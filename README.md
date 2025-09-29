@@ -25,20 +25,6 @@ It has
 
 - Examples of how to build forms and tables
 
-### 1. Setup repository settings
-
-First, we need to ensure everyone commits the same way.
-
-Go to features and turn off the features your team does not need.
-
-Go to pull requests and turn off "allow merge commits" and "allow rebase merging". This ensures the commit history is linear and easy to follow.
-
-Set the squash merging commit message to "pull request title"
-
-Turn on "automatically delete head branches". This ensures that when you merge a PR, the branch is deleted.
-
-Next, create a team in the GitHub organization and add your team members. Then, give people in the team write access to your repository so they can contribute.
-
 ### 2. Set up branch instructions
 
 Go to settings and go to the "branches" tab under "code and automation"
