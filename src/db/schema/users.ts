@@ -43,7 +43,7 @@ export const volunteers = pgTable("volunteers", {
   isAlumni: boolean("is_alumni").default(false).notNull(), // Alumni tag as required by PRD
   backgroundCheckStatus: backgroundCheckStatusEnum("background_check_status")
     .default("not_required")
-    .notNull(), // Required for youth interaction
+    .notNull(), // Tracks background check status; required only for volunteers who interact with youth. Default is 'not_required'.
   mediaRelease: boolean("media_release").default(false).notNull(), // Media release consent
   profilePicture: text("profile_picture"), // Profile picture URL (stretch goal)
   availability: jsonb("availability"), // JSON object storing availability schedule
