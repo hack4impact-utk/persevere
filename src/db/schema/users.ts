@@ -51,9 +51,10 @@ export const volunteers = pgTable("volunteers", {
   mediaRelease: boolean("media_release").default(false).notNull(), // Media release consent
   profilePicture: text("profile_picture"), // Profile picture URL (stretch goal)
   availability: jsonb("availability"), // JSON object storing availability schedule
+  // Communication preferences
   notificationPreference: notificationPreferenceEnum("notification_preference")
     .default("email")
-    .notNull(), // Communication preferences
+    .notNull(),
   isActive: boolean("is_active").default(true).notNull(), // Whether volunteer is currently active
   createdAt: timestamp("created_at").defaultNow().notNull(), // Account creation timestamp
   updatedAt: timestamp("updated_at").defaultNow().notNull(), // Last update timestamp
