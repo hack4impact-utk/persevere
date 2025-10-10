@@ -16,7 +16,7 @@ CREATE TABLE "volunteers" (
 	"lastName" text NOT NULL,
 	"email" text UNIQUE NOT NULL,
 	"phone" text,
-	"role" "volunteer_role" DEFAULT 'mentor' NOT NULL,
+	"role" "volunteer_role" NOT NULL,
 	"bio" text,
 	"availability" jsonb,
 	"isAlumni" boolean DEFAULT false NOT NULL,
