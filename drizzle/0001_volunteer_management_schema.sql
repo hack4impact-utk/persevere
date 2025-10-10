@@ -140,7 +140,7 @@ CREATE TABLE "admin_dashboard_actions" (
 CREATE TABLE "system_settings" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"key" text UNIQUE NOT NULL,
-	"value" text NOT NULL,
+	"value" jsonb NOT NULL,
 	"description" text,
 	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
