@@ -5,41 +5,49 @@ import { Box, TextField, Typography } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { ReactNode, useState } from "react";
 
-import { User } from "@/types/schema";
+import { Volunteer } from "@/types/schema";
 
 type ExampleTableProps = {
-  users: User[];
+  volunteers: Volunteer[];
 };
 
-type Row = Pick<User, "id" | "name" | "email">;
+type Row = Pick<Volunteer, "id" | "firstName" | "lastName" | "email">;
 
 const columns: GridColDef<Row>[] = [
   { field: "id", headerName: "ID", width: 100, flex: 1 },
-  { field: "name", headerName: "Name", width: 150, flex: 1 },
+  { field: "firstName", headerName: "First Name", width: 150, flex: 1 },
+  { field: "lastName", headerName: "Last Name", width: 150, flex: 1 },
   { field: "email", headerName: "Email", width: 200, flex: 1 },
 ];
 
-function getRows(users: User[], searchQuery: string): Row[] {
-  const rows = users.map((user) => ({
-    id: user.id,
-    name: user.name,
-    email: user.email,
+function getRows(volunteers: Volunteer[], searchQuery: string): Row[] {
+  const rows = volunteers.map((volunteer) => ({
+    id: volunteer.id,
+    firstName: volunteer.firstName,
+    lastName: volunteer.lastName,
+    email: volunteer.email,
   }));
 
-  return rows.filter((row) =>
-    row?.name?.toLowerCase().includes(searchQuery.toLowerCase()),
+  return rows.filter(
+    (row) =>
+      `${row?.firstName} ${row?.lastName}`
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      row?.email?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 }
 
-export default function ExampleTable({ users }: ExampleTableProps): ReactNode {
+export default function ExampleTable({
+  volunteers,
+}: ExampleTableProps): ReactNode {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredRows = getRows(users, searchQuery);
+  const filteredRows = getRows(volunteers, searchQuery);
 
   return (
     <Box sx={{ height: "75vh", width: "75vw" }}>
       <Typography align="center" variant="h6">
-        Users
+        Volunteers
       </Typography>
       <Box
         sx={{

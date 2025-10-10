@@ -1,11 +1,11 @@
 import { Box, Typography } from "@mui/material";
 import { ReactNode } from "react";
 
-import { getAllUsers } from "@/api/users";
+import { getAllVolunteers } from "@/api/users";
 import ExampleTable from "@/components/example-table";
 
 export default async function ExampleTablePage(): Promise<ReactNode> {
-  const [allUsers, error] = await getAllUsers();
+  const [allVolunteers, error] = await getAllVolunteers();
 
   if (error !== null) {
     return (
@@ -33,7 +33,7 @@ export default async function ExampleTablePage(): Promise<ReactNode> {
         marginTop: "10vh",
       }}
     >
-      <ExampleTable users={allUsers} />
+      <ExampleTable volunteers={allVolunteers} />
     </Box>
   );
 }
