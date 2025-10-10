@@ -1,16 +1,19 @@
 import db from "@/db";
 import { Result } from "@/types/result";
-import { User } from "@/types/schema";
+import { Volunteer } from "@/types/schema";
 import handleError from "@/utils/handle-error";
 
-export async function getAllUsers(): Promise<Result<User[]>> {
+export async function getAllVolunteers(): Promise<Result<Volunteer[]>> {
   try {
-    const users = await db.query.users.findMany();
-    return [users, null];
+    const volunteers = await db.query.volunteers.findMany();
+    return [volunteers, null];
   } catch (error) {
     return [null, handleError(error)];
   }
 }
+
+// Legacy function alias for backward compatibility
+export const getAllUsers = getAllVolunteers;
 
 /**
  *
