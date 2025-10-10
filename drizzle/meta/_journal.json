@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1755048222201,
-      "tag": "0000_dear_phalanx",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1760060685017,
-      "tag": "0001_volunteer_management_schema",
+      "when": 1760066107684,
+      "tag": "0000_known_manta",
       "breakpoints": true
     }
   ]
