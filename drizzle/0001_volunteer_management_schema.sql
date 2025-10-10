@@ -2,9 +2,9 @@
 -- This migration creates all tables for the Persevere volunteer management system MVP
 
 -- Create enums
-CREATE TYPE "volunteer_role" AS ENUM('volunteer', 'staff', 'admin');
+CREATE TYPE "volunteer_role" AS ENUM('mentor', 'guest_speaker', 'flexible', 'staff', 'admin');
 CREATE TYPE "opportunity_status" AS ENUM('open', 'full', 'completed', 'canceled');
-CREATE TYPE "rsvp_status" AS ENUM('pending', 'confirmed', 'declined', 'no_show');
+CREATE TYPE "rsvp_status" AS ENUM('pending', 'confirmed', 'declined', 'attended', 'no_show');
 CREATE TYPE "background_check_status" AS ENUM('not_required', 'pending', 'approved', 'rejected');
 CREATE TYPE "proficiency_level" AS ENUM('beginner', 'intermediate', 'advanced');
 CREATE TYPE "notification_preference" AS ENUM('email', 'sms', 'both', 'none');
@@ -16,15 +16,14 @@ CREATE TABLE "volunteers" (
 	"lastName" text NOT NULL,
 	"email" text UNIQUE NOT NULL,
 	"phone" text,
-	"role" "volunteer_role" DEFAULT 'volunteer' NOT NULL,
+	"role" "volunteer_role" DEFAULT 'mentor' NOT NULL,
 	"bio" text,
 	"availability" jsonb,
 	"isAlumni" boolean DEFAULT false NOT NULL,
 	"backgroundCheckStatus" "background_check_status" DEFAULT 'not_required' NOT NULL,
 	"mediaRelease" boolean DEFAULT false NOT NULL,
 	"profilePicture" text,
-	"notifyByEmail" boolean DEFAULT true NOT NULL,
-	"notifyBySMS" boolean DEFAULT false NOT NULL,
+	"notificationPreference" "notification_preference" DEFAULT 'email' NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
