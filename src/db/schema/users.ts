@@ -37,6 +37,7 @@ export const volunteers = pgTable("volunteers", {
   firstName: text("first_name").notNull(), // First name
   lastName: text("last_name").notNull(), // Last name
   email: text("email").unique().notNull(), // Unique email for login and communication
+  password: text("password").notNull(), // Bcrypt hashed password for authentication
   phone: text("phone"), // Phone number for SMS notifications
   bio: text("bio"), // Volunteer biography/description
   role: volunteerRoleEnum("role").notNull(), // Volunteer role (mentor, guest_speaker, flexible, staff, admin)
@@ -56,6 +57,7 @@ export const volunteers = pgTable("volunteers", {
     .default("email")
     .notNull(),
   isActive: boolean("is_active").default(true).notNull(), // Whether volunteer is currently active
+  isEmailVerified: boolean("is_email_verified").default(false).notNull(), // Email verification status
   createdAt: timestamp("created_at").defaultNow().notNull(), // Account creation timestamp
   updatedAt: timestamp("updated_at").defaultNow().notNull(), // Last update timestamp
 });
