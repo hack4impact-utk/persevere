@@ -1,7 +1,7 @@
 import "next-auth";
 
 declare module "next-auth" {
-  interface Session {
+  type Session = {
     user: {
       id: string;
       email: string;
@@ -11,11 +11,11 @@ declare module "next-auth" {
       isEmailVerified: boolean;
       // Add other user properties
     };
-  }
+  };
 }
 
 declare module "next-auth/jwt" {
-  interface JWT {
+  type JWT = {
     user: {
       id: string;
       email: string;
@@ -23,5 +23,5 @@ declare module "next-auth/jwt" {
       role: "mentor" | "guest_speaker" | "flexible" | "staff" | "admin";
       isEmailVerified: boolean;
     };
-  }
+  };
 }

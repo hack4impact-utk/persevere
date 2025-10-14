@@ -1,7 +1,7 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import { eq } from "drizzle-orm";
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { eq } from "drizzle-orm";
 
 import db from "@/db";
 import { volunteers } from "@/db/schema";
@@ -46,19 +46,20 @@ const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    jwt({ token, user }) {
       if (user) {
         token.user = {
           id: user.id,
           email: user.email || "",
           name: user.name || "",
-          role: (user as any).role,
-          isEmailVerified: (user as any).isEmailVerified,
+          role: (user as { role: string }).role,
+          isEmailVerified: (user as { isEmailVerified: boolean })
+            .isEmailVerified,
         };
       }
       return token;
     },
-    async session({ session, token }) {
+    session({ session, token }) {
       if (token.user) {
         session.user = token.user;
       }

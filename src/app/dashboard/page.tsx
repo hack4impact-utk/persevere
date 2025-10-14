@@ -1,9 +1,10 @@
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
 import { signOut } from "next-auth/react";
+
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 
-export default async function DashboardPage() {
+export default async function DashboardPage(): Promise<JSX.Element> {
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -17,12 +18,23 @@ export default async function DashboardPage() {
       <p>Email: {session.user.email}</p>
       <p>Role: {session.user.role}</p>
       <p>Email Verified: {session.user.isEmailVerified ? "Yes" : "No"}</p>
-      
-      <form action={async () => {
-        "use server";
-        await signOut({ redirect: true });
-      }}>
-        <button type="submit" style={{ padding: "10px", backgroundColor: "#ff0000", color: "white", border: "none", borderRadius: "4px" }}>
+
+      <form
+        action={async () => {
+          "use server";
+          await signOut({ redirect: true });
+        }}
+      >
+        <button
+          type="submit"
+          style={{
+            padding: "10px",
+            backgroundColor: "#ff0000",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+          }}
+        >
           Sign Out
         </button>
       </form>

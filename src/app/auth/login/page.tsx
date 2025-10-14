@@ -1,9 +1,10 @@
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import LoginForm from "@/components/LoginForm";
-import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
+import { getServerSession } from "next-auth";
 
-export default async function LoginPage() {
+import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
+import LoginForm from "@/components/login-form";
+
+export default async function LoginPage(): Promise<JSX.Element> {
   const session = await getServerSession(authOptions);
 
   if (session) {
