@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
+import { JSX } from "react";
 
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import LoginForm from "@/components/login-form";

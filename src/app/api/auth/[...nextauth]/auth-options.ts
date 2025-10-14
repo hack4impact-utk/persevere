@@ -52,9 +52,18 @@ const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email || "",
           name: user.name || "",
-          role: (user as { role: string }).role,
-          isEmailVerified: (user as { isEmailVerified: boolean })
-            .isEmailVerified,
+          role: (
+            user as unknown as {
+              role: "mentor" | "guest_speaker" | "flexible" | "staff" | "admin";
+              isEmailVerified: boolean;
+            }
+          ).role,
+          isEmailVerified: (
+            user as unknown as {
+              role: "mentor" | "guest_speaker" | "flexible" | "staff" | "admin";
+              isEmailVerified: boolean;
+            }
+          ).isEmailVerified,
         };
       }
       return token;
