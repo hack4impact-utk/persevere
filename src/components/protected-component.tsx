@@ -1,5 +1,6 @@
 "use client";
 import { useSession } from "next-auth/react";
+import { JSX } from "react";
 
 export default function ProtectedComponent(): JSX.Element {
   const { data: session, status } = useSession();

@@ -11,6 +11,7 @@ declare module "next-auth" {
       isEmailVerified: boolean;
       // Add other user properties
     };
+    expires: string;
   };
 }
 

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { signOut } from "next-auth/react";
+import { JSX } from "react";
 
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 
