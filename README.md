@@ -28,27 +28,38 @@ Please have the following VSCode extensions installed:
 
 ### Environment Variables
 
-Create a `.env` file in the root directory of the project and add the following variables:
+Create a `.env` file in the root directory with the following variables:
 
 ```text
-DB_CONNECTION_STRING=
-
-EXAMPLE_ENV_VAR=example-value
-EXAMPLE_ENV_VAR_2=example-value-2
-PRIVATE_ENV_VAR=
-PRIVATE_ENV_VAR_2=
+DATABASE_URL=your-database-connection-string
+NEXTAUTH_SECRET=your-generated-secret-here
+NEXTAUTH_URL=http://localhost:3000
 ```
 
-Please contact leadership to obtain the following:
+**Setup steps:**
 
-- DB_CONNECTION_STRING
-- PRIVATE_ENV_VAR
-- PRIVATE_ENV_VAR_2
+1. Generate your own NextAuth secret: `openssl rand -base64 32`
+2. Contact leadership to get database connection string
+3. Each developer must use their own unique `NEXTAUTH_SECRET`
+
+**Note:** All developers share the same database for development, but each needs their own `NEXTAUTH_SECRET` to prevent session conflicts.
 
 ### Running the App
 
 1. Run `pnpm install` to install the dependencies.
 2. Run `pnpm run dev` to start the development server.
+3. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Database Setup
+
+The project uses Drizzle ORM with PostgreSQL. Database migrations are automatically applied on startup.
+
+### Authentication
+
+Test credentials:
+
+- Email: `test@example.com`
+- Password: `testpassword123`
 
 ### Contributing
 
