@@ -1,7 +1,7 @@
 import { Avatar, Box, Button, Typography } from "@mui/material";
 import Link from "next/link";
 import { Session } from "next-auth";
-import { signIn, signOut } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import { ReactNode } from "react";
 
 type HomeCardContentProps = {
@@ -10,7 +10,7 @@ type HomeCardContentProps = {
 };
 
 const handleSignIn = (): void => {
-  void signIn("google");
+  globalThis.location.href = "/auth/login";
 };
 
 const handleSignOut = (): void => {
@@ -78,7 +78,7 @@ export default function HomeCardContent({
         Sign in to access your account information
       </Typography>
       <Button variant="contained" size="large" onClick={handleSignIn}>
-        Sign In with Google
+        Sign In
       </Button>
     </>
   );

@@ -8,6 +8,20 @@
       "when": 1760066107684,
       "tag": "0000_known_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1760479220490,
+      "tag": "0001_tearful_smasher",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1760482792189,
+      "tag": "0002_late_ironclad",
+      "breakpoints": true
     }
   ]
 }
