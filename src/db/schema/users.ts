@@ -206,3 +206,82 @@ export const volunteerInterestsRelations = relations(
     }), // Each volunteer-interest belongs to one interest
   }),
 );
+
+/**
+ * NEXTAUTH.JS REQUIRED TABLES
+ *
+ * These tables are required by NextAuth.js DrizzleAdapter for session management
+ * and OAuth provider integration. They work alongside the volunteers table.
+ */
+
+/**
+ * Users table - NextAuth.js user management
+ * This table stores user data for NextAuth.js session management
+ */
+export const users = pgTable("user", {
+  id: text("id").primaryKey().notNull(),
+  name: text("name"),
+  email: text("email"),
+  emailVerified: timestamp("emailVerified"),
+  image: text("image"),
+});
+
+/**
+ * Accounts table - OAuth provider account linking
+ * Links NextAuth users to their OAuth provider accounts
+ */
+export const accounts = pgTable(
+  "account",
+  {
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    provider: text("provider").notNull(),
+    providerAccountId: text("providerAccountId").notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: text("token_type"),
+    scope: text("scope"),
+    id_token: text("id_token"),
+    session_state: text("session_state"),
+  },
+  (table) => {
+    return {
+      // Composite primary key
+      pk: primaryKey({ columns: [table.provider, table.providerAccountId] }),
+    };
+  },
+);
+
+/**
+ * Sessions table - NextAuth.js session management
+ * Stores active user sessions for authentication
+ */
+export const sessions = pgTable("session", {
+  sessionToken: text("sessionToken").primaryKey().notNull(),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  expires: timestamp("expires").notNull(),
+});
+
+/**
+ * Verification tokens table - Email verification and password reset
+ * Stores tokens for email verification and password reset flows
+ */
+export const verificationTokens = pgTable(
+  "verificationToken",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: timestamp("expires").notNull(),
+  },
+  (table) => {
+    return {
+      // Composite primary key
+      pk: primaryKey({ columns: [table.identifier, table.token] }),
+    };
+  },
+);

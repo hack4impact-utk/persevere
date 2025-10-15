@@ -4,11 +4,26 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 import db from "@/db";
-import { volunteers } from "@/db/schema";
+import {
+  accounts,
+  sessions,
+  users,
+  verificationTokens,
+  volunteers,
+} from "@/db/schema";
 import { verifyPassword } from "@/utils/password";
 
 const authOptions: NextAuthOptions = {
-  adapter: DrizzleAdapter(db),
+  adapter: DrizzleAdapter(db, {
+    usersTable: users,
+    accountsTable: accounts,
+    sessionsTable: sessions,
+    verificationTokensTable: verificationTokens,
+  }),
+  session: {
+    strategy: "jwt",
+  },
+  useSecureCookies: false,
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -17,31 +32,55 @@ const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password required");
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            return null;
+          }
+
+          // Fetch user from database
+          const volunteer = await db.query.volunteers.findFirst({
+            where: eq(volunteers.email, credentials.email),
+          });
+
+          if (!volunteer) {
+            return null;
+          }
+
+          // Verify password
+          const isValid = await verifyPassword(
+            credentials.password,
+            volunteer.password,
+          );
+          if (!isValid) {
+            return null;
+          }
+
+          // Ensure user exists in NextAuth user table
+          const existingUser = await db.query.users.findFirst({
+            where: eq(users.id, volunteer.id.toString()),
+          });
+
+          if (!existingUser) {
+            // Create user in NextAuth user table
+            await db.insert(users).values({
+              id: volunteer.id.toString(),
+              name: `${volunteer.firstName} ${volunteer.lastName}`,
+              email: volunteer.email,
+              emailVerified: volunteer.isEmailVerified ? new Date() : null,
+            });
+          }
+
+          return {
+            id: volunteer.id.toString(),
+            email: volunteer.email,
+            name: `${volunteer.firstName} ${volunteer.lastName}`,
+            role: volunteer.role,
+            isEmailVerified: volunteer.isEmailVerified,
+          };
+        } catch (error) {
+          console.error("Authorize error:", error);
+          return null;
         }
-
-        // Fetch user from database
-        const user = await db.query.volunteers.findFirst({
-          where: eq(volunteers.email, credentials.email),
-        });
-
-        if (!user) throw new Error("Invalid credentials");
-
-        // Verify password
-        const isValid = await verifyPassword(
-          credentials.password,
-          user.password,
-        );
-        if (!isValid) throw new Error("Invalid credentials");
-
-        return {
-          id: user.id.toString(),
-          email: user.email,
-          name: `${user.firstName} ${user.lastName}`,
-          role: user.role,
-          isEmailVerified: user.isEmailVerified,
-        };
       },
     }),
   ],

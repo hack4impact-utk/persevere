@@ -1,6 +1,5 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { JSX, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -23,7 +22,6 @@ export default function LoginForm(): JSX.Element {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   const onSubmit = async (data: LoginFormData): Promise<void> => {
     setIsLoading(true);
@@ -34,15 +32,19 @@ export default function LoginForm(): JSX.Element {
         email: data.email,
         password: data.password,
         redirect: false,
+        callbackUrl: "/dashboard",
       });
 
       if (result?.error) {
         setError(result.error);
       } else if (result?.ok) {
-        router.push("/dashboard");
-        router.refresh();
+        // Force a hard redirect to ensure it works
+        globalThis.location.replace("/dashboard");
+      } else {
+        setError("Login failed. Please try again.");
       }
-    } catch {
+    } catch (error) {
+      console.error("Login exception:", error);
       setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
