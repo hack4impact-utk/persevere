@@ -18,72 +18,93 @@ import {
 } from "./enums";
 
 /**
- * VOLUNTEER MANAGEMENT MVP SCHEMA
+ * Core User and Volunteer Management Schema
  *
- * This schema supports the core volunteer management functionality
- * as defined in the Persevere PRD v2 MVP requirements:
- * - Volunteer Recruitment Portal
- * - Central Volunteer Database
- * - Matching Engine
- * - Admin Dashboard
+ * This file contains the primary user tables for the volunteer management system.
+ * It includes both the main volunteers table and the NextAuth.js adapter tables.
+ *
+ * Key design decisions:
+ * - Single volunteers table for all user types (volunteers, staff, admins)
+ * - Role-based access control through the role field
+ * - Optional volunteerType for specific volunteer categories
+ * - NextAuth tables for authentication integration
+ *
+ * Related files:
+ * - opportunities.ts: Event and opportunity management
+ * - communications.ts: Messaging and notifications
+ * - enums.ts: Shared enum definitions
  */
 
 /**
- * Main volunteers table - Central database for all volunteers and staff
- * Supports searchable, filterable records with alumni tagging as required
+ * Central user table for all system users
+ *
+ * This table stores all users regardless of their role (volunteer, staff, admin).
+ * The role field determines access permissions, while volunteerType provides
+ * additional categorization for volunteers.
+ *
+ * Authentication: Uses email/password with bcrypt hashing
+ * Access Control: Role-based permissions via middleware
+ * Data Integrity: Email uniqueness enforced at database level
  */
 export const volunteers = pgTable("volunteers", {
   id: serial("id").primaryKey(),
-  firstName: text("first_name").notNull(), // First name
-  lastName: text("last_name").notNull(), // Last name
-  email: text("email").unique().notNull(), // Unique email for login and communication
-  password: text("password").notNull(), // Bcrypt hashed password for authentication
-  phone: text("phone"), // Phone number for SMS notifications
-  bio: text("bio"), // Volunteer biography/description
-  role: volunteerRoleEnum("role").notNull(), // Volunteer role (mentor, guest_speaker, flexible, staff, admin)
-  isAlumni: boolean("is_alumni").default(false).notNull(), // Alumni tag as required by PRD
+  firstName: text("first_name").notNull(), // User's first name
+  lastName: text("last_name").notNull(), // User's last name
+  email: text("email").unique().notNull(), // Login identifier and primary contact method
+  password: text("password").notNull(), // Bcrypt hashed password (never store plaintext)
+  phone: text("phone"), // Optional phone for SMS notifications
+  bio: text("bio"), // User biography/description for profiles
+  role: volunteerRoleEnum("role").notNull(), // Access control: volunteer | staff | admin
+  volunteerType: text("volunteer_type"), // Volunteer specialization: mentor | speaker | flexible
+  isAlumni: boolean("is_alumni").default(false).notNull(), // Alumni status for tracking
   /**
-   * Tracks background check status; required only for volunteers who interact with youth.
-   * Default is 'not_required'.
+   * Background check status for safety compliance
+   * Required for volunteers working with minors or vulnerable populations
    */
   backgroundCheckStatus: backgroundCheckStatusEnum("background_check_status")
     .default("not_required")
     .notNull(),
-  mediaRelease: boolean("media_release").default(false).notNull(), // Media release consent
-  profilePicture: text("profile_picture"), // Profile picture URL (stretch goal)
-  availability: jsonb("availability"), // JSON object storing availability schedule
-  // Communication preferences
+  mediaRelease: boolean("media_release").default(false).notNull(), // Consent for photos/videos
+  profilePicture: text("profile_picture"), // URL to profile image
+  availability: jsonb("availability"), // JSON schedule preferences (flexible format)
   notificationPreference: notificationPreferenceEnum("notification_preference")
     .default("email")
-    .notNull(),
-  isActive: boolean("is_active").default(true).notNull(), // Whether volunteer is currently active
-  isEmailVerified: boolean("is_email_verified").default(false).notNull(), // Email verification status
-  createdAt: timestamp("created_at").defaultNow().notNull(), // Account creation timestamp
-  updatedAt: timestamp("updated_at").defaultNow().notNull(), // Last update timestamp
+    .notNull(), // How user wants to receive notifications
+  isActive: boolean("is_active").default(true).notNull(), // Account active status
+  isEmailVerified: boolean("is_email_verified").default(false).notNull(), // Email verification
+  createdAt: timestamp("created_at").defaultNow().notNull(), // Account creation time
+  updatedAt: timestamp("updated_at").defaultNow().notNull(), // Last modification time
 });
 
 /**
- * SKILLS MANAGEMENT FOR VOLUNTEER MATCHING
+ * Skills and Interests Management
  *
- * Skills system enables the matching engine to suggest volunteers
- * based on their abilities and proficiency levels
+ * These tables support the volunteer-opportunity matching system by tracking
+ * what volunteers can do and what opportunities require.
  */
 
 /**
- * Skills table - Master list of all available skills for volunteer matching
+ * Master skills catalog
+ *
+ * Contains all available skills that volunteers can have or opportunities can require.
+ * Used for matching volunteers to appropriate opportunities based on their abilities.
+ *
  * Examples: "JavaScript", "Python", "Mentoring", "Public Speaking", "First Aid"
  */
 export const skills = pgTable("skills", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(), // Skill name (e.g., "JavaScript", "Mentoring")
-  description: text("description"), // Optional detailed description of the skill
-  category: text("category"), // Skill category (e.g., "Technical", "Soft Skills", "Safety")
+  description: text("description"), // Detailed description of the skill
+  category: text("category"), // Grouping: "Technical", "Soft Skills", "Safety", etc.
 });
 
 /**
- * Volunteer-Skills junction table - Links volunteers to their skills with proficiency levels
- * Many-to-many relationship between volunteers and skills for matching engine
- * Uses composite primary key for better performance
+ * Volunteer-Skills many-to-many relationship
+ *
+ * Links volunteers to their skills with proficiency levels.
+ * Used by the matching algorithm to find volunteers with appropriate abilities.
+ *
+ * Composite primary key: (volunteerId, skillId) ensures no duplicate entries
  */
 export const volunteerSkills = pgTable(
   "volunteer_skills",
@@ -105,26 +126,25 @@ export const volunteerSkills = pgTable(
 );
 
 /**
- * INTERESTS MANAGEMENT FOR VOLUNTEER MATCHING
+ * Interest Categories
  *
- * Interests system helps recommend relevant opportunities to volunteers
- * and enables better volunteer-opportunity matching
- */
-
-/**
- * Interests table - Master list of all available interest categories
+ * Helps match volunteers to opportunities based on their interests and passions.
+ * Different from skills - interests are about what volunteers want to do,
+ * while skills are about what they can do.
+ *
  * Examples: "Tech Education", "Mentoring", "Community Outreach", "Youth Development"
  */
 export const interests = pgTable("interests", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(), // Interest name (e.g., "Tech Education", "Mentoring")
-  description: text("description"), // Optional description of the interest category
+  name: text("name").notNull(), // Interest category name
+  description: text("description"), // Detailed description of the interest
 });
 
 /**
- * Volunteer-Interests junction table - Links volunteers to their interests
- * Many-to-many relationship between volunteers and interests
- * Uses composite primary key for better performance
+ * Volunteer-Interests many-to-many relationship
+ *
+ * Links volunteers to their interest categories for opportunity recommendations.
+ * Used to suggest relevant opportunities based on volunteer preferences.
  */
 export const volunteerInterests = pgTable(
   "volunteer_interests",
@@ -208,27 +228,35 @@ export const volunteerInterestsRelations = relations(
 );
 
 /**
- * NEXTAUTH.JS REQUIRED TABLES
+ * NextAuth.js Integration Tables
  *
- * These tables are required by NextAuth.js DrizzleAdapter for session management
- * and OAuth provider integration. They work alongside the volunteers table.
+ * These tables are required by the NextAuth.js DrizzleAdapter for authentication.
+ * They work alongside the main volunteers table to provide session management
+ * and OAuth provider integration.
+ *
+ * Note: The main user data is stored in the volunteers table. These tables
+ * are primarily for NextAuth.js internal session management.
  */
 
 /**
- * Users table - NextAuth.js user management
- * This table stores user data for NextAuth.js session management
+ * NextAuth.js user records
+ *
+ * Stores minimal user data for NextAuth.js session management.
+ * The main user data (profile, role, etc.) is stored in the volunteers table.
  */
 export const users = pgTable("user", {
   id: text("id").primaryKey().notNull(),
-  name: text("name"),
-  email: text("email"),
-  emailVerified: timestamp("emailVerified"),
-  image: text("image"),
+  name: text("name"), // Display name
+  email: text("email"), // Email address
+  emailVerified: timestamp("emailVerified"), // Email verification timestamp
+  image: text("image"), // Profile image URL
 });
 
 /**
- * Accounts table - OAuth provider account linking
- * Links NextAuth users to their OAuth provider accounts
+ * OAuth provider account linking
+ *
+ * Links NextAuth users to their external OAuth accounts (Google, GitHub, etc.).
+ * Not currently used since we use credentials provider, but required by NextAuth.
  */
 export const accounts = pgTable(
   "account",
@@ -256,8 +284,10 @@ export const accounts = pgTable(
 );
 
 /**
- * Sessions table - NextAuth.js session management
- * Stores active user sessions for authentication
+ * User session management
+ *
+ * Stores active user sessions for authentication state.
+ * Currently using JWT strategy, so this table is mainly for NextAuth compatibility.
  */
 export const sessions = pgTable("session", {
   sessionToken: text("sessionToken").primaryKey().notNull(),
@@ -268,8 +298,10 @@ export const sessions = pgTable("session", {
 });
 
 /**
- * Verification tokens table - Email verification and password reset
- * Stores tokens for email verification and password reset flows
+ * Email verification and password reset tokens
+ *
+ * Stores secure tokens for email verification and password reset flows.
+ * Tokens have expiration times for security.
  */
 export const verificationTokens = pgTable(
   "verificationToken",

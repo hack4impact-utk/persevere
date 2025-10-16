@@ -8,7 +8,7 @@ const handleSignOut = (): void => {
   void signOut();
 };
 
-export default function DashboardContent(): ReactNode {
+export default function StaffDashboardContent(): ReactNode {
   const { data: session } = useSession();
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function DashboardContent(): ReactNode {
   return (
     <Box sx={{ padding: "20px", maxWidth: 600, margin: "0 auto" }}>
       <Typography variant="h4" gutterBottom>
-        Dashboard
+        Staff Dashboard
       </Typography>
 
       <Box sx={{ textAlign: "center", mb: 4 }}>
@@ -65,7 +65,7 @@ export default function DashboardContent(): ReactNode {
           {session.user?.email}
         </Typography>
         <Typography variant="body1" gutterBottom>
-          Role: {session.user?.role}
+          Role: {session.user?.role} (Staff Member)
         </Typography>
         <Typography variant="body1" gutterBottom>
           Email Verified: {session.user?.isEmailVerified ? "Yes" : "No"}

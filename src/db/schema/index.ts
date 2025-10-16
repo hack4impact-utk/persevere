@@ -1,17 +1,21 @@
 // src/db/schema/index.ts
 
 /**
- * MVP SCHEMA EXPORTS
+ * Database Schema Exports
  *
- * This file exports all schema components for the Persevere
- * volunteer management system MVP as defined in PRD v2.
+ * This file exports all database schema components for the volunteer
+ * management system. Each module contains related tables and functionality.
  *
- * Core MVP schemas:
- * - enums: All enum definitions for the system
- * - users: Volunteer management, skills, and interests
- * - opportunities: Event/engagement calendar and RSVP management
- * - communications: Volunteer communication tools
- * - admin: Admin dashboard and system management
+ * Schema modules:
+ * - enums: Database enums and type definitions
+ * - users: User management, authentication, and volunteer profiles
+ * - opportunities: Events, RSVPs, and volunteer hours tracking
+ * - communications: Messaging, notifications, and templates
+ * - admin: Administrative functions and system management
+ *
+ * Usage:
+ * Import specific tables or use wildcard imports for convenience.
+ * All tables are properly typed with Drizzle ORM.
  */
 
 export * from "./admin";

@@ -94,13 +94,22 @@ const authOptions: NextAuthOptions = {
           name: user.name || "",
           role: (
             user as unknown as {
-              role: "mentor" | "guest_speaker" | "flexible" | "staff" | "admin";
+              role: "volunteer" | "staff" | "admin";
+              volunteerType?: "mentor" | "speaker" | "flexible" | null;
               isEmailVerified: boolean;
             }
           ).role,
+          volunteerType: (
+            user as unknown as {
+              role: "volunteer" | "staff" | "admin";
+              volunteerType?: "mentor" | "speaker" | "flexible" | null;
+              isEmailVerified: boolean;
+            }
+          ).volunteerType,
           isEmailVerified: (
             user as unknown as {
-              role: "mentor" | "guest_speaker" | "flexible" | "staff" | "admin";
+              role: "volunteer" | "staff" | "admin";
+              volunteerType?: "mentor" | "speaker" | "flexible" | null;
               isEmailVerified: boolean;
             }
           ).isEmailVerified,

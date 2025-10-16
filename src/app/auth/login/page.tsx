@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { JSX } from "react";
 
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
-import LoginForm from "@/components/login-form";
+import { LoginForm } from "@/components";
 
 export default async function LoginPage(): Promise<JSX.Element> {
   const session = await getServerSession(authOptions);

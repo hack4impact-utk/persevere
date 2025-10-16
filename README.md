@@ -56,10 +56,19 @@ The project uses Drizzle ORM with PostgreSQL. Database migrations are automatica
 
 ### Authentication
 
-Test credentials:
+Test credentials for development:
 
-- Email: `test@example.com`
-- Password: `testpassword123`
+| Role      | Email                | Password       | Type     |
+| --------- | -------------------- | -------------- | -------- |
+| Admin     | `admin@test.com`     | `admin123`     | -        |
+| Staff     | `staff@test.com`     | `staff123`     | -        |
+| Volunteer | `volunteer@test.com` | `volunteer123` | flexible |
+
+**Note:** These are test accounts created for development purposes. Each role has different access permissions:
+
+- **Admin**: Full system access, can manage all users and settings
+- **Staff**: Can manage volunteers and opportunities, limited admin access
+- **Volunteer**: Can view and sign up for opportunities, limited to their own data
 
 ### Contributing
 
