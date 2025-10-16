@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import { ReactNode } from "react";
 
-import HomeCard from "@/components/home-card";
+import { HomeCard } from "@/components";
 
 export default function HomePage(): ReactNode {
   return (

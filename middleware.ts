@@ -8,7 +8,7 @@ export default withAuth(function middleware(req) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  // Role-based access control
+  // Simplified role-based access control
   if (req.nextUrl.pathname.startsWith("/admin") && user.role !== "admin") {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
@@ -20,8 +20,15 @@ export default withAuth(function middleware(req) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
+  if (
+    req.nextUrl.pathname.startsWith("/volunteer") &&
+    user.role !== "volunteer"
+  ) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
   // Email verification check for volunteers
-  if (user.role !== "admin" && user.role !== "staff" && !user.isEmailVerified) {
+  if (user.role === "volunteer" && !user.isEmailVerified) {
     return NextResponse.redirect(new URL("/verify-email", req.url));
   }
 });

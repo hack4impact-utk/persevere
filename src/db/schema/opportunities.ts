@@ -15,49 +15,67 @@ import { opportunityStatusEnum, rsvpStatusEnum } from "./enums"; // Import enums
 import { interests, skills, volunteers } from "./users"; // Import dependencies
 
 /**
- * EVENT & ENGAGEMENT CALENDAR MVP SCHEMA
+ * Opportunities and Events Management Schema
  *
- * This schema supports the event/engagement calendar functionality
- * as defined in the Persevere PRD v2 MVP requirements:
- * - Event & Engagement Calendar
- * - RSVP/Signup functionality
- * - Volunteer hours tracking
- * - Matching Engine support
+ * This file contains tables for managing volunteer opportunities, events,
+ * RSVPs, and volunteer hours tracking.
+ *
+ * Key features:
+ * - Event and opportunity management
+ * - RSVP and signup functionality
+ * - Volunteer hours tracking and verification
+ * - Skills and interests matching
+ * - Recurring event support
+ *
+ * Related files:
+ * - users.ts: Volunteer profiles and skills
+ * - communications.ts: Event-related messaging
+ * - admin.ts: Administrative oversight
  */
 
 /**
- * Main opportunities table - Stores all volunteer opportunities and events
- * Supports recurring scheduling and RSVP/signup functionality as required
+ * Volunteer opportunities and events
+ *
+ * Central table for all volunteer opportunities, events, and engagements.
+ * Supports both one-time and recurring events with flexible scheduling.
+ *
+ * Event lifecycle:
+ * 1. Created by staff/admin
+ * 2. Volunteers RSVP
+ * 3. Event occurs
+ * 4. Hours are tracked and verified
+ * 5. Event marked as completed
  */
 export const opportunities = pgTable("opportunities", {
   id: serial("id").primaryKey(),
-  title: text("title").notNull(), // Opportunity title (e.g., "JavaScript Mentoring Session", "Guest Speaker Event")
-  description: text("description").notNull(), // Detailed description of the opportunity
-  location: text("location").notNull(), // Location description (e.g., "Community Center", "123 Main St")
-  startDate: timestamp("start_date").notNull(), // When the opportunity starts
-  endDate: timestamp("end_date").notNull(), // When the opportunity ends
-  status: opportunityStatusEnum("status").default("open").notNull(), // Current status of the opportunity
-  maxVolunteers: integer("max_volunteers"), // Maximum number of volunteers (null = unlimited)
+  title: text("title").notNull(), // Event title
+  description: text("description").notNull(), // Detailed event description
+  location: text("location").notNull(), // Event location
+  startDate: timestamp("start_date").notNull(), // Event start time
+  endDate: timestamp("end_date").notNull(), // Event end time
+  status: opportunityStatusEnum("status").default("open").notNull(), // Current status
+  maxVolunteers: integer("max_volunteers"), // Volunteer capacity (null = unlimited)
   createdById: integer("created_by_id")
     .notNull()
-    .references(() => volunteers.id, { onDelete: "restrict" }), // Who created this opportunity (staff/admin)
-  recurrencePattern: jsonb("recurrence_pattern"), // JSON object for recurring opportunities (e.g., weekly, monthly)
-  isRecurring: boolean("is_recurring").default(false).notNull(), // Whether this is a recurring opportunity
-  createdAt: timestamp("created_at").defaultNow().notNull(), // When the opportunity was created
-  updatedAt: timestamp("updated_at").defaultNow().notNull(), // When the opportunity was last updated
+    .references(() => volunteers.id, { onDelete: "restrict" }), // Staff/admin who created this
+  recurrencePattern: jsonb("recurrence_pattern"), // Recurrence rules (weekly, monthly, etc.)
+  isRecurring: boolean("is_recurring").default(false).notNull(), // Recurring event flag
+  createdAt: timestamp("created_at").defaultNow().notNull(), // Creation timestamp
+  updatedAt: timestamp("updated_at").defaultNow().notNull(), // Last update timestamp
 });
 
 /**
- * OPPORTUNITY SKILLS MATCHING FOR MATCHING ENGINE
+ * Skills and Interests Matching
  *
- * Links opportunities to required skills for better volunteer matching
- * Supports the matching engine requirement from PRD
+ * These tables link opportunities to required skills and interests,
+ * enabling the matching engine to suggest appropriate volunteers.
  */
 
 /**
- * Opportunity-Required Skills junction table
- * Defines which skills are required for each opportunity
- * Uses composite primary key for better performance
+ * Required skills for opportunities
+ *
+ * Links opportunities to the skills they require from volunteers.
+ * Used by the matching algorithm to find qualified volunteers.
  */
 export const opportunityRequiredSkills = pgTable(
   "opportunity_required_skills",
@@ -108,16 +126,17 @@ export const opportunityInterests = pgTable(
 );
 
 /**
- * RSVP/SIGNUP MANAGEMENT
+ * RSVP and Signup Management
  *
- * Tracks volunteer RSVPs and signups for opportunities
- * Supports the RSVP/signup functionality requirement from PRD
+ * Tracks volunteer responses to opportunities and manages the signup process.
+ * Includes status tracking and approval workflows.
  */
 
 /**
- * Volunteer RSVPs table
- * Tracks when volunteers RSVP/signup for opportunities and their status
- * Uses composite primary key for better performance
+ * Volunteer RSVPs and signups
+ *
+ * Records when volunteers respond to opportunities and tracks their status
+ * through the approval and attendance process.
  */
 export const volunteerRsvps = pgTable(
   "volunteer_rsvps",
@@ -141,39 +160,40 @@ export const volunteerRsvps = pgTable(
 );
 
 /**
- * VOLUNTEER HOURS TRACKING FOR REPORTING & ANALYTICS
+ * Volunteer Hours Tracking
  *
- * Records actual volunteer hours worked for reporting and recognition
- * Supports the reporting & analytics requirement from PRD
+ * Records actual volunteer hours worked for reporting, recognition, and analytics.
+ * Supports both self-reported and verified hour tracking.
  */
 
 /**
- * Volunteer Hours table
- * Tracks actual hours worked by volunteers for each opportunity
- * Used for grant reporting and internal analytics
+ * Volunteer hours worked
+ *
+ * Tracks actual hours worked by volunteers for each opportunity.
+ * Used for grant reporting, volunteer recognition, and analytics.
  */
 export const volunteerHours = pgTable("volunteer_hours", {
   id: serial("id").primaryKey(),
   volunteerId: integer("volunteer_id")
     .notNull()
-    .references(() => volunteers.id, { onDelete: "cascade" }), // Foreign key to volunteers
+    .references(() => volunteers.id, { onDelete: "cascade" }), // Volunteer who worked the hours
   opportunityId: integer("opportunity_id")
     .notNull()
-    .references(() => opportunities.id, { onDelete: "cascade" }), // Foreign key to opportunities
-  date: timestamp("date").notNull(), // Date when hours were worked
-  hours: real("hours").notNull(), // Number of hours worked (supports decimal values like 2.5)
-  notes: text("notes"), // Optional notes about the volunteer session
+    .references(() => opportunities.id, { onDelete: "cascade" }), // Opportunity where hours were worked
+  date: timestamp("date").notNull(), // Date hours were worked
+  hours: real("hours").notNull(), // Hours worked (supports decimals like 2.5)
+  notes: text("notes"), // Additional notes about the session
   verifiedBy: integer("verified_by").references(() => volunteers.id, {
     onDelete: "set null",
-  }), // Who verified these hours (staff/admin)
-  verifiedAt: timestamp("verified_at"), // When the hours were verified
+  }), // Staff/admin who verified the hours
+  verifiedAt: timestamp("verified_at"), // Verification timestamp
 });
 
 /**
- * DRIZZLE RELATIONS
+ * Database Relations
  *
- * These relations define how opportunity tables are connected for querying
- * They support the matching engine and calendar functionality
+ * Defines relationships between opportunity tables and other entities for querying.
+ * Enables efficient joins and nested data fetching.
  */
 
 /**
