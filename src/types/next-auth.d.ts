@@ -24,5 +24,6 @@ declare module "next-auth/jwt" {
       role: "mentor" | "guest_speaker" | "flexible" | "staff" | "admin";
       isEmailVerified: boolean;
     };
+    exp?: number;
   };
 }

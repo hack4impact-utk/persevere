@@ -1,9 +1,9 @@
-import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { withAuth } from "next-auth/middleware";
 
 export default withAuth(function middleware(req) {
   const user = req.nextauth.token?.user;
-  
+
   if (!user) {
     return NextResponse.redirect(new URL("/", req.url));
   }
@@ -13,7 +13,10 @@ export default withAuth(function middleware(req) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  if (req.nextUrl.pathname.startsWith("/staff") && !["staff", "admin"].includes(user.role)) {
+  if (
+    req.nextUrl.pathname.startsWith("/staff") &&
+    !["staff", "admin"].includes(user.role)
+  ) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
@@ -24,5 +27,5 @@ export default withAuth(function middleware(req) {
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/staff/:path*", "/volunteer/:path*"]
+  matcher: ["/admin/:path*", "/staff/:path*", "/volunteer/:path*"],
 };
