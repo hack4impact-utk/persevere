@@ -22,6 +22,7 @@ const authOptions: NextAuthOptions = {
   }),
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days in seconds
   },
   useSecureCookies: false,
   providers: [
@@ -104,6 +105,8 @@ const authOptions: NextAuthOptions = {
             }
           ).isEmailVerified,
         };
+        // Set expiration time (30 days from now)
+        token.exp = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
       }
       return token;
     },
@@ -111,7 +114,17 @@ const authOptions: NextAuthOptions = {
       if (token.user) {
         session.user = token.user;
       }
+      // Set session expiration time
+      if (token.exp) {
+        session.expires = new Date(token.exp * 1000).toISOString();
+      }
       return session;
+    },
+    redirect({ url, baseUrl }) {
+      // Always redirect to dashboard after login
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return `${baseUrl}/dashboard`;
     },
   },
   pages: {
