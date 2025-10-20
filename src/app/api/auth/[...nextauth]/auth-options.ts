@@ -1,25 +1,15 @@
-import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { eq } from "drizzle-orm";
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 import db from "@/db";
-import {
-  accounts,
-  sessions,
-  users,
-  verificationTokens,
-  volunteers,
-} from "@/db/schema";
+import { users } from "@/db/schema";
 import { verifyPassword } from "@/utils/password";
 
 const authOptions: NextAuthOptions = {
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }),
+  // Note: Using custom credentials provider instead of adapter
+  // The DrizzleAdapter expects specific NextAuth table structure
+  // Our normalized schema doesn't match NextAuth's expected format
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days in seconds
@@ -38,45 +28,52 @@ const authOptions: NextAuthOptions = {
             return null;
           }
 
-          // Fetch user from database
-          const volunteer = await db.query.volunteers.findFirst({
-            where: eq(volunteers.email, credentials.email),
+          // Fetch user from database with all role information
+          const user = await db.query.users.findFirst({
+            where: eq(users.email, credentials.email),
+            with: {
+              volunteer: true,
+              staff: {
+                with: {
+                  admin: true,
+                },
+              },
+            },
           });
 
-          if (!volunteer) {
+          if (!user) {
             return null;
           }
 
           // Verify password
           const isValid = await verifyPassword(
             credentials.password,
-            volunteer.password,
+            user.password,
           );
           if (!isValid) {
             return null;
           }
 
-          // Ensure user exists in NextAuth user table
-          const existingUser = await db.query.users.findFirst({
-            where: eq(users.id, volunteer.id.toString()),
-          });
+          // Determine user role
+          let role = "none";
+          let volunteerType = null;
 
-          if (!existingUser) {
-            // Create user in NextAuth user table
-            await db.insert(users).values({
-              id: volunteer.id.toString(),
-              name: `${volunteer.firstName} ${volunteer.lastName}`,
-              email: volunteer.email,
-              emailVerified: volunteer.isEmailVerified ? new Date() : null,
-            });
+          if (user.staff?.admin) {
+            role = "admin";
+          } else if (user.staff) {
+            role = "staff";
+          } else if (user.volunteer) {
+            role = "volunteer";
+            volunteerType = user.volunteer.volunteerType;
           }
 
           return {
-            id: volunteer.id.toString(),
-            email: volunteer.email,
-            name: `${volunteer.firstName} ${volunteer.lastName}`,
-            role: volunteer.role,
-            isEmailVerified: volunteer.isEmailVerified,
+            id: user.id.toString(),
+            email: user.email,
+            name: `${user.firstName} ${user.lastName}`,
+            role,
+            volunteerType,
+            isEmailVerified: user.isEmailVerified,
           };
         } catch (error) {
           console.error("Authorize error:", error);

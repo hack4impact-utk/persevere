@@ -3,7 +3,7 @@ CREATE TYPE "public"."notification_preference" AS ENUM('email', 'sms', 'both', '
 CREATE TYPE "public"."opportunity_status" AS ENUM('open', 'full', 'completed', 'canceled');--> statement-breakpoint
 CREATE TYPE "public"."proficiency_level" AS ENUM('beginner', 'intermediate', 'advanced');--> statement-breakpoint
 CREATE TYPE "public"."rsvp_status" AS ENUM('pending', 'confirmed', 'declined', 'attended', 'no_show');--> statement-breakpoint
-CREATE TYPE "public"."volunteer_role" AS ENUM('mentor', 'guest_speaker', 'flexible', 'staff', 'admin');--> statement-breakpoint
+CREATE TYPE "public"."volunteer_role" AS ENUM('volunteer', 'staff', 'admin');--> statement-breakpoint
 CREATE TABLE "admin_dashboard_actions" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"admin_id" integer NOT NULL,
@@ -96,10 +96,39 @@ CREATE TABLE "volunteer_rsvps" (
 	CONSTRAINT "volunteer_rsvps_volunteer_id_opportunity_id_pk" PRIMARY KEY("volunteer_id","opportunity_id")
 );
 --> statement-breakpoint
+CREATE TABLE "account" (
+	"userId" text NOT NULL,
+	"type" text NOT NULL,
+	"provider" text NOT NULL,
+	"providerAccountId" text NOT NULL,
+	"refresh_token" text,
+	"access_token" text,
+	"expires_at" integer,
+	"token_type" text,
+	"scope" text,
+	"id_token" text,
+	"session_state" text,
+	CONSTRAINT "account_provider_providerAccountId_pk" PRIMARY KEY("provider","providerAccountId")
+);
+--> statement-breakpoint
+CREATE TABLE "admin" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"staff_id" integer NOT NULL,
+	"last_login_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "interests" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text
+);
+--> statement-breakpoint
+CREATE TABLE "session" (
+	"sessionToken" text PRIMARY KEY NOT NULL,
+	"userId" text NOT NULL,
+	"expires" timestamp NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "skills" (
@@ -107,6 +136,40 @@ CREATE TABLE "skills" (
 	"name" text NOT NULL,
 	"description" text,
 	"category" text
+);
+--> statement-breakpoint
+CREATE TABLE "staff" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
+	"notification_preference" "notification_preference" DEFAULT 'email' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "users" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"nextauth_id" text,
+	"first_name" text NOT NULL,
+	"last_name" text NOT NULL,
+	"email" text NOT NULL,
+	"password" text NOT NULL,
+	"phone" text,
+	"bio" text,
+	"profile_picture" text,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"is_email_verified" boolean DEFAULT false NOT NULL,
+	"email_verified_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "users_nextauth_id_unique" UNIQUE("nextauth_id"),
+	CONSTRAINT "users_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "verificationToken" (
+	"identifier" text NOT NULL,
+	"token" text NOT NULL,
+	"expires" timestamp NOT NULL,
+	CONSTRAINT "verificationToken_identifier_token_pk" PRIMARY KEY("identifier","token")
 );
 --> statement-breakpoint
 CREATE TABLE "volunteer_interests" (
@@ -124,39 +187,37 @@ CREATE TABLE "volunteer_skills" (
 --> statement-breakpoint
 CREATE TABLE "volunteers" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"first_name" text NOT NULL,
-	"last_name" text NOT NULL,
-	"email" text NOT NULL,
-	"phone" text,
-	"bio" text,
-	"role" "volunteer_role" NOT NULL,
+	"user_id" integer NOT NULL,
+	"volunteer_type" text,
 	"is_alumni" boolean DEFAULT false NOT NULL,
 	"background_check_status" "background_check_status" DEFAULT 'not_required' NOT NULL,
 	"media_release" boolean DEFAULT false NOT NULL,
-	"profile_picture" text,
 	"availability" jsonb,
 	"notification_preference" "notification_preference" DEFAULT 'email' NOT NULL,
-	"is_active" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "volunteers_email_unique" UNIQUE("email")
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "admin_dashboard_actions" ADD CONSTRAINT "admin_dashboard_actions_admin_id_volunteers_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."volunteers"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "system_settings" ADD CONSTRAINT "system_settings_updated_by_id_volunteers_id_fk" FOREIGN KEY ("updated_by_id") REFERENCES "public"."volunteers"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "communication_logs" ADD CONSTRAINT "communication_logs_sender_id_volunteers_id_fk" FOREIGN KEY ("sender_id") REFERENCES "public"."volunteers"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "communication_logs" ADD CONSTRAINT "communication_logs_recipient_id_volunteers_id_fk" FOREIGN KEY ("recipient_id") REFERENCES "public"."volunteers"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "opportunities" ADD CONSTRAINT "opportunities_created_by_id_volunteers_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."volunteers"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "admin_dashboard_actions" ADD CONSTRAINT "admin_dashboard_actions_admin_id_users_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "system_settings" ADD CONSTRAINT "system_settings_updated_by_id_users_id_fk" FOREIGN KEY ("updated_by_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "communication_logs" ADD CONSTRAINT "communication_logs_sender_id_users_id_fk" FOREIGN KEY ("sender_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "communication_logs" ADD CONSTRAINT "communication_logs_recipient_id_users_id_fk" FOREIGN KEY ("recipient_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "opportunities" ADD CONSTRAINT "opportunities_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "opportunity_interests" ADD CONSTRAINT "opportunity_interests_opportunity_id_opportunities_id_fk" FOREIGN KEY ("opportunity_id") REFERENCES "public"."opportunities"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "opportunity_interests" ADD CONSTRAINT "opportunity_interests_interest_id_interests_id_fk" FOREIGN KEY ("interest_id") REFERENCES "public"."interests"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "opportunity_required_skills" ADD CONSTRAINT "opportunity_required_skills_opportunity_id_opportunities_id_fk" FOREIGN KEY ("opportunity_id") REFERENCES "public"."opportunities"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "opportunity_required_skills" ADD CONSTRAINT "opportunity_required_skills_skill_id_skills_id_fk" FOREIGN KEY ("skill_id") REFERENCES "public"."skills"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "volunteer_hours" ADD CONSTRAINT "volunteer_hours_volunteer_id_volunteers_id_fk" FOREIGN KEY ("volunteer_id") REFERENCES "public"."volunteers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "volunteer_hours" ADD CONSTRAINT "volunteer_hours_opportunity_id_opportunities_id_fk" FOREIGN KEY ("opportunity_id") REFERENCES "public"."opportunities"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "volunteer_hours" ADD CONSTRAINT "volunteer_hours_verified_by_volunteers_id_fk" FOREIGN KEY ("verified_by") REFERENCES "public"."volunteers"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "volunteer_hours" ADD CONSTRAINT "volunteer_hours_verified_by_users_id_fk" FOREIGN KEY ("verified_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "volunteer_rsvps" ADD CONSTRAINT "volunteer_rsvps_volunteer_id_volunteers_id_fk" FOREIGN KEY ("volunteer_id") REFERENCES "public"."volunteers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "volunteer_rsvps" ADD CONSTRAINT "volunteer_rsvps_opportunity_id_opportunities_id_fk" FOREIGN KEY ("opportunity_id") REFERENCES "public"."opportunities"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "account" ADD CONSTRAINT "account_userId_users_nextauth_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("nextauth_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "admin" ADD CONSTRAINT "admin_staff_id_staff_id_fk" FOREIGN KEY ("staff_id") REFERENCES "public"."staff"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "session" ADD CONSTRAINT "session_userId_users_nextauth_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("nextauth_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "staff" ADD CONSTRAINT "staff_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "volunteer_interests" ADD CONSTRAINT "volunteer_interests_volunteer_id_volunteers_id_fk" FOREIGN KEY ("volunteer_id") REFERENCES "public"."volunteers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "volunteer_interests" ADD CONSTRAINT "volunteer_interests_interest_id_interests_id_fk" FOREIGN KEY ("interest_id") REFERENCES "public"."interests"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "volunteer_skills" ADD CONSTRAINT "volunteer_skills_volunteer_id_volunteers_id_fk" FOREIGN KEY ("volunteer_id") REFERENCES "public"."volunteers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "volunteer_skills" ADD CONSTRAINT "volunteer_skills_skill_id_skills_id_fk" FOREIGN KEY ("skill_id") REFERENCES "public"."skills"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "volunteer_skills" ADD CONSTRAINT "volunteer_skills_skill_id_skills_id_fk" FOREIGN KEY ("skill_id") REFERENCES "public"."skills"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "volunteers" ADD CONSTRAINT "volunteers_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
