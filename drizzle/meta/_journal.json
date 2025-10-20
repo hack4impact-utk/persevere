@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1760066107684,
-      "tag": "0000_known_manta",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1760479220490,
-      "tag": "0001_tearful_smasher",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1760482792189,
-      "tag": "0002_late_ironclad",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1760578450610,
-      "tag": "0003_fluffy_dreadnoughts",
+      "when": 1760999627653,
+      "tag": "0000_familiar_betty_ross",
       "breakpoints": true
     }
   ]

@@ -1,5 +1,5 @@
 {
-  "id": "9100a4a0-b0d8-4f5b-a4da-590d47d11404",
+  "id": "615d1174-0176-49e0-b045-5fe0967ec504",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -54,10 +54,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "admin_dashboard_actions_admin_id_volunteers_id_fk": {
-          "name": "admin_dashboard_actions_admin_id_volunteers_id_fk",
+        "admin_dashboard_actions_admin_id_users_id_fk": {
+          "name": "admin_dashboard_actions_admin_id_users_id_fk",
           "tableFrom": "admin_dashboard_actions",
-          "tableTo": "volunteers",
+          "tableTo": "users",
           "columnsFrom": [
             "admin_id"
           ],
@@ -118,10 +118,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "system_settings_updated_by_id_volunteers_id_fk": {
-          "name": "system_settings_updated_by_id_volunteers_id_fk",
+        "system_settings_updated_by_id_users_id_fk": {
+          "name": "system_settings_updated_by_id_users_id_fk",
           "tableFrom": "system_settings",
-          "tableTo": "volunteers",
+          "tableTo": "users",
           "columnsFrom": [
             "updated_by_id"
           ],
@@ -209,10 +209,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "communication_logs_sender_id_volunteers_id_fk": {
-          "name": "communication_logs_sender_id_volunteers_id_fk",
+        "communication_logs_sender_id_users_id_fk": {
+          "name": "communication_logs_sender_id_users_id_fk",
           "tableFrom": "communication_logs",
-          "tableTo": "volunteers",
+          "tableTo": "users",
           "columnsFrom": [
             "sender_id"
           ],
@@ -222,10 +222,10 @@
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
-        "communication_logs_recipient_id_volunteers_id_fk": {
-          "name": "communication_logs_recipient_id_volunteers_id_fk",
+        "communication_logs_recipient_id_users_id_fk": {
+          "name": "communication_logs_recipient_id_users_id_fk",
           "tableFrom": "communication_logs",
-          "tableTo": "volunteers",
+          "tableTo": "users",
           "columnsFrom": [
             "recipient_id"
           ],
@@ -402,10 +402,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "opportunities_created_by_id_volunteers_id_fk": {
-          "name": "opportunities_created_by_id_volunteers_id_fk",
+        "opportunities_created_by_id_users_id_fk": {
+          "name": "opportunities_created_by_id_users_id_fk",
           "tableFrom": "opportunities",
-          "tableTo": "volunteers",
+          "tableTo": "users",
           "columnsFrom": [
             "created_by_id"
           ],
@@ -623,10 +623,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "volunteer_hours_verified_by_volunteers_id_fk": {
-          "name": "volunteer_hours_verified_by_volunteers_id_fk",
+        "volunteer_hours_verified_by_users_id_fk": {
+          "name": "volunteer_hours_verified_by_users_id_fk",
           "tableFrom": "volunteer_hours",
-          "tableTo": "volunteers",
+          "tableTo": "users",
           "columnsFrom": [
             "verified_by"
           ],
@@ -724,6 +724,166 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.account": {
+      "name": "account",
+      "schema": "",
+      "columns": {
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "providerAccountId": {
+          "name": "providerAccountId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "access_token": {
+          "name": "access_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "token_type": {
+          "name": "token_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_token": {
+          "name": "id_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "session_state": {
+          "name": "session_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "account_userId_users_nextauth_id_fk": {
+          "name": "account_userId_users_nextauth_id_fk",
+          "tableFrom": "account",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "nextauth_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "account_provider_providerAccountId_pk": {
+          "name": "account_provider_providerAccountId_pk",
+          "columns": [
+            "provider",
+            "providerAccountId"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.admin": {
+      "name": "admin",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "staff_id": {
+          "name": "staff_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_login_at": {
+          "name": "last_login_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "admin_staff_id_staff_id_fk": {
+          "name": "admin_staff_id_staff_id_fk",
+          "tableFrom": "admin",
+          "tableTo": "staff",
+          "columnsFrom": [
+            "staff_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.interests": {
       "name": "interests",
       "schema": "",
@@ -749,6 +909,51 @@
       },
       "indexes": {},
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.session": {
+      "name": "session",
+      "schema": "",
+      "columns": {
+        "sessionToken": {
+          "name": "sessionToken",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires": {
+          "name": "expires",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "session_userId_users_nextauth_id_fk": {
+          "name": "session_userId_users_nextauth_id_fk",
+          "tableFrom": "session",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "nextauth_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -787,6 +992,222 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.staff": {
+      "name": "staff",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notification_preference": {
+          "name": "notification_preference",
+          "type": "notification_preference",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'email'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "staff_user_id_users_id_fk": {
+          "name": "staff_user_id_users_id_fk",
+          "tableFrom": "staff",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nextauth_id": {
+          "name": "nextauth_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bio": {
+          "name": "bio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profile_picture": {
+          "name": "profile_picture",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "is_email_verified": {
+          "name": "is_email_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "email_verified_at": {
+          "name": "email_verified_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_nextauth_id_unique": {
+          "name": "users_nextauth_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "nextauth_id"
+          ]
+        },
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.verificationToken": {
+      "name": "verificationToken",
+      "schema": "",
+      "columns": {
+        "identifier": {
+          "name": "identifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires": {
+          "name": "expires",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "verificationToken_identifier_token_pk": {
+          "name": "verificationToken_identifier_token_pk",
+          "columns": [
+            "identifier",
+            "token"
+          ]
+        }
+      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
@@ -929,42 +1350,17 @@
           "primaryKey": true,
           "notNull": true
         },
-        "first_name": {
-          "name": "first_name",
-          "type": "text",
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "last_name": {
-          "name": "last_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "phone": {
-          "name": "phone",
+        "volunteer_type": {
+          "name": "volunteer_type",
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "bio": {
-          "name": "bio",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "role": {
-          "name": "role",
-          "type": "volunteer_role",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
         },
         "is_alumni": {
           "name": "is_alumni",
@@ -988,12 +1384,6 @@
           "notNull": true,
           "default": false
         },
-        "profile_picture": {
-          "name": "profile_picture",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "availability": {
           "name": "availability",
           "type": "jsonb",
@@ -1007,13 +1397,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'email'"
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
         },
         "created_at": {
           "name": "created_at",
@@ -1031,17 +1414,23 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "volunteers_email_unique": {
-          "name": "volunteers_email_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+      "foreignKeys": {
+        "volunteers_user_id_users_id_fk": {
+          "name": "volunteers_user_id_users_id_fk",
+          "tableFrom": "volunteers",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1102,9 +1491,7 @@
       "name": "volunteer_role",
       "schema": "public",
       "values": [
-        "mentor",
-        "guest_speaker",
-        "flexible",
+        "volunteer",
         "staff",
         "admin"
       ]

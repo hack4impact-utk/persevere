@@ -8,98 +8,51 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 
-import { volunteers } from "./users"; // Import volunteers
+import { users } from "./users";
 
-/**
- * Communication and Messaging Schema
- *
- * This file contains tables for managing all communications between the system
- * and volunteers, including notifications, messages, and templates.
- *
- * Key features:
- * - Email and SMS notifications
- * - Mass communication capabilities
- * - Message templates for consistency
- * - Communication history and tracking
- *
- * Related files:
- * - users.ts: Volunteer contact information
- * - opportunities.ts: Event-related communications
- * - admin.ts: Administrative communication tools
- */
-
-/**
- * Communication history and tracking
- *
- * Records all messages sent to volunteers for tracking, compliance, and debugging.
- * Includes both automated system messages and manual communications from staff.
- *
- * Message types:
- * - System notifications (RSVP confirmations, reminders)
- * - Administrative communications (announcements, updates)
- * - Opportunity-related messages (event details, changes)
- */
+// Communication logs - tracks all messages sent between users
 export const communicationLogs = pgTable("communication_logs", {
   id: serial("id").primaryKey(),
   senderId: integer("sender_id")
     .notNull()
-    .references(() => volunteers.id, { onDelete: "restrict" }), // Staff/admin who sent the message
+    .references(() => users.id, { onDelete: "restrict" }),
   recipientId: integer("recipient_id")
     .notNull()
-    .references(() => volunteers.id, { onDelete: "restrict" }), // Volunteer who received the message
-  subject: text("subject").notNull(), // Message subject line
-  body: text("body").notNull(), // Message content
-  type: text("type").notNull(), // Communication type: email, sms, notification
-  sentAt: timestamp("sent_at").defaultNow().notNull(), // Send timestamp
-  status: text("status").default("sent").notNull(), // Delivery status: sent, delivered, failed
-  relatedOpportunityId: integer("related_opportunity_id"), // Optional opportunity reference
+    .references(() => users.id, { onDelete: "restrict" }),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  type: text("type").notNull(),
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+  status: text("status").default("sent").notNull(),
+  relatedOpportunityId: integer("related_opportunity_id"),
 });
 
-/**
- * Reusable message templates
- *
- * Pre-defined message templates for consistent communication across the system.
- * Templates can include placeholders for dynamic content (volunteer names, dates, etc.).
- *
- * Template categories:
- * - welcome: New volunteer onboarding messages
- * - reminder: Event and deadline reminders
- * - confirmation: RSVP and registration confirmations
- * - newsletter: Regular updates and announcements
- */
+// Communication templates - reusable message templates for consistency
 export const communicationTemplates = pgTable("communication_templates", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(), // Template identifier
-  subject: text("subject").notNull(), // Subject line template
-  body: text("body").notNull(), // Message body template
-  type: text("type").notNull(), // Communication type: email, sms, notification
-  category: text("category"), // Template category for organization
-  isActive: boolean("is_active").default(true).notNull(), // Active status
-  createdAt: timestamp("created_at").defaultNow().notNull(), // Creation timestamp
-  updatedAt: timestamp("updated_at").defaultNow().notNull(), // Last update timestamp
+  name: text("name").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  type: text("type").notNull(),
+  category: text("category"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-/**
- * Database Relations
- *
- * Defines relationships between communication tables and other entities.
- */
-
-/**
- * Communication logs to volunteers relationship
- */
+// Table relationships
 export const communicationLogsRelations = relations(
   communicationLogs,
   ({ one }) => ({
-    sender: one(volunteers, {
+    sender: one(users, {
       fields: [communicationLogs.senderId],
-      references: [volunteers.id],
+      references: [users.id],
       relationName: "SentCommunications",
-    }), // Each message has one sender (staff/admin)
-    recipient: one(volunteers, {
+    }),
+    recipient: one(users, {
       fields: [communicationLogs.recipientId],
-      references: [volunteers.id],
+      references: [users.id],
       relationName: "ReceivedCommunications",
-    }), // Each message has one recipient (volunteer)
+    }),
   }),
 );
