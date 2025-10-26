@@ -14,7 +14,7 @@ export default async function StaffDashboardPage(): Promise<JSX.Element> {
 
   return (
     <Typography variant="h4" gutterBottom>
-      PROFILE PAGE!!!!!!!!!!!!
+      PROFILE PAGE
     </Typography>
   );
 }
