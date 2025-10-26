@@ -81,7 +81,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 export async function POST(request: Request): Promise<NextResponse> {
   try {
     const json = await request.json();
-    
+
     // Validate the request body with better error handling
     const result = volunteerCreateSchema.safeParse(json);
     if (!result.success) {
@@ -91,7 +91,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         { status: 400 },
       );
     }
-    
+
     const data = result.data;
 
     const hashedPassword = await hash(data.password, 10);
