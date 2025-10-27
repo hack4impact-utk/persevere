@@ -16,10 +16,7 @@ export default async function StaffDashboardPage(): Promise<JSX.Element> {
 
   return (
     <Box>
-      <StaffHeader
-        StaffHeaderTitle={"Header"}
-        StaffHeaderSession={session}
-      ></StaffHeader>
+      <StaffHeader StaffHeaderSession={session}></StaffHeader>
       <StaffDashboardContent />
     </Box>
   );

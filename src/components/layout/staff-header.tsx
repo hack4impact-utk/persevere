@@ -1,41 +1,18 @@
-/* eslint-disable simple-import-sort/imports */
-"use client";
-
 import NotificationsIcon from "@mui/icons-material/Notifications";
-import {
-  AppBar,
-  Avatar,
-  Box,
-  IconButton,
-  Toolbar,
-  Typography,
-} from "@mui/material";
-import { Session } from "next-auth";
+import { AppBar, Avatar, Box, IconButton, Toolbar } from "@mui/material";
 import Link from "next/link";
+import { Session } from "next-auth";
 import React from "react";
 
 type StaffHeaderProps = {
-  StaffHeaderTitle: string;
   StaffHeaderSession: Session;
 };
 
-const StaffHeader: React.FC<StaffHeaderProps> = ({
-  StaffHeaderTitle,
-  StaffHeaderSession,
-}) => {
+const StaffHeader: React.FC<StaffHeaderProps> = ({ StaffHeaderSession }) => {
   return (
     <AppBar position="static" color="primary" elevation={1}>
       <Toolbar>
-        {/* Title. IDK if we really need this */}
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{ flexGrow: 1, fontWeight: 500 }}
-        >
-          {StaffHeaderTitle}
-        </Typography>
-
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, ml: "auto" }}>
           {/* Notification bell */}
           <IconButton color="inherit">
             <NotificationsIcon />
