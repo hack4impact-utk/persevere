@@ -1,15 +1,30 @@
+"use client";
+
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import PersonIcon from "@mui/icons-material/Person";
-import { AppBar, Avatar, Box, IconButton, Toolbar } from "@mui/material";
+import {
+  AppBar,
+  Avatar,
+  Box,
+  IconButton,
+  Toolbar,
+  Typography,
+} from "@mui/material";
 import Link from "next/link";
-import { Session } from "next-auth";
+import { useSession } from "next-auth/react";
 import React from "react";
 
-type StaffHeaderProps = {
-  StaffHeaderSession: Session;
-};
+const StaffHeader: React.FC = () => {
+  const { data: session } = useSession();
 
-const StaffHeader: React.FC<StaffHeaderProps> = ({ StaffHeaderSession }) => {
+  if (!session) {
+    return (
+      <Box sx={{ padding: "20px", textAlign: "center" }}>
+        <Typography variant="h6">Loading...</Typography>
+      </Box>
+    );
+  }
+
   return (
     <AppBar position="static" color="primary" elevation={1}>
       <Toolbar>
@@ -21,11 +36,11 @@ const StaffHeader: React.FC<StaffHeaderProps> = ({ StaffHeaderSession }) => {
 
           {/* Profile: if session defined, links to profile page. Else clicking profile does nothing */}
           {/* Probably want to redirect to like another page for signing up if session does not exist */}
-          {StaffHeaderSession?.user ? (
+          {session?.user ? (
             <IconButton component={Link} href="/staff/profile">
               <Avatar
-                alt={StaffHeaderSession.user.name}
-                src={StaffHeaderSession.user.image || undefined}
+                alt={session.user.name}
+                src={session.user.image || undefined}
                 sx={{ width: 32, height: 32 }}
               />
             </IconButton>
