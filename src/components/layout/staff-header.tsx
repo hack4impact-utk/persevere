@@ -1,4 +1,5 @@
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import PersonIcon from "@mui/icons-material/Person";
 import { AppBar, Avatar, Box, IconButton, Toolbar } from "@mui/material";
 import Link from "next/link";
 import { Session } from "next-auth";
@@ -30,7 +31,9 @@ const StaffHeader: React.FC<StaffHeaderProps> = ({ StaffHeaderSession }) => {
             </IconButton>
           ) : (
             <IconButton disabled>
-              <Avatar alt="User" sx={{ width: 32, height: 32 }} />
+              <Avatar sx={{ width: 32, height: 32 }}>
+                <PersonIcon fontSize="small" />
+              </Avatar>
             </IconButton>
           )}
         </Box>
