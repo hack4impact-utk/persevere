@@ -5,10 +5,10 @@ import { JSX } from "react";
 
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 
-export default async function StaffProfilePage(): Promise<JSX.Element> {
+export default async function AdminProfilePage(): Promise<JSX.Element> {
   const session = await getServerSession(authOptions);
 
-  if (!session || !["staff", "admin"].includes(session.user.role)) {
+  if (!session || !["admin"].includes(session.user.role)) {
     redirect("/auth/login");
   }
 

@@ -4,12 +4,14 @@ import { Avatar, Box, Button, Typography } from "@mui/material";
 import { signOut, useSession } from "next-auth/react";
 import { ReactNode, useEffect } from "react";
 
+import UserHeader from "../layout/user-header";
+
 const handleSignOut = (): void => {
   void signOut();
 };
 
 export default function VolunteerDashboardContent(): ReactNode {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     if (session?.expires) {
@@ -44,48 +46,51 @@ export default function VolunteerDashboardContent(): ReactNode {
     volunteerType.charAt(0).toUpperCase() + volunteerType.slice(1);
 
   return (
-    <Box sx={{ padding: "20px", maxWidth: 600, margin: "0 auto" }}>
-      <Typography variant="h4" gutterBottom>
-        Volunteer Dashboard
-      </Typography>
+    <>
+      <UserHeader session={session} status={status}></UserHeader>
+      <Box sx={{ padding: "20px", maxWidth: 600, margin: "0 auto" }}>
+        <Typography variant="h4" gutterBottom>
+          Volunteer Dashboard
+        </Typography>
 
-      <Box sx={{ textAlign: "center", mb: 4 }}>
-        <Avatar
-          src={session.user?.image || undefined}
-          alt={session.user?.name || "User"}
-          sx={{
-            width: 100,
-            height: 100,
-            mx: "auto",
-            mb: 2,
-            border: 3,
-            borderColor: "primary.main",
-          }}
-        />
-        <Typography variant="h5" gutterBottom>
-          Welcome, {session.user?.name}!
-        </Typography>
-        <Typography color="text.secondary" gutterBottom>
-          {session.user?.email}
-        </Typography>
-        <Typography variant="body1" gutterBottom>
-          Role: {volunteerTypeDisplay} Volunteer
-        </Typography>
-        <Typography variant="body1" gutterBottom>
-          Email Verified: {session.user?.isEmailVerified ? "Yes" : "No"}
-        </Typography>
-      </Box>
+        <Box sx={{ textAlign: "center", mb: 4 }}>
+          <Avatar
+            src={session.user?.image || undefined}
+            alt={session.user?.name || "User"}
+            sx={{
+              width: 100,
+              height: 100,
+              mx: "auto",
+              mb: 2,
+              border: 3,
+              borderColor: "primary.main",
+            }}
+          />
+          <Typography variant="h5" gutterBottom>
+            Welcome, {session.user?.name}!
+          </Typography>
+          <Typography color="text.secondary" gutterBottom>
+            {session.user?.email}
+          </Typography>
+          <Typography variant="body1" gutterBottom>
+            Role: {volunteerTypeDisplay} Volunteer
+          </Typography>
+          <Typography variant="body1" gutterBottom>
+            Email Verified: {session.user?.isEmailVerified ? "Yes" : "No"}
+          </Typography>
+        </Box>
 
-      <Box sx={{ textAlign: "center" }}>
-        <Button
-          variant="contained"
-          color="error"
-          size="large"
-          onClick={handleSignOut}
-        >
-          Sign Out
-        </Button>
+        <Box sx={{ textAlign: "center" }}>
+          <Button
+            variant="contained"
+            color="error"
+            size="large"
+            onClick={handleSignOut}
+          >
+            Sign Out
+          </Button>
+        </Box>
       </Box>
-    </Box>
+    </>
   );
 }
