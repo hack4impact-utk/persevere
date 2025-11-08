@@ -1,18 +1,31 @@
-import { Card, CardContent, Typography, Stack, Box, Chip, Avatar, Button } from "@mui/material";
-import { volunteers, users } from "@/db/schema";
+import {
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Stack,
+  Typography,
+} from "@mui/material";
 import type { InferSelectModel } from "drizzle-orm";
+import { JSX } from "react";
+
+import { users, volunteers } from "@/db/schema";
 
 type Volunteer = InferSelectModel<typeof volunteers>;
 type User = InferSelectModel<typeof users>;
 
-interface VolunteerProfileProps {
+type VolunteerProfileProps = {
   volunteer: {
     volunteers: Volunteer;
     users: User | null;
   };
-}
+};
 
-export default function VolunteerProfile({ volunteer }: VolunteerProfileProps) {
+export default function VolunteerProfile({
+  volunteer,
+}: VolunteerProfileProps): JSX.Element {
   const { volunteers: vol, users: user } = volunteer;
 
   // Safety check for user data
@@ -87,13 +100,17 @@ export default function VolunteerProfile({ volunteer }: VolunteerProfileProps) {
                   vol.backgroundCheckStatus === "approved"
                     ? "success"
                     : vol.backgroundCheckStatus === "pending"
-                    ? "warning"
-                    : "error"
+                      ? "warning"
+                      : "error"
                 }
                 variant="outlined"
               />
               <Chip
-                label={vol.mediaRelease ? "Media Release: Approved" : "Media Release: Not Approved"}
+                label={
+                  vol.mediaRelease
+                    ? "Media Release: Approved"
+                    : "Media Release: Not Approved"
+                }
                 color={vol.mediaRelease ? "success" : "warning"}
                 variant="outlined"
               />
@@ -114,7 +131,9 @@ export default function VolunteerProfile({ volunteer }: VolunteerProfileProps) {
                 <Chip key={time} label={time} variant="outlined" />
               ))
             ) : (
-              <Typography color="textSecondary">No availability specified</Typography>
+              <Typography color="textSecondary">
+                No availability specified
+              </Typography>
             )}
           </Box>
         </CardContent>

@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { JSX } from "react";
@@ -5,16 +6,17 @@ import { JSX } from "react";
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import VolunteerProfile from "@/components/volunteers/volunteer-profile";
 import db from "@/db";
-import { eq } from "drizzle-orm";
 import { users, volunteers } from "@/db/schema";
 
-interface PageProps {
+type PageProps = {
   params: {
     id: string;
   };
-}
+};
 
-export default async function VolunteerDetailsPage({ params }: PageProps): Promise<JSX.Element> {
+export default async function VolunteerDetailsPage({
+  params,
+}: PageProps): Promise<JSX.Element> {
   const session = await getServerSession(authOptions);
 
   // Only staff and admin can view volunteer profiles
@@ -45,7 +47,8 @@ export default async function VolunteerDetailsPage({ params }: PageProps): Promi
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">
-          Volunteer Profile: {volunteerWithUser.users.firstName} {volunteerWithUser.users.lastName}
+          Volunteer Profile: {volunteerWithUser.users.firstName}{" "}
+          {volunteerWithUser.users.lastName}
         </h1>
       </div>
       <VolunteerProfile volunteer={volunteerWithUser} />
