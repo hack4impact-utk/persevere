@@ -1,20 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import AddIcon from "@mui/icons-material/Add";
 import {
+  Alert,
   Box,
   Button,
+  CircularProgress,
   TextField,
   Typography,
-  CircularProgress,
-  Alert,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import VolunteerTable from "./volunteer-table";
+import { type ReactElement, useEffect, useState } from "react";
+
 import { Volunteer, VolunteersResponse } from "./types";
 import { fetchVolunteers } from "./volunteer-service";
+import VolunteerTable from "./volunteer-table";
 
-export default function VolunteerList() {
+export default function VolunteerList(): ReactElement {
   const [searchQuery, setSearchQuery] = useState("");
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ export default function VolunteerList() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
 
-  const loadVolunteers = async () => {
+  const loadVolunteers = async (): Promise<void> => {
     setError(null);
     setLoading(true);
     try {
@@ -47,7 +48,7 @@ export default function VolunteerList() {
   useEffect(() => {
     const debounceTimer = setTimeout(
       () => {
-        loadVolunteers();
+        void loadVolunteers();
       },
       searchQuery ? 300 : 0,
     );
@@ -55,20 +56,24 @@ export default function VolunteerList() {
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, page, limit]);
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ): void => {
     setSearchQuery(event.target.value);
     setPage(1);
   };
 
-  const handleAddVolunteer = () => {
-    console.log("Add volunteer clicked");
+  // Placeholder for add volunteer functionality
+  const handleAddVolunteer = (): void => {
+    // Will be implemented later
+    void 0;
   };
 
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = (newPage: number): void => {
     setPage(newPage);
   };
 
-  const handleLimitChange = (newLimit: number) => {
+  const handleLimitChange = (newLimit: number): void => {
     setLimit(newLimit);
     setPage(1);
   };

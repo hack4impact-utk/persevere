@@ -1,4 +1,4 @@
-export interface Volunteer {
+export type Volunteer = {
   id: number;
   userId: number;
   firstName: string;
@@ -8,19 +8,19 @@ export interface Volunteer {
   bio?: string;
   volunteerType?: string;
   isActive: boolean;
-}
+};
 
-export interface VolunteersResponse {
+export type VolunteersResponse = {
   volunteers: Volunteer[];
   total: number;
   page: number;
   limit: number;
-}
+};
 
-export interface VolunteerFilters {
+export type VolunteerFilters = {
   search?: string;
   type?: string;
   alumni?: boolean;
   page?: number;
   limit?: number;
-}
+};

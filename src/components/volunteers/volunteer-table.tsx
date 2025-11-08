@@ -1,25 +1,27 @@
 "use client";
 
+import { type ReactElement } from "react";
 import {
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
-  TableRow,
-  Paper,
   TablePagination,
+  TableRow,
 } from "@mui/material";
+
 import { Volunteer } from "./types";
 
-interface VolunteerTableProps {
+type VolunteerTableProps = {
   volunteers: Volunteer[];
   totalVolunteers: number;
   page: number;
   limit: number;
   onPageChange: (newPage: number) => void;
   onLimitChange: (newLimit: number) => void;
-}
+};
 
 export default function VolunteerTable({
   volunteers,
@@ -28,15 +30,15 @@ export default function VolunteerTable({
   limit,
   onPageChange,
   onLimitChange,
-}: VolunteerTableProps) {
-  const handleChangePage = (_event: unknown, newPage: number) => {
+}: VolunteerTableProps): ReactElement {
+  const handleChangePage = (_event: unknown, newPage: number): void => {
     onPageChange(newPage + 1);
   };
 
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    onLimitChange(parseInt(event.target.value, 10));
+  ): void => {
+    onLimitChange(Number.parseInt(event.target.value, 10));
   };
 
   return (

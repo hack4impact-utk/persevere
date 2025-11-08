@@ -1,6 +1,21 @@
 "use client";
 
-import { VolunteerFilters, VolunteersResponse } from "./types";
+import { type VolunteerFilters, type VolunteersResponse } from "./types";
+
+type APIVolunteerResponse = {
+  volunteers: {
+    id: number;
+    userId: number;
+    volunteerType: string | null;
+  };
+  users: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string | null;
+    isActive: boolean;
+  };
+};
 
 export async function fetchVolunteers(
   filters: VolunteerFilters = {},
@@ -29,7 +44,7 @@ export async function fetchVolunteers(
   const data = await response.json();
 
   return {
-    volunteers: data.data.map((item: any) => ({
+    volunteers: data.data.map((item: APIVolunteerResponse) => ({
       id: item.volunteers.id,
       userId: item.volunteers.userId,
       firstName: item.users.firstName,
