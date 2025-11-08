@@ -9,11 +9,16 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { type ReactElement, useEffect, useState } from "react";
+import { type ReactElement, useCallback, useEffect, useState } from "react";
 
-import { Volunteer, VolunteersResponse } from "./types";
+import { type Volunteer } from "./types";
 import { fetchVolunteers } from "./volunteer-service";
 import VolunteerTable from "./volunteer-table";
+
+const handleAddVolunteer = (): void => {
+  // Will be implemented later
+  void 0;
+};
 
 export default function VolunteerList(): ReactElement {
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,7 +58,9 @@ export default function VolunteerList(): ReactElement {
       searchQuery ? 300 : 0,
     );
 
-    return () => clearTimeout(debounceTimer);
+    return (): void => {
+      clearTimeout(debounceTimer);
+    };
   }, [searchQuery, page, limit]);
 
   const handleSearchChange = (
@@ -63,11 +70,9 @@ export default function VolunteerList(): ReactElement {
     setPage(1);
   };
 
-  // Placeholder for add volunteer functionality
-  const handleAddVolunteer = (): void => {
-    // Will be implemented later
-    void 0;
-  };
+  const onAddVolunteer = useCallback((): void => {
+    handleAddVolunteer();
+  }, []);
 
   const handlePageChange = (newPage: number): void => {
     setPage(newPage);
@@ -88,7 +93,7 @@ export default function VolunteerList(): ReactElement {
           variant="contained"
           color="primary"
           startIcon={<AddIcon />}
-          onClick={handleAddVolunteer}
+          onClick={onAddVolunteer}
         >
           Add Volunteer
         </Button>

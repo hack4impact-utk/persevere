@@ -1,6 +1,5 @@
 "use client";
 
-import { type ReactElement } from "react";
 import {
   Paper,
   Table,
@@ -11,8 +10,9 @@ import {
   TablePagination,
   TableRow,
 } from "@mui/material";
+import { type ReactElement } from "react";
 
-import { Volunteer } from "./types";
+import { type Volunteer } from "./types";
 
 type VolunteerTableProps = {
   volunteers: Volunteer[];
