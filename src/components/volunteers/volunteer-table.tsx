@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Table,
@@ -9,8 +9,8 @@ import {
   TableRow,
   Paper,
   TablePagination,
-} from '@mui/material';
-import { Volunteer } from './types';
+} from "@mui/material";
+import { Volunteer } from "./types";
 
 interface VolunteerTableProps {
   volunteers: Volunteer[];
@@ -21,7 +21,7 @@ interface VolunteerTableProps {
   onLimitChange: (newLimit: number) => void;
 }
 
-export default function VolunteerTable({ 
+export default function VolunteerTable({
   volunteers,
   totalVolunteers,
   page,
@@ -33,12 +33,14 @@ export default function VolunteerTable({
     onPageChange(newPage + 1);
   };
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     onLimitChange(parseInt(event.target.value, 10));
   };
 
   return (
-    <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+    <Paper sx={{ width: "100%", overflow: "hidden" }}>
       <TableContainer>
         <Table stickyHeader aria-label="volunteer table">
           <TableHead>
@@ -56,7 +58,7 @@ export default function VolunteerTable({
                     {volunteer.firstName} {volunteer.lastName}
                   </TableCell>
                   <TableCell>{volunteer.email}</TableCell>
-                  <TableCell>{volunteer.volunteerType || 'N/A'}</TableCell>
+                  <TableCell>{volunteer.volunteerType || "N/A"}</TableCell>
                 </TableRow>
               ))
             ) : (

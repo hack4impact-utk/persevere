@@ -1,14 +1,21 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Box, Button, TextField, Typography, CircularProgress, Alert } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import VolunteerTable from './volunteer-table';
-import { Volunteer, VolunteersResponse } from './types';
-import { fetchVolunteers } from './volunteer-service';
+import { useEffect, useState } from "react";
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  CircularProgress,
+  Alert,
+} from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import VolunteerTable from "./volunteer-table";
+import { Volunteer, VolunteersResponse } from "./types";
+import { fetchVolunteers } from "./volunteer-service";
 
 export default function VolunteerList() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,8 +35,8 @@ export default function VolunteerList() {
       setVolunteers(response.volunteers || []);
       setTotalVolunteers(response.total || 0);
     } catch (error) {
-      console.error('Failed to fetch volunteers:', error);
-      setError('Failed to load volunteers. Please try again later.');
+      console.error("Failed to fetch volunteers:", error);
+      setError("Failed to load volunteers. Please try again later.");
       setVolunteers([]);
       setTotalVolunteers(0);
     } finally {
@@ -38,9 +45,12 @@ export default function VolunteerList() {
   };
 
   useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      loadVolunteers();
-    }, searchQuery ? 300 : 0);
+    const debounceTimer = setTimeout(
+      () => {
+        loadVolunteers();
+      },
+      searchQuery ? 300 : 0,
+    );
 
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, page, limit]);
@@ -51,7 +61,7 @@ export default function VolunteerList() {
   };
 
   const handleAddVolunteer = () => {
-    console.log('Add volunteer clicked');
+    console.log("Add volunteer clicked");
   };
 
   const handlePageChange = (newPage: number) => {
@@ -64,8 +74,8 @@ export default function VolunteerList() {
   };
 
   return (
-    <Box sx={{ width: '100%', p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+    <Box sx={{ width: "100%", p: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
         <Typography variant="h4" component="h1">
           Volunteers
         </Typography>
@@ -97,11 +107,11 @@ export default function VolunteerList() {
       )}
 
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
           <CircularProgress />
         </Box>
       ) : (
-        <VolunteerTable 
+        <VolunteerTable
           volunteers={volunteers}
           totalVolunteers={totalVolunteers}
           page={page}
