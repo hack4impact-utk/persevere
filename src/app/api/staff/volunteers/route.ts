@@ -57,22 +57,39 @@ export async function GET(request: Request): Promise<NextResponse> {
       whereClauses.push(eq(volunteers.isAlumni, alumni === "true"));
     }
 
-    const volunteerList = await db
+    // Build volunteer list query conditionally
+    const baseQuery = db
       .select()
       .from(volunteers)
-      .leftJoin(users, eq(volunteers.userId, users.id))
-      .where(and(...whereClauses))
-      .limit(limit)
-      .offset(offset)
-      .orderBy(desc(volunteers.createdAt));
+      .leftJoin(users, eq(volunteers.userId, users.id));
 
-    const total = await db
-      .select({ count: sql`count(*)` })
+    const volunteerList = await (whereClauses.length > 0
+      ? baseQuery
+          .where(and(...whereClauses))
+          .limit(limit)
+          .offset(offset)
+          .orderBy(desc(volunteers.createdAt))
+      : baseQuery
+          .limit(limit)
+          .offset(offset)
+          .orderBy(desc(volunteers.createdAt)));
+
+    // Build count query conditionally
+    const countBaseQuery = db
+      .select({ count: sql<number>`count(${volunteers.id})` })
       .from(volunteers)
-      .leftJoin(users, eq(volunteers.userId, users.id))
-      .where(and(...whereClauses));
+      .leftJoin(users, eq(volunteers.userId, users.id));
 
-    return NextResponse.json({ data: volunteerList, total: total[0].count });
+    const total = await (whereClauses.length > 0
+      ? countBaseQuery.where(and(...whereClauses))
+      : countBaseQuery);
+
+    const totalCount =
+      typeof total[0]?.count === "bigint"
+        ? Number(total[0].count)
+        : (total[0]?.count ?? 0);
+
+    return NextResponse.json({ data: volunteerList, total: totalCount });
   } catch (error) {
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
