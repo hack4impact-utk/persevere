@@ -14,6 +14,12 @@ import { type ReactElement } from "react";
 
 import { type Volunteer } from "./types";
 
+/**
+ * VolunteerTable
+ *
+ * Displays volunteers in a paginated table. Rows are clickable and trigger
+ * the onVolunteerClick callback to open the volunteer profile modal.
+ */
 type VolunteerTableProps = {
   volunteers: Volunteer[];
   totalVolunteers: number;
@@ -21,6 +27,7 @@ type VolunteerTableProps = {
   limit: number;
   onPageChange: (newPage: number) => void;
   onLimitChange: (newLimit: number) => void;
+  onVolunteerClick: (volunteerId: number) => void;
 };
 
 export default function VolunteerTable({
@@ -30,6 +37,7 @@ export default function VolunteerTable({
   limit,
   onPageChange,
   onLimitChange,
+  onVolunteerClick,
 }: VolunteerTableProps): ReactElement {
   const handleChangePage = (_event: unknown, newPage: number): void => {
     onPageChange(newPage + 1);
@@ -39,6 +47,10 @@ export default function VolunteerTable({
     event: React.ChangeEvent<HTMLInputElement>,
   ): void => {
     onLimitChange(Number.parseInt(event.target.value, 10));
+  };
+
+  const handleRowClick = (volunteerId: number): void => {
+    onVolunteerClick(volunteerId);
   };
 
   return (
@@ -55,7 +67,16 @@ export default function VolunteerTable({
           <TableBody>
             {volunteers && volunteers.length > 0 ? (
               volunteers.map((volunteer) => (
-                <TableRow key={volunteer.id}>
+                <TableRow
+                  key={volunteer.id}
+                  onClick={() => handleRowClick(volunteer.id)}
+                  sx={{
+                    cursor: "pointer",
+                    "&:hover": {
+                      backgroundColor: "action.hover",
+                    },
+                  }}
+                >
                   <TableCell>
                     {volunteer.firstName} {volunteer.lastName}
                   </TableCell>

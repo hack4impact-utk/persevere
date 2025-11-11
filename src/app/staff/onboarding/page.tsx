@@ -6,12 +6,12 @@ import { JSX } from "react";
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 
 /**
- * Staff Dashboard Page
+ * Staff Onboarding Page
  *
- * Staff dashboard page. Uses staff layout (sidebar + header) automatically.
+ * Onboarding management page for staff to handle volunteer onboarding processes.
  * This route is protected by middleware.
  */
-export default async function StaffDashboardPage(): Promise<JSX.Element> {
+export default async function StaffOnboardingPage(): Promise<JSX.Element> {
   const session = await getServerSession(authOptions);
 
   if (!session || !["staff", "admin"].includes(session.user.role)) {
@@ -21,10 +21,10 @@ export default async function StaffDashboardPage(): Promise<JSX.Element> {
   return (
     <>
       <Typography variant="h4" gutterBottom>
-        Dashboard
+        Onboarding
       </Typography>
       <Typography color="text.secondary">
-        Overview of the whole portal.
+        Manage volunteer onboarding processes and workflows.
       </Typography>
     </>
   );

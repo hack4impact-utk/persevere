@@ -1,67 +1,28 @@
 "use client";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import React, { JSX } from "react";
 
-type NavItem = {
-  label: string;
-  href: string;
-};
+import BaseSidebar, { type NavItem } from "./base-sidebar";
 
-const navItems: NavItem[] = [
+/**
+ * Staff navigation items
+ *
+ * Ordered by usage frequency. Profile access is via header icon, not sidebar.
+ */
+const staffNavItems: NavItem[] = [
   { label: "Dashboard", href: "/staff/dashboard" },
-  { label: "Volunteers", href: "/staff/volunteers" },
-  { label: "Opportunities", href: "/staff/opportunities" },
-  { label: "Reports", href: "/staff/reports" },
+  { label: "Calendar", href: "/staff/calendar" },
   { label: "Communications", href: "/staff/communications" },
+  { label: "Volunteers", href: "/staff/volunteers" },
+  { label: "Onboarding", href: "/staff/onboarding" },
+  { label: "Analytics", href: "/staff/analytics" },
 ];
 
+/**
+ * StaffSidebar
+ *
+ * Sidebar navigation for staff routes. Uses BaseSidebar with staff-specific
+ * navigation items. Profile is accessible via the header profile icon.
+ */
 export default function StaffSidebar(): JSX.Element {
-  const pathname = usePathname();
-
-  return (
-    <aside
-      style={{
-        width: 240,
-        borderRight: "1px solid #e5e7eb",
-        padding: 16,
-        boxSizing: "border-box",
-        position: "sticky",
-        top: 0,
-        height: "100vh",
-        background: "#fafafa",
-      }}
-    >
-      <div style={{ fontWeight: 700, marginBottom: 12, fontSize: 18 }}>
-        Staff
-      </div>
-      <nav aria-label="Staff navigation">
-        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-          {navItems.map((item) => {
-            const isActive =
-              pathname === item.href || pathname?.startsWith(item.href + "/");
-            return (
-              <li key={item.href} style={{ marginBottom: 6 }}>
-                <Link
-                  href={item.href}
-                  aria-current={isActive ? "page" : undefined}
-                  style={{
-                    display: "block",
-                    padding: "8px 12px",
-                    textDecoration: "none",
-                    borderRadius: 8,
-                    color: isActive ? "#111827" : "#374151",
-                    background: isActive ? "#e5e7eb" : "transparent",
-                    fontWeight: isActive ? 600 : 500,
-                  }}
-                >
-                  {item.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-    </aside>
-  );
+  return <BaseSidebar title="Staff" navItems={staffNavItems} />;
 }

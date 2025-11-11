@@ -8,19 +8,18 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import type { InferSelectModel } from "drizzle-orm";
 import { JSX } from "react";
 
-import { users, volunteers } from "@/db/schema";
+import type { FetchVolunteerByIdResult } from "./volunteer-service";
 
-type Volunteer = InferSelectModel<typeof volunteers>;
-type User = InferSelectModel<typeof users>;
-
+/**
+ * VolunteerProfile
+ *
+ * Displays complete volunteer information including personal details, status,
+ * availability, and account history. Used in both modal and page contexts.
+ */
 type VolunteerProfileProps = {
-  volunteer: {
-    volunteers: Volunteer;
-    users: User | null;
-  };
+  volunteer: FetchVolunteerByIdResult;
 };
 
 export default function VolunteerProfile({
@@ -28,7 +27,6 @@ export default function VolunteerProfile({
 }: VolunteerProfileProps): JSX.Element {
   const { volunteers: vol, users: user } = volunteer;
 
-  // Safety check for user data
   if (!user) {
     return (
       <Card>
@@ -41,7 +39,6 @@ export default function VolunteerProfile({
 
   return (
     <Stack spacing={3}>
-      {/* Personal Information */}
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
@@ -76,7 +73,6 @@ export default function VolunteerProfile({
         </CardContent>
       </Card>
 
-      {/* Volunteer Status */}
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
@@ -119,7 +115,6 @@ export default function VolunteerProfile({
         </CardContent>
       </Card>
 
-      {/* Availability */}
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
@@ -139,7 +134,6 @@ export default function VolunteerProfile({
         </CardContent>
       </Card>
 
-      {/* History */}
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
@@ -159,7 +153,7 @@ export default function VolunteerProfile({
         </CardContent>
       </Card>
 
-      {/* Action Buttons (Placeholders) */}
+      {/* TODO: Implement edit and deactivate functionality */}
       <Box display="flex" gap={2} justifyContent="flex-end">
         <Button variant="outlined" color="primary">
           Edit Profile

@@ -2,6 +2,12 @@
 import { useSession } from "next-auth/react";
 import { JSX } from "react";
 
+/**
+ * ProtectedComponent
+ *
+ * Example component demonstrating session-based access control.
+ * Shows different content based on authentication status.
+ */
 export default function ProtectedComponent(): JSX.Element {
   const { data: session, status } = useSession();
 

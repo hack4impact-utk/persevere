@@ -2,6 +2,11 @@
 import { signOut } from "next-auth/react";
 import { JSX } from "react";
 
+/**
+ * SignOutButton
+ *
+ * Button component that signs out the current user and redirects to login.
+ */
 const handleSignOut = (): void => {
   void signOut({ callbackUrl: "/auth/login" });
 };
