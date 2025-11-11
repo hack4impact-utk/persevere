@@ -6,12 +6,12 @@ import { JSX } from "react";
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 
 /**
- * Staff Dashboard Page
+ * Staff Analytics Page
  *
- * Staff dashboard page. Uses staff layout (sidebar + header) automatically.
+ * Analytics and reporting dashboard for staff to view insights and metrics.
  * This route is protected by middleware.
  */
-export default async function StaffDashboardPage(): Promise<JSX.Element> {
+export default async function StaffAnalyticsPage(): Promise<JSX.Element> {
   const session = await getServerSession(authOptions);
 
   if (!session || !["staff", "admin"].includes(session.user.role)) {
@@ -21,10 +21,10 @@ export default async function StaffDashboardPage(): Promise<JSX.Element> {
   return (
     <>
       <Typography variant="h4" gutterBottom>
-        Dashboard
+        Analytics
       </Typography>
       <Typography color="text.secondary">
-        Overview of the whole portal.
+        View insights, metrics, and analytics for your organization.
       </Typography>
     </>
   );

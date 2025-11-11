@@ -1,5 +1,3 @@
-"use client";
-
 import { type VolunteerFilters, type VolunteersResponse } from "./types";
 
 type APIVolunteerResponse = {
@@ -17,6 +15,9 @@ type APIVolunteerResponse = {
   };
 };
 
+/**
+ * Fetches a paginated list of volunteers with optional search and filtering.
+ */
 export async function fetchVolunteers(
   filters: VolunteerFilters = {},
 ): Promise<VolunteersResponse> {
@@ -58,4 +59,51 @@ export async function fetchVolunteers(
     page: filters.page || 1,
     limit: filters.limit || 10,
   };
+}
+
+/**
+ * Return type for fetchVolunteerById function.
+ */
+export type FetchVolunteerByIdResult = {
+  volunteers: {
+    id: number;
+    userId: number;
+    volunteerType: string | null;
+    isAlumni: boolean;
+    backgroundCheckStatus: "not_required" | "pending" | "approved" | "rejected";
+    mediaRelease: boolean;
+    availability: unknown;
+    notificationPreference: "email" | "sms" | "both" | "none";
+    createdAt: Date;
+    updatedAt: Date;
+  };
+  users: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string | null;
+    bio: string | null;
+    isActive: boolean;
+  } | null;
+};
+
+/**
+ * Fetches complete volunteer profile data by ID, including user information
+ * and volunteer-specific details (status, availability, etc.).
+ */
+export async function fetchVolunteerById(
+  id: number,
+): Promise<FetchVolunteerByIdResult> {
+  const response = await fetch(`/api/staff/volunteers/${id}`, {
+    cache: "no-store",
+    next: { revalidate: 0 },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch volunteer");
+  }
+
+  const data = await response.json();
+  return data.data;
 }

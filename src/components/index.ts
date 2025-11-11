@@ -1,15 +1,18 @@
 /**
  * Components Barrel Export
  *
- * Central export point for all components organized by category.
- * This provides a clean import interface for the rest of the application.
+ * Central export point for all components. Import from here to avoid
+ * deep import paths and maintain clean dependency structure.
  */
-
-// UI Components
-export * from "./ui";
 
 // Authentication Components
 export * from "./auth";
 
-// Dashboard Components
-export * from "./dashboard";
+// Layout Components
+export * from "./layout";
+
+// UI Components
+export * from "./ui";
+
+// Volunteer Management Components
+export * from "./volunteer-management";

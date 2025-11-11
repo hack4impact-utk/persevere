@@ -4,12 +4,14 @@ import { JSX } from "react";
 
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import { LoginForm } from "@/components";
+import { getDashboardRoute } from "@/utils/routes";
 
 export default async function LoginPage(): Promise<JSX.Element> {
   const session = await getServerSession(authOptions);
 
   if (session) {
-    redirect("/dashboard");
+    const dashboardRoute = getDashboardRoute(session.user.role);
+    redirect(dashboardRoute);
   }
 
   return (

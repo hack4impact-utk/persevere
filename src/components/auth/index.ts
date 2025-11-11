@@ -1,8 +1,8 @@
 /**
  * Authentication Components
  *
- * Components related to user authentication, login, logout, and session management.
- * These components handle the authentication flow and user session state.
+ * Components for login, logout, and session management. Handles the
+ * authentication flow and user session state.
  */
 
 export { default as LoginForm } from "./login-form";

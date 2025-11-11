@@ -5,6 +5,12 @@ import { JSX, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+/**
+ * LoginForm
+ *
+ * Authentication form component. Handles user login with email/password
+ * validation. NextAuth's redirect callback handles routing to role-specific dashboard.
+ */
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
@@ -32,14 +38,14 @@ export default function LoginForm(): JSX.Element {
         email: data.email,
         password: data.password,
         redirect: false,
-        callbackUrl: "/dashboard",
       });
 
       if (result?.error) {
         setError(result.error);
       } else if (result?.ok) {
-        // Force a hard redirect to ensure it works
-        globalThis.location.replace("/dashboard");
+        // NextAuth's redirect callback will handle routing to role-specific dashboard
+        // Use globalThis.location to trigger a full page reload and let NextAuth handle redirect
+        globalThis.location.href = "/home";
       } else {
         setError("Login failed. Please try again.");
       }

@@ -23,7 +23,12 @@ const volunteerUpdateSchema = z.object({
     .enum(["not_required", "pending", "approved", "rejected"])
     .optional(),
   mediaRelease: z.boolean().optional(),
-  availability: z.record(z.string(), z.any()).optional(),
+  availability: z
+    .record(
+      z.string(),
+      z.union([z.string(), z.array(z.string()), z.boolean(), z.number()]),
+    )
+    .optional(),
   notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
 });
 
