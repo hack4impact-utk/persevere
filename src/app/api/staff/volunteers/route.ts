@@ -1,11 +1,12 @@
-import { hash } from "bcrypt";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import db from "@/db";
 import { users, volunteers } from "@/db/schema";
+import { sendWelcomeEmail } from "@/utils/email";
 import handleError from "@/utils/handle-error";
+import { generateSecurePassword, hashPassword } from "@/utils/password";
 
 const volunteerCreateSchema = z.object({
   // User fields
@@ -13,7 +14,7 @@ const volunteerCreateSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   email: z.email("Invalid email address"),
   phone: z.string().optional(),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  // Password is always auto-generated - not accepted in request
   bio: z.string().optional(),
   profilePicture: z.string().optional(),
   isActive: z.boolean().optional(),
@@ -116,7 +117,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const data = result.data;
 
-    const hashedPassword = await hash(data.password, 10);
+    // Always generate a secure random password for new volunteers
+    // Users can change their password after logging in
+    const plainPassword = generateSecurePassword(12);
+    const hashedPassword = await hashPassword(plainPassword);
 
     const newUser = await db
       .insert(users)
@@ -129,6 +133,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         bio: data.bio,
         profilePicture: data.profilePicture,
         isActive: data.isActive ?? true,
+        isEmailVerified: false, // Explicitly set to false for new volunteers
       })
       .returning({ id: users.id });
 
@@ -148,6 +153,19 @@ export async function POST(request: Request): Promise<NextResponse> {
         notificationPreference: data.notificationPreference ?? "email",
       })
       .returning();
+
+    // Send welcome email with credentials
+    // If email fails, log error but don't fail volunteer creation
+    try {
+      await sendWelcomeEmail(data.email, data.firstName, plainPassword);
+    } catch (emailError) {
+      // Log the error but continue - volunteer is already created
+      console.error(
+        `Failed to send welcome email to ${data.email}:`,
+        emailError,
+      );
+      // Note: We still return success since the volunteer was created successfully
+    }
 
     return NextResponse.json(
       { message: "Volunteer created successfully", data: newVolunteer[0] },

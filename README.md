@@ -34,6 +34,8 @@ Create a `.env` file in the root directory with the following variables:
 DATABASE_URL=your-database-connection-string
 NEXTAUTH_SECRET=your-generated-secret-here
 NEXTAUTH_URL=http://localhost:3000
+RESEND_API_KEY=your-resend-api-key (optional, for sending emails)
+RESEND_FROM_EMAIL=noreply@yourdomain.com (optional, defaults to onboarding@resend.dev for testing)
 ```
 
 **Setup steps:**
