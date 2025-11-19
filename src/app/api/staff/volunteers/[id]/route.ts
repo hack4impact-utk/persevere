@@ -35,10 +35,11 @@ const volunteerUpdateSchema = z.object({
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const volunteerId = Number.parseInt(params.id, 10);
+    const { id } = await params;
+    const volunteerId = Number.parseInt(id, 10);
 
     if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
       return NextResponse.json(
@@ -68,10 +69,11 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const volunteerId = validateAndParseId(params.id);
+    const { id } = await params;
+    const volunteerId = validateAndParseId(id);
 
     if (volunteerId === null) {
       return NextResponse.json(
@@ -180,10 +182,11 @@ export async function PUT(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const volunteerId = Number(params.id);
+    const { id } = await params;
+    const volunteerId = Number(id);
     if (!Number.isFinite(volunteerId)) {
       return NextResponse.json(
         { message: "Invalid volunteer id" },
