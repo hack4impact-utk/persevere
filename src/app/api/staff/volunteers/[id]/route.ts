@@ -5,6 +5,7 @@ import { z } from "zod";
 import db from "@/db";
 import { users, volunteers } from "@/db/schema";
 import handleError from "@/utils/handle-error";
+import { validateAndParseId } from "@/utils/validate-id";
 
 const volunteerUpdateSchema = z.object({
   // User fields
@@ -31,26 +32,6 @@ const volunteerUpdateSchema = z.object({
     .optional(),
   notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
 });
-
-/**
- * Validates and parses a volunteer ID from a string parameter.
- * Returns null if the ID is invalid (not a positive integer).
- */
-function validateAndParseId(id: string): number | null {
-  // Check if the ID is a non-empty string of digits
-  if (!/^\d+$/.test(id)) {
-    return null;
-  }
-
-  const parsed = Number.parseInt(id, 10);
-
-  // Ensure it's a valid positive integer
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  return parsed;
-}
 
 export async function GET(
   _request: Request,
