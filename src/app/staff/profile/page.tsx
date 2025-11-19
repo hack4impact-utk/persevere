@@ -1,21 +1,17 @@
 "use client";
 
 import { Avatar, Box, Button, Typography } from "@mui/material";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { JSX } from "react";
 
-const handleSignOut = (): void => {
-  void signOut();
-};
+import { useSignOut } from "@/utils/auth-hooks";
 
 /**
- * Staff Profile Page
- *
- * Staff profile page displaying user information and account details.
- * This route is protected by middleware.
+ * Staff profile page. Protected by middleware.
  */
 export default function StaffProfilePage(): JSX.Element {
   const { data: session } = useSession();
+  const handleSignOut = useSignOut();
 
   if (!session) {
     return (
