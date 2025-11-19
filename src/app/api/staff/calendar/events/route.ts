@@ -134,8 +134,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       .insert(opportunities)
       .values({
         title: data.title,
-        description: data.description || "",
-        location: data.location || "",
+        description: data.description || null,
+        location: data.location || null,
         startDate: startDate,
         endDate: endDate,
         createdById: Number.parseInt(session.user.id, 10),

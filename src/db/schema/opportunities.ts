@@ -18,8 +18,8 @@ import { interests, skills, users, volunteers } from "./users";
 export const opportunities = pgTable("opportunities", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
-  description: text("description").notNull(),
-  location: text("location").notNull(),
+  description: text("description"),
+  location: text("location"),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   status: opportunityStatusEnum("status").default("open").notNull(),
