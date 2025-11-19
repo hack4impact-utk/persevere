@@ -17,4 +17,3 @@ export function validateAndParseId(id: string): number | null {
 
   return parsed;
 }
-

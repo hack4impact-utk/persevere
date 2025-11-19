@@ -7,6 +7,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import {
+  alpha,
   Box,
   Button,
   Dialog,
@@ -16,6 +17,7 @@ import {
   IconButton,
   TextField,
   Typography,
+  useTheme,
 } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useRef, useState } from "react";
@@ -74,6 +76,7 @@ type CalendarProps = {
 export default function Calendar({
   readOnly = false,
 }: CalendarProps): JSX.Element {
+  const theme = useTheme();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [view, setView] = useState<
     "dayGridMonth" | "timeGridWeek" | "timeGridDay"
@@ -110,11 +113,38 @@ export default function Calendar({
     }
   }, []);
 
+  // Helper function to get date range for fetching events
+  const getEventsFetchDateRange = (): { start: Date; end: Date } => {
+    const now = new Date();
+    return {
+      start: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+      end: new Date(now.getFullYear(), now.getMonth() + 2, 0),
+    };
+  };
+
+  // Helper function to validate event date/time range
+  const validateEventDateTime = (
+    startDate: string,
+    startTime: string,
+    endDate: string,
+    endTime: string,
+  ): boolean => {
+    const startDateTime = new Date(`${startDate}T${startTime}`);
+    const endDateTime = new Date(`${endDate}T${endTime}`);
+
+    if (endDateTime <= startDateTime) {
+      enqueueSnackbar("End date/time must be after start date/time", {
+        variant: "error",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   // Load events on mount and when view changes
   useEffect(() => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+    const { start, end } = getEventsFetchDateRange();
     void fetchEvents(start, end);
   }, [fetchEvents]);
 
@@ -195,7 +225,7 @@ export default function Calendar({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           startDate: newStart.toISOString(),
-          endDate: newEnd!.toISOString(),
+          endDate: newEnd.toISOString(),
         }),
       });
 
@@ -204,9 +234,7 @@ export default function Calendar({
       }
 
       // Refresh events
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const end = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+      const { start, end } = getEventsFetchDateRange();
       await fetchEvents(start, end);
 
       enqueueSnackbar("Event rescheduled successfully", { variant: "success" });
@@ -226,17 +254,21 @@ export default function Calendar({
     }
 
     try {
+      if (
+        !validateEventDateTime(
+          formData.startDate,
+          formData.startTime,
+          formData.endDate,
+          formData.endTime,
+        )
+      ) {
+        return;
+      }
+
       const startDateTime = new Date(
         `${formData.startDate}T${formData.startTime}`,
       );
       const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
-
-      if (endDateTime <= startDateTime) {
-        enqueueSnackbar("End date/time must be after start date/time", {
-          variant: "error",
-        });
-        return;
-      }
 
       const response = await fetch("/api/staff/calendar/events", {
         method: "POST",
@@ -263,9 +295,7 @@ export default function Calendar({
       setFormData(initialFormData);
 
       // Refresh events
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const end = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+      const { start, end } = getEventsFetchDateRange();
       await fetchEvents(start, end);
     } catch (error) {
       enqueueSnackbar(
@@ -284,17 +314,21 @@ export default function Calendar({
     }
 
     try {
+      if (
+        !validateEventDateTime(
+          formData.startDate,
+          formData.startTime,
+          formData.endDate,
+          formData.endTime,
+        )
+      ) {
+        return;
+      }
+
       const startDateTime = new Date(
         `${formData.startDate}T${formData.startTime}`,
       );
       const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
-
-      if (endDateTime <= startDateTime) {
-        enqueueSnackbar("End date/time must be after start date/time", {
-          variant: "error",
-        });
-        return;
-      }
 
       const response = await fetch(
         `/api/staff/calendar/events/${selectedEvent.id}`,
@@ -325,9 +359,7 @@ export default function Calendar({
       setFormData(initialFormData);
 
       // Refresh events
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const end = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+      const { start, end } = getEventsFetchDateRange();
       await fetchEvents(start, end);
     } catch (error) {
       enqueueSnackbar(
@@ -361,9 +393,7 @@ export default function Calendar({
       setFormData(initialFormData);
 
       // Refresh events
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const end = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+      const { start, end } = getEventsFetchDateRange();
       await fetchEvents(start, end);
     } catch (error) {
       enqueueSnackbar("Failed to delete event", { variant: "error" });
@@ -492,7 +522,7 @@ export default function Calendar({
           minHeight: 0,
           backgroundColor: "background.paper",
           borderRadius: 3,
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+          boxShadow: `0 4px 20px ${theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.08)"}`,
           p: { xs: 2, md: 3 },
           border: "1px solid",
           borderColor: "divider",
@@ -506,7 +536,7 @@ export default function Calendar({
             letterSpacing: "-0.02em",
           },
           "& .fc-button": {
-            backgroundColor: "#000",
+            backgroundColor: theme.palette.primary.main,
             border: "none",
             borderRadius: 2,
             textTransform: "capitalize",
@@ -514,25 +544,26 @@ export default function Calendar({
             padding: "8px 16px",
             transition: "all 0.2s ease-in-out",
             "&:hover": {
-              backgroundColor: "#333",
+              backgroundColor:
+                theme.palette.primary.dark || theme.palette.action.hover,
               transform: "translateY(-1px)",
             },
             "&:disabled": {
-              backgroundColor: "#e0e0e0",
+              backgroundColor: theme.palette.action.disabledBackground,
               opacity: 0.6,
             },
             "&:focus": {
-              boxShadow: "0 0 0 3px rgba(0, 0, 0, 0.1)",
+              boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`,
             },
           },
           "& .fc-button-active": {
-            backgroundColor: "#000 !important",
+            backgroundColor: `${theme.palette.primary.main} !important`,
             fontWeight: 700,
           },
           "& .fc-daygrid-day": {
             transition: "background-color 0.2s ease",
             "&:hover": {
-              backgroundColor: "rgba(0, 0, 0, 0.02)",
+              backgroundColor: theme.palette.action.hover,
             },
           },
           "& .fc-daygrid-day-number": {
@@ -541,7 +572,7 @@ export default function Calendar({
             padding: "8px",
           },
           "& .fc-col-header-cell": {
-            backgroundColor: "rgba(0, 0, 0, 0.03)",
+            backgroundColor: theme.palette.action.hover,
             borderColor: "divider",
             padding: "12px 4px",
             fontWeight: 700,
@@ -554,7 +585,7 @@ export default function Calendar({
             borderRadius: 2,
           },
           "& .fc-theme-standard td, & .fc-theme-standard th": {
-            borderColor: "#f0f0f0",
+            borderColor: theme.palette.divider,
           },
           "& .fc-event": {
             border: "none",
@@ -563,21 +594,25 @@ export default function Calendar({
             cursor: "pointer",
             fontSize: "0.875rem",
             fontWeight: 600,
-            backgroundColor: "#000",
-            color: "#fff",
+            backgroundColor: theme.palette.primary.main,
+            color:
+              theme.palette.primary.contrastText || theme.palette.common.white,
             transition: "all 0.2s ease-in-out",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            boxShadow: `0 2px 4px ${theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.1)"}`,
             "&:hover": {
-              backgroundColor: "#333",
+              backgroundColor:
+                theme.palette.primary.dark || theme.palette.action.hover,
               transform: "translateY(-1px)",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+              boxShadow: `0 4px 12px ${theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.4)" : "rgba(0, 0, 0, 0.15)"}`,
             },
           },
           "& .fc-event-title": {
-            color: "#fff",
+            color:
+              theme.palette.primary.contrastText || theme.palette.common.white,
           },
           "& .fc-event-title-container": {
-            color: "#fff",
+            color:
+              theme.palette.primary.contrastText || theme.palette.common.white,
           },
           "& .fc-daygrid-event": {
             marginBottom: "3px",
@@ -589,10 +624,10 @@ export default function Calendar({
             flexDirection: "row",
           },
           "& .fc-highlight": {
-            backgroundColor: "rgba(0, 0, 0, 0.08)",
+            backgroundColor: theme.palette.action.selected,
           },
           "& .fc-day-today": {
-            backgroundColor: "rgba(0, 0, 0, 0.04) !important",
+            backgroundColor: `${theme.palette.action.hover} !important`,
           },
         }}
       >
@@ -640,7 +675,7 @@ export default function Calendar({
           PaperProps={{
             sx: {
               borderRadius: 3,
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+              boxShadow: `0 8px 32px ${theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.4)" : "rgba(0, 0, 0, 0.12)"}`,
             },
           }}
         >
@@ -825,7 +860,7 @@ export default function Calendar({
           PaperProps={{
             sx: {
               borderRadius: 3,
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+              boxShadow: `0 8px 32px ${theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.4)" : "rgba(0, 0, 0, 0.12)"}`,
             },
           }}
         >
@@ -854,7 +889,10 @@ export default function Calendar({
                   transition: "all 0.2s ease-in-out",
                   "&:hover": {
                     transform: "scale(1.1)",
-                    backgroundColor: "rgba(211, 47, 47, 0.08)",
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? `${theme.palette.error.main}20`
+                        : `${theme.palette.error.main}14`,
                   },
                 }}
               >
@@ -1033,7 +1071,7 @@ export default function Calendar({
           PaperProps={{
             sx: {
               borderRadius: 3,
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+              boxShadow: `0 8px 32px ${theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.4)" : "rgba(0, 0, 0, 0.12)"}`,
             },
           }}
         >
