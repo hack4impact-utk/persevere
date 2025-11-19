@@ -1,21 +1,17 @@
 "use client";
 
 import { Avatar, Box, Button, Typography } from "@mui/material";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { JSX } from "react";
 
-const handleSignOut = (): void => {
-  void signOut();
-};
+import { useSignOut } from "@/utils/auth-hooks";
 
 /**
- * Admin Profile Page
- *
- * Admin profile page displaying user information and account details.
- * This route is protected by middleware.
+ * Admin profile page. Protected by middleware.
  */
 export default function AdminProfilePage(): JSX.Element {
   const { data: session } = useSession();
+  const handleSignOut = useSignOut();
 
   if (!session) {
     return (

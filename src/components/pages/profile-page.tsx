@@ -6,10 +6,19 @@ import { JSX } from "react";
 
 import { useSignOut } from "@/utils/auth-hooks";
 
+type ProfilePageProps = {
+  roleLabel?: string;
+};
+
 /**
- * Volunteer profile page. Protected by middleware.
+ * Shared profile page component for staff and admin roles.
+ *
+ * @param roleLabel - Optional custom role label. Defaults to "Administrator" for admin,
+ *                    "Staff Member" for staff, or the user's role string.
  */
-export default function VolunteerProfilePage(): JSX.Element {
+export default function ProfilePage({
+  roleLabel,
+}: ProfilePageProps): JSX.Element {
   const { data: session } = useSession();
   const handleSignOut = useSignOut();
 
@@ -21,10 +30,14 @@ export default function VolunteerProfilePage(): JSX.Element {
     );
   }
 
-  // Format volunteer type for display
-  const volunteerType = session.user?.volunteerType || "volunteer";
-  const volunteerTypeDisplay =
-    volunteerType.charAt(0).toUpperCase() + volunteerType.slice(1);
+  // Determine role label from session if not provided as prop
+  const displayRoleLabel =
+    roleLabel ||
+    (session.user?.role === "admin"
+      ? "Administrator"
+      : session.user?.role === "staff"
+        ? "Staff Member"
+        : session.user?.role || "User");
 
   return (
     <Box sx={{ padding: "20px", maxWidth: 600, margin: "0 auto" }}>
@@ -52,7 +65,7 @@ export default function VolunteerProfilePage(): JSX.Element {
           {session.user?.email}
         </Typography>
         <Typography variant="body1" gutterBottom>
-          Role: {volunteerTypeDisplay} Volunteer
+          Role: {session.user?.role} ({displayRoleLabel})
         </Typography>
         <Typography variant="body1" gutterBottom>
           Email Verified: {session.user?.isEmailVerified ? "Yes" : "No"}

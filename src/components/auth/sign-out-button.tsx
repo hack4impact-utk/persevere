@@ -1,17 +1,15 @@
 "use client";
-import { signOut } from "next-auth/react";
 import { JSX } from "react";
 
-/**
- * SignOutButton
- *
- * Button component that signs out the current user and redirects to login.
- */
-const handleSignOut = (): void => {
-  void signOut({ callbackUrl: "/auth/login" });
-};
+import { useSignOut } from "@/utils/auth-hooks";
 
+/**
+ * Button component that signs out the current user and redirects to login.
+ * For custom UI, use the useSignOut hook directly with MUI Button.
+ */
 export default function SignOutButton(): JSX.Element {
+  const handleSignOut = useSignOut();
+
   return (
     <button
       onClick={handleSignOut}
