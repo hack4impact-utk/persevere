@@ -17,6 +17,7 @@ import {
 import { type ReactElement, useCallback, useEffect, useState } from "react";
 
 import { type Volunteer } from "./types";
+import AddVolunteerModal from "./volunteer-add-modal";
 import VolunteerProfile from "./volunteer-profile";
 import {
   fetchVolunteerById,
@@ -24,17 +25,6 @@ import {
   fetchVolunteers,
 } from "./volunteer-service";
 import VolunteerTable from "./volunteer-table";
-
-/**
- * VolunteerList
- *
- * Main volunteer management page component. Displays a searchable, paginated
- * table of volunteers. Clicking a volunteer opens their profile in a modal.
- */
-const handleAddVolunteer = (): void => {
-  // TODO: Implement volunteer creation
-  void 0;
-};
 
 export default function VolunteerList(): ReactElement {
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,6 +41,8 @@ export default function VolunteerList(): ReactElement {
     useState<FetchVolunteerByIdResult | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   const loadVolunteers = async (): Promise<void> => {
     setError(null);
@@ -95,7 +87,7 @@ export default function VolunteerList(): ReactElement {
   };
 
   const onAddVolunteer = useCallback((): void => {
-    handleAddVolunteer();
+    setAddModalOpen(true);
   }, []);
 
   const handlePageChange = (newPage: number): void => {
@@ -215,6 +207,10 @@ export default function VolunteerList(): ReactElement {
           ) : null}
         </DialogContent>
       </Dialog>
+      <AddVolunteerModal
+        open={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+      />
     </Box>
   );
 }
