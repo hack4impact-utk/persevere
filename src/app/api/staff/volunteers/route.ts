@@ -43,6 +43,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const search = searchParams.get("search");
     const type = searchParams.get("type");
     const alumni = searchParams.get("alumni");
+    const emailVerified = searchParams.get("emailVerified");
 
     const offset = (page - 1) * limit;
 
@@ -61,6 +62,9 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
     if (alumni) {
       whereClauses.push(eq(volunteers.isAlumni, alumni === "true"));
+    }
+    if (emailVerified !== null) {
+      whereClauses.push(eq(users.isEmailVerified, emailVerified === "true"));
     }
 
     // Build volunteer list query conditionally

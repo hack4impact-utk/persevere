@@ -12,6 +12,7 @@ type APIVolunteerResponse = {
     email: string;
     phone: string | null;
     isActive: boolean;
+    isEmailVerified: boolean;
   };
 };
 
@@ -27,6 +28,8 @@ export async function fetchVolunteers(
   if (filters.type) searchParams.append("type", filters.type);
   if (filters.alumni !== undefined)
     searchParams.append("alumni", String(filters.alumni));
+  if (filters.emailVerified !== undefined)
+    searchParams.append("emailVerified", String(filters.emailVerified));
   if (filters.page) searchParams.append("page", String(filters.page));
   if (filters.limit) searchParams.append("limit", String(filters.limit));
 
@@ -54,11 +57,30 @@ export async function fetchVolunteers(
       phone: item.users.phone,
       volunteerType: item.volunteers.volunteerType,
       isActive: item.users.isActive,
+      isEmailVerified: item.users.isEmailVerified,
     })),
     total: data.total,
     page: filters.page || 1,
     limit: filters.limit || 10,
   };
+}
+
+/**
+ * Fetches pending invites - volunteers who have not yet verified their email.
+ */
+export async function fetchPendingInvites(
+  filters: VolunteerFilters = {},
+): Promise<VolunteersResponse> {
+  return fetchVolunteers({ ...filters, emailVerified: false });
+}
+
+/**
+ * Fetches active volunteers - volunteers who have verified their email.
+ */
+export async function fetchActiveVolunteers(
+  filters: VolunteerFilters = {},
+): Promise<VolunteersResponse> {
+  return fetchVolunteers({ ...filters, emailVerified: true });
 }
 
 /**
