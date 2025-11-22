@@ -14,12 +14,14 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useRouter } from "next/navigation";
 import { type ReactElement, useCallback, useEffect, useState } from "react";
 
 import PendingInvitesTable from "./pending-invites-table";
 import { type Volunteer } from "./types";
 import VolunteerProfile from "./volunteer-profile";
 import {
+  AuthenticationError,
   fetchActiveVolunteers,
   fetchPendingInvites,
   fetchVolunteerById,
@@ -42,6 +44,7 @@ const handleAddVolunteer = (): void => {
 };
 
 export default function VolunteerList(): ReactElement {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
 
   // Active volunteers state
@@ -90,6 +93,12 @@ export default function VolunteerList(): ReactElement {
       setPendingInvites(pendingResponse.volunteers || []);
       setTotalPendingInvites(pendingResponse.total || 0);
     } catch (error) {
+      // Handle authentication errors silently (redirect will happen)
+      if (error instanceof AuthenticationError) {
+        router.push("/auth/login");
+        return;
+      }
+
       console.error("Failed to fetch volunteers:", error);
       setError("Failed to load volunteers. Please try again later.");
       setActiveVolunteers([]);

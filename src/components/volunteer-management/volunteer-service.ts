@@ -1,5 +1,12 @@
 import { type VolunteerFilters, type VolunteersResponse } from "./types";
 
+export class AuthenticationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AuthenticationError";
+  }
+}
+
 type APIVolunteerResponse = {
   volunteers: {
     id: number;
@@ -40,6 +47,10 @@ export async function fetchVolunteers(
       next: { revalidate: 0 },
     },
   );
+
+  if (response.status === 401 || response.status === 403) {
+    throw new AuthenticationError("Unauthorized access");
+  }
 
   if (!response.ok) {
     throw new Error("Failed to fetch volunteers");
