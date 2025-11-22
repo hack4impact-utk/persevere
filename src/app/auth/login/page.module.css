@@ -1,0 +1,223 @@
+/* Overall layout */
+.page {
+  min-height: 100vh;
+  display: flex;
+  background-color: #020617; /* behind left panel */
+}
+
+/* ================= LEFT PANEL ================= */
+
+.hero {
+  flex: 1;
+  background-color: #020617;
+  color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5rem 3rem;
+}
+
+.heroInner {
+  max-width: 32rem;
+}
+
+.logoRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+
+.logoMark {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #020617;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #e5e7eb;
+}
+
+.logoText {
+  font-weight: 500;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+  color: #f9fafb;
+}
+
+.heroTextBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.heroTitle {
+  margin: 0;
+  font-size: 2.4rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #f9fafb;
+}
+
+.heroTitleAccent {
+  color: #0ea5e9; /* bright blue accent */
+}
+
+.heroSubtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #cbd5f5;
+  max-width: 30rem;
+}
+
+/* ================= RIGHT PANEL ================= */
+
+.main {
+  flex: 1;
+  background: #f3f4f6; /* light gray background behind card */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 3.5rem;
+}
+
+.cardWrapper {
+  width: 100%;
+  max-width: 480px;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 1.75rem;
+  padding: 2.5rem 2.5rem 2.25rem;
+  box-shadow:
+    0 40px 90px rgba(15, 23, 42, 0.18),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
+  color: #0f172a;
+}
+
+/* Back link */
+.backLink {
+  display: inline-block;
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 1.25rem;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: #111827;
+  text-decoration: underline;
+}
+
+/* Card header */
+.cardHeader {
+  margin-bottom: 1.75rem;
+}
+
+.cardTitle {
+  margin: 0 0 0.35rem;
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.cardDescription {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #6b7280;
+}
+
+/* "Sign In" title above form */
+.sectionTitle {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Wrapper to align LoginForm spacing with design */
+.formWrapper {
+  margin-bottom: 1.75rem;
+}
+
+/* Card footer */
+.cardFooter {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.cardFooterText {
+  display: inline-block;
+}
+
+.cardFooterLink {
+  color: #111827;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.cardFooterLink:hover {
+  text-decoration: underline;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 960px) {
+  .page {
+    flex-direction: column;
+  }
+
+  .hero {
+    padding: 2.5rem 1.75rem 2rem;
+    justify-content: flex-start;
+  }
+
+  .heroInner {
+    max-width: 28rem;
+  }
+
+  .heroTitle {
+    font-size: 2rem;
+  }
+
+  .main {
+    padding: 2.5rem 1.75rem 2.25rem;
+  }
+
+  .card {
+    border-radius: 1.5rem;
+    padding: 2.25rem 1.9rem 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero {
+    padding: 2rem 1.5rem 1.75rem;
+  }
+
+  .heroTitle {
+    font-size: 1.7rem;
+  }
+
+  .heroSubtitle {
+    font-size: 0.9rem;
+  }
+
+  .main {
+    padding: 2rem 1.25rem 2.25rem;
+  }
+
+  .card {
+    padding: 2rem 1.5rem 1.9rem;
+    border-radius: 1.35rem;
+  }
+}

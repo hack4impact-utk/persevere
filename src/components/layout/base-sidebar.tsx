@@ -13,12 +13,6 @@ type BaseSidebarProps = {
   navItems: NavItem[];
 };
 
-/**
- * BaseSidebar
- *
- * Reusable sidebar component. Configure with navigation items and title
- * to create role-specific sidebars (staff, admin, volunteer).
- */
 export default function BaseSidebar({
   title,
   navItems,
@@ -29,45 +23,79 @@ export default function BaseSidebar({
     <aside
       style={{
         width: 240,
-        borderRight: "1px solid #e5e7eb",
-        padding: 16,
-        boxSizing: "border-box",
+        height: "100vh",
         position: "sticky",
         top: 0,
-        height: "100vh",
-        background: "#fafafa",
+        display: "flex",
+        flexDirection: "column",
+        padding: "2rem 1.25rem",
+        background: "#f8fafc",
+        borderRight: "1px solid #e2e8f0",
+        boxSizing: "border-box",
       }}
     >
-      <div style={{ fontWeight: 700, marginBottom: 12, fontSize: 18 }}>
+      {/* Title */}
+      <div
+        style={{
+          fontSize: 20,
+          fontWeight: 700,
+          color: "#0f172a",
+          marginBottom: "2rem",
+          letterSpacing: "-0.01em",
+        }}
+      >
         {title}
       </div>
-      <nav aria-label={`${title} navigation`}>
+
+      {/* Navigation */}
+      <nav style={{ flex: 1 }}>
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {navItems.map((item) => {
             const isActive =
               pathname === item.href || pathname?.startsWith(item.href + "/");
+
             return (
-              <li key={item.href} style={{ marginBottom: 6 }}>
-                <Link
-                  href={item.href}
-                  aria-current={isActive ? "page" : undefined}
-                  style={{
-                    display: "block",
-                    padding: "8px 12px",
-                    textDecoration: "none",
-                    borderRadius: 8,
-                    color: isActive ? "#111827" : "#374151",
-                    background: isActive ? "#e5e7eb" : "transparent",
-                    fontWeight: isActive ? 600 : 500,
-                  }}
-                >
-                  {item.label}
+              <li key={item.href} style={{ marginBottom: 10 }}>
+                <Link href={item.href} style={{ textDecoration: "none" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "0.7rem 1rem",
+                      borderRadius: 12,
+                      fontSize: 15,
+                      fontWeight: isActive ? 600 : 500,
+                      color: isActive ? "#0f172a" : "#475569",
+                      background: isActive ? "#e2e8f0" : "transparent",
+                      borderLeft: isActive
+                        ? "4px solid #0ea5e9"
+                        : "4px solid transparent",
+                      transition: "all 0.2s ease",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {item.label}
+                  </div>
                 </Link>
               </li>
             );
           })}
         </ul>
       </nav>
+
+      {/* Bottom Footnote (optional aesthetic detail) */}
+      <div
+        style={{
+          marginTop: "auto",
+          fontSize: 13,
+          color: "#94a3b8",
+          paddingTop: "1rem",
+          borderTop: "1px solid #e2e8f0",
+          textAlign: "center",
+        }}
+      >
+        Persevere © {new Date().getFullYear()}
+      </div>
     </aside>
   );
 }
