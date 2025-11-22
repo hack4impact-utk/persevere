@@ -1,8 +1,8 @@
 /**
  * UI Components
  *
- * Reusable UI components that are not specific to any particular feature.
- * These components focus on presentation and can be used throughout the application.
+ * Reusable presentation components used throughout the application.
+ * These are generic UI elements not tied to specific features.
  */
 
 export { default as HomeCard } from "./home-card";

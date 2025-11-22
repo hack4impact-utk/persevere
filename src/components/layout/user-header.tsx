@@ -7,30 +7,19 @@ import { useRouter } from "next/navigation";
 import { Session } from "next-auth";
 import React from "react";
 
+import { getProfileRoute } from "@/utils/routes";
+
 type UserHeaderProps = {
   session: Session | null;
   status: "loading" | "authenticated" | "unauthenticated";
 };
 
-const getProfileRoute = (role: string | undefined): string => {
-  switch (role) {
-    case "admin": {
-      return "/admin/profile";
-    }
-    case "staff": {
-      return "/staff/profile";
-    }
-    case "volunteer": {
-      return "/volunteer/profile";
-    }
-    default: {
-      return "/dashboard";
-    }
-  }
-};
-
-// UserHeader takes in a session and a status object because this will be called basically everywhere.
-// And we want to avoid calling useSession() twice on every single page
+/**
+ * UserHeader
+ *
+ * Shared header component displayed across all authenticated routes.
+ * Accepts session and status as props to avoid calling useSession() multiple times.
+ */
 const UserHeader: React.FC<UserHeaderProps> = ({ session, status }) => {
   const router = useRouter();
 
@@ -54,7 +43,6 @@ const UserHeader: React.FC<UserHeaderProps> = ({ session, status }) => {
     </Avatar>
   );
 
-  // we can't produce <a> so we have to use router.push
   const onProfileClick = (): void => {
     if (profileLink) {
       router.push(profileLink);
@@ -65,16 +53,10 @@ const UserHeader: React.FC<UserHeaderProps> = ({ session, status }) => {
     <AppBar position="static" color="primary" elevation={1}>
       <Toolbar>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, ml: "auto" }}>
-          {/* Notification bell */}
           <IconButton color="inherit">
             <NotificationsIcon />
           </IconButton>
 
-          {/* Profile button. 3 cases:
-           *  1. if no session at all is initialized, completely disable any navigation until session loads. Header bar still loads, but you can't sign in.
-           *  2. if session is initialized but session.name does not exist, clicking profile leads to sign-in page
-           *  3. if session and session.name are initialized, move to respective profile page screen
-           */}
           {profileLink ? (
             <IconButton
               onClick={onProfileClick}

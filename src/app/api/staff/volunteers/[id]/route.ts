@@ -5,6 +5,7 @@ import { z } from "zod";
 import db from "@/db";
 import { users, volunteers } from "@/db/schema";
 import handleError from "@/utils/handle-error";
+import { validateAndParseId } from "@/utils/validate-id";
 
 const volunteerUpdateSchema = z.object({
   // User fields
@@ -23,36 +24,22 @@ const volunteerUpdateSchema = z.object({
     .enum(["not_required", "pending", "approved", "rejected"])
     .optional(),
   mediaRelease: z.boolean().optional(),
-  availability: z.record(z.string(), z.any()).optional(),
+  availability: z
+    .record(
+      z.string(),
+      z.union([z.string(), z.array(z.string()), z.boolean(), z.number()]),
+    )
+    .optional(),
   notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
 });
 
-/**
- * Validates and parses a volunteer ID from a string parameter.
- * Returns null if the ID is invalid (not a positive integer).
- */
-function validateAndParseId(id: string): number | null {
-  // Check if the ID is a non-empty string of digits
-  if (!/^\d+$/.test(id)) {
-    return null;
-  }
-
-  const parsed = Number.parseInt(id, 10);
-
-  // Ensure it's a valid positive integer
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  return parsed;
-}
-
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const volunteerId = Number.parseInt(params.id, 10);
+    const { id } = await params;
+    const volunteerId = Number.parseInt(id, 10);
 
     if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
       return NextResponse.json(
@@ -82,10 +69,11 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const volunteerId = validateAndParseId(params.id);
+    const { id } = await params;
+    const volunteerId = validateAndParseId(id);
 
     if (volunteerId === null) {
       return NextResponse.json(
@@ -194,10 +182,11 @@ export async function PUT(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const volunteerId = Number(params.id);
+    const { id } = await params;
+    const volunteerId = Number(id);
     if (!Number.isFinite(volunteerId)) {
       return NextResponse.json(
         { message: "Invalid volunteer id" },

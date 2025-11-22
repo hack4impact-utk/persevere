@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 
 import db from "@/db";
 import { users } from "@/db/schema";
+import { env } from "@/utils/env";
 import { verifyPassword } from "@/utils/password";
 
 const authOptions: NextAuthOptions = {
@@ -127,16 +128,19 @@ const authOptions: NextAuthOptions = {
       return session;
     },
     redirect({ url, baseUrl }) {
-      // Always redirect to dashboard after login
+      // If a specific URL is provided and valid, use it
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       if (new URL(url).origin === baseUrl) return url;
-      return `${baseUrl}/dashboard`;
+
+      // Default redirect to /home which will route to role-specific dashboard
+      // The /home route uses server-side session to determine role
+      return `${baseUrl}/home`;
     },
   },
   pages: {
     signIn: "/auth/login",
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: env.nextAuthSecret,
 };
 
 export default authOptions;

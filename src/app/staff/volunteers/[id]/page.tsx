@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { JSX } from "react";
 
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
-import VolunteerProfile from "@/components/volunteers/volunteer-profile";
+import VolunteerProfile from "@/components/volunteer-management/volunteer-profile";
 import db from "@/db";
 import { users, volunteers } from "@/db/schema";
 

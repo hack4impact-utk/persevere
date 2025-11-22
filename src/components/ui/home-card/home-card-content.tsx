@@ -2,6 +2,14 @@ import { Button, Typography } from "@mui/material";
 import { Session } from "next-auth";
 import { ReactNode } from "react";
 
+import { getDashboardRoute } from "@/utils/routes";
+
+/**
+ * HomeCardContent
+ *
+ * Landing page card component. Shows sign-in prompt for unauthenticated users
+ * or redirects authenticated users directly to their role-specific dashboard.
+ */
 type HomeCardContentProps = {
   session: Session | null;
   status: "loading" | "authenticated" | "unauthenticated";
@@ -24,8 +32,8 @@ export default function HomeCardContent({
   }
 
   if (session) {
-    // Redirect to dashboard if user has session
-    globalThis.location.href = "/dashboard";
+    const dashboardRoute = getDashboardRoute(session.user?.role);
+    globalThis.location.href = dashboardRoute;
     return null;
   }
 

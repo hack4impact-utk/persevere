@@ -1,22 +1,38 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
 import {
   Alert,
   Box,
   Button,
   CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
   TextField,
   Typography,
 } from "@mui/material";
 import { type ReactElement, useCallback, useEffect, useState } from "react";
 
 import { type Volunteer } from "./types";
-import { fetchVolunteers } from "./volunteer-service";
+import VolunteerProfile from "./volunteer-profile";
+import {
+  fetchVolunteerById,
+  type FetchVolunteerByIdResult,
+  fetchVolunteers,
+} from "./volunteer-service";
 import VolunteerTable from "./volunteer-table";
 
+/**
+ * VolunteerList
+ *
+ * Main volunteer management page component. Displays a searchable, paginated
+ * table of volunteers. Clicking a volunteer opens their profile in a modal.
+ */
 const handleAddVolunteer = (): void => {
-  // Will be implemented later
+  // TODO: Implement volunteer creation
   void 0;
 };
 
@@ -28,6 +44,13 @@ export default function VolunteerList(): ReactElement {
   const [totalVolunteers, setTotalVolunteers] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [selectedVolunteerId, setSelectedVolunteerId] = useState<number | null>(
+    null,
+  );
+  const [volunteerProfile, setVolunteerProfile] =
+    useState<FetchVolunteerByIdResult | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const loadVolunteers = async (): Promise<void> => {
     setError(null);
@@ -50,6 +73,7 @@ export default function VolunteerList(): ReactElement {
     }
   };
 
+  // Debounce search to avoid excessive API calls
   useEffect(() => {
     const debounceTimer = setTimeout(
       () => {
@@ -81,6 +105,28 @@ export default function VolunteerList(): ReactElement {
   const handleLimitChange = (newLimit: number): void => {
     setLimit(newLimit);
     setPage(1);
+  };
+
+  const handleVolunteerClick = async (volunteerId: number): Promise<void> => {
+    setSelectedVolunteerId(volunteerId);
+    setProfileLoading(true);
+    setProfileError(null);
+    try {
+      const data = await fetchVolunteerById(volunteerId);
+      setVolunteerProfile(data);
+    } catch (error) {
+      console.error("Failed to fetch volunteer profile:", error);
+      setProfileError("Failed to load volunteer profile. Please try again.");
+      setVolunteerProfile(null);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleCloseModal = (): void => {
+    setSelectedVolunteerId(null);
+    setVolunteerProfile(null);
+    setProfileError(null);
   };
 
   return (
@@ -128,8 +174,47 @@ export default function VolunteerList(): ReactElement {
           limit={limit}
           onPageChange={handlePageChange}
           onLimitChange={handleLimitChange}
+          onVolunteerClick={handleVolunteerClick}
         />
       )}
+
+      {/* Profile modal opens when a volunteer row is clicked */}
+      <Dialog
+        open={selectedVolunteerId !== null}
+        onClose={handleCloseModal}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Typography variant="h6">Volunteer Profile</Typography>
+            <IconButton
+              aria-label="close"
+              onClick={handleCloseModal}
+              sx={{ color: (theme) => theme.palette.grey[500] }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {profileLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : profileError ? (
+            <Alert severity="error">{profileError}</Alert>
+          ) : volunteerProfile ? (
+            <VolunteerProfile volunteer={volunteerProfile} />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }
