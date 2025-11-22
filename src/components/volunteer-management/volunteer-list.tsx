@@ -14,22 +14,29 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useRouter } from "next/navigation";
 import { type ReactElement, useCallback, useEffect, useState } from "react";
 
+import PendingInvitesTable from "./pending-invites-table";
 import { type Volunteer } from "./types";
 import VolunteerProfile from "./volunteer-profile";
 import {
+  AuthenticationError,
+  fetchActiveVolunteers,
+  fetchPendingInvites,
   fetchVolunteerById,
   type FetchVolunteerByIdResult,
-  fetchVolunteers,
 } from "./volunteer-service";
 import VolunteerTable from "./volunteer-table";
 
 /**
  * VolunteerList
  *
- * Main volunteer management page component. Displays a searchable, paginated
- * table of volunteers. Clicking a volunteer opens their profile in a modal.
+ * Main volunteer management page component. Displays two tables:
+ * 1. Active Volunteers (email verified)
+ * 2. Pending Invites (email not yet verified)
+ *
+ * Both tables share a single search box that searches both tables simultaneously.
  */
 const handleAddVolunteer = (): void => {
   // TODO: Implement volunteer creation
@@ -37,13 +44,23 @@ const handleAddVolunteer = (): void => {
 };
 
 export default function VolunteerList(): ReactElement {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+
+  // Active volunteers state
+  const [activeVolunteers, setActiveVolunteers] = useState<Volunteer[]>([]);
+  const [totalActiveVolunteers, setTotalActiveVolunteers] = useState(0);
+  const [activePage, setActivePage] = useState(1);
+
+  // Pending invites state
+  const [pendingInvites, setPendingInvites] = useState<Volunteer[]>([]);
+  const [totalPendingInvites, setTotalPendingInvites] = useState(0);
+  const [pendingPage, setPendingPage] = useState(1);
+
+  // Shared state
+  const limit = 10;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [totalVolunteers, setTotalVolunteers] = useState(0);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
   const [selectedVolunteerId, setSelectedVolunteerId] = useState<number | null>(
     null,
   );
@@ -56,18 +73,38 @@ export default function VolunteerList(): ReactElement {
     setError(null);
     setLoading(true);
     try {
-      const response = await fetchVolunteers({
-        search: searchQuery,
-        page,
-        limit,
-      });
-      setVolunteers(response.volunteers || []);
-      setTotalVolunteers(response.total || 0);
+      // Fetch both active and pending volunteers with the same search query
+      const [activeResponse, pendingResponse] = await Promise.all([
+        fetchActiveVolunteers({
+          search: searchQuery,
+          page: activePage,
+          limit,
+        }),
+        fetchPendingInvites({
+          search: searchQuery,
+          page: pendingPage,
+          limit,
+        }),
+      ]);
+
+      setActiveVolunteers(activeResponse.volunteers || []);
+      setTotalActiveVolunteers(activeResponse.total || 0);
+
+      setPendingInvites(pendingResponse.volunteers || []);
+      setTotalPendingInvites(pendingResponse.total || 0);
     } catch (error) {
+      // Handle authentication errors silently (redirect will happen)
+      if (error instanceof AuthenticationError) {
+        router.push("/auth/login");
+        return;
+      }
+
       console.error("Failed to fetch volunteers:", error);
       setError("Failed to load volunteers. Please try again later.");
-      setVolunteers([]);
-      setTotalVolunteers(0);
+      setActiveVolunteers([]);
+      setTotalActiveVolunteers(0);
+      setPendingInvites([]);
+      setTotalPendingInvites(0);
     } finally {
       setLoading(false);
     }
@@ -85,26 +122,27 @@ export default function VolunteerList(): ReactElement {
     return (): void => {
       clearTimeout(debounceTimer);
     };
-  }, [searchQuery, page, limit]);
+  }, [searchQuery, activePage, pendingPage, limit]);
 
   const handleSearchChange = (
     event: React.ChangeEvent<HTMLInputElement>,
   ): void => {
     setSearchQuery(event.target.value);
-    setPage(1);
+    // Reset pages when search changes
+    setActivePage(1);
+    setPendingPage(1);
   };
 
   const onAddVolunteer = useCallback((): void => {
     handleAddVolunteer();
   }, []);
 
-  const handlePageChange = (newPage: number): void => {
-    setPage(newPage);
+  const handleActivePageChange = (newPage: number): void => {
+    setActivePage(newPage);
   };
 
-  const handleLimitChange = (newLimit: number): void => {
-    setLimit(newLimit);
-    setPage(1);
+  const handlePendingPageChange = (newPage: number): void => {
+    setPendingPage(newPage);
   };
 
   const handleVolunteerClick = async (volunteerId: number): Promise<void> => {
@@ -152,7 +190,7 @@ export default function VolunteerList(): ReactElement {
           variant="outlined"
           value={searchQuery}
           onChange={handleSearchChange}
-          placeholder="Search by name..."
+          placeholder="Search by name or email..."
         />
       </Box>
 
@@ -167,15 +205,43 @@ export default function VolunteerList(): ReactElement {
           <CircularProgress />
         </Box>
       ) : (
-        <VolunteerTable
-          volunteers={volunteers}
-          totalVolunteers={totalVolunteers}
-          page={page}
-          limit={limit}
-          onPageChange={handlePageChange}
-          onLimitChange={handleLimitChange}
-          onVolunteerClick={handleVolunteerClick}
-        />
+        <>
+          {/* Active Volunteers Table */}
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+              Active Volunteers
+            </Typography>
+            <VolunteerTable
+              volunteers={activeVolunteers}
+              totalVolunteers={totalActiveVolunteers}
+              page={activePage}
+              limit={limit}
+              onPageChange={handleActivePageChange}
+              onLimitChange={(): void => {
+                // Note: keeping limit constant for both tables for simplicity
+              }}
+              onVolunteerClick={handleVolunteerClick}
+            />
+          </Box>
+
+          {/* Pending Invites Table */}
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+              Pending Invites
+            </Typography>
+            <PendingInvitesTable
+              volunteers={pendingInvites}
+              totalVolunteers={totalPendingInvites}
+              page={pendingPage}
+              limit={limit}
+              onPageChange={handlePendingPageChange}
+              onLimitChange={(): void => {
+                // Note: keeping limit constant for both tables for simplicity
+              }}
+              onVolunteerClick={handleVolunteerClick}
+            />
+          </Box>
+        </>
       )}
 
       {/* Profile modal opens when a volunteer row is clicked */}

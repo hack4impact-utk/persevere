@@ -1,7 +1,9 @@
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { z } from "zod";
 
+import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import db from "@/db";
 import { users, volunteers } from "@/db/schema";
 import { sendWelcomeEmail } from "@/utils/email";
@@ -37,12 +39,27 @@ const volunteerCreateSchema = z.object({
 
 export async function GET(request: Request): Promise<NextResponse> {
   try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user has staff or admin role
+    const user = session.user as {
+      role?: string;
+    };
+    if (!user.role || !["staff", "admin"].includes(user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const page = Number.parseInt(searchParams.get("page") || "1");
     const limit = Number.parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search");
     const type = searchParams.get("type");
     const alumni = searchParams.get("alumni");
+    const emailVerified = searchParams.get("emailVerified");
 
     const offset = (page - 1) * limit;
 
@@ -61,6 +78,9 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
     if (alumni) {
       whereClauses.push(eq(volunteers.isAlumni, alumni === "true"));
+    }
+    if (emailVerified !== null) {
+      whereClauses.push(eq(users.isEmailVerified, emailVerified === "true"));
     }
 
     // Build volunteer list query conditionally
@@ -103,6 +123,20 @@ export async function GET(request: Request): Promise<NextResponse> {
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user has staff or admin role
+    const user = session.user as {
+      role?: string;
+    };
+    if (!user.role || !["staff", "admin"].includes(user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const json = await request.json();
 
     // Validate the request body with better error handling
