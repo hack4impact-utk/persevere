@@ -100,6 +100,8 @@ export default function AddVolunteerModal({
         bio: bio.trim() || undefined,
       };
 
+      // This just adds a volunteer without verifying them first
+      // #TODO: volunteer is only added to database after they have been verified
       const response = await fetch("/api/staff/volunteers", {
         method: "POST",
         headers: {
