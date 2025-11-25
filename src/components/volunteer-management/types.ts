@@ -8,6 +8,7 @@ export type Volunteer = {
   bio?: string;
   volunteerType?: string;
   isActive: boolean;
+  isEmailVerified: boolean;
 };
 
 export type VolunteersResponse = {
@@ -23,4 +24,5 @@ export type VolunteerFilters = {
   alumni?: boolean;
   page?: number;
   limit?: number;
+  emailVerified?: boolean;
 };
