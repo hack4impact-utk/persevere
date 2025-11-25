@@ -15,10 +15,17 @@ import {
   Typography,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { type ReactElement, useCallback, useEffect, useState } from "react";
+import {
+  type ReactElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import PendingInvitesTable from "./pending-invites-table";
 import { type Volunteer } from "./types";
+import AddVolunteerModal from "./volunteer-add-modal";
 import VolunteerProfile from "./volunteer-profile";
 import {
   AuthenticationError,
@@ -38,11 +45,6 @@ import VolunteerTable from "./volunteer-table";
  *
  * Both tables share a single search box that searches both tables simultaneously.
  */
-const handleAddVolunteer = (): void => {
-  // TODO: Implement volunteer creation
-  void 0;
-};
-
 export default function VolunteerList(): ReactElement {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,7 +71,14 @@ export default function VolunteerList(): ReactElement {
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
 
-  const loadVolunteers = async (): Promise<void> => {
+  const [addModalOpen, setAddModalOpen] = useState(false);
+
+  // Use ref to store latest loadVolunteers to avoid dependency issues
+  const loadVolunteersRef = useRef<(() => Promise<void>) | undefined>(
+    undefined,
+  );
+
+  const loadVolunteers = useCallback(async (): Promise<void> => {
     setError(null);
     setLoading(true);
     try {
@@ -108,13 +117,18 @@ export default function VolunteerList(): ReactElement {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery, activePage, pendingPage, limit, router]);
 
-  // Debounce search to avoid excessive API calls
+  // Keep ref updated with latest loadVolunteers
+  loadVolunteersRef.current = loadVolunteers;
+
+  // Debounce search to avoid excessive API calls - only debounce search query changes
   useEffect(() => {
     const debounceTimer = setTimeout(
       () => {
-        void loadVolunteers();
+        if (loadVolunteersRef.current) {
+          void loadVolunteersRef.current();
+        }
       },
       searchQuery ? 300 : 0,
     );
@@ -122,7 +136,14 @@ export default function VolunteerList(): ReactElement {
     return (): void => {
       clearTimeout(debounceTimer);
     };
-  }, [searchQuery, activePage, pendingPage, limit]);
+  }, [searchQuery]);
+
+  // Load immediately when pagination changes (no debounce)
+  useEffect(() => {
+    if (loadVolunteersRef.current) {
+      void loadVolunteersRef.current();
+    }
+  }, [activePage, pendingPage]);
 
   const handleSearchChange = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -134,7 +155,7 @@ export default function VolunteerList(): ReactElement {
   };
 
   const onAddVolunteer = useCallback((): void => {
-    handleAddVolunteer();
+    setAddModalOpen(true);
   }, []);
 
   const handleActivePageChange = (newPage: number): void => {
@@ -281,6 +302,13 @@ export default function VolunteerList(): ReactElement {
           ) : null}
         </DialogContent>
       </Dialog>
+      <AddVolunteerModal
+        open={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onCreated={() => {
+          void loadVolunteers();
+        }}
+      />
     </Box>
   );
 }

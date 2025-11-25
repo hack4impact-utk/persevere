@@ -8,15 +8,13 @@ import VolunteerProfile from "@/components/volunteer-management/volunteer-profil
 import db from "@/db";
 import { users, volunteers } from "@/db/schema";
 
-type PageProps = {
-  params: {
-    id: string;
-  };
-};
-
+// params not being wrapped as a promise prevented run build from working
 export default async function VolunteerDetailsPage({
   params,
-}: PageProps): Promise<JSX.Element> {
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<JSX.Element> {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
 
   // Only staff and admin can view volunteer profiles
@@ -25,7 +23,7 @@ export default async function VolunteerDetailsPage({
   }
 
   // Get volunteer data from the database
-  const volunteerId = Number.parseInt(params.id, 10);
+  const volunteerId = Number.parseInt(id, 10);
 
   if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
     notFound();
