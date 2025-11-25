@@ -55,6 +55,21 @@ const authOptions: NextAuthOptions = {
             return null;
           }
 
+          // Auto-verify email on first sign-in if not already verified
+          let isEmailVerified = user.isEmailVerified;
+          if (!user.isEmailVerified) {
+            // Update email verification status
+            await db
+              .update(users)
+              .set({
+                isEmailVerified: true,
+                emailVerifiedAt: new Date(),
+              })
+              .where(eq(users.id, user.id));
+
+            isEmailVerified = true;
+          }
+
           // Determine user role
           let role = "none";
           let volunteerType = null;
@@ -74,7 +89,7 @@ const authOptions: NextAuthOptions = {
             name: `${user.firstName} ${user.lastName}`,
             role,
             volunteerType,
-            isEmailVerified: user.isEmailVerified,
+            isEmailVerified,
           };
         } catch (error) {
           console.error("Authorize error:", error);

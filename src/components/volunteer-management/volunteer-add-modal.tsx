@@ -235,12 +235,10 @@ export default function AddVolunteerModal({
                 value={volunteerType}
                 onChange={handleTypeChange}
               >
-                <MenuItem value="None">None</MenuItem>
-
-                {/* TODO: Figure out what types to actually use for dropdown */}
-                <MenuItem value="Type1">Type1</MenuItem>
-                <MenuItem value="Type2">Type2</MenuItem>
-                <MenuItem value="Type3">Type3</MenuItem>
+                <MenuItem value="">None</MenuItem>
+                <MenuItem value="mentor">Mentor</MenuItem>
+                <MenuItem value="speaker">Speaker</MenuItem>
+                <MenuItem value="flexible">Flexible</MenuItem>
               </Select>
             </FormControl>
 
