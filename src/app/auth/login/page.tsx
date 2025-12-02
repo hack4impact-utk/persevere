@@ -1,4 +1,4 @@
-import Link from "next/link";
+//import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { JSX } from "react";
@@ -19,64 +19,16 @@ export default async function LoginPage(): Promise<JSX.Element> {
 
   return (
     <div className={styles.page}>
-      {/* LEFT PANEL – PERSEVERE BRANDING */}
-      <section className={styles.hero}>
-        <div className={styles.heroInner}>
-          <div className={styles.logoRow}>
-            <div className={styles.logoMark}>P</div>
-            <span className={styles.logoText}>Persevere</span>
-          </div>
+      {/* left 60% side image with blue overlay baked into perseverelogin.png */}
+      <section className={styles.hero} aria-label="Persevere mission image" />
 
-          <div className={styles.heroTextBlock}>
-            <h1 className={styles.heroTitle}>
-              Helping Communities
-              <br />
-              Through Technology.
-              <br />
-              <span className={styles.heroTitleAccent}>Persevere.</span>
-            </h1>
-
-            <p className={styles.heroSubtitle}>
-              The purpose of Persevere is to empower individuals impacted
-              justice system through technology education, life skills, and
-              skills, and wraparound support to reduce recidivism.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* RIGHT PANEL – LOGIN CARD */}
+      {/* right 40% side centered Welcome + login form */}
       <main className={styles.main}>
-        <div className={styles.cardWrapper}>
-          <div className={styles.card}>
-            {/* Back link */}
-            <Link href="/" className={styles.backLink}>
-              Back to website
-            </Link>
+        <div className={styles.panel}>
+          <h1 className={styles.heading}>Welcome</h1>
 
-            <header className={styles.cardHeader}>
-              <h2 className={styles.cardTitle}>Welcome back!</h2>
-              <p className={styles.cardDescription}>
-                Log in to continue your work in Persevere.
-              </p>
-            </header>
-
-            <div className={styles.sectionTitle}>Sign In</div>
-
-            {/* Existing LoginForm (inputs + button) */}
-            <div className={styles.formWrapper}>
-              <LoginForm />
-            </div>
-
-            <footer className={styles.cardFooter}>
-              <span className={styles.cardFooterText}>
-                Don&apos;t have an account?{" "}
-                <Link href="/auth/register" className={styles.cardFooterLink}>
-                  Sign up
-                </Link>
-              </span>
-            </footer>
-          </div>
+          {/* connected to login in components */}
+          <LoginForm />
         </div>
       </main>
     </div>

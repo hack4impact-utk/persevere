@@ -1,101 +1,58 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { JSX } from "react";
+import React, { ReactNode } from "react";
+
+import styles from "./base-sidebar.module.css";
 
 export type NavItem = {
   label: string;
   href: string;
+  icon?: ReactNode; // optional, so your existing navItems still type-check
 };
 
 type BaseSidebarProps = {
-  title: string;
   navItems: NavItem[];
 };
 
-export default function BaseSidebar({
-  title,
-  navItems,
-}: BaseSidebarProps): JSX.Element {
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+export default function BaseSidebar({ navItems }: BaseSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside
-      style={{
-        width: 240,
-        height: "100vh",
-        position: "sticky",
-        top: 0,
-        display: "flex",
-        flexDirection: "column",
-        padding: "2rem 1.25rem",
-        background: "#f8fafc",
-        borderRight: "1px solid #e2e8f0",
-        boxSizing: "border-box",
-      }}
-    >
-      {/* Title */}
-      <div
-        style={{
-          fontSize: 20,
-          fontWeight: 700,
-          color: "#0f172a",
-          marginBottom: "2rem",
-          letterSpacing: "-0.01em",
-        }}
-      >
-        {title}
+    <aside className={styles.sidebar}>
+      {/* Logo row */}
+      <div className={styles.logo}>
+        <Image
+          src="/images/perseverelogo.png"
+          alt="Persevere Logo"
+          width={140}
+          height={32}
+        />
       </div>
 
       {/* Navigation */}
-      <nav style={{ flex: 1 }}>
-        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-          {navItems.map((item) => {
-            const isActive =
-              pathname === item.href || pathname?.startsWith(item.href + "/");
+      <nav className={styles.nav} aria-label="Main navigation">
+        {navItems.map((item) => {
+          const isActive =
+            pathname === item.href || pathname?.startsWith(item.href + "/");
 
-            return (
-              <li key={item.href} style={{ marginBottom: 10 }}>
-                <Link href={item.href} style={{ textDecoration: "none" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      padding: "0.7rem 1rem",
-                      borderRadius: 12,
-                      fontSize: 15,
-                      fontWeight: isActive ? 600 : 500,
-                      color: isActive ? "#0f172a" : "#475569",
-                      background: isActive ? "#e2e8f0" : "transparent",
-                      borderLeft: isActive
-                        ? "4px solid #0ea5e9"
-                        : "4px solid transparent",
-                      transition: "all 0.2s ease",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {item.label}
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={styles.link}
+              aria-current={isActive ? "page" : undefined}
+            >
+              <div className={isActive ? styles.navItemActive : styles.navItem}>
+                {item.icon && <span className={styles.icon}>{item.icon}</span>}
+                <span className={styles.label}>{item.label}</span>
+              </div>
+            </Link>
+          );
+        })}
       </nav>
-
-      {/* Bottom Footnote (optional aesthetic detail) */}
-      <div
-        style={{
-          marginTop: "auto",
-          fontSize: 13,
-          color: "#94a3b8",
-          paddingTop: "1rem",
-          borderTop: "1px solid #e2e8f0",
-          textAlign: "center",
-        }}
-      >
-        Persevere © {new Date().getFullYear()}
-      </div>
     </aside>
   );
 }
