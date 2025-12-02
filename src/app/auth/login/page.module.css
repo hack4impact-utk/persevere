@@ -1,0 +1,163 @@
+/*login page layout */
+.page {
+  min-height: 100vh;
+  display: flex;
+  background-color: #ffffff;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* left side 60% */
+
+.hero {
+  flex: 0 0 60%;
+  min-height: 100vh;
+  background-image:
+    linear-gradient(rgba(37, 99, 235, 0.0), rgba(37, 99, 235, 0.0)),
+    url("/images/perseverelogin.png");
+  background-size: cover;
+  background-position: center;
+}
+
+/* right side 40% */
+
+.main {
+  flex: 0 0 40%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 4rem;
+  background-color: #ffffff;
+}
+
+.panel {
+  width: 100%;
+  max-width: 440px;
+}
+
+.heading {
+  margin: 0 0 2.5rem;
+  text-align: center;
+  font-size: 3rem;
+  font-weight: 500;
+  color: #3b82f6; 
+  letter-spacing: 0.03em;
+}
+
+/*form*/
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field {
+  position: relative;
+}
+
+/* rounded input */
+.input {
+  width: 100%;
+  padding: 1.1rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 999px; /* pill shape */
+  border: 1px solid #d4d4d8;
+  outline: none;
+  color: #111827;
+  background-color: #ffffff;
+  box-sizing: border-box;
+}
+
+.input::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.25);
+}
+
+/* forgot pass */
+.forgotPassword {
+  position: absolute;
+  right: 1.5rem;
+  bottom: -1.4rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+/* big rounded login button */
+.button {
+  margin-top: 2.25rem;
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 1.1rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #ffffff;
+  background-color: #3b82f6; 
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.button:hover {
+  background-color: #2563eb;
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+/* ally helper */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* responsive */
+
+@media (max-width: 960px) {
+  .page {
+    flex-direction: column;
+  }
+
+  .hero {
+    flex: 0 0 auto;
+    min-height: 260px;
+  }
+
+  .main {
+    flex: 1;
+    padding: 2.5rem 2rem 3rem;
+  }
+
+  .heading {
+    font-size: 2.4rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero {
+    min-height: 220px;
+  }
+
+  .main {
+    padding: 2rem 1.5rem 3rem;
+  }
+
+  .heading {
+    font-size: 2rem;
+  }
+}
