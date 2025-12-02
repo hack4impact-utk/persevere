@@ -1,5 +1,12 @@
 import { type VolunteerFilters, type VolunteersResponse } from "./types";
 
+export class AuthenticationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AuthenticationError";
+  }
+}
+
 type APIVolunteerResponse = {
   volunteers: {
     id: number;
@@ -12,6 +19,7 @@ type APIVolunteerResponse = {
     email: string;
     phone: string | null;
     isActive: boolean;
+    isEmailVerified: boolean;
   };
 };
 
@@ -27,6 +35,8 @@ export async function fetchVolunteers(
   if (filters.type) searchParams.append("type", filters.type);
   if (filters.alumni !== undefined)
     searchParams.append("alumni", String(filters.alumni));
+  if (filters.emailVerified !== undefined)
+    searchParams.append("emailVerified", String(filters.emailVerified));
   if (filters.page) searchParams.append("page", String(filters.page));
   if (filters.limit) searchParams.append("limit", String(filters.limit));
 
@@ -37,6 +47,10 @@ export async function fetchVolunteers(
       next: { revalidate: 0 },
     },
   );
+
+  if (response.status === 401 || response.status === 403) {
+    throw new AuthenticationError("Unauthorized access");
+  }
 
   if (!response.ok) {
     throw new Error("Failed to fetch volunteers");
@@ -54,11 +68,30 @@ export async function fetchVolunteers(
       phone: item.users.phone,
       volunteerType: item.volunteers.volunteerType,
       isActive: item.users.isActive,
+      isEmailVerified: item.users.isEmailVerified,
     })),
     total: data.total,
     page: filters.page || 1,
     limit: filters.limit || 10,
   };
+}
+
+/**
+ * Fetches pending invites - volunteers who have not yet verified their email.
+ */
+export async function fetchPendingInvites(
+  filters: VolunteerFilters = {},
+): Promise<VolunteersResponse> {
+  return fetchVolunteers({ ...filters, emailVerified: false });
+}
+
+/**
+ * Fetches active volunteers - volunteers who have verified their email.
+ */
+export async function fetchActiveVolunteers(
+  filters: VolunteerFilters = {},
+): Promise<VolunteersResponse> {
+  return fetchVolunteers({ ...filters, emailVerified: true });
 }
 
 /**

@@ -58,12 +58,8 @@
           "name": "admin_dashboard_actions_admin_id_users_id_fk",
           "tableFrom": "admin_dashboard_actions",
           "tableTo": "users",
-          "columnsFrom": [
-            "admin_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["admin_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -122,12 +118,8 @@
           "name": "system_settings_updated_by_id_users_id_fk",
           "tableFrom": "system_settings",
           "tableTo": "users",
-          "columnsFrom": [
-            "updated_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -137,9 +129,7 @@
         "system_settings_key_unique": {
           "name": "system_settings_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "key"
-          ]
+          "columns": ["key"]
         }
       },
       "policies": {},
@@ -213,12 +203,8 @@
           "name": "communication_logs_sender_id_users_id_fk",
           "tableFrom": "communication_logs",
           "tableTo": "users",
-          "columnsFrom": [
-            "sender_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["sender_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -226,12 +212,8 @@
           "name": "communication_logs_recipient_id_users_id_fk",
           "tableFrom": "communication_logs",
           "tableTo": "users",
-          "columnsFrom": [
-            "recipient_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["recipient_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -406,12 +388,8 @@
           "name": "opportunities_created_by_id_users_id_fk",
           "tableFrom": "opportunities",
           "tableTo": "users",
-          "columnsFrom": [
-            "created_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -445,12 +423,8 @@
           "name": "opportunity_interests_opportunity_id_opportunities_id_fk",
           "tableFrom": "opportunity_interests",
           "tableTo": "opportunities",
-          "columnsFrom": [
-            "opportunity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["opportunity_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -458,12 +432,8 @@
           "name": "opportunity_interests_interest_id_interests_id_fk",
           "tableFrom": "opportunity_interests",
           "tableTo": "interests",
-          "columnsFrom": [
-            "interest_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["interest_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -471,10 +441,7 @@
       "compositePrimaryKeys": {
         "opportunity_interests_opportunity_id_interest_id_pk": {
           "name": "opportunity_interests_opportunity_id_interest_id_pk",
-          "columns": [
-            "opportunity_id",
-            "interest_id"
-          ]
+          "columns": ["opportunity_id", "interest_id"]
         }
       },
       "uniqueConstraints": {},
@@ -505,12 +472,8 @@
           "name": "opportunity_required_skills_opportunity_id_opportunities_id_fk",
           "tableFrom": "opportunity_required_skills",
           "tableTo": "opportunities",
-          "columnsFrom": [
-            "opportunity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["opportunity_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -518,12 +481,8 @@
           "name": "opportunity_required_skills_skill_id_skills_id_fk",
           "tableFrom": "opportunity_required_skills",
           "tableTo": "skills",
-          "columnsFrom": [
-            "skill_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["skill_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -531,10 +490,7 @@
       "compositePrimaryKeys": {
         "opportunity_required_skills_opportunity_id_skill_id_pk": {
           "name": "opportunity_required_skills_opportunity_id_skill_id_pk",
-          "columns": [
-            "opportunity_id",
-            "skill_id"
-          ]
+          "columns": ["opportunity_id", "skill_id"]
         }
       },
       "uniqueConstraints": {},
@@ -601,12 +557,8 @@
           "name": "volunteer_hours_volunteer_id_volunteers_id_fk",
           "tableFrom": "volunteer_hours",
           "tableTo": "volunteers",
-          "columnsFrom": [
-            "volunteer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["volunteer_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -614,12 +566,8 @@
           "name": "volunteer_hours_opportunity_id_opportunities_id_fk",
           "tableFrom": "volunteer_hours",
           "tableTo": "opportunities",
-          "columnsFrom": [
-            "opportunity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["opportunity_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -627,12 +575,8 @@
           "name": "volunteer_hours_verified_by_users_id_fk",
           "tableFrom": "volunteer_hours",
           "tableTo": "users",
-          "columnsFrom": [
-            "verified_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["verified_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -687,12 +631,8 @@
           "name": "volunteer_rsvps_volunteer_id_volunteers_id_fk",
           "tableFrom": "volunteer_rsvps",
           "tableTo": "volunteers",
-          "columnsFrom": [
-            "volunteer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["volunteer_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -700,12 +640,8 @@
           "name": "volunteer_rsvps_opportunity_id_opportunities_id_fk",
           "tableFrom": "volunteer_rsvps",
           "tableTo": "opportunities",
-          "columnsFrom": [
-            "opportunity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["opportunity_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -713,10 +649,7 @@
       "compositePrimaryKeys": {
         "volunteer_rsvps_volunteer_id_opportunity_id_pk": {
           "name": "volunteer_rsvps_volunteer_id_opportunity_id_pk",
-          "columns": [
-            "volunteer_id",
-            "opportunity_id"
-          ]
+          "columns": ["volunteer_id", "opportunity_id"]
         }
       },
       "uniqueConstraints": {},
@@ -801,12 +734,8 @@
           "name": "account_userId_users_nextauth_id_fk",
           "tableFrom": "account",
           "tableTo": "users",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "nextauth_id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["nextauth_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -814,10 +743,7 @@
       "compositePrimaryKeys": {
         "account_provider_providerAccountId_pk": {
           "name": "account_provider_providerAccountId_pk",
-          "columns": [
-            "provider",
-            "providerAccountId"
-          ]
+          "columns": ["provider", "providerAccountId"]
         }
       },
       "uniqueConstraints": {},
@@ -868,12 +794,8 @@
           "name": "admin_staff_id_staff_id_fk",
           "tableFrom": "admin",
           "tableTo": "staff",
-          "columnsFrom": [
-            "staff_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["staff_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -944,12 +866,8 @@
           "name": "session_userId_users_nextauth_id_fk",
           "tableFrom": "session",
           "tableTo": "users",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "nextauth_id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["nextauth_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1042,12 +960,8 @@
           "name": "staff_user_id_users_id_fk",
           "tableFrom": "staff",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1158,16 +1072,12 @@
         "users_nextauth_id_unique": {
           "name": "users_nextauth_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "nextauth_id"
-          ]
+          "columns": ["nextauth_id"]
         },
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -1202,10 +1112,7 @@
       "compositePrimaryKeys": {
         "verificationToken_identifier_token_pk": {
           "name": "verificationToken_identifier_token_pk",
-          "columns": [
-            "identifier",
-            "token"
-          ]
+          "columns": ["identifier", "token"]
         }
       },
       "uniqueConstraints": {},
@@ -1236,12 +1143,8 @@
           "name": "volunteer_interests_volunteer_id_volunteers_id_fk",
           "tableFrom": "volunteer_interests",
           "tableTo": "volunteers",
-          "columnsFrom": [
-            "volunteer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["volunteer_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1249,12 +1152,8 @@
           "name": "volunteer_interests_interest_id_interests_id_fk",
           "tableFrom": "volunteer_interests",
           "tableTo": "interests",
-          "columnsFrom": [
-            "interest_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["interest_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1262,10 +1161,7 @@
       "compositePrimaryKeys": {
         "volunteer_interests_volunteer_id_interest_id_pk": {
           "name": "volunteer_interests_volunteer_id_interest_id_pk",
-          "columns": [
-            "volunteer_id",
-            "interest_id"
-          ]
+          "columns": ["volunteer_id", "interest_id"]
         }
       },
       "uniqueConstraints": {},
@@ -1303,12 +1199,8 @@
           "name": "volunteer_skills_volunteer_id_volunteers_id_fk",
           "tableFrom": "volunteer_skills",
           "tableTo": "volunteers",
-          "columnsFrom": [
-            "volunteer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["volunteer_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1316,12 +1208,8 @@
           "name": "volunteer_skills_skill_id_skills_id_fk",
           "tableFrom": "volunteer_skills",
           "tableTo": "skills",
-          "columnsFrom": [
-            "skill_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["skill_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1329,10 +1217,7 @@
       "compositePrimaryKeys": {
         "volunteer_skills_volunteer_id_skill_id_pk": {
           "name": "volunteer_skills_volunteer_id_skill_id_pk",
-          "columns": [
-            "volunteer_id",
-            "skill_id"
-          ]
+          "columns": ["volunteer_id", "skill_id"]
         }
       },
       "uniqueConstraints": {},
@@ -1419,12 +1304,8 @@
           "name": "volunteers_user_id_users_id_fk",
           "tableFrom": "volunteers",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1440,61 +1321,32 @@
     "public.background_check_status": {
       "name": "background_check_status",
       "schema": "public",
-      "values": [
-        "not_required",
-        "pending",
-        "approved",
-        "rejected"
-      ]
+      "values": ["not_required", "pending", "approved", "rejected"]
     },
     "public.notification_preference": {
       "name": "notification_preference",
       "schema": "public",
-      "values": [
-        "email",
-        "sms",
-        "both",
-        "none"
-      ]
+      "values": ["email", "sms", "both", "none"]
     },
     "public.opportunity_status": {
       "name": "opportunity_status",
       "schema": "public",
-      "values": [
-        "open",
-        "full",
-        "completed",
-        "canceled"
-      ]
+      "values": ["open", "full", "completed", "canceled"]
     },
     "public.proficiency_level": {
       "name": "proficiency_level",
       "schema": "public",
-      "values": [
-        "beginner",
-        "intermediate",
-        "advanced"
-      ]
+      "values": ["beginner", "intermediate", "advanced"]
     },
     "public.rsvp_status": {
       "name": "rsvp_status",
       "schema": "public",
-      "values": [
-        "pending",
-        "confirmed",
-        "declined",
-        "attended",
-        "no_show"
-      ]
+      "values": ["pending", "confirmed", "declined", "attended", "no_show"]
     },
     "public.volunteer_role": {
       "name": "volunteer_role",
       "schema": "public",
-      "values": [
-        "volunteer",
-        "staff",
-        "admin"
-      ]
+      "values": ["volunteer", "staff", "admin"]
     }
   },
   "schemas": {},
