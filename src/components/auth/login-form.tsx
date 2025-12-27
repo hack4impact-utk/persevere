@@ -4,7 +4,6 @@ import { signIn } from "next-auth/react";
 import { JSX, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-
 /**
  * LoginForm
  *
@@ -26,6 +25,7 @@ export default function LoginForm(): JSX.Element {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +44,6 @@ export default function LoginForm(): JSX.Element {
         setError(result.error);
       } else if (result?.ok) {
         // NextAuth's redirect callback will handle routing to role-specific dashboard
-        // Use globalThis.location to trigger a full page reload and let NextAuth handle redirect
         globalThis.location.href = "/home";
       } else {
         setError("Login failed. Please try again.");
@@ -58,53 +57,145 @@ export default function LoginForm(): JSX.Element {
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "0 auto", padding: "20px" }}>
-      <h2>Sign In</h2>
+    <div
+      style={{
+        maxWidth: "420px",
+        margin: "0 auto",
+        display: "flex",
+        flexDirection: "column",
+        gap: "1rem",
+      }}
+    >
       {error && (
-        <div style={{ color: "red", marginBottom: "10px" }}>{error}</div>
+        <div
+          style={{
+            color: "#b91c1c",
+            backgroundColor: "#fee2e2",
+            borderRadius: 8,
+            padding: "0.75rem 1rem",
+            fontSize: 14,
+            marginBottom: "0.5rem",
+          }}
+        >
+          {error}
+        </div>
       )}
+
       <form
         onSubmit={handleSubmit(onSubmit)}
-        style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "1.25rem",
+        }}
       >
-        <div>
+        {/* Email */}
+        <div style={{ textAlign: "left" }}>
           <input
             {...register("email")}
             type="email"
-            placeholder="Email"
-            style={{ width: "100%", padding: "8px" }}
+            placeholder="Email Address"
             disabled={isLoading}
+            style={{
+              width: "100%",
+              padding: "1.1rem 1.25rem",
+              fontSize: 16,
+              borderRadius: 14,
+              border: "1px solid #d1d5db",
+              outline: "none",
+              boxSizing: "border-box",
+              backgroundColor: "#ffffff",
+              color: "#111827",
+            }}
           />
           {errors.email && (
-            <span style={{ color: "red" }}>{errors.email.message}</span>
+            <span
+              style={{
+                color: "#b91c1c",
+                fontSize: 12,
+                marginTop: 4,
+                display: "inline-block",
+              }}
+            >
+              {errors.email.message}
+            </span>
           )}
         </div>
 
-        <div>
+        {/* Password + forgot password */}
+        <div style={{ textAlign: "left" }}>
           <input
             {...register("password")}
             type="password"
             placeholder="Password"
-            style={{ width: "100%", padding: "8px" }}
             disabled={isLoading}
+            style={{
+              width: "100%",
+              padding: "1.1rem 1.25rem",
+              fontSize: 16,
+              borderRadius: 14,
+              border: "1px solid #d1d5db",
+              outline: "none",
+              boxSizing: "border-box",
+              backgroundColor: "#ffffff",
+              color: "#111827",
+            }}
           />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: 6,
+              fontSize: 12,
+              color: "#9ca3af",
+            }}
+          >
+            <button
+              type="button"
+              style={{
+                border: "none",
+                background: "transparent",
+                padding: 0,
+                margin: 0,
+                color: "#9ca3af",
+                cursor: "pointer",
+              }}
+            >
+              Forgot Password?
+            </button>
+          </div>
           {errors.password && (
-            <span style={{ color: "red" }}>{errors.password.message}</span>
+            <span
+              style={{
+                color: "#b91c1c",
+                fontSize: 12,
+                marginTop: 4,
+                display: "inline-block",
+              }}
+            >
+              {errors.password.message}
+            </span>
           )}
         </div>
 
+        {/* Login button */}
         <button
           type="submit"
           disabled={isLoading}
           style={{
-            padding: "10px",
-            backgroundColor: "#0070f3",
-            color: "white",
+            marginTop: "0.75rem",
+            width: "100%",
+            padding: "1.05rem",
+            borderRadius: 18,
             border: "none",
-            borderRadius: "4px",
+            backgroundColor: "#3b82f6",
+            color: "#ffffff",
+            fontSize: 18,
+            fontWeight: 600,
+            cursor: isLoading ? "default" : "pointer",
           }}
         >
-          {isLoading ? "Signing in..." : "Sign In"}
+          {isLoading ? "Signing in..." : "Login"}
         </button>
       </form>
     </div>

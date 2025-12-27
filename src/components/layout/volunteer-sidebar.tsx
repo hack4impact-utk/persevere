@@ -22,5 +22,5 @@ const volunteerNavItems: NavItem[] = [
  * via the header profile icon.
  */
 export default function VolunteerSidebar(): JSX.Element {
-  return <BaseSidebar title="Volunteer" navItems={volunteerNavItems} />;
+  return <BaseSidebar navItems={volunteerNavItems} />;
 }

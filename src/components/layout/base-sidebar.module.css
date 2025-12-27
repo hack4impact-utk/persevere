@@ -1,0 +1,90 @@
+.sidebar {
+  width: 260px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0.5rem 2rem;
+  box-sizing: border-box;
+
+  /* Main blue background just like Figma */
+  background-color: #327bf7;
+  color: #ffffff;
+}
+
+/* Top logo */
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.logoRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 2rem;
+}
+
+.logoText {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+
+/* Navigation list */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Reset link styles */
+.link {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Base nav item pill */
+.navItem,
+.navItemActive {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, transform 0.1s ease,
+    box-shadow 0.15s ease;
+}
+
+/* Inactive state */
+.navItem {
+  background-color: transparent;
+  color: #e5edff;
+}
+
+/* Active pill (dark blue) */
+.navItemActive {
+  background-color: #27427f;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+}
+
+/* Optional icon (if you pass one in navItems) */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+/* Label text */
+.label {
+  white-space: nowrap;
+}
