@@ -20,16 +20,33 @@ type BaseSidebarProps = {
 export default function BaseSidebar({ navItems }: BaseSidebarProps) {
   const pathname = usePathname();
 
+  // Determine dashboard route based on current pathname
+  const getDashboardRoute = (): string => {
+    if (pathname?.startsWith("/admin")) {
+      return "/admin/dashboard";
+    }
+    if (pathname?.startsWith("/staff")) {
+      return "/staff/dashboard";
+    }
+    if (pathname?.startsWith("/volunteer")) {
+      return "/volunteer/dashboard";
+    }
+    return "/home"; // fallback
+  };
+
   return (
     <aside className={styles.sidebar}>
       {/* Logo row */}
       <div className={styles.logo}>
-        <Image
-          src="/images/perseverelogo.png"
-          alt="Persevere Logo"
-          width={140}
-          height={32}
-        />
+        <Link href={getDashboardRoute()} aria-label="Go to dashboard">
+          <Image
+            src="/images/perseverelogo.png"
+            alt="Persevere Logo"
+            width={220}
+            height={50}
+            priority
+          />
+        </Link>
       </div>
 
       {/* Navigation */}

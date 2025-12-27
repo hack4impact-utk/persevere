@@ -58,12 +58,14 @@ const UserHeader: React.FC<UserHeaderProps> = ({ session, status }) => {
 
   return (
     <AppBar
-      position="static"
+      position="sticky"
       elevation={0}
       sx={{
         backgroundColor: "#ffffff",
         color: "#111827",
-        borderBottom: "1px solid #e5e7eb",
+        borderBottom: "none",
+        top: 0,
+        zIndex: 1100,
       }}
     >
       <Toolbar
@@ -72,22 +74,9 @@ const UserHeader: React.FC<UserHeaderProps> = ({ session, status }) => {
           px: { xs: 2, sm: 3, md: 4 },
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
+          justifyContent: "flex-end",
         }}
       >
-        {/* Left side: app / section label */}
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{
-            fontSize: 18,
-            fontWeight: 600,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Persevere Portal
-        </Typography>
-
         {/* Right side: user actions */}
         <Box
           sx={{

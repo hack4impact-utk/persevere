@@ -104,6 +104,8 @@ export default function LoginForm(): JSX.Element {
               border: "1px solid #d1d5db",
               outline: "none",
               boxSizing: "border-box",
+              backgroundColor: "#ffffff",
+              color: "#111827",
             }}
           />
           {errors.email && (
@@ -135,6 +137,8 @@ export default function LoginForm(): JSX.Element {
               border: "1px solid #d1d5db",
               outline: "none",
               boxSizing: "border-box",
+              backgroundColor: "#ffffff",
+              color: "#111827",
             }}
           />
           <div

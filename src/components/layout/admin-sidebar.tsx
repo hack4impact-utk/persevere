@@ -25,5 +25,5 @@ const adminNavItems: NavItem[] = [
  * admin-specific dashboard. Profile is accessible via the header profile icon.
  */
 export default function AdminSidebar(): JSX.Element {
-  return <BaseSidebar title="Admin" navItems={adminNavItems} />;
+  return <BaseSidebar navItems={adminNavItems} />;
 }
