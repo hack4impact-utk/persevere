@@ -3,8 +3,19 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import db from "@/db";
-import { users, volunteers, volunteerSkills, volunteerInterests, skills, interests } from "@/db/schema";
-import { volunteerHours, volunteerRsvps, opportunities } from "@/db/schema/opportunities";
+import {
+  interests,
+  skills,
+  users,
+  volunteerInterests,
+  volunteers,
+  volunteerSkills,
+} from "@/db/schema";
+import {
+  opportunities,
+  volunteerHours,
+  volunteerRsvps,
+} from "@/db/schema/opportunities";
 import handleError from "@/utils/handle-error";
 import { validateAndParseId } from "@/utils/validate-id";
 
@@ -110,7 +121,10 @@ export async function GET(
         rsvpNotes: volunteerRsvps.notes,
       })
       .from(volunteerRsvps)
-      .leftJoin(opportunities, eq(volunteerRsvps.opportunityId, opportunities.id))
+      .leftJoin(
+        opportunities,
+        eq(volunteerRsvps.opportunityId, opportunities.id),
+      )
       .where(eq(volunteerRsvps.volunteerId, volunteerId))
       .orderBy(desc(volunteerRsvps.rsvpAt))
       .limit(5);
@@ -127,7 +141,10 @@ export async function GET(
         verifiedAt: volunteerHours.verifiedAt,
       })
       .from(volunteerHours)
-      .leftJoin(opportunities, eq(volunteerHours.opportunityId, opportunities.id))
+      .leftJoin(
+        opportunities,
+        eq(volunteerHours.opportunityId, opportunities.id),
+      )
       .where(eq(volunteerHours.volunteerId, volunteerId))
       .orderBy(desc(volunteerHours.date))
       .limit(10);
