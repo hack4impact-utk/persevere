@@ -2,16 +2,31 @@
 
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import {
   Alert,
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
+  FormControl,
+  FormControlLabel,
+  FormGroup,
   IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Stack,
+  Tab,
+  Tabs,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
@@ -30,6 +45,7 @@ import VolunteerProfile from "./volunteer-profile";
 import {
   AuthenticationError,
   fetchActiveVolunteers,
+  fetchInactiveVolunteers,
   fetchPendingInvites,
   fetchVolunteerById,
   type FetchVolunteerByIdResult,
@@ -39,20 +55,27 @@ import VolunteerTable from "./volunteer-table";
 /**
  * VolunteerList
  *
- * Main volunteer management page component. Displays two tables:
- * 1. Active Volunteers (email verified)
- * 2. Pending Invites (email not yet verified)
+ * Main volunteer management page component. Displays three tables in tabs:
+ * 1. Active Volunteers (email verified and active)
+ * 2. Inactive Volunteers (email verified but inactive)
+ * 3. Pending Invites (email not yet verified)
  *
- * Both tables share a single search box that searches both tables simultaneously.
+ * All tables share a single search box that searches all tables simultaneously.
  */
 export default function VolunteerList(): ReactElement {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentTab, setCurrentTab] = useState(0);
 
   // Active volunteers state
   const [activeVolunteers, setActiveVolunteers] = useState<Volunteer[]>([]);
   const [totalActiveVolunteers, setTotalActiveVolunteers] = useState(0);
   const [activePage, setActivePage] = useState(1);
+
+  // Inactive volunteers state
+  const [inactiveVolunteers, setInactiveVolunteers] = useState<Volunteer[]>([]);
+  const [totalInactiveVolunteers, setTotalInactiveVolunteers] = useState(0);
+  const [inactivePage, setInactivePage] = useState(1);
 
   // Pending invites state
   const [pendingInvites, setPendingInvites] = useState<Volunteer[]>([]);
@@ -60,7 +83,7 @@ export default function VolunteerList(): ReactElement {
   const [pendingPage, setPendingPage] = useState(1);
 
   // Shared state
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedVolunteerId, setSelectedVolunteerId] = useState<number | null>(
@@ -72,6 +95,11 @@ export default function VolunteerList(): ReactElement {
   const [profileError, setProfileError] = useState<string | null>(null);
 
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+  const [filters, setFilters] = useState<{
+    type?: string;
+    alumni?: boolean;
+  }>({});
 
   // Use ref to store latest loadVolunteers to avoid dependency issues
   const loadVolunteersRef = useRef<(() => Promise<void>) | undefined>(
@@ -82,22 +110,37 @@ export default function VolunteerList(): ReactElement {
     setError(null);
     setLoading(true);
     try {
-      // Fetch both active and pending volunteers with the same search query
-      const [activeResponse, pendingResponse] = await Promise.all([
-        fetchActiveVolunteers({
-          search: searchQuery,
-          page: activePage,
-          limit,
-        }),
-        fetchPendingInvites({
-          search: searchQuery,
-          page: pendingPage,
-          limit,
-        }),
-      ]);
+      // Fetch active, inactive, and pending volunteers with the same search query and filters
+      const [activeResponse, inactiveResponse, pendingResponse] =
+        await Promise.all([
+          fetchActiveVolunteers({
+            search: searchQuery,
+            page: activePage,
+            limit,
+            type: filters.type,
+            alumni: filters.alumni,
+          }),
+          fetchInactiveVolunteers({
+            search: searchQuery,
+            page: inactivePage,
+            limit,
+            type: filters.type,
+            alumni: filters.alumni,
+          }),
+          fetchPendingInvites({
+            search: searchQuery,
+            page: pendingPage,
+            limit,
+            type: filters.type,
+            alumni: filters.alumni,
+          }),
+        ]);
 
       setActiveVolunteers(activeResponse.volunteers || []);
       setTotalActiveVolunteers(activeResponse.total || 0);
+
+      setInactiveVolunteers(inactiveResponse.volunteers || []);
+      setTotalInactiveVolunteers(inactiveResponse.total || 0);
 
       setPendingInvites(pendingResponse.volunteers || []);
       setTotalPendingInvites(pendingResponse.total || 0);
@@ -112,12 +155,23 @@ export default function VolunteerList(): ReactElement {
       setError("Failed to load volunteers. Please try again later.");
       setActiveVolunteers([]);
       setTotalActiveVolunteers(0);
+      setInactiveVolunteers([]);
+      setTotalInactiveVolunteers(0);
       setPendingInvites([]);
       setTotalPendingInvites(0);
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, activePage, pendingPage, limit, router]);
+  }, [
+    searchQuery,
+    activePage,
+    inactivePage,
+    pendingPage,
+    limit,
+    filters.type,
+    filters.alumni,
+    router,
+  ]);
 
   // Keep ref updated with latest loadVolunteers
   loadVolunteersRef.current = loadVolunteers;
@@ -138,132 +192,328 @@ export default function VolunteerList(): ReactElement {
     };
   }, [searchQuery]);
 
-  // Load immediately when pagination changes (no debounce)
+  // Load immediately when pagination, limit, or filters change (no debounce)
   useEffect(() => {
     if (loadVolunteersRef.current) {
       void loadVolunteersRef.current();
     }
-  }, [activePage, pendingPage]);
+  }, [activePage, inactivePage, pendingPage, limit, filters]);
 
-  const handleSearchChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ): void => {
-    setSearchQuery(event.target.value);
-    // Reset pages when search changes
+  const handleSearchChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>): void => {
+      setSearchQuery(event.target.value);
+      // Reset pages when search changes
+      setActivePage(1);
+      setInactivePage(1);
+      setPendingPage(1);
+    },
+    [],
+  );
+
+  const handleFilterTypeChange = useCallback(
+    (e: SelectChangeEvent<string>): void => {
+      setFilters((prev) => ({
+        ...prev,
+        type: e.target.value || undefined,
+      }));
+      // Reset pages when filters change
+      setActivePage(1);
+      setInactivePage(1);
+      setPendingPage(1);
+    },
+    [],
+  );
+
+  const handleFilterAlumniChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>): void => {
+      setFilters((prev) => ({
+        ...prev,
+        alumni: e.target.checked ? true : undefined,
+      }));
+      // Reset pages when filters change
+      setActivePage(1);
+      setInactivePage(1);
+      setPendingPage(1);
+    },
+    [],
+  );
+
+  const handleClearFilters = useCallback((): void => {
+    setFilters({});
     setActivePage(1);
+    setInactivePage(1);
     setPendingPage(1);
-  };
+  }, []);
+
+  const handleTabChange = useCallback(
+    (_event: React.SyntheticEvent, newValue: number): void => {
+      setCurrentTab(newValue);
+    },
+    [],
+  );
+
+  const handleInactivePageChange = useCallback((newPage: number): void => {
+    setInactivePage(newPage);
+  }, []);
+
+  const handleLimitChange = useCallback((newLimit: number): void => {
+    setLimit(newLimit);
+    // Reset to page 1 when limit changes
+    setActivePage(1);
+    setInactivePage(1);
+    setPendingPage(1);
+  }, []);
 
   const onAddVolunteer = useCallback((): void => {
     setAddModalOpen(true);
   }, []);
 
-  const handleActivePageChange = (newPage: number): void => {
+  const handleActivePageChange = useCallback((newPage: number): void => {
     setActivePage(newPage);
-  };
+  }, []);
 
-  const handlePendingPageChange = (newPage: number): void => {
+  const handlePendingPageChange = useCallback((newPage: number): void => {
     setPendingPage(newPage);
-  };
+  }, []);
 
-  const handleVolunteerClick = async (volunteerId: number): Promise<void> => {
-    setSelectedVolunteerId(volunteerId);
-    setProfileLoading(true);
-    setProfileError(null);
-    try {
-      const data = await fetchVolunteerById(volunteerId);
-      setVolunteerProfile(data);
-    } catch (error) {
-      console.error("Failed to fetch volunteer profile:", error);
-      setProfileError("Failed to load volunteer profile. Please try again.");
-      setVolunteerProfile(null);
-    } finally {
-      setProfileLoading(false);
-    }
-  };
+  const handleVolunteerClick = useCallback(
+    async (volunteerId: number): Promise<void> => {
+      setSelectedVolunteerId(volunteerId);
+      setProfileLoading(true);
+      setProfileError(null);
+      try {
+        const data = await fetchVolunteerById(volunteerId);
+        setVolunteerProfile(data);
+      } catch (error) {
+        console.error("Failed to fetch volunteer profile:", error);
+        setProfileError("Failed to load volunteer profile. Please try again.");
+        setVolunteerProfile(null);
+      } finally {
+        setProfileLoading(false);
+      }
+    },
+    [],
+  );
 
-  const handleCloseModal = (): void => {
+  const handleCloseModal = useCallback((): void => {
     setSelectedVolunteerId(null);
     setVolunteerProfile(null);
     setProfileError(null);
-  };
+  }, []);
 
   return (
-    <Box sx={{ width: "100%", p: 3 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Volunteers
-        </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={onAddVolunteer}
-        >
-          Add Volunteer
-        </Button>
-      </Box>
-
-      <Box sx={{ mb: 3 }}>
-        <TextField
-          fullWidth
-          label="Search volunteers"
-          variant="outlined"
-          value={searchQuery}
-          onChange={handleSearchChange}
-          placeholder="Search by name or email..."
-        />
-      </Box>
+    <Box
+      sx={{
+        width: "100%",
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        p: 3,
+        overflow: "hidden",
+      }}
+    >
+      <Typography
+        variant="h4"
+        component="h1"
+        sx={{
+          mb: 3,
+          flexShrink: 0,
+          fontWeight: 700,
+          letterSpacing: "-0.02em",
+          fontSize: "2rem",
+        }}
+      >
+        Volunteers
+      </Typography>
 
       {error && (
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 3, flexShrink: 0 }}>
           <Alert severity="error">{error}</Alert>
         </Box>
       )}
 
-      {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-          <CircularProgress />
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0,
+          overflow: "hidden",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 3,
+            gap: 2,
+            flexWrap: "wrap",
+            flexShrink: 0,
+          }}
+        >
+          <Tabs
+            value={currentTab}
+            onChange={handleTabChange}
+            aria-label="volunteer tabs"
+            sx={{ flex: 1, minWidth: 0 }}
+          >
+            <Tab label="Active Volunteers" />
+            <Tab label="Inactive Volunteers" />
+            <Tab
+              label={
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <span>Pending Invites</span>
+                  {totalPendingInvites > 0 && (
+                    <Box
+                      sx={{
+                        backgroundColor: "primary.main",
+                        color: "primary.contrastText",
+                        borderRadius: "12px",
+                        px: 1,
+                        py: 0.25,
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        minWidth: "20px",
+                        textAlign: "center",
+                      }}
+                    >
+                      {totalPendingInvites}
+                    </Box>
+                  )}
+                </Box>
+              }
+            />
+          </Tabs>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              flexShrink: 0,
+            }}
+          >
+            <TextField
+              size="small"
+              label="Search"
+              variant="outlined"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              placeholder="Search by name or email..."
+              sx={{ minWidth: 250 }}
+            />
+            <Tooltip title="Filter">
+              <IconButton
+                color="primary"
+                onClick={() => setFilterModalOpen(true)}
+                sx={{
+                  backgroundColor:
+                    Object.keys(filters).length > 0
+                      ? "primary.main"
+                      : "transparent",
+                  color:
+                    Object.keys(filters).length > 0
+                      ? "primary.contrastText"
+                      : "primary.main",
+                  "&:hover": {
+                    backgroundColor:
+                      Object.keys(filters).length > 0
+                        ? "primary.dark"
+                        : "action.hover",
+                  },
+                }}
+              >
+                <FilterListIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Add Volunteer">
+              <IconButton
+                color="primary"
+                onClick={onAddVolunteer}
+                sx={{
+                  backgroundColor: "primary.main",
+                  color: "primary.contrastText",
+                  "&:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                <AddIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
-      ) : (
-        <>
-          {/* Active Volunteers Table */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
-              Active Volunteers
-            </Typography>
+
+        {/* Active Volunteers Tab */}
+        {currentTab === 0 && (
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             <VolunteerTable
               volunteers={activeVolunteers}
               totalVolunteers={totalActiveVolunteers}
               page={activePage}
               limit={limit}
               onPageChange={handleActivePageChange}
-              onLimitChange={(): void => {
-                // Note: keeping limit constant for both tables for simplicity
-              }}
+              onLimitChange={handleLimitChange}
               onVolunteerClick={handleVolunteerClick}
+              loading={loading}
             />
           </Box>
+        )}
 
-          {/* Pending Invites Table */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
-              Pending Invites
-            </Typography>
+        {/* Inactive Volunteers Tab */}
+        {currentTab === 1 && (
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <VolunteerTable
+              volunteers={inactiveVolunteers}
+              totalVolunteers={totalInactiveVolunteers}
+              page={inactivePage}
+              limit={limit}
+              onPageChange={handleInactivePageChange}
+              onLimitChange={handleLimitChange}
+              onVolunteerClick={handleVolunteerClick}
+              loading={loading}
+            />
+          </Box>
+        )}
+
+        {/* Pending Invites Tab */}
+        {currentTab === 2 && (
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             <PendingInvitesTable
               volunteers={pendingInvites}
               totalVolunteers={totalPendingInvites}
               page={pendingPage}
               limit={limit}
               onPageChange={handlePendingPageChange}
-              onLimitChange={(): void => {
-                // Note: keeping limit constant for both tables for simplicity
-              }}
+              onLimitChange={handleLimitChange}
               onVolunteerClick={handleVolunteerClick}
+              onRefresh={loadVolunteers}
+              loading={loading}
             />
           </Box>
-        </>
-      )}
+        )}
+      </Box>
 
       {/* Profile modal opens when a volunteer row is clicked */}
       <Dialog
@@ -298,7 +548,15 @@ export default function VolunteerList(): ReactElement {
           ) : profileError ? (
             <Alert severity="error">{profileError}</Alert>
           ) : volunteerProfile ? (
-            <VolunteerProfile volunteer={volunteerProfile} />
+            <VolunteerProfile
+              volunteer={volunteerProfile}
+              onDelete={() => {
+                setSelectedVolunteerId(null);
+                setVolunteerProfile(null);
+                setProfileError(null);
+                void loadVolunteers();
+              }}
+            />
           ) : null}
         </DialogContent>
       </Dialog>
@@ -309,6 +567,110 @@ export default function VolunteerList(): ReactElement {
           void loadVolunteers();
         }}
       />
+
+      {/* Filter Modal */}
+      <Dialog
+        open={filterModalOpen}
+        onClose={() => setFilterModalOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            pb: 2,
+            pt: 3,
+            px: 3,
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Typography variant="h5" component="div" fontWeight={600}>
+              Filter Volunteers
+            </Typography>
+            <IconButton
+              onClick={() => setFilterModalOpen(false)}
+              sx={{ color: (theme) => theme.palette.grey[500] }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <Divider />
+        <DialogContent sx={{ px: 3, py: 3 }}>
+          <Stack spacing={3}>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
+                Volunteer Type
+              </Typography>
+              <FormControl fullWidth>
+                <InputLabel id="filter-type-label" shrink>
+                  Volunteer Type
+                </InputLabel>
+                <Select
+                  labelId="filter-type-label"
+                  label="Volunteer Type"
+                  value={filters.type || ""}
+                  onChange={handleFilterTypeChange}
+                  displayEmpty
+                  notched
+                >
+                  <MenuItem value="">
+                    <em>All Types</em>
+                  </MenuItem>
+                  <MenuItem value="mentor">Mentor</MenuItem>
+                  <MenuItem value="speaker">Speaker</MenuItem>
+                  <MenuItem value="flexible">Flexible</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Divider />
+
+            <Box>
+              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
+                Additional Filters
+              </Typography>
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={filters.alumni === true}
+                      onChange={handleFilterAlumniChange}
+                    />
+                  }
+                  label="Alumni only"
+                />
+              </FormGroup>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <Divider />
+        <DialogActions sx={{ px: 3, py: 2.5, gap: 1.5 }}>
+          <Button
+            onClick={handleClearFilters}
+            disabled={
+              Object.keys(filters).length === 0 ||
+              (filters.type === undefined && filters.alumni === undefined)
+            }
+          >
+            Clear Filters
+          </Button>
+          <Box sx={{ flex: 1 }} />
+          <Button onClick={() => setFilterModalOpen(false)} variant="contained">
+            Apply Filters
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
