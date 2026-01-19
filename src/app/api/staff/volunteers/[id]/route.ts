@@ -16,6 +16,7 @@ import {
   volunteerHours,
   volunteerRsvps,
 } from "@/db/schema/opportunities";
+import { requireAuth } from "@/utils/auth";
 import handleError from "@/utils/handle-error";
 import { validateAndParseId } from "@/utils/validate-id";
 
@@ -50,6 +51,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    // Require staff or admin role
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { id } = await params;
     const volunteerId = Number.parseInt(id, 10);
 
@@ -169,6 +176,12 @@ export async function GET(
       },
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
@@ -178,6 +191,12 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    // Require staff or admin role
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { id } = await params;
     const volunteerId = validateAndParseId(id);
 
@@ -282,6 +301,12 @@ export async function PUT(
       data: updatedVolunteer[0],
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
@@ -291,6 +316,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    // Require staff or admin role
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { id } = await params;
     const volunteerId = Number(id);
     if (!Number.isFinite(volunteerId)) {
@@ -325,6 +356,12 @@ export async function DELETE(
       data: volunteer[0],
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
