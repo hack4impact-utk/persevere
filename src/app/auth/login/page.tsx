@@ -10,7 +10,16 @@ import { getDashboardRoute } from "@/utils/routes";
 import styles from "./page.module.css";
 
 export default async function LoginPage(): Promise<JSX.Element> {
-  const session = await getServerSession(authOptions);
+  // Handle potential JWT decryption errors gracefully
+  // This can happen if NEXTAUTH_SECRET changed or cookies are corrupted
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch (error) {
+    // If session decryption fails, treat as no session
+    // User will need to log in again
+    session = null;
+  }
 
   if (session) {
     const dashboardRoute = getDashboardRoute(session.user.role);

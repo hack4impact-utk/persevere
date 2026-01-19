@@ -1,6 +1,7 @@
 "use client";
 
-import React, { JSX } from "react";
+import { useSession } from "next-auth/react";
+import React, { JSX, useMemo } from "react";
 
 import BaseSidebar, { NavItem } from "./base-sidebar";
 
@@ -128,17 +129,46 @@ const ChatIcon = (): JSX.Element => (
   </svg>
 );
 
-//staff nav items
-
-const staffNavItems: NavItem[] = [
-  { label: "Dashboard", href: "/staff/dashboard", icon: <DashboardIcon /> },
-  { label: "Calendar", href: "/staff/calendar", icon: <CalendarIcon /> },
-  { label: "Volunteers", href: "/staff/volunteers", icon: <UsersIcon /> },
-  { label: "Onboarding", href: "/staff/onboarding", icon: <DocumentIcon /> },
-  { label: "Analytics", href: "/staff/analytics", icon: <BarChartIcon /> },
-  { label: "Communication", href: "/staff/communications", icon: <ChatIcon /> },
-];
-
 export default function StaffSidebar(): JSX.Element {
-  return <BaseSidebar navItems={staffNavItems} />;
+  const { data: session } = useSession();
+  const user = session?.user as { role?: string } | undefined;
+
+  const isAdmin = user?.role === "admin";
+
+  const navItems: NavItem[] = useMemo(() => {
+    const baseItems: NavItem[] = [
+      { label: "Dashboard", href: "/staff/dashboard", icon: <DashboardIcon /> },
+      { label: "Calendar", href: "/staff/calendar", icon: <CalendarIcon /> },
+      {
+        label: "Onboarding",
+        href: "/staff/onboarding",
+        icon: <DocumentIcon />,
+      },
+      { label: "Analytics", href: "/staff/analytics", icon: <BarChartIcon /> },
+      {
+        label: "Communication",
+        href: "/staff/communications",
+        icon: <ChatIcon />,
+      },
+    ];
+
+    // Admin sees "People" tab, staff sees "Volunteers" tab
+    if (isAdmin) {
+      baseItems.splice(2, 0, {
+        label: "People",
+        href: "/staff/people",
+        icon: <UsersIcon />,
+      });
+    } else {
+      baseItems.splice(2, 0, {
+        label: "Volunteers",
+        href: "/staff/volunteers",
+        icon: <UsersIcon />,
+      });
+    }
+
+    return baseItems;
+  }, [isAdmin]);
+
+  return <BaseSidebar navItems={navItems} />;
 }
