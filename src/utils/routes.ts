@@ -10,7 +10,7 @@
 export function getDashboardRoute(role: string | undefined): string {
   switch (role) {
     case "admin": {
-      return "/admin/dashboard";
+      return "/staff/dashboard";
     }
     case "staff": {
       return "/staff/dashboard";
@@ -30,7 +30,7 @@ export function getDashboardRoute(role: string | undefined): string {
 export function getProfileRoute(role: string | undefined): string {
   switch (role) {
     case "admin": {
-      return "/admin/profile";
+      return "/staff/profile";
     }
     case "staff": {
       return "/staff/profile";
