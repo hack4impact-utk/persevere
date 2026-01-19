@@ -7,7 +7,6 @@ import {
   Alert,
   Box,
   Button,
-  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -15,8 +14,6 @@ import {
   DialogTitle,
   Divider,
   FormControl,
-  FormControlLabel,
-  FormGroup,
   IconButton,
   InputLabel,
   MenuItem,
@@ -39,7 +36,7 @@ import {
 } from "react";
 
 import VolunteerList from "@/components/volunteer-management/volunteer-list";
-import { type Staff } from "./types";
+
 import AddStaffModal from "./staff-add-modal";
 import {
   AuthenticationError,
@@ -48,6 +45,7 @@ import {
   type FetchStaffByIdResult,
 } from "./staff-service";
 import StaffTable from "./staff-table";
+import { type Staff } from "./types";
 
 /**
  * PeopleList
@@ -84,8 +82,9 @@ export default function PeopleList(): ReactElement {
 
   // Staff profile state
   const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
-  const [staffProfile, setStaffProfile] =
-    useState<FetchStaffByIdResult | null>(null);
+  const [staffProfile, setStaffProfile] = useState<FetchStaffByIdResult | null>(
+    null,
+  );
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
 
@@ -96,9 +95,15 @@ export default function PeopleList(): ReactElement {
   }>({});
 
   // Use refs to store latest load functions to avoid dependency issues
-  const loadActiveStaffRef = useRef<(() => Promise<void>) | undefined>(undefined);
-  const loadInactiveStaffRef = useRef<(() => Promise<void>) | undefined>(undefined);
-  const loadPendingStaffRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const loadActiveStaffRef = useRef<(() => Promise<void>) | undefined>(
+    undefined,
+  );
+  const loadInactiveStaffRef = useRef<(() => Promise<void>) | undefined>(
+    undefined,
+  );
+  const loadPendingStaffRef = useRef<(() => Promise<void>) | undefined>(
+    undefined,
+  );
 
   const loadActiveStaff = useCallback(async (): Promise<void> => {
     setStaffError(null);
@@ -227,7 +232,15 @@ export default function PeopleList(): ReactElement {
         void loadPendingStaffRef.current();
       }
     }
-  }, [activeStaffPage, inactiveStaffPage, pendingStaffPage, staffLimit, currentTab, staffTab, staffFilters]);
+  }, [
+    activeStaffPage,
+    inactiveStaffPage,
+    pendingStaffPage,
+    staffLimit,
+    currentTab,
+    staffTab,
+    staffFilters,
+  ]);
 
   const handleSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>): void => {
@@ -271,7 +284,10 @@ export default function PeopleList(): ReactElement {
     (e: SelectChangeEvent<string>): void => {
       setStaffFilters((prev) => ({
         ...prev,
-        role: e.target.value === "" ? undefined : (e.target.value as "admin" | "staff"),
+        role:
+          e.target.value === ""
+            ? undefined
+            : (e.target.value as "admin" | "staff"),
       }));
       setActiveStaffPage(1);
       setInactiveStaffPage(1);

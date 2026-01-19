@@ -164,7 +164,9 @@ export default function AddStaffModal({
       } catch (error) {
         console.error("Error creating staff:", error);
         setSubmitError(
-          error instanceof Error ? error.message : "Failed to create staff member",
+          error instanceof Error
+            ? error.message
+            : "Failed to create staff member",
         );
       } finally {
         setSubmitting(false);
@@ -204,7 +206,10 @@ export default function AddStaffModal({
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
             {submitError && (
-              <Alert severity="error" onClose={(): void => setSubmitError(null)}>
+              <Alert
+                severity="error"
+                onClose={(): void => setSubmitError(null)}
+              >
                 {submitError}
               </Alert>
             )}
@@ -282,7 +287,11 @@ export default function AddStaffModal({
       </Dialog>
 
       {/* Success Dialog */}
-      <Dialog open={successDialogOpen} onClose={handleSuccessClose} maxWidth="sm">
+      <Dialog
+        open={successDialogOpen}
+        onClose={handleSuccessClose}
+        maxWidth="sm"
+      >
         <DialogTitle>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <CheckCircleIcon color="success" />
@@ -291,8 +300,8 @@ export default function AddStaffModal({
         </DialogTitle>
         <DialogContent>
           <Typography variant="body1" gutterBottom>
-            <strong>{successData?.staffName}</strong> has been successfully added
-            to the system.
+            <strong>{successData?.staffName}</strong> has been successfully
+            added to the system.
           </Typography>
 
           <Divider sx={{ my: 2 }} />

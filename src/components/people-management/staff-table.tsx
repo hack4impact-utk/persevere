@@ -240,7 +240,9 @@ export default function StaffTable({
                         gap: 0.5,
                       }}
                     >
-                      <Typography variant="body2">{staffMember.email}</Typography>
+                      <Typography variant="body2">
+                        {staffMember.email}
+                      </Typography>
                       {staffMember.phone && (
                         <Typography variant="body2" color="text.secondary">
                           {staffMember.phone}

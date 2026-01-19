@@ -15,7 +15,7 @@ export default async function LoginPage(): Promise<JSX.Element> {
   let session;
   try {
     session = await getServerSession(authOptions);
-  } catch (error) {
+  } catch {
     // If session decryption fails, treat as no session
     // User will need to log in again
     session = null;
