@@ -47,7 +47,10 @@ export default function StaffProfilePage(): JSX.Element {
           {session.user?.email}
         </Typography>
         <Typography variant="body1" gutterBottom>
-          Role: {session.user?.role} (Staff Member)
+          Role: {session.user?.role}{" "}
+          {session.user?.role === "admin"
+            ? "(Administrator)"
+            : "(Staff Member)"}
         </Typography>
         <Typography variant="body1" gutterBottom>
           Email Verified: {session.user?.isEmailVerified ? "Yes" : "No"}

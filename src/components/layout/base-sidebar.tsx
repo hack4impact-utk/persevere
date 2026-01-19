@@ -22,9 +22,6 @@ export default function BaseSidebar({ navItems }: BaseSidebarProps) {
 
   // Determine dashboard route based on current pathname
   const getDashboardRoute = (): string => {
-    if (pathname?.startsWith("/admin")) {
-      return "/admin/dashboard";
-    }
     if (pathname?.startsWith("/staff")) {
       return "/staff/dashboard";
     }

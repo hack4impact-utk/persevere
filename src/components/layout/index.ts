@@ -5,7 +5,6 @@
  * These components provide consistent navigation and structure across role-specific routes.
  */
 
-export { default as AdminSidebar } from "./admin-sidebar";
 export { default as BaseSidebar, type NavItem } from "./base-sidebar";
 export { default as RoleLayout } from "./role-layout";
 export { default as StaffSidebar } from "./staff-sidebar";
