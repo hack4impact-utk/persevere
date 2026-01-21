@@ -105,3 +105,181 @@ This is an automated message. Please do not reply to this email.
 
   return result;
 }
+
+/**
+ * Sends bulk emails to multiple recipients
+ * @param recipients - Array of email addresses to send to
+ * @param subject - Email subject line
+ * @param body - Email body (HTML and plain text will be the same)
+ * @returns Promise that resolves with results including success count and failures
+ */
+export async function sendBulkEmail(
+  recipients: string[],
+  subject: string,
+  body: string,
+): Promise<{
+  successCount: number;
+  failureCount: number;
+  failures: { email: string; error: string }[];
+}> {
+  if (!resend || !process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY is not configured");
+  }
+
+  const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+
+  // Convert body to plain text (simple HTML stripping)
+  const plainTextBody = body
+    .replaceAll(/<[^>]*>/g, "")
+    .replaceAll("&nbsp;", " ")
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .trim();
+
+  // Wrap body in HTML structure for better email rendering
+  const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin: 20px 0;">
+    ${body}
+  </div>
+</body>
+</html>
+  `;
+
+  const emailText = plainTextBody;
+
+  let successCount = 0;
+  let failureCount = 0;
+  const failures: { email: string; error: string }[] = [];
+
+  // Use Resend batch API: create one email object per recipient, send up to 100 emails per batch call
+  // This gives us privacy (each recipient gets their own email) AND efficiency (one API call)
+  const maxEmailsPerBatch = 100;
+
+  // Create email objects: one per recipient for privacy
+  const emailObjects: {
+    from: string;
+    to: string[];
+    subject: string;
+    html: string;
+    text: string;
+  }[] = [];
+
+  for (const email of recipients) {
+    emailObjects.push({
+      from: fromEmail,
+      to: [email], // One recipient per email object for privacy
+      subject,
+      html: emailHtml,
+      text: emailText,
+    });
+  }
+
+  // Send in batches of up to 100 email objects per API call
+  for (let i = 0; i < emailObjects.length; i += maxEmailsPerBatch) {
+    const batch = emailObjects.slice(i, i + maxEmailsPerBatch);
+
+    try {
+      if (!resend.batch || typeof resend.batch.send !== "function") {
+        console.error("Resend batch API not available");
+        throw new Error("Batch API not available in Resend SDK");
+      }
+
+      const result = await resend.batch.send(batch);
+
+      if (result.error) {
+        console.error("Batch failed:", result.error);
+        // If batch fails, mark all recipients in this batch as failed
+        for (const emailObj of batch) {
+          const email = emailObj.to[0];
+          failureCount++;
+          failures.push({
+            email,
+            error: result.error?.message || "Unknown error",
+          });
+        }
+      } else if (result.data) {
+        // Handle different response structures from Resend batch API
+        // Could be { data: [emailIds] } or { data: { data: [emailIds] } }
+        let emailIds: unknown[];
+        if (Array.isArray(result.data)) {
+          emailIds = result.data;
+        } else if (result.data.data && Array.isArray(result.data.data)) {
+          emailIds = result.data.data;
+        } else {
+          emailIds = batch.map(() => ({ id: "unknown" }));
+        }
+
+        const successfulEmails = emailIds.length;
+        const expectedEmails = batch.length;
+
+        if (successfulEmails === expectedEmails) {
+          // All emails in batch succeeded
+          successCount += successfulEmails;
+        } else {
+          // Partial success - this shouldn't happen but handle it
+          console.error(
+            `Batch partial success: ${successfulEmails}/${expectedEmails} emails sent`,
+          );
+          successCount += successfulEmails;
+          // Mark missing ones as failed (though Resend doesn't tell us which ones)
+          for (let j = successfulEmails; j < expectedEmails; j++) {
+            const email = batch[j].to[0];
+            failureCount++;
+            failures.push({
+              email,
+              error: "Email not included in batch response",
+            });
+          }
+        }
+      } else {
+        // Unexpected response structure
+        console.error("Batch unexpected response structure:", result);
+        for (const emailObj of batch) {
+          const email = emailObj.to[0];
+          failureCount++;
+          failures.push({
+            email,
+            error: "Unexpected response structure from Resend API",
+          });
+        }
+      }
+    } catch (error) {
+      console.error(
+        "Batch failed:",
+        error instanceof Error ? error.message : String(error),
+      );
+      // If batch fails, mark all recipients in this batch as failed
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      for (const emailObj of batch) {
+        const email = emailObj.to[0];
+        failureCount++;
+        failures.push({
+          email,
+          error: errorMessage,
+        });
+      }
+    }
+  }
+
+  if (failureCount > 0) {
+    console.error(
+      `Email sending errors: ${successCount} sent, ${failureCount} failed`,
+    );
+  }
+
+  return {
+    successCount,
+    failureCount,
+    failures,
+  };
+}
