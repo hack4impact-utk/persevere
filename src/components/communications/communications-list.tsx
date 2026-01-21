@@ -136,8 +136,10 @@ export default function CommunicationsList({
 
   const truncateText = useCallback(
     (text: string, maxLength: number): string => {
-      if (text.length <= maxLength) return text;
-      return `${text.slice(0, Math.max(0, maxLength)).trim()}...`;
+      // Strip HTML tags for preview
+      const plainText = text.replaceAll(/<[^>]*>/g, "").trim();
+      if (plainText.length <= maxLength) return plainText;
+      return `${plainText.slice(0, Math.max(0, maxLength)).trim()}...`;
     },
     [],
   );
@@ -177,7 +179,6 @@ export default function CommunicationsList({
           gap: 2,
           flex: 1,
           minHeight: 0,
-          height: 0, // Force flex child to respect height constraints
           overflow: "hidden",
         }}
       >
@@ -189,8 +190,6 @@ export default function CommunicationsList({
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            height: "100%",
-            minHeight: 0,
           }}
         >
           {loading && communications.length === 0 ? (
@@ -292,8 +291,6 @@ export default function CommunicationsList({
             flexDirection: "column",
             overflow: "hidden",
             p: 3,
-            height: "100%",
-            minHeight: 0,
           }}
         >
           {selectedCommunication ? (
@@ -340,20 +337,35 @@ export default function CommunicationsList({
 
               <Divider sx={{ my: 2, flexShrink: 0 }} />
 
-              {/* Body Content */}
+              {/* Body Content - Render HTML from rich text editor */}
               <Box
                 sx={{
                   flex: 1,
                   overflowY: "auto",
                   overflowX: "hidden",
-                  whiteSpace: "pre-wrap",
                   minHeight: 0,
+                  "& p": { margin: "0 0 8px 0" },
+                  "& h1": {
+                    fontSize: "1.75rem",
+                    fontWeight: 600,
+                    margin: "16px 0 8px",
+                  },
+                  "& h2": {
+                    fontSize: "1.5rem",
+                    fontWeight: 600,
+                    margin: "14px 0 6px",
+                  },
+                  "& h3": {
+                    fontSize: "1.25rem",
+                    fontWeight: 600,
+                    margin: "12px 0 4px",
+                  },
+                  "& ul, & ol": { paddingLeft: "24px", margin: "8px 0" },
+                  "& li": { marginBottom: "4px" },
+                  "& a": { color: "#1976d2", textDecoration: "underline" },
                 }}
-              >
-                <Typography variant="body1">
-                  {selectedCommunication.body}
-                </Typography>
-              </Box>
+                dangerouslySetInnerHTML={{ __html: selectedCommunication.body }}
+              />
             </Box>
           ) : (
             <Box

@@ -206,10 +206,19 @@ export async function sendBulkEmail(
             error: result.error?.message || "Unknown error",
           });
         }
-      } else if (result.data && result.data.data) {
-        // Batch API returns nested structure: { data: { data: [emailIds] } }
-        const emailIds = result.data.data;
-        const successfulEmails = Array.isArray(emailIds) ? emailIds.length : 0;
+      } else if (result.data) {
+        // Handle different response structures from Resend batch API
+        // Could be { data: [emailIds] } or { data: { data: [emailIds] } }
+        let emailIds: unknown[];
+        if (Array.isArray(result.data)) {
+          emailIds = result.data;
+        } else if (result.data.data && Array.isArray(result.data.data)) {
+          emailIds = result.data.data;
+        } else {
+          emailIds = batch.map(() => ({ id: "unknown" }));
+        }
+
+        const successfulEmails = emailIds.length;
         const expectedEmails = batch.length;
 
         if (successfulEmails === expectedEmails) {
@@ -233,7 +242,7 @@ export async function sendBulkEmail(
         }
       } else {
         // Unexpected response structure
-        console.error("Batch unexpected response structure");
+        console.error("Batch unexpected response structure:", result);
         for (const emailObj of batch) {
           const email = emailObj.to[0];
           failureCount++;

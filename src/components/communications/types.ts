@@ -4,6 +4,14 @@
 
 export type RecipientType = "volunteers" | "staff" | "both";
 
+export type Attachment = {
+  id: string;
+  file: File;
+  name: string;
+  size: number;
+  type: string;
+};
+
 export type BulkCommunicationLog = {
   id: number;
   senderId: number;

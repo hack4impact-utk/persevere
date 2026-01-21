@@ -16,6 +16,8 @@ type RoleLayoutProps = {
  *
  * Shared layout wrapper that combines a sidebar and header. Used by all
  * role-specific layouts (staff, admin, volunteer) to provide consistent structure.
+ *
+ * Note: overflow is set to "hidden" so each page can control its own scrolling behavior.
  */
 export default function RoleLayout({
   sidebar,
@@ -24,17 +26,34 @@ export default function RoleLayout({
   const { data: session, status } = useSession();
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
       {/* Sidebar */}
       {sidebar}
 
       {/* Main content area */}
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          minWidth: 0,
+        }}
+      >
         {/* Header - shared across all roles */}
         <UserHeader session={session} status={status} />
 
-        {/* Page content */}
-        <Box component="main" sx={{ flex: 1, overflow: "auto" }}>
+        {/* Page content - each page controls its own scrolling */}
+        <Box
+          component="main"
+          sx={{
+            flex: 1,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+          }}
+        >
           {children}
         </Box>
       </Box>
