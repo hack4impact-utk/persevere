@@ -26,13 +26,19 @@ export default function RoleLayout({
   const { data: session, status } = useSession();
 
   return (
-    <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+    <div
+      style={{
+        display: "flex",
+        height: "100vh",
+        overflow: "hidden",
+      }}
+    >
       {/* Sidebar */}
       {sidebar}
 
       {/* Main content area */}
-      <Box
-        sx={{
+      <div
+        style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
@@ -56,7 +62,7 @@ export default function RoleLayout({
         >
           {children}
         </Box>
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }
