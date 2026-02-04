@@ -60,7 +60,7 @@ export async function PUT(
   }
 }
 
-// DELETE: Remove hours record
+// DELETE: Remove hours record (only unverified)
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -78,10 +78,28 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
     }
 
-    // 4. Execute the delete
+    // 4. Check if record exists and is not verified
+    const existingRecord = await db
+      .select()
+      .from(volunteerHours)
+      .where(eq(volunteerHours.id, hourId))
+      .limit(1);
+
+    if (existingRecord.length === 0) {
+      return NextResponse.json({ error: "Record not found" }, { status: 404 });
+    }
+
+    if (existingRecord[0].verifiedAt !== null) {
+      return NextResponse.json(
+        { error: "Cannot delete hours that have already been verified." },
+        { status: 403 },
+      );
+    }
+
+    // 5. Execute the delete
     await db.delete(volunteerHours).where(eq(volunteerHours.id, hourId));
 
-    // 5. Return 204 No Content (standard for successful DELETE)
+    // 6. Return 204 No Content (standard for successful DELETE)
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error("Delete Error:", error);

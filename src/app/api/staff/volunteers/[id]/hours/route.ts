@@ -1,4 +1,4 @@
-import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { and, eq, gte, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import db from "@/db";
@@ -14,15 +14,26 @@ export async function GET(
     const { id } = await params;
     const volunteerId = Number.parseInt(id, 10);
 
+    // Validate volunteer ID
+    if (Number.isNaN(volunteerId)) {
+      return NextResponse.json(
+        { error: "Invalid volunteer ID" },
+        { status: 400 },
+      );
+    }
+
     // Extract query params for filtering
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
+    const verified = searchParams.get("verified");
 
     // Build dynamic filters
     const filters = [eq(volunteerHours.volunteerId, volunteerId)];
     if (startDate) filters.push(gte(volunteerHours.date, new Date(startDate)));
     if (endDate) filters.push(lte(volunteerHours.date, new Date(endDate)));
+    if (verified === "true") filters.push(isNotNull(volunteerHours.verifiedAt));
+    if (verified === "false") filters.push(isNull(volunteerHours.verifiedAt));
 
     // 1. Fetch the list of hour records with opportunity titles
     const hoursRecords = await db
@@ -54,7 +65,8 @@ export async function GET(
       data: hoursRecords,
       totalHours: totalResult[0]?.total || 0,
     });
-  } catch {
+  } catch (error) {
+    console.error("GET Hours Error:", error);
     return NextResponse.json(
       { error: "Failed to fetch hours" },
       { status: 500 },
@@ -70,6 +82,14 @@ export async function POST(
     await requireAuth("staff");
     const { id } = await params;
     const volunteerId = Number.parseInt(id, 10);
+
+    // Validate volunteer ID
+    if (Number.isNaN(volunteerId)) {
+      return NextResponse.json(
+        { error: "Invalid volunteer ID" },
+        { status: 400 },
+      );
+    }
 
     // 2. Parse and validate basic body requirements
     const body = await req.json();
