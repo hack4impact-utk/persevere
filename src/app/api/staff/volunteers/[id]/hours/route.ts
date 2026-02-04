@@ -1,16 +1,18 @@
-import db from "@/db";
-import { volunteerHours, opportunities, volunteers } from "@/db/schema";
-import { requireAuth } from "@/utils/auth";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
+
+import db from "@/db";
+import { opportunities, volunteerHours, volunteers } from "@/db/schema";
+import { requireAuth } from "@/utils/auth";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
-) {
+  { params }: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
   try {
     await requireAuth("staff");
-    const volunteerId = parseInt(params.id);
+    const { id } = await params;
+    const volunteerId = Number.parseInt(id, 10);
 
     // Extract query params for filtering
     const { searchParams } = new URL(req.url);
@@ -33,7 +35,10 @@ export async function GET(
         opportunityTitle: opportunities.title,
       })
       .from(volunteerHours)
-      .leftJoin(opportunities, eq(volunteerHours.opportunityId, opportunities.id))
+      .leftJoin(
+        opportunities,
+        eq(volunteerHours.opportunityId, opportunities.id),
+      )
       .where(and(...filters))
       .orderBy(volunteerHours.date);
 
@@ -49,43 +54,62 @@ export async function GET(
       data: hoursRecords,
       totalHours: totalResult[0]?.total || 0,
     });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch hours" }, { status: 500 });
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to fetch hours" },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
-) {
+  { params }: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
   try {
-    // 1. Auth check (Ensures only staff/admins can log hours for others)
     await requireAuth("staff");
-    const volunteerId = parseInt(params.id);
+    const { id } = await params;
+    const volunteerId = Number.parseInt(id, 10);
 
     // 2. Parse and validate basic body requirements
     const body = await req.json();
     const { opportunityId, date, hours, notes } = body;
 
-    if (!opportunityId || !date || typeof hours !== 'number' || hours <= 0) {
+    if (!opportunityId || !date || typeof hours !== "number" || hours <= 0) {
       return NextResponse.json(
-        { error: "Valid opportunityId, date, and positive hours are required." },
-        { status: 400 }
+        {
+          error: "Valid opportunityId, date, and positive hours are required.",
+        },
+        { status: 400 },
       );
     }
 
     // 3. Validate existence of Volunteer and Opportunity
     // We run these in parallel to keep the API snappy
     const [volunteerExists, opportunityExists] = await Promise.all([
-      db.select().from(volunteers).where(eq(volunteers.id, volunteerId)).limit(1),
-      db.select().from(opportunities).where(eq(opportunities.id, opportunityId)).limit(1),
+      db
+        .select()
+        .from(volunteers)
+        .where(eq(volunteers.id, volunteerId))
+        .limit(1),
+      db
+        .select()
+        .from(opportunities)
+        .where(eq(opportunities.id, opportunityId))
+        .limit(1),
     ]);
 
     if (volunteerExists.length === 0) {
-      return NextResponse.json({ error: "Volunteer not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Volunteer not found" },
+        { status: 404 },
+      );
     }
     if (opportunityExists.length === 0) {
-      return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Opportunity not found" },
+        { status: 404 },
+      );
     }
 
     // 4. Insert the record

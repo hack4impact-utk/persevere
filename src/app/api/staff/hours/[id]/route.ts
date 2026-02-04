@@ -1,18 +1,19 @@
+import { eq } from "drizzle-orm";
+import { NextResponse } from "next/server";
+
 import db from "@/db";
 import { volunteerHours } from "@/db/schema";
 import { requireAuth } from "@/utils/auth";
-import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 
 // PUT: Update or Verify hours
 export async function PUT(
   req: Request,
-  { params }: { params: Promise<{ id: string }> } // Standardize Next.js 15 async params
-) {
+  { params }: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
   try {
     const session = await requireAuth("staff");
     const { id } = await params;
-    const hourId = parseInt(id);
+    const hourId = Number.parseInt(id, 10);
     const body = await req.json();
 
     // 1. Fetch current record to check status
@@ -27,21 +28,20 @@ export async function PUT(
     }
 
     const currentRecord = existingRecord[0];
-    const updateData: any = {};
+    const updateData: Partial<typeof volunteerHours.$inferInsert> = {};
 
     if (body.verify) {
       // Allow verification logic
-      updateData.verifiedBy = session.user.id;
+      updateData.verifiedBy = Number.parseInt(session.user.id, 10);
       updateData.verifiedAt = new Date();
     } else {
-      // 2. CRITICAL FIX: Block edits if already verified
       if (currentRecord.verifiedAt !== null) {
         return NextResponse.json(
           { error: "Cannot edit hours that have already been verified." },
-          { status: 403 } // Forbidden
+          { status: 403 }, // Forbidden
         );
       }
-      
+
       // Only update provided fields
       if (body.hours !== undefined) updateData.hours = body.hours;
       if (body.notes !== undefined) updateData.notes = body.notes;
@@ -62,17 +62,29 @@ export async function PUT(
 
 // DELETE: Remove hours record
 export async function DELETE(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
   try {
+    // 1. Authenticate
     await requireAuth("staff");
-    const hourId = parseInt(params.id);
 
+    // 2. Await the params promise to get the ID
+    const { id } = await params;
+    const hourId = Number.parseInt(id, 10);
+
+    // 3. Validate the ID parsed correctly
+    if (Number.isNaN(hourId)) {
+      return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
+    }
+
+    // 4. Execute the delete
     await db.delete(volunteerHours).where(eq(volunteerHours.id, hourId));
 
+    // 5. Return 204 No Content (standard for successful DELETE)
     return new NextResponse(null, { status: 204 });
   } catch (error) {
+    console.error("Delete Error:", error);
     return NextResponse.json({ error: "Delete failed" }, { status: 500 });
   }
 }
