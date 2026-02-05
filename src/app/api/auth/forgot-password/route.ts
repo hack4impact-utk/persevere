@@ -5,8 +5,8 @@ import { NextResponse } from "next/server";
 
 import db from "@/db";
 import { users, verificationTokens } from "@/db/schema";
-import handleError from "@/utils/handle-error";
 import { sendPasswordResetEmail } from "@/utils/email";
+import handleError from "@/utils/handle-error";
 
 // Token expiration: 1 hour
 const TOKEN_EXPIRATION_MS = 60 * 60 * 1000;
@@ -70,7 +70,8 @@ export async function POST(request: Request): Promise<NextResponse> {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString(),
-        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        errorType:
+          error instanceof Error ? error.constructor.name : typeof error,
       });
       // Still return success to prevent email enumeration
     }
