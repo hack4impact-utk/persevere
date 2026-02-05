@@ -30,10 +30,7 @@ export default withAuth(function middleware(req) {
     );
   }
 
-  // Email verification check for volunteers
-  if (user.role === "volunteer" && !user.isEmailVerified) {
-    return NextResponse.redirect(new URL("/verify-email", req.url));
-  }
+  // Email verification handled on first sign-in (auth-options.ts)
 });
 
 export const config = {
