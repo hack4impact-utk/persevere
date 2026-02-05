@@ -1,5 +1,6 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { JSX, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -150,8 +151,8 @@ export default function LoginForm(): JSX.Element {
               color: "#9ca3af",
             }}
           >
-            <button
-              type="button"
+            <Link
+              href="/auth/forgot-password"
               style={{
                 border: "none",
                 background: "transparent",
@@ -159,10 +160,12 @@ export default function LoginForm(): JSX.Element {
                 margin: 0,
                 color: "#9ca3af",
                 cursor: "pointer",
+                textDecoration: "none",
+                fontSize: "inherit",
               }}
             >
               Forgot Password?
-            </button>
+            </Link>
           </div>
           {errors.password && (
             <span
