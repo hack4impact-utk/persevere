@@ -56,16 +56,39 @@ function ResetPasswordForm(): JSX.Element {
 
   if (!token) {
     return (
-      <div style={{ textAlign: "center" }}>
-        <p style={{ color: "#b91c1c", fontSize: 16, marginBottom: "1rem" }}>
+      <div
+        style={{
+          maxWidth: "420px",
+          margin: "0 auto",
+          textAlign: "center",
+          padding: "2rem 1rem",
+          backgroundColor: "#fef2f2",
+          borderRadius: 12,
+          border: "1px solid #fca5a5",
+        }}
+      >
+        <p
+          style={{
+            color: "#991b1b",
+            fontSize: 16,
+            lineHeight: 1.5,
+            margin: "0 0 1.5rem",
+          }}
+        >
           Invalid reset link. No token provided.
         </p>
         <Link
           href="/auth/forgot-password"
           style={{
-            color: "#3b82f6",
+            display: "inline-block",
+            padding: "0.75rem 1.5rem",
+            borderRadius: 14,
+            backgroundColor: "#3b82f6",
+            color: "#ffffff",
             fontSize: 14,
+            fontWeight: 500,
             textDecoration: "none",
+            transition: "background-color 0.15s ease",
           }}
         >
           Request a new reset link
@@ -78,26 +101,55 @@ function ResetPasswordForm(): JSX.Element {
     return (
       <div
         style={{
+          maxWidth: "420px",
+          margin: "0 auto",
           textAlign: "center",
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem",
+          padding: "2rem 1rem",
+          backgroundColor: "#f0fdf4",
+          borderRadius: 12,
+          border: "1px solid #86efac",
         }}
       >
-        <p style={{ color: "#333", fontSize: 16 }}>
+        <svg
+          style={{
+            width: 48,
+            height: 48,
+            margin: "0 auto 1rem",
+            color: "#16a34a",
+          }}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <p
+          style={{
+            color: "#166534",
+            fontSize: 16,
+            lineHeight: 1.5,
+            margin: "0 0 1.5rem",
+          }}
+        >
           Your password has been reset successfully.
         </p>
         <Link
           href="/auth/login"
           style={{
             display: "inline-block",
+            padding: "0.75rem 1.5rem",
+            borderRadius: 14,
             backgroundColor: "#3b82f6",
             color: "#ffffff",
-            textDecoration: "none",
-            padding: "0.75rem 1.5rem",
-            borderRadius: 999,
+            fontSize: 14,
             fontWeight: 500,
-            fontSize: 16,
+            textDecoration: "none",
+            transition: "background-color 0.15s ease",
           }}
         >
           Go to Login
@@ -107,7 +159,15 @@ function ResetPasswordForm(): JSX.Element {
   }
 
   return (
-    <>
+    <div
+      style={{
+        maxWidth: "420px",
+        margin: "0 auto",
+        display: "flex",
+        flexDirection: "column",
+        gap: "1rem",
+      }}
+    >
       {error && (
         <div
           style={{
@@ -116,7 +176,7 @@ function ResetPasswordForm(): JSX.Element {
             borderRadius: 8,
             padding: "0.75rem 1rem",
             fontSize: 14,
-            marginBottom: "1rem",
+            marginBottom: "0.5rem",
           }}
         >
           {error}
@@ -131,7 +191,19 @@ function ResetPasswordForm(): JSX.Element {
           gap: "1.25rem",
         }}
       >
-        <div>
+        <p
+          style={{
+            color: "#6b7280",
+            fontSize: 14,
+            textAlign: "center",
+            margin: "0 0 0.75rem",
+            lineHeight: 1.5,
+          }}
+        >
+          Enter your new password below. Password must be at least 8 characters.
+        </p>
+
+        <div style={{ textAlign: "left" }}>
           <input
             type="password"
             placeholder="New Password"
@@ -139,11 +211,21 @@ function ResetPasswordForm(): JSX.Element {
             onChange={(e) => setNewPassword(e.target.value)}
             required
             disabled={isLoading}
-            className={styles.input}
+            style={{
+              width: "100%",
+              padding: "1.1rem 1.25rem",
+              fontSize: 16,
+              borderRadius: 14,
+              border: "1px solid #d1d5db",
+              outline: "none",
+              boxSizing: "border-box",
+              backgroundColor: "#ffffff",
+              color: "#111827",
+            }}
           />
         </div>
 
-        <div>
+        <div style={{ textAlign: "left" }}>
           <input
             type="password"
             placeholder="Confirm Password"
@@ -151,28 +233,55 @@ function ResetPasswordForm(): JSX.Element {
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             disabled={isLoading}
-            className={styles.input}
+            style={{
+              width: "100%",
+              padding: "1.1rem 1.25rem",
+              fontSize: 16,
+              borderRadius: 14,
+              border: "1px solid #d1d5db",
+              outline: "none",
+              boxSizing: "border-box",
+              backgroundColor: "#ffffff",
+              color: "#111827",
+            }}
           />
         </div>
 
-        <button type="submit" disabled={isLoading} className={styles.button}>
+        <button
+          type="submit"
+          disabled={isLoading}
+          style={{
+            marginTop: "0.75rem",
+            width: "100%",
+            padding: "1.05rem",
+            borderRadius: 18,
+            border: "none",
+            backgroundColor: isLoading ? "#93c5fd" : "#3b82f6",
+            color: "#ffffff",
+            fontSize: 18,
+            fontWeight: 600,
+            cursor: isLoading ? "default" : "pointer",
+            transition: "background-color 0.15s ease",
+          }}
+        >
           {isLoading ? "Resetting..." : "Reset Password"}
         </button>
       </form>
 
-      <div style={{ textAlign: "center", marginTop: "1rem" }}>
+      <div style={{ textAlign: "center", marginTop: "0.5rem" }}>
         <Link
           href="/auth/login"
           style={{
             color: "#9ca3af",
             fontSize: 12,
             textDecoration: "none",
+            transition: "color 0.15s ease",
           }}
         >
           Back to Login
         </Link>
       </div>
-    </>
+    </div>
   );
 }
 
