@@ -109,7 +109,7 @@ This is an automated message. Please do not reply to this email.
 /**
  * Sends a password reset email with a reset link
  * @param email - User's email address
- * @param token - Password reset token
+ * @param token - Password reset token (UUID)
  * @returns Promise that resolves with Resend response if email is sent successfully
  */
 export async function sendPasswordResetEmail(
@@ -120,7 +120,7 @@ export async function sendPasswordResetEmail(
     throw new Error("RESEND_API_KEY is not configured");
   }
 
-  const resetUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/auth/reset-password?token=${token}`;
+  const resetUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/auth/reset-password?token=${encodeURIComponent(token)}`;
 
   const forgotPasswordEmailHtml = `
 <!DOCTYPE html>
@@ -184,7 +184,6 @@ This is an automated message. Please do not reply to this email.
 
   if (result.error) {
     const errorMessage = result.error.message || JSON.stringify(result.error);
-    console.error("Resend API error:", result.error);
     throw new Error(`Failed to send password reset email: ${errorMessage}`);
   }
 

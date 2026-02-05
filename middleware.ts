@@ -30,6 +30,7 @@ export default withAuth(function middleware(req) {
     );
   }
 
+  // Email verification handled on first sign-in (auth-options.ts)
 });
 
 export const config = {
