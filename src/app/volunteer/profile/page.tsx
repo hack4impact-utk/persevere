@@ -7,12 +7,13 @@ import { JSX } from "react";
 import { useSignOut } from "@/utils/auth-hooks";
 
 /**
- * Volunteer profile page. Protected by middleware.
+ * Volunteer profile page. Protected by layout auth check.
  */
 export default function VolunteerProfilePage(): JSX.Element {
   const { data: session } = useSession();
   const handleSignOut = useSignOut();
 
+  // Layout handles auth redirect - this is just for loading state
   if (!session) {
     return (
       <Box sx={{ padding: "20px", textAlign: "center" }}>
