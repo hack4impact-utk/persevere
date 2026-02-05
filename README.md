@@ -31,17 +31,17 @@ Please have the following VSCode extensions installed:
 Create a `.env` file in the root directory with the following variables:
 
 ```text
-DATABASE_URL=your-database-connection-string
-NEXTAUTH_SECRET=your-generated-secret-here
+DATABASE_URL=<ask lead for credentials>
+NEXTAUTH_SECRET=<generate your own>
 NEXTAUTH_URL=http://localhost:3000
-RESEND_API_KEY=your-resend-api-key (optional, for sending emails)
-RESEND_FROM_EMAIL=noreply@yourdomain.com (optional, defaults to onboarding@resend.dev for testing)
+RESEND_API_KEY=<ask lead for credentials>
+RESEND_FROM_EMAIL=<ask lead for credentials>
 ```
 
 **Setup steps:**
 
-1. Generate your own NextAuth secret: `openssl rand -base64 32`
-2. Contact leadership to get database connection string
+1. Ask your team lead for `DATABASE_URL`, `RESEND_API_KEY`, and `RESEND_FROM_EMAIL`
+2. Generate your own NextAuth secret: `openssl rand -base64 32`
 3. Each developer must use their own unique `NEXTAUTH_SECRET`
 
 **Note:** All developers share the same database for development, but each needs their own `NEXTAUTH_SECRET` to prevent session conflicts.
@@ -60,13 +60,20 @@ The project uses Drizzle ORM with PostgreSQL. Database migrations are automatica
 
 Test credentials for development:
 
-| Role      | Email                | Password       | Type     |
-| --------- | -------------------- | -------------- | -------- |
-| Admin     | `admin@test.com`     | `admin123`     | -        |
-| Staff     | `staff@test.com`     | `staff123`     | -        |
-| Volunteer | `volunteer@test.com` | `volunteer123` | flexible |
+| Role  | Email            | Password   |
+| ----- | ---------------- | ---------- |
+| Admin | `admin@test.com` | `admin123` |
+| Staff | `staff@test.com` | `staff123` |
 
-**Note:** These are test accounts created for development purposes. Each role has different access permissions:
+**Creating yourself as a volunteer:**
+
+1. Log in as staff or admin
+2. Go to Volunteers page → Add Volunteer
+3. Fill in your details and select "No background check required"
+4. Check your email for the welcome email with credentials
+5. Log out and log in with your new volunteer account
+
+**Role permissions:**
 
 - **Admin**: Full system access, can manage all users and settings
 - **Staff**: Can manage volunteers and opportunities, limited admin access

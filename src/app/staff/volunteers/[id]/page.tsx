@@ -1,35 +1,24 @@
 import { eq } from "drizzle-orm";
-import { notFound, redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
+import { notFound } from "next/navigation";
 import { JSX } from "react";
 
-import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import VolunteerProfile from "@/components/volunteer-management/volunteer-profile";
 import db from "@/db";
 import { users, volunteers } from "@/db/schema";
 
-// params not being wrapped as a promise prevented run build from working
+/** Individual volunteer profile page. */
 export default async function VolunteerDetailsPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<JSX.Element> {
   const { id } = await params;
-  const session = await getServerSession(authOptions);
-
-  // Only staff and admin can view volunteer profiles
-  if (!session || !["staff", "admin"].includes(session.user.role)) {
-    redirect("/auth/login");
-  }
-
-  // Get volunteer data from the database
   const volunteerId = Number.parseInt(id, 10);
 
   if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
     notFound();
   }
 
-  // Query volunteer data with user information using the API pattern
   const volunteerWithUser = await db
     .select()
     .from(volunteers)
