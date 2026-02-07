@@ -54,9 +54,7 @@ export default function RoleLayout({
           component="main"
           sx={{
             flex: 1,
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
+            overflow: "auto",
             minHeight: 0,
           }}
         >
