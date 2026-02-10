@@ -92,14 +92,17 @@ export async function GET(request: Request): Promise<NextResponse> {
       return Number(opp.rsvpCount) < opp.maxVolunteers;
     });
 
-    // Calculate spots remaining
-    const opportunitiesWithSpots = availableOpportunities.map((opp) => ({
-      ...opp,
-      spotsRemaining:
-        opp.maxVolunteers === null
-          ? null
-          : opp.maxVolunteers - Number(opp.rsvpCount),
-    }));
+    // Calculate spots remaining; coerce rsvpCount to number here since
+    // SQL COALESCE expressions arrive as strings on the wire despite the sql<number> annotation.
+    const opportunitiesWithSpots = availableOpportunities.map((opp) => {
+      const rsvpCount = Number(opp.rsvpCount);
+      return {
+        ...opp,
+        rsvpCount,
+        spotsRemaining:
+          opp.maxVolunteers === null ? null : opp.maxVolunteers - rsvpCount,
+      };
+    });
 
     return NextResponse.json({ data: opportunitiesWithSpots });
   } catch (error) {
