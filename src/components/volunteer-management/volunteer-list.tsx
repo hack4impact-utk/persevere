@@ -556,6 +556,11 @@ export default function VolunteerList(): ReactElement {
                 setProfileError(null);
                 void loadVolunteers();
               }}
+              onVolunteerUpdated={() => {
+                if (selectedVolunteerId) {
+                  void handleVolunteerClick(selectedVolunteerId);
+                }
+              }}
             />
           ) : null}
         </DialogContent>

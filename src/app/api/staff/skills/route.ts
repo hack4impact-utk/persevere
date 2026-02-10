@@ -37,7 +37,7 @@ export async function GET(): Promise<NextResponse> {
 export async function POST(request: Request): Promise<NextResponse> {
   try {
     const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
+    if (session.user.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
