@@ -27,7 +27,7 @@ export default function RsvpButton({
       const method = isRsvped ? "DELETE" : "POST";
       const res = await fetch(
         `/api/volunteer/opportunities/${opportunityId}/rsvp`,
-        { method }
+        { method },
       );
 
       if (!res.ok) {
@@ -43,7 +43,7 @@ export default function RsvpButton({
     } catch (error) {
       enqueueSnackbar(
         error instanceof Error ? error.message : "Something went wrong",
-        { variant: "error" }
+        { variant: "error" },
       );
     } finally {
       setLoading(false);

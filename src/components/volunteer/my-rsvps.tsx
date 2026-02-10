@@ -1,5 +1,8 @@
 "use client";
 
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import EventIcon from "@mui/icons-material/Event";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
@@ -9,9 +12,6 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import EventIcon from "@mui/icons-material/Event";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
 import { JSX, useCallback, useEffect, useState } from "react";
 
 import RsvpButton from "./rsvp-button";
@@ -19,19 +19,24 @@ import type { RsvpItem, RsvpStatus } from "./types";
 import { formatDate } from "./utils";
 
 function getRsvpStatusColor(
-  status: RsvpStatus
+  status: RsvpStatus,
 ): "success" | "primary" | "error" | "warning" | "default" {
   switch (status) {
-    case "confirmed":
+    case "confirmed": {
       return "primary";
-    case "attended":
+    }
+    case "attended": {
       return "success";
-    case "declined":
+    }
+    case "declined": {
       return "error";
-    case "pending":
+    }
+    case "pending": {
       return "warning";
-    case "no_show":
+    }
+    case "no_show": {
       return "default";
+    }
   }
 }
 
@@ -51,15 +56,15 @@ export default function MyRsvps(): JSX.Element {
           message?: string;
         };
         throw new Error(
-          json.message ?? json.error ?? `Request failed (${res.status})`
+          json.message ?? json.error ?? `Request failed (${res.status})`,
         );
       }
       const json = (await res.json()) as {
         data: { upcoming: RsvpItem[] };
       };
       setUpcoming(json.data.upcoming);
-    } catch (err) {
-      console.error("[MyRsvps] Failed to load RSVPs:", err);
+    } catch (error_) {
+      console.error("[MyRsvps] Failed to load RSVPs:", error_);
       setError("Failed to load your RSVPs.");
     } finally {
       setLoading(false);
@@ -72,16 +77,16 @@ export default function MyRsvps(): JSX.Element {
 
   const handleRsvpChange = useCallback(
     (opportunityId: number, newIsRsvped: boolean): void => {
-      if (!newIsRsvped) {
-        setUpcoming((prev) =>
-          prev.filter((r) => r.opportunityId !== opportunityId)
-        );
-      } else {
+      if (newIsRsvped) {
         // A new RSVP was created — re-fetch to get full details for the new item
         void loadRsvps();
+      } else {
+        setUpcoming((prev) =>
+          prev.filter((r) => r.opportunityId !== opportunityId),
+        );
       }
     },
-    [loadRsvps]
+    [loadRsvps],
   );
 
   return (

@@ -1,5 +1,10 @@
 "use client";
 
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import EventIcon from "@mui/icons-material/Event";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import PeopleIcon from "@mui/icons-material/People";
+import SearchIcon from "@mui/icons-material/Search";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -12,11 +17,6 @@ import InputAdornment from "@mui/material/InputAdornment";
 import Skeleton from "@mui/material/Skeleton";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import EventIcon from "@mui/icons-material/Event";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import PeopleIcon from "@mui/icons-material/People";
-import SearchIcon from "@mui/icons-material/Search";
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useRef, useState } from "react";
 
@@ -43,7 +43,11 @@ function SpotsChip({ opp }: { opp: Opportunity }): JSX.Element {
     );
   }
   return (
-    <Chip label={`${opp.spotsRemaining} spots left`} color="success" size="small" />
+    <Chip
+      label={`${opp.spotsRemaining} spots left`}
+      color="success"
+      size="small"
+    />
   );
 }
 
@@ -180,7 +184,11 @@ function SkeletonGrid(): JSX.Element {
             <Skeleton variant="text" width="80%" sx={{ mb: 1.5 }} />
             <Skeleton variant="text" width="55%" />
             <Skeleton variant="text" width="50%" sx={{ mb: 2 }} />
-            <Skeleton variant="rectangular" height={36} sx={{ borderRadius: 1 }} />
+            <Skeleton
+              variant="rectangular"
+              height={36}
+              sx={{ borderRadius: 1 }}
+            />
           </CardContent>
         </Card>
       ))}
@@ -202,7 +210,7 @@ export default function OpportunitiesPage(): JSX.Element {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const loadOpportunitiesRef = useRef<(() => Promise<void>) | undefined>(
-    undefined
+    undefined,
   );
 
   const loadOpportunities = useCallback(async (): Promise<void> => {
@@ -234,15 +242,19 @@ export default function OpportunitiesPage(): JSX.Element {
         const rsvpsJson = (await rsvpsRes.json()) as {
           data: { all: RsvpItem[] };
         };
-        setRsvpedIds(
-          new Set(rsvpsJson.data.all.map((r) => r.opportunityId))
-        );
+        setRsvpedIds(new Set(rsvpsJson.data.all.map((r) => r.opportunityId)));
       } else {
-        console.error("[OpportunitiesPage] RSVP status fetch failed:", rsvpsRes.status);
+        console.error(
+          "[OpportunitiesPage] RSVP status fetch failed:",
+          rsvpsRes.status,
+        );
         setRsvpWarning(true);
       }
-    } catch (err) {
-      console.error("[OpportunitiesPage] Failed to load opportunities:", err);
+    } catch (error_) {
+      console.error(
+        "[OpportunitiesPage] Failed to load opportunities:",
+        error_,
+      );
       setError("Failed to load opportunities. Please try again.");
       setOpportunities([]);
     } finally {
@@ -258,7 +270,7 @@ export default function OpportunitiesPage(): JSX.Element {
       () => {
         void loadOpportunitiesRef.current?.();
       },
-      search ? 300 : 0
+      search ? 300 : 0,
     );
     return (): void => {
       clearTimeout(timer);
@@ -269,7 +281,11 @@ export default function OpportunitiesPage(): JSX.Element {
     (opportunityId: number, newIsRsvped: boolean): void => {
       setRsvpedIds((prev) => {
         const next = new Set(prev);
-        newIsRsvped ? next.add(opportunityId) : next.delete(opportunityId);
+        if (newIsRsvped) {
+          next.add(opportunityId);
+        } else {
+          next.delete(opportunityId);
+        }
         return next;
       });
       setOpportunities((prev) =>
@@ -281,14 +297,14 @@ export default function OpportunitiesPage(): JSX.Element {
             ...opp,
             rsvpCount: newRsvpCount,
             spotsRemaining:
-              opp.maxVolunteers !== null
-                ? opp.maxVolunteers - newRsvpCount
-                : null,
+              opp.maxVolunteers === null
+                ? null
+                : opp.maxVolunteers - newRsvpCount,
           };
-        })
+        }),
       );
     },
-    []
+    [],
   );
 
   const loadMore = useCallback(async (): Promise<void> => {
@@ -307,9 +323,11 @@ export default function OpportunitiesPage(): JSX.Element {
       setOpportunities((prev) => [...prev, ...json.data]);
       setPage(nextPage);
       setHasMore(json.data.length === LIMIT);
-    } catch (err) {
-      console.error("[OpportunitiesPage] loadMore failed:", err);
-      enqueueSnackbar("Failed to load more opportunities", { variant: "error" });
+    } catch (error_) {
+      console.error("[OpportunitiesPage] loadMore failed:", error_);
+      enqueueSnackbar("Failed to load more opportunities", {
+        variant: "error",
+      });
     } finally {
       setLoadingMore(false);
     }
