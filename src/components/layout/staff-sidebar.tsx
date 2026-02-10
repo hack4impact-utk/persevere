@@ -180,7 +180,7 @@ export default function StaffSidebar(): JSX.Element {
       });
       baseItems.push({
         label: "Settings",
-        href: "/staff/settings/skills",
+        href: "/staff/settings",
         icon: <SettingsIcon />,
       });
     } else {
