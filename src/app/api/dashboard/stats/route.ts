@@ -60,7 +60,7 @@ export async function GET() {
     console.error("GET /api/staff/dashboard/stats error:", error);
     return NextResponse.json(
       { error: "Failed to load staff dashboard stats" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

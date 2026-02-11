@@ -48,14 +48,14 @@ export async function GET(req: NextRequest) {
         .from(volunteerRsvps)
         .innerJoin(
           opportunities,
-          eq(volunteerRsvps.opportunityId, opportunities.id)
+          eq(volunteerRsvps.opportunityId, opportunities.id),
         )
         .where(
           and(
             eq(volunteerRsvps.volunteerId, volunteerId),
             eq(volunteerRsvps.status, "CONFIRMED"),
-            gt(opportunities.startDate, now)
-          )
+            gt(opportunities.startDate, now),
+          ),
         )
         .orderBy(asc(opportunities.startDate)),
 
@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
     console.error("GET /api/volunteer/dashboard error:", error);
     return NextResponse.json(
       { error: "Failed to load volunteer dashboard" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

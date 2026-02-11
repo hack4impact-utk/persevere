@@ -173,4 +173,4 @@ export const volunteerHoursRelations = relations(volunteerHours, ({ one }) => ({
   }),
 }));
 
-export { volunteers };
+export { volunteers } from "./users";
