@@ -43,7 +43,11 @@ next-env.d.ts
 # documentation
 ARCHITECTURE.md
 
-# planning 
+# planning
 /planning
+
+# local files
+*.local
+*.local.*
 
 .vscode/

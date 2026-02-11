@@ -1,31 +1,22 @@
-import { Typography } from "@mui/material";
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import { JSX } from "react";
 
-import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
+import MyRsvps from "@/components/volunteer/my-rsvps";
 
-/**
- * Volunteer Dashboard Page
- *
- * Volunteer dashboard page. Uses volunteer layout (sidebar + header) automatically.
- * This route is protected by middleware.
- */
-export default async function VolunteerDashboardPage(): Promise<JSX.Element> {
-  const session = await getServerSession(authOptions);
-
-  if (!session || session.user.role !== "volunteer") {
-    redirect("/auth/login");
-  }
-
+/** Volunteer dashboard with portal overview. */
+export default function VolunteerDashboardPage(): JSX.Element {
   return (
-    <>
+    <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
         Dashboard
       </Typography>
-      <Typography color="text.secondary">
+      <Typography color="text.secondary" mb={3}>
         Overview of the whole portal.
       </Typography>
-    </>
+      <Box sx={{ maxWidth: 600 }}>
+        <MyRsvps />
+      </Box>
+    </Box>
   );
 }

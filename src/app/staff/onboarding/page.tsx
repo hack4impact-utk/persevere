@@ -1,23 +1,8 @@
 import { Typography } from "@mui/material";
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { JSX } from "react";
 
-import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
-
-/**
- * Staff Onboarding Page
- *
- * Onboarding management page for staff to handle volunteer onboarding processes.
- * This route is protected by middleware.
- */
-export default async function StaffOnboardingPage(): Promise<JSX.Element> {
-  const session = await getServerSession(authOptions);
-
-  if (!session || !["staff", "admin"].includes(session.user.role)) {
-    redirect("/auth/login");
-  }
-
+/** Volunteer onboarding management. */
+export default function StaffOnboardingPage(): JSX.Element {
   return (
     <>
       <Typography variant="h4" gutterBottom>

@@ -7,12 +7,13 @@ import { JSX } from "react";
 import { useSignOut } from "@/utils/auth-hooks";
 
 /**
- * Staff profile page. Protected by middleware.
+ * Staff profile page. Protected by layout auth check.
  */
 export default function StaffProfilePage(): JSX.Element {
   const { data: session } = useSession();
   const handleSignOut = useSignOut();
 
+  // Layout handles auth redirect - this is just for loading state
   if (!session) {
     return (
       <Box sx={{ padding: "20px", textAlign: "center" }}>
