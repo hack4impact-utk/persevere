@@ -46,3 +46,10 @@ export const notificationPreferenceEnum = pgEnum("notification_preference", [
   "both",
   "none",
 ]);
+
+// Bulk communication recipient types
+export const recipientTypeEnum = pgEnum("recipient_type", [
+  "volunteers",
+  "staff",
+  "both",
+]);

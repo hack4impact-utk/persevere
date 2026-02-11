@@ -10,6 +10,7 @@ import BaseSidebar, { type NavItem } from "./base-sidebar";
  */
 const volunteerNavItems: NavItem[] = [
   { label: "Dashboard", href: "/volunteer/dashboard" },
+  { label: "Opportunities", href: "/volunteer/opportunities" },
   { label: "Calendar", href: "/volunteer/calendar" },
   { label: "Onboarding", href: "/volunteer/onboarding" },
   { label: "Hours", href: "/volunteer/hours" },
@@ -22,5 +23,5 @@ const volunteerNavItems: NavItem[] = [
  * via the header profile icon.
  */
 export default function VolunteerSidebar(): JSX.Element {
-  return <BaseSidebar title="Volunteer" navItems={volunteerNavItems} />;
+  return <BaseSidebar navItems={volunteerNavItems} />;
 }

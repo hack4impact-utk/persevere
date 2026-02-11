@@ -1,5 +1,6 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { JSX, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -96,15 +97,6 @@ export default function LoginForm(): JSX.Element {
             type="email"
             placeholder="Email Address"
             disabled={isLoading}
-            style={{
-              width: "100%",
-              padding: "1.1rem 1.25rem",
-              fontSize: 16,
-              borderRadius: 14,
-              border: "1px solid #d1d5db",
-              outline: "none",
-              boxSizing: "border-box",
-            }}
           />
           {errors.email && (
             <span
@@ -127,39 +119,7 @@ export default function LoginForm(): JSX.Element {
             type="password"
             placeholder="Password"
             disabled={isLoading}
-            style={{
-              width: "100%",
-              padding: "1.1rem 1.25rem",
-              fontSize: 16,
-              borderRadius: 14,
-              border: "1px solid #d1d5db",
-              outline: "none",
-              boxSizing: "border-box",
-            }}
           />
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginTop: 6,
-              fontSize: 12,
-              color: "#9ca3af",
-            }}
-          >
-            <button
-              type="button"
-              style={{
-                border: "none",
-                background: "transparent",
-                padding: 0,
-                margin: 0,
-                color: "#9ca3af",
-                cursor: "pointer",
-              }}
-            >
-              Forgot Password?
-            </button>
-          </div>
           {errors.password && (
             <span
               style={{

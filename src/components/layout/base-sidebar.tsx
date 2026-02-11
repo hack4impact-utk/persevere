@@ -1,4 +1,6 @@
 "use client";
+import { title } from "node:process";
+
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -20,16 +22,32 @@ type BaseSidebarProps = {
 export default function BaseSidebar({ navItems }: BaseSidebarProps) {
   const pathname = usePathname();
 
+  // Determine dashboard route based on current pathname
+  const getDashboardRoute = (): string => {
+    if (pathname?.startsWith("/staff")) {
+      return "/staff/dashboard";
+    }
+    if (pathname?.startsWith("/volunteer")) {
+      return "/volunteer/dashboard";
+    }
+    return "/home"; // fallback
+  };
+
   return (
-    <aside className={styles.sidebar}>
-      {/* Logo row */}
-      <div className={styles.logo}>
-        <Image
-          src="/images/perseverelogo.png"
-          alt="Persevere Logo"
-          width={140}
-          height={32}
-        />
+    <aside
+      style={{
+        width: 240,
+        borderRight: "1px solid #e5e7eb",
+        padding: 16,
+        boxSizing: "border-box",
+        position: "sticky",
+        top: 0,
+        height: "100vh",
+        background: "#fafafa",
+      }}
+    >
+      <div style={{ fontWeight: 700, marginBottom: 12, fontSize: 18 }}>
+        {title}
       </div>
 
       {/* Navigation */}

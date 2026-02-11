@@ -172,3 +172,5 @@ export const volunteerHoursRelations = relations(volunteerHours, ({ one }) => ({
     relationName: "VerifiedHours",
   }),
 }));
+
+export { volunteers };

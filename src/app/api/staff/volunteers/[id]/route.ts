@@ -1,9 +1,22 @@
-import { eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import db from "@/db";
-import { users, volunteers } from "@/db/schema";
+import {
+  interests,
+  skills,
+  users,
+  volunteerInterests,
+  volunteers,
+  volunteerSkills,
+} from "@/db/schema";
+import {
+  opportunities,
+  volunteerHours,
+  volunteerRsvps,
+} from "@/db/schema/opportunities";
+import { requireAuth } from "@/utils/auth";
 import handleError from "@/utils/handle-error";
 import { validateAndParseId } from "@/utils/validate-id";
 
@@ -38,6 +51,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    // Require staff or admin role
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { id } = await params;
     const volunteerId = Number.parseInt(id, 10);
 
@@ -61,8 +80,108 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ data: volunteer[0] });
+    // Calculate total hours
+    const hoursResult = await db
+      .select({
+        total: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)`,
+      })
+      .from(volunteerHours)
+      .where(eq(volunteerHours.volunteerId, volunteerId));
+
+    const totalHours =
+      typeof hoursResult[0]?.total === "number" ? hoursResult[0].total : 0;
+
+    // Fetch skills with proficiency levels
+    const volunteerSkillsData = await db
+      .select({
+        skillId: volunteerSkills.skillId,
+        skillName: skills.name,
+        skillDescription: skills.description,
+        skillCategory: skills.category,
+        proficiencyLevel: volunteerSkills.level,
+      })
+      .from(volunteerSkills)
+      .leftJoin(skills, eq(volunteerSkills.skillId, skills.id))
+      .where(eq(volunteerSkills.volunteerId, volunteerId));
+
+    // Fetch interests
+    const volunteerInterestsData = await db
+      .select({
+        interestId: volunteerInterests.interestId,
+        interestName: interests.name,
+        interestDescription: interests.description,
+      })
+      .from(volunteerInterests)
+      .leftJoin(interests, eq(volunteerInterests.interestId, interests.id))
+      .where(eq(volunteerInterests.volunteerId, volunteerId));
+
+    // Fetch recent opportunities (last 5)
+    const recentOpportunities = await db
+      .select({
+        opportunityId: volunteerRsvps.opportunityId,
+        opportunityTitle: opportunities.title,
+        opportunityLocation: opportunities.location,
+        opportunityStartDate: opportunities.startDate,
+        opportunityEndDate: opportunities.endDate,
+        rsvpStatus: volunteerRsvps.status,
+        rsvpAt: volunteerRsvps.rsvpAt,
+        rsvpNotes: volunteerRsvps.notes,
+      })
+      .from(volunteerRsvps)
+      .leftJoin(
+        opportunities,
+        eq(volunteerRsvps.opportunityId, opportunities.id),
+      )
+      .where(eq(volunteerRsvps.volunteerId, volunteerId))
+      .orderBy(desc(volunteerRsvps.rsvpAt))
+      .limit(5);
+
+    // Fetch hours breakdown (last 10 entries)
+    const hoursBreakdown = await db
+      .select({
+        id: volunteerHours.id,
+        opportunityId: volunteerHours.opportunityId,
+        opportunityTitle: opportunities.title,
+        date: volunteerHours.date,
+        hours: volunteerHours.hours,
+        notes: volunteerHours.notes,
+        verifiedAt: volunteerHours.verifiedAt,
+      })
+      .from(volunteerHours)
+      .leftJoin(
+        opportunities,
+        eq(volunteerHours.opportunityId, opportunities.id),
+      )
+      .where(eq(volunteerHours.volunteerId, volunteerId))
+      .orderBy(desc(volunteerHours.date))
+      .limit(10);
+
+    const volunteerData = volunteer[0];
+    if (!volunteerData) {
+      return NextResponse.json(
+        { message: "Volunteer not found" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({
+      data: {
+        volunteers: volunteerData.volunteers,
+        users: volunteerData.users,
+        totalHours,
+        skills: volunteerSkillsData,
+        interests: volunteerInterestsData,
+        recentOpportunities,
+        hoursBreakdown,
+      },
+    });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
@@ -72,6 +191,12 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    // Require staff or admin role
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { id } = await params;
     const volunteerId = validateAndParseId(id);
 
@@ -176,6 +301,12 @@ export async function PUT(
       data: updatedVolunteer[0],
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
@@ -185,6 +316,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    // Require staff or admin role
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { id } = await params;
     const volunteerId = Number(id);
     if (!Number.isFinite(volunteerId)) {
@@ -219,6 +356,12 @@ export async function DELETE(
       data: volunteer[0],
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

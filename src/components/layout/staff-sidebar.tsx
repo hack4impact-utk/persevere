@@ -1,144 +1,28 @@
 "use client";
-
 import React, { JSX } from "react";
 
 import BaseSidebar, { NavItem } from "./base-sidebar";
 
-//the icons for the side bar
-
-const DashboardIcon = (): JSX.Element => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <rect
-      x="3"
-      y="3"
-      width="8"
-      height="8"
-      rx="1.5"
-      stroke="white"
-      strokeWidth="2"
-    />
-    <rect
-      x="13"
-      y="3"
-      width="8"
-      height="5"
-      rx="1.5"
-      stroke="white"
-      strokeWidth="2"
-    />
-    <rect
-      x="13"
-      y="10"
-      width="8"
-      height="11"
-      rx="1.5"
-      stroke="white"
-      strokeWidth="2"
-    />
-    <rect
-      x="3"
-      y="13"
-      width="8"
-      height="8"
-      rx="1.5"
-      stroke="white"
-      strokeWidth="2"
-    />
-  </svg>
-);
-
-const CalendarIcon = (): JSX.Element => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <rect
-      x="3"
-      y="5"
-      width="18"
-      height="16"
-      rx="2"
-      stroke="white"
-      strokeWidth="2"
-    />
-    <path
-      d="M8 3v4M16 3v4M3 10h18"
-      stroke="white"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-const UsersIcon = (): JSX.Element => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <circle cx="9" cy="8" r="3" stroke="white" strokeWidth="2" />
-    <path
-      d="M3 19c0-3 2.5-5 6-5"
-      stroke="white"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <circle cx="18" cy="9" r="2.5" stroke="white" strokeWidth="2" />
-    <path
-      d="M15.5 17.5c1-.8 2.1-1.2 3.5-1.2 1.4 0 2.5.4 3.5 1.2"
-      stroke="white"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-const DocumentIcon = (): JSX.Element => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"
-      stroke="white"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M14 3v5h5"
-      stroke="white"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const BarChartIcon = (): JSX.Element => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M4 20V9M10 20V4M16 20v-7M3 20h18"
-      stroke="white"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-const ChatIcon = (): JSX.Element => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M5 20l1.5-3H7a8 8 0 1 1 0-16h6a5 5 0 0 1 5 5v4a8 8 0 0 1-8 8H8"
-      stroke="white"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-//staff nav items
-
+/**
+ * Staff navigation items
+ *
+ * Ordered by usage frequency. Profile access is via header icon, not sidebar.
+ */
 const staffNavItems: NavItem[] = [
-  { label: "Dashboard", href: "/staff/dashboard", icon: <DashboardIcon /> },
-  { label: "Calendar", href: "/staff/calendar", icon: <CalendarIcon /> },
-  { label: "Volunteers", href: "/staff/volunteers", icon: <UsersIcon /> },
-  { label: "Onboarding", href: "/staff/onboarding", icon: <DocumentIcon /> },
-  { label: "Analytics", href: "/staff/analytics", icon: <BarChartIcon /> },
-  { label: "Communication", href: "/staff/communications", icon: <ChatIcon /> },
+  { label: "Dashboard", href: "/staff/dashboard" },
+  { label: "Calendar", href: "/staff/calendar" },
+  { label: "Communications", href: "/staff/communications" },
+  { label: "Volunteers", href: "/staff/volunteers" },
+  { label: "Onboarding", href: "/staff/onboarding" },
+  { label: "Analytics", href: "/staff/analytics" },
 ];
 
+/**
+ * StaffSidebar
+ *
+ * Sidebar navigation for staff routes. Uses BaseSidebar with staff-specific
+ * navigation items. Profile is accessible via the header profile icon.
+ */
 export default function StaffSidebar(): JSX.Element {
-  return <BaseSidebar navItems={staffNavItems} />;
+  return <BaseSidebar title="Staff" navItems={staffNavItems} />;
 }

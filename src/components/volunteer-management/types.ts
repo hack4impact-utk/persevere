@@ -9,6 +9,15 @@ export type Volunteer = {
   volunteerType?: string;
   isActive: boolean;
   isEmailVerified: boolean;
+  backgroundCheckStatus?:
+    | "not_required"
+    | "pending"
+    | "approved"
+    | "rejected"
+    | null;
+  isAlumni?: boolean;
+  totalHours?: number;
+  profilePicture?: string | null;
 };
 
 export type VolunteersResponse = {
@@ -25,4 +34,5 @@ export type VolunteerFilters = {
   page?: number;
   limit?: number;
   emailVerified?: boolean;
+  isActive?: boolean;
 };

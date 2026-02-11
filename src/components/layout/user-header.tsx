@@ -57,66 +57,10 @@ const UserHeader: React.FC<UserHeaderProps> = ({ session, status }) => {
   };
 
   return (
-    <AppBar
-      position="static"
-      elevation={0}
-      sx={{
-        backgroundColor: "#ffffff",
-        color: "#111827",
-        borderBottom: "1px solid #e5e7eb",
-      }}
-    >
-      <Toolbar
-        sx={{
-          minHeight: 64,
-          px: { xs: 2, sm: 3, md: 4 },
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        {/* Left side: app / section label */}
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{
-            fontSize: 18,
-            fontWeight: 600,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Persevere Portal
-        </Typography>
-
-        {/* Right side: user actions */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-          }}
-        >
-          {/* Optional welcome text on larger screens */}
-          {session?.user?.name && (
-            <Typography
-              variant="body2"
-              sx={{
-                display: { xs: "none", sm: "block" },
-                color: "#4b5563",
-              }}
-            >
-              Hi, <strong>{session.user.name}</strong>
-            </Typography>
-          )}
-
-          {/* Notifications icon */}
-          <IconButton
-            aria-label="notifications"
-            sx={{
-              color: "#4b5563",
-              "&:hover": { color: "#111827" },
-            }}
-          >
+    <AppBar position="static" color="primary" elevation={1}>
+      <Toolbar>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, ml: "auto" }}>
+          <IconButton color="inherit">
             <NotificationsIcon />
           </IconButton>
 

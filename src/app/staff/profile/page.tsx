@@ -7,12 +7,13 @@ import { JSX } from "react";
 import { useSignOut } from "@/utils/auth-hooks";
 
 /**
- * Staff profile page. Protected by middleware.
+ * Staff profile page. Protected by layout auth check.
  */
 export default function StaffProfilePage(): JSX.Element {
   const { data: session } = useSession();
   const handleSignOut = useSignOut();
 
+  // Layout handles auth redirect - this is just for loading state
   if (!session) {
     return (
       <Box sx={{ padding: "20px", textAlign: "center" }}>
@@ -47,7 +48,10 @@ export default function StaffProfilePage(): JSX.Element {
           {session.user?.email}
         </Typography>
         <Typography variant="body1" gutterBottom>
-          Role: {session.user?.role} (Staff Member)
+          Role: {session.user?.role}{" "}
+          {session.user?.role === "admin"
+            ? "(Administrator)"
+            : "(Staff Member)"}
         </Typography>
         <Typography variant="body1" gutterBottom>
           Email Verified: {session.user?.isEmailVerified ? "Yes" : "No"}

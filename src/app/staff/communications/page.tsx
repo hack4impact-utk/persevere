@@ -1,31 +1,14 @@
-import { Typography } from "@mui/material";
-import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { JSX } from "react";
+import { type JSX } from "react";
 
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 
-/**
- * Staff Communications Page
- *
- * Communications management page for staff to handle messaging and communications.
- * This route is protected by middleware.
- */
+import CommunicationsPageWrapper from "./communications-page-wrapper";
+
+/** Messaging and communications management. */
 export default async function StaffCommunicationsPage(): Promise<JSX.Element> {
   const session = await getServerSession(authOptions);
+  const userRole = (session?.user.role as "staff" | "admin") ?? "staff";
 
-  if (!session || !["staff", "admin"].includes(session.user.role)) {
-    redirect("/auth/login");
-  }
-
-  return (
-    <>
-      <Typography variant="h4" gutterBottom>
-        Communications
-      </Typography>
-      <Typography color="text.secondary">
-        Manage messaging and communications with volunteers and stakeholders.
-      </Typography>
-    </>
-  );
+  return <CommunicationsPageWrapper userRole={userRole} />;
 }
