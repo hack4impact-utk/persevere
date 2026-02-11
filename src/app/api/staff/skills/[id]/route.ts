@@ -57,7 +57,7 @@ export async function PUT(
 ): Promise<NextResponse> {
   try {
     const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
+    if (session.user.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -146,7 +146,7 @@ export async function DELETE(
 ): Promise<NextResponse> {
   try {
     const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
+    if (session.user.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -42,7 +42,7 @@ type VolunteerProfileData = {
 };
 
 /**
- * Volunteer profile page. Protected by middleware.
+ * Volunteer profile page. Protected by layout auth check.
  */
 export default function VolunteerProfilePage(): JSX.Element {
   const { data: session } = useSession();
@@ -110,6 +110,7 @@ export default function VolunteerProfilePage(): JSX.Element {
     }
   };
 
+  // Layout handles auth redirect - this is just for loading state
   if (!session) {
     return (
       <Box sx={{ padding: "20px", textAlign: "center" }}>

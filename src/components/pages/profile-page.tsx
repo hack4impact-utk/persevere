@@ -22,6 +22,7 @@ export default function ProfilePage({
   const { data: session } = useSession();
   const handleSignOut = useSignOut();
 
+  // Layout handles auth redirect - this is just for loading state
   if (!session) {
     return (
       <Box sx={{ padding: "20px", textAlign: "center" }}>

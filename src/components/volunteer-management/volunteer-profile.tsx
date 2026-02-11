@@ -33,6 +33,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  IconButton,
   Stack,
   Switch,
   TextField,
@@ -41,6 +42,7 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useState } from "react";
 
+import SkillsModal from "./skills-modal";
 import type { FetchVolunteerByIdResult } from "./volunteer-service";
 
 /**
@@ -52,6 +54,7 @@ import type { FetchVolunteerByIdResult } from "./volunteer-service";
 type VolunteerProfileProps = {
   volunteer: FetchVolunteerByIdResult;
   onDelete?: () => void;
+  onVolunteerUpdated?: () => void;
 };
 
 const getStatusColor = (
@@ -76,12 +79,15 @@ const getStatusLabel = (status: string): string => {
 export default function VolunteerProfile({
   volunteer,
   onDelete,
+  onVolunteerUpdated,
 }: VolunteerProfileProps): JSX.Element {
   const { volunteers: vol, users: user } = volunteer;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [skillsModalOpen, setSkillsModalOpen] = useState(false);
+  const [skillsModalMode, setSkillsModalMode] = useState<
+    "skills" | "interests"
+  >("skills");
   const { enqueueSnackbar } = useSnackbar();
 
   const handleEditVolunteer = useCallback(async (data: {
@@ -618,9 +624,18 @@ export default function VolunteerProfile({
               <CardContent sx={{ p: 2.5 }}>
                 <Box display="flex" alignItems="center" gap={1} mb={2}>
                   <StarIcon color="primary" />
-                  <Typography variant="h6" fontWeight={600}>
+                  <Typography variant="h6" fontWeight={600} sx={{ flex: 1 }}>
                     Skills
                   </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setSkillsModalMode("skills");
+                      setSkillsModalOpen(true);
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
                 </Box>
                 <Divider sx={{ mb: 2 }} />
                 {volunteer.skills && volunteer.skills.length > 0 ? (
@@ -689,9 +704,18 @@ export default function VolunteerProfile({
               <CardContent sx={{ p: 2.5 }}>
                 <Box display="flex" alignItems="center" gap={1} mb={2}>
                   <FavoriteIcon color="primary" />
-                  <Typography variant="h6" fontWeight={600}>
+                  <Typography variant="h6" fontWeight={600} sx={{ flex: 1 }}>
                     Interests
                   </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setSkillsModalMode("interests");
+                      setSkillsModalOpen(true);
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
                 </Box>
                 <Divider sx={{ mb: 2 }} />
                 {volunteer.interests && volunteer.interests.length > 0 ? (
@@ -926,6 +950,28 @@ export default function VolunteerProfile({
           </Button>
         </Box>
       </Stack>
+
+      {/* Skills/Interests Assignment Modal */}
+      <SkillsModal
+        open={skillsModalOpen}
+        onClose={() => setSkillsModalOpen(false)}
+        volunteerId={vol.id}
+        mode={skillsModalMode}
+        currentSkills={
+          volunteer.skills?.map((s) => ({
+            skillId: s.skillId,
+            proficiencyLevel: s.proficiencyLevel,
+          })) || []
+        }
+        currentInterests={
+          volunteer.interests?.map((i) => ({
+            interestId: i.interestId,
+          })) || []
+        }
+        onSaved={() => {
+          if (onVolunteerUpdated) onVolunteerUpdated();
+        }}
+      />
 
       {/* Delete User Confirmation Dialog */}
       <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)}>
