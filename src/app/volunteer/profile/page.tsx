@@ -146,7 +146,12 @@ export default function VolunteerProfilePage(): JSX.Element {
 
   return (
     <Box sx={{ padding: "20px", maxWidth: 900, margin: "0 auto" }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+      >
         <Typography variant="h4">My Profile</Typography>
         {!editMode && (
           <Button
@@ -225,7 +230,11 @@ export default function VolunteerProfilePage(): JSX.Element {
               <>
                 <Divider sx={{ my: 3 }} />
                 <Box>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    gutterBottom
+                  >
                     About Me
                   </Typography>
                   <Typography variant="body1">{user.bio}</Typography>
@@ -236,7 +245,11 @@ export default function VolunteerProfilePage(): JSX.Element {
             {/* Notification Preference */}
             <Divider sx={{ my: 3 }} />
             <Box>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                gutterBottom
+              >
                 Notification Preference
               </Typography>
               <Chip
@@ -254,7 +267,11 @@ export default function VolunteerProfilePage(): JSX.Element {
               <>
                 <Divider sx={{ my: 3 }} />
                 <Box>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    gutterBottom
+                  >
                     Availability
                   </Typography>
                   <Stack spacing={1} mt={1}>
@@ -265,7 +282,11 @@ export default function VolunteerProfilePage(): JSX.Element {
                             <Typography variant="body2" fontWeight={600}>
                               {day.charAt(0).toUpperCase() + day.slice(1)}:
                             </Typography>
-                            <Typography variant="body2" color="text.secondary" ml={2}>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              ml={2}
+                            >
                               {slots.join(", ")}
                             </Typography>
                           </Box>

@@ -76,7 +76,11 @@ export default function AvailabilityEditor({
         <Box />
         {TIME_SLOTS.map((slot) => (
           <Box key={slot} textAlign="center">
-            <Typography variant="caption" fontWeight={600} color="text.secondary">
+            <Typography
+              variant="caption"
+              fontWeight={600}
+              color="text.secondary"
+            >
               {TIME_SLOT_LABELS[slot]}
             </Typography>
           </Box>

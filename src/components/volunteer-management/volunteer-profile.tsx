@@ -84,53 +84,60 @@ export default function VolunteerProfile({
   const [saving, setSaving] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
 
-  const handleEditVolunteer = useCallback(async (data: {
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    phone?: string;
-    bio?: string;
-    isActive?: boolean;
-    volunteerType?: string;
-    isAlumni?: boolean;
-    backgroundCheckStatus?: "not_required" | "pending" | "approved" | "rejected";
-    mediaRelease?: boolean;
-    availability?: Record<string, unknown>;
-    notificationPreference?: "email" | "sms" | "both" | "none";
-  }): Promise<void> => {
-    if (!vol.id) return;
+  const handleEditVolunteer = useCallback(
+    async (data: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      phone?: string;
+      bio?: string;
+      isActive?: boolean;
+      volunteerType?: string;
+      isAlumni?: boolean;
+      backgroundCheckStatus?:
+        | "not_required"
+        | "pending"
+        | "approved"
+        | "rejected";
+      mediaRelease?: boolean;
+      availability?: Record<string, unknown>;
+      notificationPreference?: "email" | "sms" | "both" | "none";
+    }): Promise<void> => {
+      if (!vol.id) return;
 
-    setSaving(true);
-    try {
-      const response = await fetch(`/api/staff/volunteers/${vol.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      setSaving(true);
+      try {
+        const response = await fetch(`/api/staff/volunteers/${vol.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to update volunteer");
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to update volunteer");
+        }
+
+        enqueueSnackbar("Volunteer updated successfully", {
+          variant: "success",
+        });
+        setEditModalOpen(false);
+        // Trigger refresh by calling onDelete (which should be renamed to onUpdate)
+        if (onDelete) {
+          onDelete();
+        }
+      } catch (error) {
+        console.error("Failed to update volunteer:", error);
+        enqueueSnackbar(
+          error instanceof Error ? error.message : "Failed to update volunteer",
+          { variant: "error" },
+        );
+      } finally {
+        setSaving(false);
       }
-
-      enqueueSnackbar("Volunteer updated successfully", {
-        variant: "success",
-      });
-      setEditModalOpen(false);
-      // Trigger refresh by calling onDelete (which should be renamed to onUpdate)
-      if (onDelete) {
-        onDelete();
-      }
-    } catch (error) {
-      console.error("Failed to update volunteer:", error);
-      enqueueSnackbar(
-        error instanceof Error ? error.message : "Failed to update volunteer",
-        { variant: "error" },
-      );
-    } finally {
-      setSaving(false);
-    }
-  }, [vol.id, enqueueSnackbar, onDelete]);
+    },
+    [vol.id, enqueueSnackbar, onDelete],
+  );
 
   const handleDeleteUser = useCallback(async (): Promise<void> => {
     if (!vol.id) return;
@@ -980,7 +987,11 @@ type StaffEditVolunteerModalProps = {
     isActive?: boolean;
     volunteerType?: string;
     isAlumni?: boolean;
-    backgroundCheckStatus?: "not_required" | "pending" | "approved" | "rejected";
+    backgroundCheckStatus?:
+      | "not_required"
+      | "pending"
+      | "approved"
+      | "rejected";
     mediaRelease?: boolean;
     availability?: Record<string, unknown>;
     notificationPreference?: "email" | "sms" | "both" | "none";
@@ -1076,7 +1087,9 @@ function StaffEditVolunteerModal({
                 <Select
                   value={formData.volunteerType}
                   label="Volunteer Type"
-                  onChange={(e) => handleChange("volunteerType", e.target.value)}
+                  onChange={(e) =>
+                    handleChange("volunteerType", e.target.value)
+                  }
                 >
                   <MenuItem value="individual">Individual</MenuItem>
                   <MenuItem value="corporate">Corporate</MenuItem>
