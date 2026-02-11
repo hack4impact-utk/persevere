@@ -75,7 +75,7 @@ export default function VolunteerProfilePage(): JSX.Element {
   }, [enqueueSnackbar]);
 
   useEffect(() => {
-    fetchProfile();
+    void fetchProfile();
   }, [fetchProfile]);
 
   const handleSave = async (data: {

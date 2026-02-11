@@ -9,8 +9,8 @@ declare module "next-auth" {
       image?: string;
       role: "volunteer" | "staff" | "admin";
       volunteerType?: "mentor" | "speaker" | "flexible" | null;
+      volunteerId?: number | null;
       isEmailVerified: boolean;
-      // Add other user properties
     };
     expires: string;
   };
@@ -24,6 +24,7 @@ declare module "next-auth/jwt" {
       name: string;
       role: "volunteer" | "staff" | "admin";
       volunteerType?: "mentor" | "speaker" | "flexible" | null;
+      volunteerId?: number | null;
       isEmailVerified: boolean;
     };
     exp?: number;

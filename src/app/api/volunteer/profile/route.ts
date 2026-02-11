@@ -32,7 +32,7 @@ const volunteerSelfUpdateSchema = z.object({
   notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
 });
 
-export async function GET(_request: Request): Promise<NextResponse> {
+export async function GET(): Promise<NextResponse> {
   try {
     // Require volunteer role
     const session = await requireAuth();

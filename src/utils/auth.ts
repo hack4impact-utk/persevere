@@ -3,6 +3,7 @@
  *
  * Server-side authentication helpers. Use these in API routes and server components.
  */
+import type { Session } from "next-auth";
 import { getServerSession as nextAuthGetServerSession } from "next-auth";
 
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
@@ -29,15 +30,7 @@ export async function getServerSession(): Promise<{
  */
 export async function requireAuth(
   role?: "mentor" | "guest_speaker" | "flexible" | "staff" | "admin",
-): Promise<{
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-    isEmailVerified: boolean;
-  };
-}> {
+): Promise<Session> {
   const session = await getServerSession();
 
   if (!session) {

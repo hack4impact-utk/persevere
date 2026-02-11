@@ -21,7 +21,6 @@ import {
   Button,
   Card,
   CardContent,
-  Checkbox,
   Chip,
   Dialog,
   DialogActions,
@@ -1008,12 +1007,12 @@ function StaffEditVolunteerModal({
 }: StaffEditVolunteerModalProps): JSX.Element {
   const { volunteers: vol, users: user } = volunteer;
   const [formData, setFormData] = useState({
-    firstName: user.firstName || "",
-    lastName: user.lastName || "",
-    email: user.email || "",
-    phone: user.phone || "",
-    bio: user.bio || "",
-    isActive: user.isActive ?? true,
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    bio: user?.bio || "",
+    isActive: user?.isActive ?? true,
     volunteerType: vol.volunteerType || "",
     isAlumni: vol.isAlumni || false,
     backgroundCheckStatus: vol.backgroundCheckStatus || "not_required",
