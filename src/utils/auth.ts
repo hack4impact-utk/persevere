@@ -41,5 +41,5 @@ export async function requireAuth(
     throw new Error("Forbidden");
   }
 
-  return session;
+  return session as Session;
 }

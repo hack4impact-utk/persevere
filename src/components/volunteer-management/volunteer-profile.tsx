@@ -29,10 +29,10 @@ import {
   Divider,
   FormControl,
   FormControlLabel,
+  IconButton,
   InputLabel,
   MenuItem,
   Select,
-  IconButton,
   Stack,
   Switch,
   TextField,
@@ -83,6 +83,8 @@ export default function VolunteerProfile({
   const { volunteers: vol, users: user } = volunteer;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [skillsModalOpen, setSkillsModalOpen] = useState(false);
   const [skillsModalMode, setSkillsModalMode] = useState<
     "skills" | "interests"
