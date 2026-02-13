@@ -18,16 +18,6 @@ import {
 } from "@/db/schema/opportunities";
 import { AuthError, requireAuth } from "@/utils/auth";
 
-const DAY_NAMES = [
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-  "sunday",
-] as const;
-
 const timeRangeSchema = z
   .object({
     start: z
@@ -41,13 +31,23 @@ const timeRangeSchema = z
     message: "Start time must be before end time",
   });
 
+// Per-day availability: each day is optional; if present, must be a valid array of ranges.
+// z.record(z.enum(...)) requires ALL enum keys in Zod v4, so use z.object instead.
+const availabilitySchema = z.object({
+  monday: z.array(timeRangeSchema).optional(),
+  tuesday: z.array(timeRangeSchema).optional(),
+  wednesday: z.array(timeRangeSchema).optional(),
+  thursday: z.array(timeRangeSchema).optional(),
+  friday: z.array(timeRangeSchema).optional(),
+  saturday: z.array(timeRangeSchema).optional(),
+  sunday: z.array(timeRangeSchema).optional(),
+});
+
 // Volunteer self-update schema - restricted fields only
 const volunteerSelfUpdateSchema = z.object({
   phone: z.string().max(20).optional(),
   bio: z.string().max(2000).optional(),
-  availability: z
-    .record(z.enum(DAY_NAMES), z.array(timeRangeSchema))
-    .optional(),
+  availability: availabilitySchema.optional(),
   notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
 });
 
