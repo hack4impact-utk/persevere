@@ -39,7 +39,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
-import { JSX, useCallback, useState } from "react";
+import { JSX, useCallback, useEffect, useState } from "react";
 
 import SkillsModal from "./skills-modal";
 import type { FetchVolunteerByIdResult } from "./volunteer-service";
@@ -57,7 +57,13 @@ type VolunteerProfileProps = {
 };
 
 function formatStaffTime(hhmm: string): string {
-  const [h, m] = hhmm.split(":").map(Number);
+  const parts = hhmm.split(":");
+  const h = Number(parts[0]);
+  const m = Number(parts[1]);
+  if (Number.isNaN(h) || Number.isNaN(m)) {
+    console.error("[formatStaffTime] Invalid time string:", hhmm);
+    return hhmm;
+  }
   const period = h < 12 ? "AM" : "PM";
   const hour = h % 12 || 12;
   return m === 0
@@ -130,8 +136,11 @@ export default function VolunteerProfile({
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || "Failed to update volunteer");
+          const body = await response.json().catch(() => ({}));
+          throw new Error(
+            (body as { message?: string }).message ||
+              "Failed to update volunteer",
+          );
         }
 
         enqueueSnackbar("Volunteer updated successfully", {
@@ -1099,9 +1108,34 @@ function StaffEditVolunteerModal({
     notificationPreference: vol.notificationPreference || "email",
   });
 
+  // Re-sync form data whenever the modal opens or volunteer data changes
+  useEffect(() => {
+    if (!open) return;
+    setFormData({
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      email: user?.email || "",
+      phone: user?.phone || "",
+      bio: user?.bio || "",
+      isActive: user?.isActive ?? true,
+      volunteerType: vol.volunteerType || "",
+      isAlumni: vol.isAlumni || false,
+      backgroundCheckStatus: vol.backgroundCheckStatus || "not_required",
+      mediaRelease: vol.mediaRelease || false,
+      notificationPreference: vol.notificationPreference || "email",
+    });
+  }, [open, volunteer]);
+
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
-    await onSave(formData);
+    try {
+      await onSave(formData);
+    } catch (error) {
+      console.error(
+        "[StaffEditVolunteerModal] onSave rejected unexpectedly:",
+        error,
+      );
+    }
   };
 
   const handleChange = (field: string, value: unknown): void => {

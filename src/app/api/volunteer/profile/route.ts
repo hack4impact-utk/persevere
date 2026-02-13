@@ -16,19 +16,38 @@ import {
   volunteerHours,
   volunteerRsvps,
 } from "@/db/schema/opportunities";
-import { requireAuth } from "@/utils/auth";
-import handleError from "@/utils/handle-error";
+import { AuthError, requireAuth } from "@/utils/auth";
 
-const timeRangeSchema = z.object({
-  start: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
-  end: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
-});
+const DAY_NAMES = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+] as const;
+
+const timeRangeSchema = z
+  .object({
+    start: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Invalid time format (HH:MM)"),
+    end: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Invalid time format (HH:MM)"),
+  })
+  .refine((data) => data.start < data.end, {
+    message: "Start time must be before end time",
+  });
 
 // Volunteer self-update schema - restricted fields only
 const volunteerSelfUpdateSchema = z.object({
   phone: z.string().max(20).optional(),
   bio: z.string().max(2000).optional(),
-  availability: z.record(z.string(), z.array(timeRangeSchema)).optional(),
+  availability: z
+    .record(z.enum(DAY_NAMES), z.array(timeRangeSchema))
+    .optional(),
   notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
 });
 
@@ -145,6 +164,15 @@ export async function GET(): Promise<NextResponse> {
         { status: 404 },
       );
     }
+    if (!volunteerData.users) {
+      console.error(
+        `[GET /api/volunteer/profile] Volunteer ${volunteerId} has no associated user record — data integrity issue`,
+      );
+      return NextResponse.json(
+        { message: "Your account data is incomplete. Please contact support." },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({
       data: {
@@ -158,14 +186,15 @@ export async function GET(): Promise<NextResponse> {
       },
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof AuthError) {
+      const status = error.code === "Unauthorized" ? 401 : 403;
+      return NextResponse.json({ error: error.code }, { status });
     }
     console.error("[GET /api/volunteer/profile] Unhandled error:", error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return NextResponse.json(
+      { error: "An unexpected error occurred. Please try again." },
+      { status: 500 },
+    );
   }
 }
 
@@ -226,7 +255,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
       bio?: string;
     } = {};
     const volunteerData: {
-      availability?: Record<string, unknown>;
+      availability?: z.infer<typeof volunteerSelfUpdateSchema>["availability"];
       notificationPreference?: "email" | "sms" | "both" | "none";
     } = {};
 
@@ -240,16 +269,32 @@ export async function PUT(request: Request): Promise<NextResponse> {
 
     // Update both tables sequentially (neon-http doesn't support transactions)
     if (Object.keys(userData).length > 0) {
-      await db
-        .update(users)
-        .set(userData)
-        .where(eq(users.id, volunteer[0].userId));
+      try {
+        await db
+          .update(users)
+          .set(userData)
+          .where(eq(users.id, volunteer[0].userId));
+      } catch (error) {
+        console.error(
+          `[PUT /api/volunteer/profile] Failed updating users table for volunteerId=${volunteerId}:`,
+          error,
+        );
+        throw error;
+      }
     }
     if (Object.keys(volunteerData).length > 0) {
-      await db
-        .update(volunteers)
-        .set(volunteerData)
-        .where(eq(volunteers.id, volunteerId));
+      try {
+        await db
+          .update(volunteers)
+          .set(volunteerData)
+          .where(eq(volunteers.id, volunteerId));
+      } catch (error) {
+        console.error(
+          `[PUT /api/volunteer/profile] PARTIAL WRITE: users table may have been updated but volunteers table failed for volunteerId=${volunteerId}:`,
+          error,
+        );
+        throw error;
+      }
     }
 
     // Fetch updated volunteer data
@@ -264,13 +309,14 @@ export async function PUT(request: Request): Promise<NextResponse> {
       data: updatedVolunteer[0],
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof AuthError) {
+      const status = error.code === "Unauthorized" ? 401 : 403;
+      return NextResponse.json({ error: error.code }, { status });
     }
     console.error("[PUT /api/volunteer/profile] Unhandled error:", error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return NextResponse.json(
+      { error: "An unexpected error occurred. Please try again." },
+      { status: 500 },
+    );
   }
 }

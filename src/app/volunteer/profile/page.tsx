@@ -47,7 +47,13 @@ type VolunteerProfileData = {
 };
 
 function formatTime(hhmm: string): string {
-  const [h, m] = hhmm.split(":").map(Number);
+  const parts = hhmm.split(":");
+  const h = Number(parts[0]);
+  const m = Number(parts[1]);
+  if (Number.isNaN(h) || Number.isNaN(m)) {
+    console.error("[formatTime] Invalid time string:", hhmm);
+    return hhmm;
+  }
   const period = h < 12 ? "AM" : "PM";
   const hour = h % 12 || 12;
   return m === 0
@@ -172,9 +178,9 @@ export default function VolunteerProfilePage(): JSX.Element {
       });
 
       if (!response.ok) {
-        const error = await response.json();
+        const body = await response.json().catch(() => ({}));
         throw new Error(
-          (error as { message?: string }).message || "Failed to update profile",
+          (body as { message?: string }).message || "Failed to update profile",
         );
       }
 

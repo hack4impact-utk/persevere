@@ -1,6 +1,14 @@
 import "next-auth";
 
 declare module "next-auth" {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+  interface User {
+    role: "volunteer" | "staff" | "admin";
+    volunteerType?: "mentor" | "speaker" | "flexible" | null;
+    volunteerId: number | null;
+    isEmailVerified: boolean;
+  }
+
   type Session = {
     user: {
       id: string;
@@ -8,8 +16,8 @@ declare module "next-auth" {
       name: string;
       image?: string;
       role: "volunteer" | "staff" | "admin";
-      volunteerType?: string | null;
-      volunteerId?: number | null;
+      volunteerType?: "mentor" | "speaker" | "flexible" | null;
+      volunteerId: number | null;
       isEmailVerified: boolean;
     };
     expires: string;
@@ -24,8 +32,8 @@ declare module "next-auth/jwt" {
       name: string;
       image?: string;
       role: "volunteer" | "staff" | "admin";
-      volunteerType?: string | null;
-      volunteerId?: number | null;
+      volunteerType?: "mentor" | "speaker" | "flexible" | null;
+      volunteerId: number | null;
       isEmailVerified: boolean;
     };
     exp?: number;

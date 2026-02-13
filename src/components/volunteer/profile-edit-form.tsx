@@ -15,6 +15,7 @@ import { JSX, useState } from "react";
 
 import AvailabilityEditor, {
   type AvailabilityData,
+  validateRanges,
 } from "./availability-editor";
 
 type ProfileData = {
@@ -64,9 +65,17 @@ export default function ProfileEditForm({
     notificationPreference: initialData.notificationPreference || "email",
   });
 
+  const hasAvailabilityErrors = Object.values(formData.availability ?? {}).some(
+    (ranges) => ranges != null && validateRanges(ranges) !== null,
+  );
+
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
-    await onSave(formData);
+    try {
+      await onSave(formData);
+    } catch (error) {
+      console.error("[ProfileEditForm] onSave rejected unexpectedly:", error);
+    }
   };
 
   return (
@@ -169,7 +178,7 @@ export default function ProfileEditForm({
           <Button
             type="submit"
             variant="contained"
-            disabled={loading}
+            disabled={loading || hasAvailabilityErrors}
             sx={{
               bgcolor: "grey.900",
               "&:hover": { bgcolor: "grey.700" },

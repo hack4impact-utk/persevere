@@ -13,12 +13,6 @@ import {
 import { JSX } from "react";
 
 export type TimeRange = { start: string; end: string };
-export type AvailabilityData = Record<string, TimeRange[]>;
-
-type AvailabilityEditorProps = {
-  value: AvailabilityData;
-  onChange: (value: AvailabilityData) => void;
-};
 
 const DAYS = [
   "monday",
@@ -28,7 +22,15 @@ const DAYS = [
   "friday",
   "saturday",
   "sunday",
-];
+] as const;
+
+export type Day = (typeof DAYS)[number];
+export type AvailabilityData = Partial<Record<Day, TimeRange[]>>;
+
+type AvailabilityEditorProps = {
+  value: AvailabilityData;
+  onChange: (value: AvailabilityData) => void;
+};
 
 const DAY_LABELS: Record<string, string> = {
   monday: "Monday",
@@ -42,7 +44,7 @@ const DAY_LABELS: Record<string, string> = {
 
 const DEFAULT_RANGE: TimeRange = { start: "09:00", end: "17:00" };
 
-function validateRanges(ranges: TimeRange[]): string | null {
+export function validateRanges(ranges: TimeRange[]): string | null {
   for (const r of ranges) {
     if (r.start >= r.end) return "Start must be before end";
   }
@@ -63,12 +65,12 @@ export default function AvailabilityEditor({
   value,
   onChange,
 }: AvailabilityEditorProps): JSX.Element {
-  const handleAdd = (day: string): void => {
+  const handleAdd = (day: Day): void => {
     const existing = value[day] ?? [];
     onChange({ ...value, [day]: [...existing, { ...DEFAULT_RANGE }] });
   };
 
-  const handleRemove = (day: string, index: number): void => {
+  const handleRemove = (day: Day, index: number): void => {
     const updated = (value[day] ?? []).filter((_, i) => i !== index);
     if (updated.length === 0) {
       const next = { ...value };
@@ -80,7 +82,7 @@ export default function AvailabilityEditor({
   };
 
   const handleChange = (
-    day: string,
+    day: Day,
     index: number,
     field: "start" | "end",
     val: string,
