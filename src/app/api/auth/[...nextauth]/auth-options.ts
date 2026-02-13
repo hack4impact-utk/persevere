@@ -89,6 +89,7 @@ const authOptions: NextAuthOptions = {
             name: `${user.firstName} ${user.lastName}`,
             role,
             volunteerType,
+            volunteerId: user.volunteer?.id ?? null,
             isEmailVerified,
           };
         } catch (error) {
@@ -101,31 +102,20 @@ const authOptions: NextAuthOptions = {
   callbacks: {
     jwt({ token, user }) {
       if (user) {
+        const u = user as unknown as {
+          role: "volunteer" | "staff" | "admin";
+          volunteerType?: string | null;
+          volunteerId?: number | null;
+          isEmailVerified: boolean;
+        };
         token.user = {
           id: user.id,
           email: user.email || "",
           name: user.name || "",
-          role: (
-            user as unknown as {
-              role: "volunteer" | "staff" | "admin";
-              volunteerType?: "mentor" | "speaker" | "flexible" | null;
-              isEmailVerified: boolean;
-            }
-          ).role,
-          volunteerType: (
-            user as unknown as {
-              role: "volunteer" | "staff" | "admin";
-              volunteerType?: "mentor" | "speaker" | "flexible" | null;
-              isEmailVerified: boolean;
-            }
-          ).volunteerType,
-          isEmailVerified: (
-            user as unknown as {
-              role: "volunteer" | "staff" | "admin";
-              volunteerType?: "mentor" | "speaker" | "flexible" | null;
-              isEmailVerified: boolean;
-            }
-          ).isEmailVerified,
+          role: u.role,
+          volunteerType: u.volunteerType,
+          volunteerId: u.volunteerId ?? null,
+          isEmailVerified: u.isEmailVerified,
         };
         // Set expiration time (30 days from now)
         token.exp = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;

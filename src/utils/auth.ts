@@ -11,15 +11,7 @@ import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 /**
  * Gets the current server session. Returns null if not authenticated.
  */
-export async function getServerSession(): Promise<{
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-    isEmailVerified: boolean;
-  };
-} | null> {
+export async function getServerSession(): Promise<Session | null> {
   return await nextAuthGetServerSession(authOptions);
 }
 
@@ -29,7 +21,7 @@ export async function getServerSession(): Promise<{
  * @throws {Error} "Forbidden" if role doesn't match
  */
 export async function requireAuth(
-  role?: "mentor" | "guest_speaker" | "flexible" | "staff" | "admin",
+  role?: "volunteer" | "staff" | "admin",
 ): Promise<Session> {
   const session = await getServerSession();
 
@@ -41,5 +33,5 @@ export async function requireAuth(
     throw new Error("Forbidden");
   }
 
-  return session as Session;
+  return session;
 }

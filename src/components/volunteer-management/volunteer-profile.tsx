@@ -56,6 +56,15 @@ type VolunteerProfileProps = {
   onVolunteerUpdated?: () => void;
 };
 
+function formatStaffTime(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const period = h < 12 ? "AM" : "PM";
+  const hour = h % 12 || 12;
+  return m === 0
+    ? `${hour} ${period}`
+    : `${hour}:${m.toString().padStart(2, "0")} ${period}`;
+}
+
 const getStatusColor = (
   status: string,
 ): "success" | "warning" | "error" | "default" => {
@@ -129,9 +138,8 @@ export default function VolunteerProfile({
           variant: "success",
         });
         setEditModalOpen(false);
-        // Trigger refresh by calling onDelete (which should be renamed to onUpdate)
-        if (onDelete) {
-          onDelete();
+        if (onVolunteerUpdated) {
+          onVolunteerUpdated();
         }
       } catch (error) {
         console.error("Failed to update volunteer:", error);
@@ -143,7 +151,7 @@ export default function VolunteerProfile({
         setSaving(false);
       }
     },
-    [vol.id, enqueueSnackbar, onDelete],
+    [vol.id, enqueueSnackbar, onVolunteerUpdated],
   );
 
   const handleDeleteUser = useCallback(async (): Promise<void> => {
@@ -223,8 +231,8 @@ export default function VolunteerProfile({
               >
                 {!user.profilePicture && (
                   <>
-                    {user.firstName[0]}
-                    {user.lastName[0]}
+                    {user.firstName?.[0]}
+                    {user.lastName?.[0]}
                   </>
                 )}
               </Avatar>
@@ -450,17 +458,40 @@ export default function VolunteerProfile({
                   </Typography>
                 </Box>
                 <Divider sx={{ mb: 2 }} />
-                <Box display="flex" gap={1} flexWrap="wrap">
-                  {vol.availability && Array.isArray(vol.availability) ? (
-                    (vol.availability as string[]).map((time: string) => (
-                      <Chip
-                        key={time}
-                        label={time}
-                        variant="outlined"
-                        size="small"
-                        sx={{ fontWeight: 500 }}
-                      />
-                    ))
+                <Box display="flex" flexDirection="column" gap={0.5}>
+                  {vol.availability &&
+                  typeof vol.availability === "object" &&
+                  !Array.isArray(vol.availability) &&
+                  Object.keys(vol.availability).length > 0 ? (
+                    Object.entries(
+                      vol.availability as Record<
+                        string,
+                        { start: string; end: string }[]
+                      >,
+                    )
+                      .filter(
+                        ([, ranges]) =>
+                          Array.isArray(ranges) && ranges.length > 0,
+                      )
+                      .map(([day, ranges]) => (
+                        <Box key={day} display="flex" gap={1}>
+                          <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            sx={{ width: 90, flexShrink: 0 }}
+                          >
+                            {day.charAt(0).toUpperCase() + day.slice(1)}:
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {ranges
+                              .map(
+                                (r) =>
+                                  `${formatStaffTime(r.start)} – ${formatStaffTime(r.end)}`,
+                              )
+                              .join(", ")}
+                          </Typography>
+                        </Box>
+                      ))
                   ) : (
                     <Typography
                       variant="body2"
