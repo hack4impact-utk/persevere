@@ -19,16 +19,16 @@ import {
 import { requireAuth } from "@/utils/auth";
 import handleError from "@/utils/handle-error";
 
+const timeRangeSchema = z.object({
+  start: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
+  end: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
+});
+
 // Volunteer self-update schema - restricted fields only
 const volunteerSelfUpdateSchema = z.object({
-  phone: z.string().optional(),
-  bio: z.string().optional(),
-  availability: z
-    .record(
-      z.string(),
-      z.union([z.string(), z.array(z.string()), z.boolean(), z.number()]),
-    )
-    .optional(),
+  phone: z.string().max(20).optional(),
+  bio: z.string().max(2000).optional(),
+  availability: z.record(z.string(), z.array(timeRangeSchema)).optional(),
   notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
 });
 
@@ -164,6 +164,7 @@ export async function GET(): Promise<NextResponse> {
     if (error instanceof Error && error.message === "Forbidden") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    console.error("[GET /api/volunteer/profile] Unhandled error:", error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
@@ -185,7 +186,15 @@ export async function PUT(request: Request): Promise<NextResponse> {
       );
     }
 
-    const json = await request.json();
+    let json: unknown;
+    try {
+      json = await request.json();
+    } catch {
+      return NextResponse.json(
+        { message: "Invalid request body: expected JSON" },
+        { status: 400 },
+      );
+    }
 
     // Validate the request body with restricted fields
     const result = volunteerSelfUpdateSchema.safeParse(json);
@@ -229,15 +238,13 @@ export async function PUT(request: Request): Promise<NextResponse> {
     if (data.notificationPreference !== undefined)
       volunteerData.notificationPreference = data.notificationPreference;
 
-    // Update user table if there are user fields
+    // Update both tables sequentially (neon-http doesn't support transactions)
     if (Object.keys(userData).length > 0) {
       await db
         .update(users)
         .set(userData)
         .where(eq(users.id, volunteer[0].userId));
     }
-
-    // Update volunteer table if there are volunteer fields
     if (Object.keys(volunteerData).length > 0) {
       await db
         .update(volunteers)
@@ -263,6 +270,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
     if (error instanceof Error && error.message === "Forbidden") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    console.error("[PUT /api/volunteer/profile] Unhandled error:", error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
