@@ -1061,6 +1061,20 @@ export default function VolunteerProfile({
   );
 }
 
+function StaffSectionLabel({ children }: { children: string }): JSX.Element {
+  return (
+    <Typography
+      variant="caption"
+      fontWeight={700}
+      letterSpacing={0.8}
+      color="text.secondary"
+      sx={{ textTransform: "uppercase", display: "block", mb: 1.5 }}
+    >
+      {children}
+    </Typography>
+  );
+}
+
 type StaffEditVolunteerModalProps = {
   open: boolean;
   onClose: () => void;
@@ -1103,9 +1117,7 @@ function StaffEditVolunteerModal({
     isActive: user?.isActive ?? true,
     volunteerType: vol.volunteerType || "",
     isAlumni: vol.isAlumni || false,
-    backgroundCheckStatus: vol.backgroundCheckStatus || "not_required",
     mediaRelease: vol.mediaRelease || false,
-    notificationPreference: vol.notificationPreference || "email",
   });
 
   // Re-sync form data whenever the modal opens or volunteer data changes
@@ -1120,9 +1132,7 @@ function StaffEditVolunteerModal({
       isActive: user?.isActive ?? true,
       volunteerType: vol.volunteerType || "",
       isAlumni: vol.isAlumni || false,
-      backgroundCheckStatus: vol.backgroundCheckStatus || "not_required",
       mediaRelease: vol.mediaRelease || false,
-      notificationPreference: vol.notificationPreference || "email",
     });
   }, [open, volunteer]);
 
@@ -1143,58 +1153,73 @@ function StaffEditVolunteerModal({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit}>
         <DialogTitle>Edit Volunteer Profile</DialogTitle>
         <DialogContent>
-          <Stack spacing={3} sx={{ mt: 2 }}>
-            {/* Name Fields */}
-            <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+          <Stack spacing={4} sx={{ mt: 2 }}>
+            {/* ── Identity ─────────────────────────────────── */}
+            <Box>
+              <StaffSectionLabel>Identity</StaffSectionLabel>
+              <Stack spacing={2}>
+                <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                  <TextField
+                    label="First Name"
+                    value={formData.firstName}
+                    onChange={(e) => handleChange("firstName", e.target.value)}
+                    required
+                    disabled={saving}
+                    size="small"
+                  />
+                  <TextField
+                    label="Last Name"
+                    value={formData.lastName}
+                    onChange={(e) => handleChange("lastName", e.target.value)}
+                    required
+                    disabled={saving}
+                    size="small"
+                  />
+                </Box>
+                <TextField
+                  label="Email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleChange("email", e.target.value)}
+                  required
+                  disabled={saving}
+                  size="small"
+                  fullWidth
+                />
+                <TextField
+                  label="Phone"
+                  value={formData.phone}
+                  onChange={(e) => handleChange("phone", e.target.value)}
+                  disabled={saving}
+                  size="small"
+                  fullWidth
+                />
+              </Stack>
+            </Box>
+
+            {/* ── About Me ─────────────────────────────────── */}
+            <Box>
+              <StaffSectionLabel>About Me</StaffSectionLabel>
               <TextField
-                label="First Name"
-                value={formData.firstName}
-                onChange={(e) => handleChange("firstName", e.target.value)}
-                required
+                label="Bio"
+                value={formData.bio}
+                onChange={(e) => handleChange("bio", e.target.value)}
+                multiline
+                rows={3}
                 disabled={saving}
-              />
-              <TextField
-                label="Last Name"
-                value={formData.lastName}
-                onChange={(e) => handleChange("lastName", e.target.value)}
-                required
-                disabled={saving}
+                size="small"
+                fullWidth
               />
             </Box>
 
-            {/* Contact Information */}
-            <TextField
-              label="Email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleChange("email", e.target.value)}
-              required
-              disabled={saving}
-            />
-            <TextField
-              label="Phone"
-              value={formData.phone}
-              onChange={(e) => handleChange("phone", e.target.value)}
-              disabled={saving}
-            />
-
-            {/* Bio */}
-            <TextField
-              label="Bio"
-              value={formData.bio}
-              onChange={(e) => handleChange("bio", e.target.value)}
-              multiline
-              rows={3}
-              disabled={saving}
-            />
-
-            {/* Status and Type */}
-            <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
-              <FormControl fullWidth disabled={saving}>
+            {/* ── Role ─────────────────────────────────────── */}
+            <Box>
+              <StaffSectionLabel>Role</StaffSectionLabel>
+              <FormControl fullWidth disabled={saving} size="small">
                 <InputLabel>Volunteer Type</InputLabel>
                 <Select
                   value={formData.volunteerType}
@@ -1203,90 +1228,81 @@ function StaffEditVolunteerModal({
                     handleChange("volunteerType", e.target.value)
                   }
                 >
-                  <MenuItem value="individual">Individual</MenuItem>
-                  <MenuItem value="corporate">Corporate</MenuItem>
-                  <MenuItem value="group">Group</MenuItem>
-                  <MenuItem value="student">Student</MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormControl fullWidth disabled={saving}>
-                <InputLabel>Background Check</InputLabel>
-                <Select
-                  value={formData.backgroundCheckStatus}
-                  label="Background Check"
-                  onChange={(e) =>
-                    handleChange("backgroundCheckStatus", e.target.value)
-                  }
-                >
-                  <MenuItem value="not_required">Not Required</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="approved">Approved</MenuItem>
-                  <MenuItem value="rejected">Rejected</MenuItem>
+                  <MenuItem value="mentor">Mentor</MenuItem>
+                  <MenuItem value="speaker">Speaker</MenuItem>
+                  <MenuItem value="flexible">Flexible</MenuItem>
                 </Select>
               </FormControl>
             </Box>
 
-            {/* Notification Preference */}
-            <FormControl fullWidth disabled={saving}>
-              <InputLabel>Notification Preference</InputLabel>
-              <Select
-                value={formData.notificationPreference}
-                label="Notification Preference"
-                onChange={(e) =>
-                  handleChange("notificationPreference", e.target.value)
-                }
-              >
-                <MenuItem value="email">Email</MenuItem>
-                <MenuItem value="sms">SMS</MenuItem>
-                <MenuItem value="both">Both</MenuItem>
-                <MenuItem value="none">None</MenuItem>
-              </Select>
-            </FormControl>
-
-            {/* Boolean Toggles */}
+            {/* ── Account ──────────────────────────────────── */}
             <Box>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.isActive}
-                    onChange={(e) => handleChange("isActive", e.target.checked)}
-                    disabled={saving}
-                  />
-                }
-                label="Account Active"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.isAlumni}
-                    onChange={(e) => handleChange("isAlumni", e.target.checked)}
-                    disabled={saving}
-                  />
-                }
-                label="Alumni Status"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.mediaRelease}
-                    onChange={(e) =>
-                      handleChange("mediaRelease", e.target.checked)
-                    }
-                    disabled={saving}
-                  />
-                }
-                label="Media Release Signed"
-              />
+              <StaffSectionLabel>Account</StaffSectionLabel>
+              <Stack>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.isActive}
+                      onChange={(e) =>
+                        handleChange("isActive", e.target.checked)
+                      }
+                      disabled={saving}
+                    />
+                  }
+                  label="Account Active"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.isAlumni}
+                      onChange={(e) =>
+                        handleChange("isAlumni", e.target.checked)
+                      }
+                      disabled={saving}
+                    />
+                  }
+                  label="Alumni Status"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.mediaRelease}
+                      onChange={(e) =>
+                        handleChange("mediaRelease", e.target.checked)
+                      }
+                      disabled={saving}
+                    />
+                  }
+                  label="Media Release Signed"
+                />
+              </Stack>
             </Box>
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose} disabled={saving}>
+          <Button
+            onClick={onClose}
+            disabled={saving}
+            variant="outlined"
+            sx={{
+              borderColor: "grey.300",
+              color: "text.secondary",
+              "&:hover": { borderColor: "grey.500" },
+            }}
+          >
             Cancel
           </Button>
-          <Button type="submit" variant="contained" disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={saving}
+            sx={{
+              bgcolor: "grey.900",
+              "&:hover": { bgcolor: "grey.700" },
+              fontWeight: 600,
+            }}
+          >
+            {saving ? "Saving…" : "Save changes"}
           </Button>
         </DialogActions>
       </form>
