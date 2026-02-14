@@ -27,12 +27,19 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  FormControl,
+  FormControlLabel,
   IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
+  Switch,
+  TextField,
   Typography,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
-import { JSX, useCallback, useState } from "react";
+import { JSX, useCallback, useEffect, useState } from "react";
 
 import SkillsModal from "./skills-modal";
 import type { FetchVolunteerByIdResult } from "./volunteer-service";
@@ -48,6 +55,21 @@ type VolunteerProfileProps = {
   onDelete?: () => void;
   onVolunteerUpdated?: () => void;
 };
+
+function formatStaffTime(hhmm: string): string {
+  const parts = hhmm.split(":");
+  const h = Number(parts[0]);
+  const m = Number(parts[1]);
+  if (Number.isNaN(h) || Number.isNaN(m)) {
+    console.error("[formatStaffTime] Invalid time string:", hhmm);
+    return hhmm;
+  }
+  const period = h < 12 ? "AM" : "PM";
+  const hour = h % 12 || 12;
+  return m === 0
+    ? `${hour} ${period}`
+    : `${hour}:${m.toString().padStart(2, "0")} ${period}`;
+}
 
 const getStatusColor = (
   status: string,
@@ -76,11 +98,70 @@ export default function VolunteerProfile({
   const { volunteers: vol, users: user } = volunteer;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [skillsModalOpen, setSkillsModalOpen] = useState(false);
   const [skillsModalMode, setSkillsModalMode] = useState<
     "skills" | "interests"
   >("skills");
   const { enqueueSnackbar } = useSnackbar();
+
+  const handleEditVolunteer = useCallback(
+    async (data: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      phone?: string;
+      bio?: string;
+      isActive?: boolean;
+      volunteerType?: string;
+      isAlumni?: boolean;
+      backgroundCheckStatus?:
+        | "not_required"
+        | "pending"
+        | "approved"
+        | "rejected";
+      mediaRelease?: boolean;
+      availability?: Record<string, unknown>;
+      notificationPreference?: "email" | "sms" | "both" | "none";
+    }): Promise<void> => {
+      if (!vol.id) return;
+
+      setSaving(true);
+      try {
+        const response = await fetch(`/api/staff/volunteers/${vol.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(
+            (body as { message?: string }).message ||
+              "Failed to update volunteer",
+          );
+        }
+
+        enqueueSnackbar("Volunteer updated successfully", {
+          variant: "success",
+        });
+        setEditModalOpen(false);
+        if (onVolunteerUpdated) {
+          onVolunteerUpdated();
+        }
+      } catch (error) {
+        console.error("Failed to update volunteer:", error);
+        enqueueSnackbar(
+          error instanceof Error ? error.message : "Failed to update volunteer",
+          { variant: "error" },
+        );
+      } finally {
+        setSaving(false);
+      }
+    },
+    [vol.id, enqueueSnackbar, onVolunteerUpdated],
+  );
 
   const handleDeleteUser = useCallback(async (): Promise<void> => {
     if (!vol.id) return;
@@ -159,8 +240,8 @@ export default function VolunteerProfile({
               >
                 {!user.profilePicture && (
                   <>
-                    {user.firstName[0]}
-                    {user.lastName[0]}
+                    {user.firstName?.[0]}
+                    {user.lastName?.[0]}
                   </>
                 )}
               </Avatar>
@@ -386,17 +467,40 @@ export default function VolunteerProfile({
                   </Typography>
                 </Box>
                 <Divider sx={{ mb: 2 }} />
-                <Box display="flex" gap={1} flexWrap="wrap">
-                  {vol.availability && Array.isArray(vol.availability) ? (
-                    (vol.availability as string[]).map((time: string) => (
-                      <Chip
-                        key={time}
-                        label={time}
-                        variant="outlined"
-                        size="small"
-                        sx={{ fontWeight: 500 }}
-                      />
-                    ))
+                <Box display="flex" flexDirection="column" gap={0.5}>
+                  {vol.availability &&
+                  typeof vol.availability === "object" &&
+                  !Array.isArray(vol.availability) &&
+                  Object.keys(vol.availability).length > 0 ? (
+                    Object.entries(
+                      vol.availability as Record<
+                        string,
+                        { start: string; end: string }[]
+                      >,
+                    )
+                      .filter(
+                        ([, ranges]) =>
+                          Array.isArray(ranges) && ranges.length > 0,
+                      )
+                      .map(([day, ranges]) => (
+                        <Box key={day} display="flex" gap={1}>
+                          <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            sx={{ width: 90, flexShrink: 0 }}
+                          >
+                            {day.charAt(0).toUpperCase() + day.slice(1)}:
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {ranges
+                              .map(
+                                (r) =>
+                                  `${formatStaffTime(r.start)} – ${formatStaffTime(r.end)}`,
+                              )
+                              .join(", ")}
+                          </Typography>
+                        </Box>
+                      ))
                   ) : (
                     <Typography
                       variant="body2"
@@ -866,6 +970,7 @@ export default function VolunteerProfile({
             variant="contained"
             color="primary"
             startIcon={<EditIcon />}
+            onClick={() => setEditModalOpen(true)}
             sx={{
               borderRadius: 2,
               px: 3,
@@ -943,6 +1048,264 @@ export default function VolunteerProfile({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Edit Volunteer Dialog */}
+      <StaffEditVolunteerModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        volunteer={volunteer}
+        onSave={handleEditVolunteer}
+        saving={saving}
+      />
     </Box>
+  );
+}
+
+function StaffSectionLabel({ children }: { children: string }): JSX.Element {
+  return (
+    <Typography
+      variant="caption"
+      fontWeight={700}
+      letterSpacing={0.8}
+      color="text.secondary"
+      sx={{ textTransform: "uppercase", display: "block", mb: 1.5 }}
+    >
+      {children}
+    </Typography>
+  );
+}
+
+type StaffEditVolunteerModalProps = {
+  open: boolean;
+  onClose: () => void;
+  volunteer: FetchVolunteerByIdResult;
+  onSave: (data: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+    bio?: string;
+    isActive?: boolean;
+    volunteerType?: string;
+    isAlumni?: boolean;
+    backgroundCheckStatus?:
+      | "not_required"
+      | "pending"
+      | "approved"
+      | "rejected";
+    mediaRelease?: boolean;
+    availability?: Record<string, unknown>;
+    notificationPreference?: "email" | "sms" | "both" | "none";
+  }) => Promise<void>;
+  saving: boolean;
+};
+
+function StaffEditVolunteerModal({
+  open,
+  onClose,
+  volunteer,
+  onSave,
+  saving,
+}: StaffEditVolunteerModalProps): JSX.Element {
+  const { volunteers: vol, users: user } = volunteer;
+  const [formData, setFormData] = useState({
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    bio: user?.bio || "",
+    isActive: user?.isActive ?? true,
+    volunteerType: vol.volunteerType || "",
+    isAlumni: vol.isAlumni || false,
+    mediaRelease: vol.mediaRelease || false,
+  });
+
+  // Re-sync form data whenever the modal opens or volunteer data changes
+  useEffect(() => {
+    if (!open) return;
+    setFormData({
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      email: user?.email || "",
+      phone: user?.phone || "",
+      bio: user?.bio || "",
+      isActive: user?.isActive ?? true,
+      volunteerType: vol.volunteerType || "",
+      isAlumni: vol.isAlumni || false,
+      mediaRelease: vol.mediaRelease || false,
+    });
+  }, [open, volunteer]);
+
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
+    e.preventDefault();
+    try {
+      await onSave(formData);
+    } catch (error) {
+      console.error(
+        "[StaffEditVolunteerModal] onSave rejected unexpectedly:",
+        error,
+      );
+    }
+  };
+
+  const handleChange = (field: string, value: unknown): void => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <form onSubmit={handleSubmit}>
+        <DialogTitle>Edit Volunteer Profile</DialogTitle>
+        <DialogContent>
+          <Stack spacing={4} sx={{ mt: 2 }}>
+            {/* ── Identity ─────────────────────────────────── */}
+            <Box>
+              <StaffSectionLabel>Identity</StaffSectionLabel>
+              <Stack spacing={2}>
+                <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                  <TextField
+                    label="First Name"
+                    value={formData.firstName}
+                    onChange={(e) => handleChange("firstName", e.target.value)}
+                    required
+                    disabled={saving}
+                    size="small"
+                  />
+                  <TextField
+                    label="Last Name"
+                    value={formData.lastName}
+                    onChange={(e) => handleChange("lastName", e.target.value)}
+                    required
+                    disabled={saving}
+                    size="small"
+                  />
+                </Box>
+                <TextField
+                  label="Email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleChange("email", e.target.value)}
+                  required
+                  disabled={saving}
+                  size="small"
+                  fullWidth
+                />
+                <TextField
+                  label="Phone"
+                  value={formData.phone}
+                  onChange={(e) => handleChange("phone", e.target.value)}
+                  disabled={saving}
+                  size="small"
+                  fullWidth
+                />
+              </Stack>
+            </Box>
+
+            {/* ── About Me ─────────────────────────────────── */}
+            <Box>
+              <StaffSectionLabel>About Me</StaffSectionLabel>
+              <TextField
+                label="Bio"
+                value={formData.bio}
+                onChange={(e) => handleChange("bio", e.target.value)}
+                multiline
+                rows={3}
+                disabled={saving}
+                size="small"
+                fullWidth
+              />
+            </Box>
+
+            {/* ── Role ─────────────────────────────────────── */}
+            <Box>
+              <StaffSectionLabel>Role</StaffSectionLabel>
+              <FormControl fullWidth disabled={saving} size="small">
+                <InputLabel>Volunteer Type</InputLabel>
+                <Select
+                  value={formData.volunteerType}
+                  label="Volunteer Type"
+                  onChange={(e) =>
+                    handleChange("volunteerType", e.target.value)
+                  }
+                >
+                  <MenuItem value="mentor">Mentor</MenuItem>
+                  <MenuItem value="speaker">Speaker</MenuItem>
+                  <MenuItem value="flexible">Flexible</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            {/* ── Account ──────────────────────────────────── */}
+            <Box>
+              <StaffSectionLabel>Account</StaffSectionLabel>
+              <Stack>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.isActive}
+                      onChange={(e) =>
+                        handleChange("isActive", e.target.checked)
+                      }
+                      disabled={saving}
+                    />
+                  }
+                  label="Account Active"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.isAlumni}
+                      onChange={(e) =>
+                        handleChange("isAlumni", e.target.checked)
+                      }
+                      disabled={saving}
+                    />
+                  }
+                  label="Alumni Status"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.mediaRelease}
+                      onChange={(e) =>
+                        handleChange("mediaRelease", e.target.checked)
+                      }
+                      disabled={saving}
+                    />
+                  }
+                  label="Media Release Signed"
+                />
+              </Stack>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={onClose}
+            disabled={saving}
+            variant="outlined"
+            sx={{
+              borderColor: "grey.300",
+              color: "text.secondary",
+              "&:hover": { borderColor: "grey.500" },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={saving}
+            sx={{
+              bgcolor: "grey.900",
+              "&:hover": { bgcolor: "grey.700" },
+              fontWeight: 600,
+            }}
+          >
+            {saving ? "Saving…" : "Save changes"}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   );
 }
