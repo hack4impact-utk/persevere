@@ -1,10 +1,13 @@
-import React, { JSX } from "react";
+import Typography from "@mui/material/Typography";
+import { JSX } from "react";
 
 export default function StaffOpportunitiesPage(): JSX.Element {
   return (
     <>
-      <h1 style={{ margin: 0 }}>Opportunities</h1>
-      <p>This is the Opportunities page</p>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Opportunities
+      </Typography>
+      <Typography>This is the Opportunities page</Typography>
     </>
   );
 }
