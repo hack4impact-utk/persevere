@@ -1,7 +1,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { Volunteer } from "@/components/volunteer-management/types";
+import type { Volunteer } from "@/components/staff/volunteer-management/types";
 import {
   AuthenticationError,
   fetchActiveVolunteers,

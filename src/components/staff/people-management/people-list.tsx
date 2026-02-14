@@ -35,7 +35,7 @@ import {
   useState,
 } from "react";
 
-import VolunteerList from "@/components/volunteer-management/volunteer-list";
+import VolunteerList from "@/components/staff/volunteer-management/volunteer-list";
 
 import AddStaffModal from "./staff-add-modal";
 import {

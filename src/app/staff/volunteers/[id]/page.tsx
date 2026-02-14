@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { JSX } from "react";
 
-import VolunteerProfile from "@/components/volunteer-management/volunteer-profile";
+import VolunteerProfile from "@/components/staff/volunteer-management/volunteer-profile";
 import db from "@/db";
 import { users, volunteers } from "@/db/schema";
 
