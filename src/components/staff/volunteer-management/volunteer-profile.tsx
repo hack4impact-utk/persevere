@@ -41,8 +41,9 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
+import type { FetchVolunteerByIdResult } from "@/services/volunteer-client.service";
+
 import SkillsModal from "./skills-modal";
-import type { FetchVolunteerByIdResult } from "./volunteer-service";
 
 /**
  * VolunteerProfile

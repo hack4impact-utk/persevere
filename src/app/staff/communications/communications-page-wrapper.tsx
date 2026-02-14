@@ -3,7 +3,7 @@
 import { Box } from "@mui/material";
 import { type ReactElement } from "react";
 
-import CommunicationsList from "@/components/communications/communications-list";
+import CommunicationsList from "@/components/staff/communications/communications-list";
 
 type CommunicationsPageWrapperProps = {
   userRole: "staff" | "admin";

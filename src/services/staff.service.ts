@@ -1,6 +1,8 @@
+import {
+  type StaffFilters,
+  type StaffResponse,
+} from "@/components/staff/people-management/types";
 import { AuthenticationError } from "@/lib/api-client";
-
-import { type StaffFilters, type StaffResponse } from "./types";
 
 export { AuthenticationError } from "@/lib/api-client";
 

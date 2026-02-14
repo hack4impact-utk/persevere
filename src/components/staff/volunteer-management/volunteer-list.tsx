@@ -32,14 +32,14 @@ import {
 import { type ReactElement, useCallback, useState } from "react";
 
 import { useVolunteers } from "@/hooks/use-volunteers";
+import {
+  fetchVolunteerById,
+  type FetchVolunteerByIdResult,
+} from "@/services/volunteer-client.service";
 
 import PendingInvitesTable from "./pending-invites-table";
 import AddVolunteerModal from "./volunteer-add-modal";
 import VolunteerProfile from "./volunteer-profile";
-import {
-  fetchVolunteerById,
-  type FetchVolunteerByIdResult,
-} from "./volunteer-service";
 import VolunteerTable from "./volunteer-table";
 
 /**

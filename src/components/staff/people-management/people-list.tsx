@@ -36,14 +36,14 @@ import {
 } from "react";
 
 import VolunteerList from "@/components/staff/volunteer-management/volunteer-list";
-
-import AddStaffModal from "./staff-add-modal";
 import {
   AuthenticationError,
   fetchStaff,
   fetchStaffById,
   type FetchStaffByIdResult,
-} from "./staff-service";
+} from "@/services/staff.service";
+
+import AddStaffModal from "./staff-add-modal";
 import StaffTable from "./staff-table";
 import { type Staff } from "./types";
 
