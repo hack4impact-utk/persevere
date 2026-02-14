@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import db from "@/db";
 import { users, volunteers } from "@/db/schema";
 import handleError from "@/utils/handle-error";
-import { requireAuth } from "@/utils/server/auth";
+import { AuthError, requireAuth } from "@/utils/server/auth";
 import { sendWelcomeEmail } from "@/utils/server/email";
 import { generateSecurePassword, hashPassword } from "@/utils/server/password";
 import { validateAndParseId } from "@/utils/validate-id";
@@ -93,11 +93,11 @@ export async function POST(
       },
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

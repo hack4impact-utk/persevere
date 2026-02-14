@@ -5,7 +5,7 @@ import { z } from "zod";
 import db from "@/db";
 import { skills, volunteers, volunteerSkills } from "@/db/schema";
 import handleError from "@/utils/handle-error";
-import { requireAuth } from "@/utils/server/auth";
+import { AuthError, requireAuth } from "@/utils/server/auth";
 
 const addSkillSchema = z.object({
   skillId: z.number().int().positive("Skill ID must be a positive integer"),
@@ -60,11 +60,11 @@ export async function GET(
 
     return NextResponse.json({ data: volunteerSkillsData });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
@@ -167,11 +167,11 @@ export async function POST(
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

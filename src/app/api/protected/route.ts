@@ -1,17 +1,15 @@
-import { requireAuth } from "@/utils/server/auth";
+import { AuthError, requireAuth } from "@/utils/server/auth";
 
 export async function GET(): Promise<Response> {
   try {
     const session = await requireAuth("admin"); // or "staff" or no role
     return Response.json({ message: "Protected data", user: session.user });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === "Unauthorized") {
-        return Response.json({ error: "Unauthorized" }, { status: 401 });
-      }
-      if (error.message === "Forbidden") {
-        return Response.json({ error: "Forbidden" }, { status: 403 });
-      }
+    if (error instanceof AuthError) {
+      return Response.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
     }
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }

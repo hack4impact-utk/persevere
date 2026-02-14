@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import db from "@/db";
 import { volunteers, volunteerSkills } from "@/db/schema";
 import handleError from "@/utils/handle-error";
-import { requireAuth } from "@/utils/server/auth";
+import { AuthError, requireAuth } from "@/utils/server/auth";
 
 export async function DELETE(
   _request: Request,
@@ -80,11 +80,11 @@ export async function DELETE(
       data: { volunteerId, skillId },
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

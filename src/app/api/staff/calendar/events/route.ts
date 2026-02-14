@@ -5,7 +5,7 @@ import { z } from "zod";
 import db from "@/db";
 import { opportunities } from "@/db/schema";
 import handleError from "@/utils/handle-error";
-import { requireAuth } from "@/utils/server/auth";
+import { AuthError, requireAuth } from "@/utils/server/auth";
 
 const eventCreateSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -83,11 +83,11 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ data: calendarEvents });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
@@ -175,11 +175,11 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
