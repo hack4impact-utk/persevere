@@ -51,3 +51,6 @@ ARCHITECTURE.md
 *.local.*
 
 .vscode/
+
+# git worktrees
+.worktrees/
