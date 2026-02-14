@@ -1,5 +1,3 @@
-"use client";
-
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -160,7 +158,14 @@ export function useVolunteers(
   // Load immediately when pagination, limit, or filters change (no debounce)
   useEffect(() => {
     void loadVolunteersRef.current?.();
-  }, [activePage, inactivePage, pendingPage, limit, filters]);
+  }, [
+    activePage,
+    inactivePage,
+    pendingPage,
+    limit,
+    filters.type,
+    filters.alumni,
+  ]);
 
   return {
     activeVolunteers,

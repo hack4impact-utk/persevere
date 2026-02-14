@@ -101,7 +101,7 @@ export default function VolunteerList(): ReactElement {
       setInactivePage(1);
       setPendingPage(1);
     },
-    [],
+    [setActivePage, setInactivePage, setPendingPage],
   );
 
   const handleFilterTypeChange = useCallback(
@@ -115,7 +115,7 @@ export default function VolunteerList(): ReactElement {
       setInactivePage(1);
       setPendingPage(1);
     },
-    [],
+    [setActivePage, setInactivePage, setPendingPage],
   );
 
   const handleFilterAlumniChange = useCallback(
@@ -129,7 +129,7 @@ export default function VolunteerList(): ReactElement {
       setInactivePage(1);
       setPendingPage(1);
     },
-    [],
+    [setActivePage, setInactivePage, setPendingPage],
   );
 
   const handleClearFilters = useCallback((): void => {
@@ -137,7 +137,7 @@ export default function VolunteerList(): ReactElement {
     setActivePage(1);
     setInactivePage(1);
     setPendingPage(1);
-  }, []);
+  }, [setActivePage, setInactivePage, setPendingPage]);
 
   const handleTabChange = useCallback(
     (_event: React.SyntheticEvent, newValue: number): void => {
@@ -150,13 +150,16 @@ export default function VolunteerList(): ReactElement {
     setInactivePage(newPage);
   }, []);
 
-  const handleLimitChange = useCallback((newLimit: number): void => {
-    setLimit(newLimit);
-    // Reset to page 1 when limit changes
-    setActivePage(1);
-    setInactivePage(1);
-    setPendingPage(1);
-  }, []);
+  const handleLimitChange = useCallback(
+    (newLimit: number): void => {
+      setLimit(newLimit);
+      // Reset to page 1 when limit changes
+      setActivePage(1);
+      setInactivePage(1);
+      setPendingPage(1);
+    },
+    [setLimit, setActivePage, setInactivePage, setPendingPage],
+  );
 
   const onAddVolunteer = useCallback((): void => {
     setAddModalOpen(true);

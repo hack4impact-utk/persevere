@@ -1,5 +1,3 @@
-"use client";
-
 import { useSnackbar } from "notistack";
 import { useCallback, useEffect, useRef, useState } from "react";
 
