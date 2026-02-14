@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { listOpenOpportunities } from "@/services/opportunities.service";
-import { requireAuth } from "@/utils/auth";
+import { AuthError, requireAuth } from "@/utils/auth";
 import handleError from "@/utils/handle-error";
 
 /**
@@ -37,11 +37,9 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ data: opportunitiesWithSpots });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof AuthError) {
+      const status = error.code === "Unauthorized" ? 401 : 403;
+      return NextResponse.json({ error: error.code }, { status });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
