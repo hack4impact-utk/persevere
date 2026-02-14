@@ -14,8 +14,8 @@ import {
   volunteerHours,
   volunteerRsvps,
 } from "@/db/schema/opportunities";
-import { sendWelcomeEmail } from "@/utils/email";
-import { generateSecurePassword, hashPassword } from "@/utils/password";
+import { sendWelcomeEmail } from "@/utils/server/email";
+import { generateSecurePassword, hashPassword } from "@/utils/server/password";
 
 // ---------------------------------------------------------------------------
 // Types

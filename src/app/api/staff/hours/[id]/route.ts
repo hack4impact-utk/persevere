@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import db from "@/db";
 import { volunteerHours } from "@/db/schema";
-import { requireAuth } from "@/utils/auth";
+import { requireAuth } from "@/utils/server/auth";
 
 // PUT: Update or Verify hours
 export async function PUT(

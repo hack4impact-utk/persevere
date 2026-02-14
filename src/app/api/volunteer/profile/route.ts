@@ -5,7 +5,7 @@ import {
   getVolunteerProfile,
   updateVolunteerProfile,
 } from "@/services/volunteer.service";
-import { AuthError, requireAuth } from "@/utils/auth";
+import { AuthError, requireAuth } from "@/utils/server/auth";
 
 const timeRangeSchema = z
   .object({

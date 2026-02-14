@@ -12,8 +12,8 @@ import {
   users,
   volunteers,
 } from "@/db/schema";
-import { sendBulkEmail } from "@/utils/email";
 import handleError from "@/utils/handle-error";
+import { sendBulkEmail } from "@/utils/server/email";
 
 const createCommunicationSchema = z.object({
   subject: z.string().min(1, "Subject is required"),

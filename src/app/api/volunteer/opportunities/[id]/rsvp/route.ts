@@ -4,8 +4,8 @@ import { NextResponse } from "next/server";
 import db from "@/db";
 import { volunteers } from "@/db/schema";
 import { opportunities, volunteerRsvps } from "@/db/schema/opportunities";
-import { requireAuth } from "@/utils/auth";
 import handleError from "@/utils/handle-error";
+import { requireAuth } from "@/utils/server/auth";
 
 /**
  * POST /api/volunteer/opportunities/[id]/rsvp

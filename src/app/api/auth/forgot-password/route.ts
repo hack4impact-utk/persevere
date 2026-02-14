@@ -5,8 +5,8 @@ import { NextResponse } from "next/server";
 
 import db from "@/db";
 import { users, verificationTokens } from "@/db/schema";
-import { sendPasswordResetEmail } from "@/utils/email";
 import handleError from "@/utils/handle-error";
+import { sendPasswordResetEmail } from "@/utils/server/email";
 
 // Token expiration: 1 hour
 const TOKEN_EXPIRATION_MS = 60 * 60 * 1000;

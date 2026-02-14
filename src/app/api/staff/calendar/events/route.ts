@@ -4,8 +4,8 @@ import { z } from "zod";
 
 import db from "@/db";
 import { opportunities } from "@/db/schema";
-import { requireAuth } from "@/utils/auth";
 import handleError from "@/utils/handle-error";
+import { requireAuth } from "@/utils/server/auth";
 
 const eventCreateSchema = z.object({
   title: z.string().min(1, "Title is required"),

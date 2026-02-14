@@ -4,8 +4,8 @@ import { z } from "zod";
 
 import db from "@/db";
 import { skills, volunteers, volunteerSkills } from "@/db/schema";
-import { requireAuth } from "@/utils/auth";
 import handleError from "@/utils/handle-error";
+import { requireAuth } from "@/utils/server/auth";
 
 const addSkillSchema = z.object({
   skillId: z.number().int().positive("Skill ID must be a positive integer"),

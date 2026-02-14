@@ -6,9 +6,9 @@ import { z } from "zod";
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import db from "@/db";
 import { admin, staff, users } from "@/db/schema";
-import { sendWelcomeEmail } from "@/utils/email";
 import handleError from "@/utils/handle-error";
-import { generateSecurePassword, hashPassword } from "@/utils/password";
+import { sendWelcomeEmail } from "@/utils/server/email";
+import { generateSecurePassword, hashPassword } from "@/utils/server/password";
 
 const staffCreateSchema = z.object({
   firstName: z.string().min(1, "First name is required"),

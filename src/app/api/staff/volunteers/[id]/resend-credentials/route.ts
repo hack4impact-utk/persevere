@@ -3,10 +3,10 @@ import { NextResponse } from "next/server";
 
 import db from "@/db";
 import { users, volunteers } from "@/db/schema";
-import { requireAuth } from "@/utils/auth";
-import { sendWelcomeEmail } from "@/utils/email";
 import handleError from "@/utils/handle-error";
-import { generateSecurePassword, hashPassword } from "@/utils/password";
+import { requireAuth } from "@/utils/server/auth";
+import { sendWelcomeEmail } from "@/utils/server/email";
+import { generateSecurePassword, hashPassword } from "@/utils/server/password";
 import { validateAndParseId } from "@/utils/validate-id";
 
 /**

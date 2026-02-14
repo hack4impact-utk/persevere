@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 
 import db from "@/db";
 import { volunteers, volunteerSkills } from "@/db/schema";
-import { requireAuth } from "@/utils/auth";
 import handleError from "@/utils/handle-error";
+import { requireAuth } from "@/utils/server/auth";
 
 export async function DELETE(
   _request: Request,

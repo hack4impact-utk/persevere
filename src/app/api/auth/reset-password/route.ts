@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import db from "@/db";
 import { users, verificationTokens } from "@/db/schema";
 import handleError from "@/utils/handle-error";
-import { hashPassword } from "@/utils/password";
+import { hashPassword } from "@/utils/server/password";
 
 export async function POST(request: Request): Promise<NextResponse> {
   let token: unknown;

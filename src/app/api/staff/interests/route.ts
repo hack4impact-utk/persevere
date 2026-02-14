@@ -4,8 +4,8 @@ import { z } from "zod";
 
 import db from "@/db";
 import { interests } from "@/db/schema";
-import { requireAuth } from "@/utils/auth";
 import handleError from "@/utils/handle-error";
+import { requireAuth } from "@/utils/server/auth";
 
 const interestCreateSchema = z.object({
   name: z.string().min(1, "Name is required"),

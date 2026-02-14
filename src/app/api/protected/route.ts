@@ -1,4 +1,4 @@
-import { requireAuth } from "@/utils/auth";
+import { requireAuth } from "@/utils/server/auth";
 
 export async function GET(): Promise<Response> {
   try {

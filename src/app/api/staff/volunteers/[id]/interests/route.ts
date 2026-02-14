@@ -4,8 +4,8 @@ import { z } from "zod";
 
 import db from "@/db";
 import { interests, volunteerInterests, volunteers } from "@/db/schema";
-import { requireAuth } from "@/utils/auth";
 import handleError from "@/utils/handle-error";
+import { requireAuth } from "@/utils/server/auth";
 
 const addInterestSchema = z.object({
   interestId: z

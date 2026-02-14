@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { listOpenOpportunities } from "@/services/opportunities.service";
-import { AuthError, requireAuth } from "@/utils/auth";
 import handleError from "@/utils/handle-error";
+import { AuthError, requireAuth } from "@/utils/server/auth";
 
 /**
  * GET /api/volunteer/opportunities

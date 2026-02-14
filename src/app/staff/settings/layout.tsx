@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { type ReactNode } from "react";
 
 import SettingsNav from "@/components/layout/settings-nav";
-import { getServerSession } from "@/utils/auth";
+import { getServerSession } from "@/utils/server/auth";
 
 type SettingsLayoutProps = {
   children: ReactNode;

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import db from "@/db";
 import { opportunities, volunteerHours, volunteers } from "@/db/schema";
-import { requireAuth } from "@/utils/auth";
+import { requireAuth } from "@/utils/server/auth";
 
 export async function GET(
   req: Request,

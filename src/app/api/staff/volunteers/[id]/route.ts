@@ -16,8 +16,8 @@ import {
   volunteerHours,
   volunteerRsvps,
 } from "@/db/schema/opportunities";
-import { requireAuth } from "@/utils/auth";
 import handleError from "@/utils/handle-error";
+import { requireAuth } from "@/utils/server/auth";
 import { validateAndParseId } from "@/utils/validate-id";
 
 const volunteerUpdateSchema = z.object({
