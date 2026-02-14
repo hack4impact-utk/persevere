@@ -1,4 +1,4 @@
-import { AuthenticationError } from "@/lib/api-client";
+import { apiClient } from "@/lib/api-client";
 
 export { AuthenticationError } from "@/lib/api-client";
 
@@ -85,23 +85,10 @@ export async function fetchVolunteers(
   if (filters.page) searchParams.append("page", String(filters.page));
   if (filters.limit) searchParams.append("limit", String(filters.limit));
 
-  const response = await fetch(
-    `/api/staff/volunteers?${searchParams.toString()}`,
-    {
-      cache: "no-store",
-      next: { revalidate: 0 },
-    },
-  );
-
-  if (response.status === 401 || response.status === 403) {
-    throw new AuthenticationError("Unauthorized access");
-  }
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch volunteers");
-  }
-
-  const data = await response.json();
+  const data = await apiClient.get<{
+    data: APIVolunteerResponse[];
+    total: number;
+  }>(`/api/staff/volunteers?${searchParams.toString()}`);
 
   return {
     volunteers: data.data.map((item: APIVolunteerResponse) => ({
@@ -110,8 +97,8 @@ export async function fetchVolunteers(
       firstName: item.users.firstName,
       lastName: item.users.lastName,
       email: item.users.email,
-      phone: item.users.phone,
-      volunteerType: item.volunteers.volunteerType,
+      phone: item.users.phone ?? undefined,
+      volunteerType: item.volunteers.volunteerType ?? undefined,
       isActive: item.users.isActive,
       isEmailVerified: item.users.isEmailVerified,
       backgroundCheckStatus: item.volunteers.backgroundCheckStatus,
@@ -220,15 +207,8 @@ export type FetchVolunteerByIdResult = {
 export async function fetchVolunteerById(
   id: number,
 ): Promise<FetchVolunteerByIdResult> {
-  const response = await fetch(`/api/staff/volunteers/${id}`, {
-    cache: "no-store",
-    next: { revalidate: 0 },
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch volunteer");
-  }
-
-  const data = await response.json();
+  const data = await apiClient.get<{ data: FetchVolunteerByIdResult }>(
+    `/api/staff/volunteers/${id}`,
+  );
   return data.data;
 }

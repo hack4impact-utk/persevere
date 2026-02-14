@@ -1,4 +1,4 @@
-import { AuthenticationError } from "@/lib/api-client";
+import { apiClient } from "@/lib/api-client";
 
 import {
   type BulkCommunicationLog,
@@ -22,23 +22,7 @@ export async function fetchCommunications(
   if (filters.page) searchParams.append("page", String(filters.page));
   if (filters.limit) searchParams.append("limit", String(filters.limit));
 
-  const response = await fetch(
-    `/api/staff/communications?${searchParams.toString()}`,
-    {
-      cache: "no-store",
-      next: { revalidate: 0 },
-    },
-  );
-
-  if (response.status === 401 || response.status === 403) {
-    throw new AuthenticationError("Unauthorized access");
-  }
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch communications");
-  }
-
-  const data = (await response.json()) as {
+  const data = await apiClient.get<{
     communications: {
       id: number;
       senderId: number;
@@ -57,7 +41,8 @@ export async function fetchCommunications(
     total: number;
     page: number;
     limit: number;
-  };
+  }>(`/api/staff/communications?${searchParams.toString()}`);
+
   return {
     communications: data.communications.map((comm) => ({
       ...comm,
@@ -76,24 +61,9 @@ export async function fetchCommunications(
 export async function fetchCommunicationById(
   id: number,
 ): Promise<BulkCommunicationLog> {
-  const response = await fetch(`/api/staff/communications/${id}`, {
-    cache: "no-store",
-    next: { revalidate: 0 },
-  });
-
-  if (response.status === 401 || response.status === 403) {
-    throw new AuthenticationError("Unauthorized access");
-  }
-
-  if (response.status === 404) {
-    throw new Error("Communication not found");
-  }
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch communication");
-  }
-
-  const data = await response.json();
+  const data = await apiClient.get<{ communication: BulkCommunicationLog }>(
+    `/api/staff/communications/${id}`,
+  );
   return {
     ...data.communication,
     sentAt: new Date(data.communication.sentAt),
@@ -104,26 +74,12 @@ export async function fetchCommunicationById(
  * Creates a new bulk communication.
  */
 export async function createCommunication(
-  data: CreateCommunicationRequest,
+  payload: CreateCommunicationRequest,
 ): Promise<BulkCommunicationLog> {
-  const response = await fetch("/api/staff/communications", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (response.status === 401 || response.status === 403) {
-    throw new AuthenticationError("Unauthorized access");
-  }
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || "Failed to create communication");
-  }
-
-  const result = await response.json();
+  const result = await apiClient.post<{ communication: BulkCommunicationLog }>(
+    "/api/staff/communications",
+    payload,
+  );
   return {
     ...result.communication,
     sentAt: new Date(result.communication.sentAt),

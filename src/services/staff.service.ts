@@ -2,7 +2,7 @@ import {
   type StaffFilters,
   type StaffResponse,
 } from "@/components/staff/people-management/types";
-import { AuthenticationError } from "@/lib/api-client";
+import { apiClient } from "@/lib/api-client";
 
 export { AuthenticationError } from "@/lib/api-client";
 
@@ -45,20 +45,10 @@ export async function fetchStaff(
   if (filters.page) searchParams.append("page", String(filters.page));
   if (filters.limit) searchParams.append("limit", String(filters.limit));
 
-  const response = await fetch(`/api/staff/staff?${searchParams.toString()}`, {
-    cache: "no-store",
-    next: { revalidate: 0 },
-  });
-
-  if (response.status === 401 || response.status === 403) {
-    throw new AuthenticationError("Unauthorized access");
-  }
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch staff");
-  }
-
-  const data = await response.json();
+  const data = await apiClient.get<{
+    data: APIStaffResponse[];
+    total: number;
+  }>(`/api/staff/staff?${searchParams.toString()}`);
 
   return {
     staff: data.data.map((item: APIStaffResponse) => ({
@@ -110,15 +100,8 @@ export type FetchStaffByIdResult = {
 export async function fetchStaffById(
   id: number,
 ): Promise<FetchStaffByIdResult> {
-  const response = await fetch(`/api/staff/staff/${id}`, {
-    cache: "no-store",
-    next: { revalidate: 0 },
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch staff member");
-  }
-
-  const data = await response.json();
+  const data = await apiClient.get<{ data: FetchStaffByIdResult }>(
+    `/api/staff/staff/${id}`,
+  );
   return data.data;
 }
