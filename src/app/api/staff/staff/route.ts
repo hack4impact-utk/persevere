@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { createStaff, listStaff } from "@/services/staff-server.service";
 import handleError from "@/utils/handle-error";
 
@@ -26,7 +27,9 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const { searchParams } = new URL(request.url);
     const page = Number.parseInt(searchParams.get("page") || "1");
-    const limit = Number.parseInt(searchParams.get("limit") || "10");
+    const limit = Number.parseInt(
+      searchParams.get("limit") || String(DEFAULT_PAGE_SIZE),
+    );
 
     const result = await listStaff({
       page,

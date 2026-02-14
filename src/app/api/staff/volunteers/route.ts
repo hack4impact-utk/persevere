@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { createVolunteer, listVolunteers } from "@/services/volunteer.service";
 import handleError from "@/utils/handle-error";
 
@@ -51,7 +52,9 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const { searchParams } = new URL(request.url);
     const page = Number.parseInt(searchParams.get("page") || "1");
-    const limit = Number.parseInt(searchParams.get("limit") || "10");
+    const limit = Number.parseInt(
+      searchParams.get("limit") || String(DEFAULT_PAGE_SIZE),
+    );
     const search = searchParams.get("search");
     const type = searchParams.get("type");
     const alumni = searchParams.get("alumni");

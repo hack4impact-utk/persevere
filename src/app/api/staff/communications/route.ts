@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import {
   createCommunication,
   listCommunications,
@@ -27,7 +28,9 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const { searchParams } = new URL(request.url);
     const page = Number.parseInt(searchParams.get("page") || "1");
-    const limit = Number.parseInt(searchParams.get("limit") || "20");
+    const limit = Number.parseInt(
+      searchParams.get("limit") || String(DEFAULT_PAGE_SIZE),
+    );
 
     const result = await listCommunications({
       page,
