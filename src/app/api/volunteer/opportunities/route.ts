@@ -1,8 +1,6 @@
-import { and, count, eq, gt, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import db from "@/db";
-import { opportunities, volunteerRsvps } from "@/db/schema/opportunities";
+import { listOpenOpportunities } from "@/services/opportunities.service";
 import { requireAuth } from "@/utils/auth";
 import handleError from "@/utils/handle-error";
 
@@ -31,77 +29,10 @@ export async function GET(request: Request): Promise<NextResponse> {
     );
     const search = searchParams.get("search")?.trim() || "";
 
-    const now = new Date();
-
-    // Build base conditions: open status and future start date
-    const baseConditions = and(
-      eq(opportunities.status, "open"),
-      gt(opportunities.startDate, now),
-    );
-
-    // Get opportunities with RSVP counts using a subquery
-    const rsvpCountSubquery = db
-      .select({
-        opportunityId: volunteerRsvps.opportunityId,
-        rsvpCount: count(volunteerRsvps.volunteerId).as("rsvp_count"),
-      })
-      .from(volunteerRsvps)
-      .groupBy(volunteerRsvps.opportunityId)
-      .as("rsvp_counts");
-
-    // Query opportunities
-    let query = db
-      .select({
-        id: opportunities.id,
-        title: opportunities.title,
-        description: opportunities.description,
-        location: opportunities.location,
-        startDate: opportunities.startDate,
-        endDate: opportunities.endDate,
-        status: opportunities.status,
-        maxVolunteers: opportunities.maxVolunteers,
-        rsvpCount: sql<number>`COALESCE(${rsvpCountSubquery.rsvpCount}, 0)`,
-      })
-      .from(opportunities)
-      .leftJoin(
-        rsvpCountSubquery,
-        eq(opportunities.id, rsvpCountSubquery.opportunityId),
-      )
-      .where(baseConditions)
-      .$dynamic();
-
-    // Apply search filter if provided
-    if (search) {
-      query = query.where(
-        and(
-          baseConditions,
-          sql`(${opportunities.title} ILIKE ${`%${search}%`} OR ${opportunities.description} ILIKE ${`%${search}%`} OR ${opportunities.location} ILIKE ${`%${search}%`})`,
-        ),
-      );
-    }
-
-    // Execute query with pagination
-    const allOpportunities = await query
-      .orderBy(opportunities.startDate)
-      .limit(limit)
-      .offset(offset);
-
-    // Filter out full opportunities (where rsvpCount >= maxVolunteers)
-    const availableOpportunities = allOpportunities.filter((opp) => {
-      if (opp.maxVolunteers === null) return true; // No limit
-      return Number(opp.rsvpCount) < opp.maxVolunteers;
-    });
-
-    // Calculate spots remaining; coerce rsvpCount to number here since
-    // SQL COALESCE expressions arrive as strings on the wire despite the sql<number> annotation.
-    const opportunitiesWithSpots = availableOpportunities.map((opp) => {
-      const rsvpCount = Number(opp.rsvpCount);
-      return {
-        ...opp,
-        rsvpCount,
-        spotsRemaining:
-          opp.maxVolunteers === null ? null : opp.maxVolunteers - rsvpCount,
-      };
+    const opportunitiesWithSpots = await listOpenOpportunities({
+      limit,
+      offset,
+      search,
     });
 
     return NextResponse.json({ data: opportunitiesWithSpots });
