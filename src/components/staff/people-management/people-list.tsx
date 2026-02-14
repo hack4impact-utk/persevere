@@ -26,26 +26,17 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useRouter } from "next/navigation";
-import {
-  type ReactElement,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type ReactElement, useCallback, useState } from "react";
 
 import VolunteerList from "@/components/staff/volunteer-management/volunteer-list";
+import { useStaff } from "@/hooks/use-staff";
 import {
-  AuthenticationError,
-  fetchStaff,
   fetchStaffById,
   type FetchStaffByIdResult,
 } from "@/services/staff.service";
 
 import AddStaffModal from "./staff-add-modal";
 import StaffTable from "./staff-table";
-import { type Staff } from "./types";
 
 /**
  * PeopleList
@@ -55,30 +46,32 @@ import { type Staff } from "./types";
  * 2. Staff - Shows staff management with ability to add staff
  */
 export default function PeopleList(): ReactElement {
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentTab, setCurrentTab] = useState(0);
   const [staffTab, setStaffTab] = useState(0); // Staff sub-tabs: 0=Active, 1=Inactive, 2=Pending
+  const [staffFilters, setStaffFilters] = useState<{
+    role?: "admin" | "staff";
+  }>({});
 
-  // Staff state - Active
-  const [activeStaff, setActiveStaff] = useState<Staff[]>([]);
-  const [totalActiveStaff, setTotalActiveStaff] = useState(0);
-  const [activeStaffPage, setActiveStaffPage] = useState(1);
-
-  // Staff state - Inactive
-  const [inactiveStaff, setInactiveStaff] = useState<Staff[]>([]);
-  const [totalInactiveStaff, setTotalInactiveStaff] = useState(0);
-  const [inactiveStaffPage, setInactiveStaffPage] = useState(1);
-
-  // Staff state - Pending Invites
-  const [pendingStaff, setPendingStaff] = useState<Staff[]>([]);
-  const [totalPendingStaff, setTotalPendingStaff] = useState(0);
-  const [pendingStaffPage, setPendingStaffPage] = useState(1);
-
-  // Shared staff state
-  const [staffLimit, setStaffLimit] = useState(10);
-  const [staffLoading, setStaffLoading] = useState(false);
-  const [staffError, setStaffError] = useState<string | null>(null);
+  const {
+    activeStaff,
+    totalActiveStaff,
+    activePage: activeStaffPage,
+    setActivePage: setActiveStaffPage,
+    inactiveStaff,
+    totalInactiveStaff,
+    inactivePage: inactiveStaffPage,
+    setInactivePage: setInactiveStaffPage,
+    pendingStaff,
+    totalPendingStaff,
+    pendingPage: pendingStaffPage,
+    setPendingPage: setPendingStaffPage,
+    limit: staffLimit,
+    setLimit: setStaffLimit,
+    loading: staffLoading,
+    error: staffError,
+    loadStaff,
+  } = useStaff(searchQuery, staffFilters);
 
   // Staff profile state
   const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
@@ -90,157 +83,6 @@ export default function PeopleList(): ReactElement {
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
-  const [staffFilters, setStaffFilters] = useState<{
-    role?: "admin" | "staff";
-  }>({});
-
-  // Use refs to store latest load functions to avoid dependency issues
-  const loadActiveStaffRef = useRef<(() => Promise<void>) | undefined>(
-    undefined,
-  );
-  const loadInactiveStaffRef = useRef<(() => Promise<void>) | undefined>(
-    undefined,
-  );
-  const loadPendingStaffRef = useRef<(() => Promise<void>) | undefined>(
-    undefined,
-  );
-
-  const loadActiveStaff = useCallback(async (): Promise<void> => {
-    setStaffError(null);
-    setStaffLoading(true);
-    try {
-      const response = await fetchStaff({
-        search: searchQuery,
-        page: activeStaffPage,
-        limit: staffLimit,
-        isActive: true,
-        emailVerified: true,
-        role: staffFilters.role,
-      });
-
-      setActiveStaff(response.staff || []);
-      setTotalActiveStaff(response.total || 0);
-    } catch (error) {
-      if (error instanceof AuthenticationError) {
-        router.push("/auth/login");
-        return;
-      }
-
-      console.error("Failed to fetch active staff:", error);
-      setStaffError("Failed to load active staff. Please try again later.");
-      setActiveStaff([]);
-      setTotalActiveStaff(0);
-    } finally {
-      setStaffLoading(false);
-    }
-  }, [searchQuery, activeStaffPage, staffLimit, staffFilters.role, router]);
-
-  const loadInactiveStaff = useCallback(async (): Promise<void> => {
-    setStaffError(null);
-    setStaffLoading(true);
-    try {
-      const response = await fetchStaff({
-        search: searchQuery,
-        page: inactiveStaffPage,
-        limit: staffLimit,
-        isActive: false,
-        emailVerified: true,
-        role: staffFilters.role,
-      });
-
-      setInactiveStaff(response.staff || []);
-      setTotalInactiveStaff(response.total || 0);
-    } catch (error) {
-      if (error instanceof AuthenticationError) {
-        router.push("/auth/login");
-        return;
-      }
-
-      console.error("Failed to fetch inactive staff:", error);
-      setStaffError("Failed to load inactive staff. Please try again later.");
-      setInactiveStaff([]);
-      setTotalInactiveStaff(0);
-    } finally {
-      setStaffLoading(false);
-    }
-  }, [searchQuery, inactiveStaffPage, staffLimit, staffFilters.role, router]);
-
-  const loadPendingStaff = useCallback(async (): Promise<void> => {
-    setStaffError(null);
-    setStaffLoading(true);
-    try {
-      const response = await fetchStaff({
-        search: searchQuery,
-        page: pendingStaffPage,
-        limit: staffLimit,
-        emailVerified: false,
-        role: staffFilters.role,
-      });
-
-      setPendingStaff(response.staff || []);
-      setTotalPendingStaff(response.total || 0);
-    } catch (error) {
-      if (error instanceof AuthenticationError) {
-        router.push("/auth/login");
-        return;
-      }
-
-      console.error("Failed to fetch pending staff:", error);
-      setStaffError("Failed to load pending staff. Please try again later.");
-      setPendingStaff([]);
-      setTotalPendingStaff(0);
-    } finally {
-      setStaffLoading(false);
-    }
-  }, [searchQuery, pendingStaffPage, staffLimit, staffFilters.role, router]);
-
-  // Keep refs updated
-  loadActiveStaffRef.current = loadActiveStaff;
-  loadInactiveStaffRef.current = loadInactiveStaff;
-  loadPendingStaffRef.current = loadPendingStaff;
-
-  // Debounce search to avoid excessive API calls
-  useEffect(() => {
-    const debounceTimer = setTimeout(
-      () => {
-        if (currentTab === 1) {
-          if (staffTab === 0 && loadActiveStaffRef.current) {
-            void loadActiveStaffRef.current();
-          } else if (staffTab === 1 && loadInactiveStaffRef.current) {
-            void loadInactiveStaffRef.current();
-          } else if (staffTab === 2 && loadPendingStaffRef.current) {
-            void loadPendingStaffRef.current();
-          }
-        }
-      },
-      searchQuery ? 300 : 0,
-    );
-
-    return (): void => {
-      clearTimeout(debounceTimer);
-    };
-  }, [searchQuery, currentTab, staffTab]);
-
-  // Load immediately when pagination, limit, tab, or filters change
-  useEffect(() => {
-    if (currentTab === 1) {
-      if (staffTab === 0 && loadActiveStaffRef.current) {
-        void loadActiveStaffRef.current();
-      } else if (staffTab === 1 && loadInactiveStaffRef.current) {
-        void loadInactiveStaffRef.current();
-      } else if (staffTab === 2 && loadPendingStaffRef.current) {
-        void loadPendingStaffRef.current();
-      }
-    }
-  }, [
-    activeStaffPage,
-    inactiveStaffPage,
-    pendingStaffPage,
-    staffLimit,
-    currentTab,
-    staffTab,
-    staffFilters,
-  ]);
 
   const handleSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>): void => {
@@ -251,31 +93,24 @@ export default function PeopleList(): ReactElement {
         setPendingStaffPage(1);
       }
     },
-    [currentTab],
+    [currentTab, setActiveStaffPage, setInactiveStaffPage, setPendingStaffPage],
   );
 
   const handleTabChange = useCallback(
     (_event: React.SyntheticEvent, newValue: number): void => {
       setCurrentTab(newValue);
-      setSearchQuery(""); // Clear search when switching tabs
-      // Load staff data when switching to Staff tab
+      setSearchQuery("");
       if (newValue === 1) {
-        if (staffTab === 0 && loadActiveStaffRef.current) {
-          void loadActiveStaffRef.current();
-        } else if (staffTab === 1 && loadInactiveStaffRef.current) {
-          void loadInactiveStaffRef.current();
-        } else if (staffTab === 2 && loadPendingStaffRef.current) {
-          void loadPendingStaffRef.current();
-        }
+        void loadStaff();
       }
     },
-    [staffTab],
+    [loadStaff],
   );
 
   const handleStaffTabChange = useCallback(
     (_event: React.SyntheticEvent, newValue: number): void => {
       setStaffTab(newValue);
-      setSearchQuery(""); // Clear search when switching staff tabs
+      setSearchQuery("");
     },
     [],
   );
@@ -293,7 +128,7 @@ export default function PeopleList(): ReactElement {
       setInactiveStaffPage(1);
       setPendingStaffPage(1);
     },
-    [],
+    [setActiveStaffPage, setInactiveStaffPage, setPendingStaffPage],
   );
 
   const handleClearFilters = useCallback((): void => {
@@ -301,26 +136,43 @@ export default function PeopleList(): ReactElement {
     setActiveStaffPage(1);
     setInactiveStaffPage(1);
     setPendingStaffPage(1);
-  }, []);
+  }, [setActiveStaffPage, setInactiveStaffPage, setPendingStaffPage]);
 
-  const handleActiveStaffPageChange = useCallback((newPage: number): void => {
-    setActiveStaffPage(newPage);
-  }, []);
+  const handleActiveStaffPageChange = useCallback(
+    (newPage: number): void => {
+      setActiveStaffPage(newPage);
+    },
+    [setActiveStaffPage],
+  );
 
-  const handleInactiveStaffPageChange = useCallback((newPage: number): void => {
-    setInactiveStaffPage(newPage);
-  }, []);
+  const handleInactiveStaffPageChange = useCallback(
+    (newPage: number): void => {
+      setInactiveStaffPage(newPage);
+    },
+    [setInactiveStaffPage],
+  );
 
-  const handlePendingStaffPageChange = useCallback((newPage: number): void => {
-    setPendingStaffPage(newPage);
-  }, []);
+  const handlePendingStaffPageChange = useCallback(
+    (newPage: number): void => {
+      setPendingStaffPage(newPage);
+    },
+    [setPendingStaffPage],
+  );
 
-  const handleStaffLimitChange = useCallback((newLimit: number): void => {
-    setStaffLimit(newLimit);
-    setActiveStaffPage(1);
-    setInactiveStaffPage(1);
-    setPendingStaffPage(1);
-  }, []);
+  const handleStaffLimitChange = useCallback(
+    (newLimit: number): void => {
+      setStaffLimit(newLimit);
+      setActiveStaffPage(1);
+      setInactiveStaffPage(1);
+      setPendingStaffPage(1);
+    },
+    [
+      setStaffLimit,
+      setActiveStaffPage,
+      setInactiveStaffPage,
+      setPendingStaffPage,
+    ],
+  );
 
   const onAddStaff = useCallback((): void => {
     setAddModalOpen(true);
@@ -690,14 +542,7 @@ export default function PeopleList(): ReactElement {
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
         onCreated={() => {
-          // Reload the appropriate staff list based on current tab
-          if (staffTab === 0 && loadActiveStaffRef.current) {
-            void loadActiveStaffRef.current();
-          } else if (staffTab === 1 && loadInactiveStaffRef.current) {
-            void loadInactiveStaffRef.current();
-          } else if (staffTab === 2 && loadPendingStaffRef.current) {
-            void loadPendingStaffRef.current();
-          }
+          void loadStaff();
         }}
       />
 
