@@ -16,22 +16,11 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useRouter } from "next/navigation";
-import {
-  type ReactElement,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type ReactElement, useCallback, useState } from "react";
 
-import {
-  AuthenticationError,
-  fetchCommunicationById,
-  fetchCommunications,
-} from "./communication-service";
+import { useCommunications } from "@/hooks/use-communications";
+
 import ComposeModal from "./compose-modal";
-import type { BulkCommunicationLog } from "./types";
 
 export type CommunicationsListProps = {
   userRole: "staff" | "admin";
@@ -46,68 +35,15 @@ export type CommunicationsListProps = {
 export default function CommunicationsList({
   userRole,
 }: CommunicationsListProps): ReactElement {
-  const router = useRouter();
-  const [communications, setCommunications] = useState<BulkCommunicationLog[]>(
-    [],
-  );
-  const [selectedCommunication, setSelectedCommunication] =
-    useState<BulkCommunicationLog | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    communications,
+    selectedCommunication,
+    loading,
+    error,
+    loadCommunications,
+    selectCommunication,
+  } = useCommunications();
   const [composeModalOpen, setComposeModalOpen] = useState(false);
-
-  const loadCommunicationsRef = useRef<(() => Promise<void>) | undefined>(
-    undefined,
-  );
-
-  const loadCommunications = useCallback(async (): Promise<void> => {
-    setError(null);
-    setLoading(true);
-    try {
-      const response = await fetchCommunications({
-        page: 1,
-        limit: 50,
-      });
-
-      setCommunications(response.communications || []);
-
-      // Auto-select first communication if none selected
-      if (
-        response.communications.length > 0 &&
-        !selectedCommunication &&
-        !loadCommunicationsRef.current
-      ) {
-        setSelectedCommunication(response.communications[0]);
-      }
-    } catch (error) {
-      if (error instanceof AuthenticationError) {
-        router.push("/auth/login");
-        return;
-      }
-
-      console.error("Failed to fetch communications:", error);
-      setError("Failed to load communications. Please try again later.");
-      setCommunications([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [router, selectedCommunication]);
-
-  loadCommunicationsRef.current = loadCommunications;
-
-  useEffect(() => {
-    void loadCommunications();
-  }, [loadCommunications]);
-
-  const handleCommunicationClick = useCallback(async (id: number) => {
-    try {
-      const communication = await fetchCommunicationById(id);
-      setSelectedCommunication(communication);
-    } catch (error) {
-      console.error("Failed to fetch communication:", error);
-      setError("Failed to load communication details.");
-    }
-  }, []);
 
   const formatDate = useCallback((date: Date): string => {
     return new Intl.DateTimeFormat("en-US", {
@@ -243,7 +179,7 @@ export default function CommunicationsList({
                   }}
                 >
                   <ListItemButton
-                    onClick={() => handleCommunicationClick(comm.id)}
+                    onClick={() => void selectCommunication(comm.id)}
                     selected={selectedCommunication?.id === comm.id}
                     sx={{
                       flexDirection: "column",
