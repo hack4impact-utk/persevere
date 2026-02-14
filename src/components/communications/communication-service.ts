@@ -1,3 +1,5 @@
+import { AuthenticationError } from "@/lib/api-client";
+
 import {
   type BulkCommunicationLog,
   type CommunicationFilters,
@@ -6,12 +8,7 @@ import {
   type RecipientType,
 } from "./types";
 
-export class AuthenticationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "AuthenticationError";
-  }
-}
+export { AuthenticationError } from "@/lib/api-client";
 
 /**
  * Fetches a paginated list of bulk communications with optional search and filtering.

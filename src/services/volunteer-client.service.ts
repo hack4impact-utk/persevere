@@ -1,3 +1,7 @@
+import { AuthenticationError } from "@/lib/api-client";
+
+export { AuthenticationError } from "@/lib/api-client";
+
 export type Volunteer = {
   id: number;
   userId: number;
@@ -36,13 +40,6 @@ export type VolunteerFilters = {
   emailVerified?: boolean;
   isActive?: boolean;
 };
-
-export class AuthenticationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "AuthenticationError";
-  }
-}
 
 type APIVolunteerResponse = {
   volunteers: {

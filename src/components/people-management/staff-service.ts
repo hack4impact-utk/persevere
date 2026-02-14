@@ -1,11 +1,8 @@
+import { AuthenticationError } from "@/lib/api-client";
+
 import { type StaffFilters, type StaffResponse } from "./types";
 
-export class AuthenticationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "AuthenticationError";
-  }
-}
+export { AuthenticationError } from "@/lib/api-client";
 
 type APIStaffResponse = {
   staff: {
