@@ -1,8 +1,9 @@
-/**
- * Volunteer Types
- *
- * Type definitions for volunteer-related data structures.
- */
+import { InferInsertModel, InferSelectModel } from "drizzle-orm";
+
+import { volunteers } from "@/db/schema";
+
+export type Volunteer = InferSelectModel<typeof volunteers>;
+export type NewVolunteer = InferInsertModel<typeof volunteers>;
 
 /**
  * Availability data structure.
