@@ -29,24 +29,14 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useRouter } from "next/navigation";
-import {
-  type ReactElement,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type ReactElement, useCallback, useState } from "react";
+
+import { useVolunteers } from "@/hooks/use-volunteers";
 
 import PendingInvitesTable from "./pending-invites-table";
-import { type Volunteer } from "./types";
 import AddVolunteerModal from "./volunteer-add-modal";
 import VolunteerProfile from "./volunteer-profile";
 import {
-  AuthenticationError,
-  fetchActiveVolunteers,
-  fetchInactiveVolunteers,
-  fetchPendingInvites,
   fetchVolunteerById,
   type FetchVolunteerByIdResult,
 } from "./volunteer-service";
@@ -63,29 +53,35 @@ import VolunteerTable from "./volunteer-table";
  * All tables share a single search box that searches all tables simultaneously.
  */
 export default function VolunteerList(): ReactElement {
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentTab, setCurrentTab] = useState(0);
 
-  // Active volunteers state
-  const [activeVolunteers, setActiveVolunteers] = useState<Volunteer[]>([]);
-  const [totalActiveVolunteers, setTotalActiveVolunteers] = useState(0);
-  const [activePage, setActivePage] = useState(1);
+  const [filters, setFilters] = useState<{
+    type?: string;
+    alumni?: boolean;
+  }>({});
 
-  // Inactive volunteers state
-  const [inactiveVolunteers, setInactiveVolunteers] = useState<Volunteer[]>([]);
-  const [totalInactiveVolunteers, setTotalInactiveVolunteers] = useState(0);
-  const [inactivePage, setInactivePage] = useState(1);
+  const {
+    activeVolunteers,
+    totalActiveVolunteers,
+    activePage,
+    setActivePage,
+    inactiveVolunteers,
+    totalInactiveVolunteers,
+    inactivePage,
+    setInactivePage,
+    pendingInvites,
+    totalPendingInvites,
+    pendingPage,
+    setPendingPage,
+    limit,
+    setLimit,
+    loading,
+    error,
+    loadVolunteers,
+  } = useVolunteers(searchQuery, filters);
 
-  // Pending invites state
-  const [pendingInvites, setPendingInvites] = useState<Volunteer[]>([]);
-  const [totalPendingInvites, setTotalPendingInvites] = useState(0);
-  const [pendingPage, setPendingPage] = useState(1);
-
-  // Shared state
-  const [limit, setLimit] = useState(10);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Profile modal state
   const [selectedVolunteerId, setSelectedVolunteerId] = useState<number | null>(
     null,
   );
@@ -96,108 +92,6 @@ export default function VolunteerList(): ReactElement {
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
-  const [filters, setFilters] = useState<{
-    type?: string;
-    alumni?: boolean;
-  }>({});
-
-  // Use ref to store latest loadVolunteers to avoid dependency issues
-  const loadVolunteersRef = useRef<(() => Promise<void>) | undefined>(
-    undefined,
-  );
-
-  const loadVolunteers = useCallback(async (): Promise<void> => {
-    setError(null);
-    setLoading(true);
-    try {
-      // Fetch active, inactive, and pending volunteers with the same search query and filters
-      const [activeResponse, inactiveResponse, pendingResponse] =
-        await Promise.all([
-          fetchActiveVolunteers({
-            search: searchQuery,
-            page: activePage,
-            limit,
-            type: filters.type,
-            alumni: filters.alumni,
-          }),
-          fetchInactiveVolunteers({
-            search: searchQuery,
-            page: inactivePage,
-            limit,
-            type: filters.type,
-            alumni: filters.alumni,
-          }),
-          fetchPendingInvites({
-            search: searchQuery,
-            page: pendingPage,
-            limit,
-            type: filters.type,
-            alumni: filters.alumni,
-          }),
-        ]);
-
-      setActiveVolunteers(activeResponse.volunteers || []);
-      setTotalActiveVolunteers(activeResponse.total || 0);
-
-      setInactiveVolunteers(inactiveResponse.volunteers || []);
-      setTotalInactiveVolunteers(inactiveResponse.total || 0);
-
-      setPendingInvites(pendingResponse.volunteers || []);
-      setTotalPendingInvites(pendingResponse.total || 0);
-    } catch (error) {
-      // Handle authentication errors silently (redirect will happen)
-      if (error instanceof AuthenticationError) {
-        router.push("/auth/login");
-        return;
-      }
-
-      console.error("Failed to fetch volunteers:", error);
-      setError("Failed to load volunteers. Please try again later.");
-      setActiveVolunteers([]);
-      setTotalActiveVolunteers(0);
-      setInactiveVolunteers([]);
-      setTotalInactiveVolunteers(0);
-      setPendingInvites([]);
-      setTotalPendingInvites(0);
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    searchQuery,
-    activePage,
-    inactivePage,
-    pendingPage,
-    limit,
-    filters.type,
-    filters.alumni,
-    router,
-  ]);
-
-  // Keep ref updated with latest loadVolunteers
-  loadVolunteersRef.current = loadVolunteers;
-
-  // Debounce search to avoid excessive API calls - only debounce search query changes
-  useEffect(() => {
-    const debounceTimer = setTimeout(
-      () => {
-        if (loadVolunteersRef.current) {
-          void loadVolunteersRef.current();
-        }
-      },
-      searchQuery ? 300 : 0,
-    );
-
-    return (): void => {
-      clearTimeout(debounceTimer);
-    };
-  }, [searchQuery]);
-
-  // Load immediately when pagination, limit, or filters change (no debounce)
-  useEffect(() => {
-    if (loadVolunteersRef.current) {
-      void loadVolunteersRef.current();
-    }
-  }, [activePage, inactivePage, pendingPage, limit, filters]);
 
   const handleSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>): void => {

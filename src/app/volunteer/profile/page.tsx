@@ -25,7 +25,7 @@ import { JSX, useCallback, useEffect, useState } from "react";
 
 import type { AvailabilityData } from "@/components/volunteer/availability-editor";
 import ProfileEditForm from "@/components/volunteer/profile-edit-form";
-import { useSignOut } from "@/utils/auth-hooks";
+import { useSignOut } from "@/hooks/use-auth";
 
 type VolunteerProfileData = {
   volunteers: {

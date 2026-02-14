@@ -1,7 +1,7 @@
 "use client";
 import { JSX } from "react";
 
-import { useSignOut } from "@/utils/auth-hooks";
+import { useSignOut } from "@/hooks/use-auth";
 
 /**
  * Button component that signs out the current user and redirects to login.

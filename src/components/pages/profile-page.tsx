@@ -4,7 +4,7 @@ import { Avatar, Box, Button, Typography } from "@mui/material";
 import { useSession } from "next-auth/react";
 import { JSX } from "react";
 
-import { useSignOut } from "@/utils/auth-hooks";
+import { useSignOut } from "@/hooks/use-auth";
 
 type ProfilePageProps = {
   roleLabel?: string;
