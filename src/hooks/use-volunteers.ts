@@ -2,6 +2,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Volunteer } from "@/components/staff/volunteer-management/types";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import {
   AuthenticationError,
   fetchActiveVolunteers,
@@ -64,7 +65,7 @@ export function useVolunteers(
   const [pendingPage, setPendingPage] = useState(1);
 
   // Shared state
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

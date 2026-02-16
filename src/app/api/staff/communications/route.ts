@@ -8,6 +8,7 @@ import {
   createCommunication,
   listCommunications,
 } from "@/services/communications.service";
+import { NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 
 const createCommunicationSchema = z.object({
@@ -88,6 +89,9 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(output, { status: 201 });
   } catch (error) {
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

@@ -1,9 +1,11 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import db from "@/db";
-import { interests } from "@/db/schema";
+import {
+  createInterest,
+  listInterests,
+} from "@/services/interests-server.service";
+import { ConflictError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
 
@@ -19,10 +21,7 @@ export async function GET(): Promise<NextResponse> {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const allInterests = await db
-      .select()
-      .from(interests)
-      .orderBy(interests.name);
+    const allInterests = await listInterests();
 
     return NextResponse.json({ data: allInterests });
   } catch (error) {
@@ -54,31 +53,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    const data = result.data;
-
-    // Check if interest with same name already exists
-    const existing = await db
-      .select()
-      .from(interests)
-      .where(eq(interests.name, data.name));
-
-    if (existing.length > 0) {
-      return NextResponse.json(
-        { message: "An interest with this name already exists" },
-        { status: 400 },
-      );
-    }
-
-    const newInterest = await db
-      .insert(interests)
-      .values({
-        name: data.name,
-        description: data.description,
-      })
-      .returning();
+    const newInterest = await createInterest(result.data);
 
     return NextResponse.json(
-      { message: "Interest created successfully", data: newInterest[0] },
+      { message: "Interest created successfully", data: newInterest },
       { status: 201 },
     );
   } catch (error) {
@@ -87,6 +65,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         { error: error.code },
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
+    }
+    if (error instanceof ConflictError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

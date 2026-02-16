@@ -2,7 +2,7 @@ import { and, eq, gte, isNotNull, isNull, lte, sql } from "drizzle-orm";
 
 import db from "@/db";
 import { opportunities, volunteerHours, volunteers } from "@/db/schema";
-import { NotFoundError } from "@/utils/errors";
+import { ConflictError, NotFoundError } from "@/utils/errors";
 
 export type HoursFilters = {
   volunteerId: number;
@@ -120,4 +120,78 @@ export async function logHours(input: LogHoursInput): Promise<{
 
   if (!newEntry[0]) throw new Error("Failed to log hours");
   return newEntry[0];
+}
+
+export type HoursRecord = typeof volunteerHours.$inferSelect;
+
+/**
+ * Updates a volunteer hours record. Allows verification or editing unverified records.
+ * Throws NotFoundError if the record does not exist.
+ */
+export async function updateHours(
+  hourId: number,
+  data: {
+    verify?: boolean;
+    hours?: number;
+    notes?: string;
+    verifiedBy?: number;
+  },
+): Promise<HoursRecord> {
+  const existing = await db
+    .select()
+    .from(volunteerHours)
+    .where(eq(volunteerHours.id, hourId))
+    .limit(1);
+
+  if (existing.length === 0) {
+    throw new NotFoundError("Record not found");
+  }
+
+  const currentRecord = existing[0];
+  const updateData: Partial<typeof volunteerHours.$inferInsert> = {};
+
+  if (data.verify) {
+    updateData.verifiedBy = data.verifiedBy;
+    updateData.verifiedAt = new Date();
+  } else {
+    if (currentRecord.verifiedAt !== null) {
+      throw new ConflictError(
+        "Cannot edit hours that have already been verified.",
+      );
+    }
+    if (data.hours !== undefined) updateData.hours = data.hours;
+    if (data.notes !== undefined) updateData.notes = data.notes;
+  }
+
+  const updated = await db
+    .update(volunteerHours)
+    .set(updateData)
+    .where(eq(volunteerHours.id, hourId))
+    .returning();
+
+  return updated[0];
+}
+
+/**
+ * Deletes a volunteer hours record if it has not been verified.
+ * Throws NotFoundError if not found, ConflictError if already verified.
+ */
+export async function deleteHours(hourId: number): Promise<void> {
+  const existing = await db
+    .select()
+    .from(volunteerHours)
+    .where(eq(volunteerHours.id, hourId))
+    .limit(1);
+
+  if (existing.length === 0) {
+    throw new NotFoundError("Record not found");
+  }
+
+  if (existing[0].verifiedAt !== null) {
+    throw new ConflictError(
+      "Cannot delete hours that have already been verified.",
+    );
+  }
+
+  await db.delete(volunteerHours).where(eq(volunteerHours.id, hourId));
 }

@@ -1,11 +1,14 @@
-import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import db from "@/db";
-import { skills, volunteers, volunteerSkills } from "@/db/schema";
+import {
+  assignSkill,
+  getVolunteerSkills,
+} from "@/services/volunteer-skills.service";
+import { NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
+import { validateAndParseId } from "@/utils/validate-id";
 
 const addSkillSchema = z.object({
   skillId: z.number().int().positive("Skill ID must be a positive integer"),
@@ -23,48 +26,26 @@ export async function GET(
     }
 
     const { id } = await params;
-    const volunteerId = Number.parseInt(id, 10);
-
-    if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
         { message: "Invalid volunteer ID" },
         { status: 400 },
       );
     }
 
-    // Check if volunteer exists
-    const volunteer = await db
-      .select()
-      .from(volunteers)
-      .where(eq(volunteers.id, volunteerId));
+    const data = await getVolunteerSkills(volunteerId);
 
-    if (volunteer.length === 0) {
-      return NextResponse.json(
-        { message: "Volunteer not found" },
-        { status: 404 },
-      );
-    }
-
-    // Fetch volunteer's skills
-    const volunteerSkillsData = await db
-      .select({
-        skillId: volunteerSkills.skillId,
-        skillName: skills.name,
-        skillDescription: skills.description,
-        skillCategory: skills.category,
-        proficiencyLevel: volunteerSkills.level,
-      })
-      .from(volunteerSkills)
-      .leftJoin(skills, eq(volunteerSkills.skillId, skills.id))
-      .where(eq(volunteerSkills.volunteerId, volunteerId));
-
-    return NextResponse.json({ data: volunteerSkillsData });
+    return NextResponse.json({ data });
   } catch (error) {
     if (error instanceof AuthError) {
       return NextResponse.json(
         { error: error.code },
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
@@ -81,9 +62,8 @@ export async function POST(
     }
 
     const { id } = await params;
-    const volunteerId = Number.parseInt(id, 10);
-
-    if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
         { message: "Invalid volunteer ID" },
         { status: 400 },
@@ -102,62 +82,14 @@ export async function POST(
     }
 
     const { skillId, level } = result.data;
+    const outcome = await assignSkill(volunteerId, skillId, level);
 
-    // Check if volunteer exists
-    const volunteer = await db
-      .select()
-      .from(volunteers)
-      .where(eq(volunteers.id, volunteerId));
-
-    if (volunteer.length === 0) {
-      return NextResponse.json(
-        { message: "Volunteer not found" },
-        { status: 404 },
-      );
-    }
-
-    // Check if skill exists
-    const skill = await db.select().from(skills).where(eq(skills.id, skillId));
-
-    if (skill.length === 0) {
-      return NextResponse.json({ message: "Skill not found" }, { status: 404 });
-    }
-
-    // Check if already assigned
-    const existing = await db
-      .select()
-      .from(volunteerSkills)
-      .where(
-        and(
-          eq(volunteerSkills.volunteerId, volunteerId),
-          eq(volunteerSkills.skillId, skillId),
-        ),
-      );
-
-    if (existing.length > 0) {
-      // Update the level instead of failing
-      await db
-        .update(volunteerSkills)
-        .set({ level })
-        .where(
-          and(
-            eq(volunteerSkills.volunteerId, volunteerId),
-            eq(volunteerSkills.skillId, skillId),
-          ),
-        );
-
+    if ("updated" in outcome) {
       return NextResponse.json({
         message: "Skill level updated successfully",
         data: { volunteerId, skillId, level },
       });
     }
-
-    // Add the skill assignment
-    await db.insert(volunteerSkills).values({
-      volunteerId,
-      skillId,
-      level,
-    });
 
     return NextResponse.json(
       {
@@ -172,6 +104,9 @@ export async function POST(
         { error: error.code },
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

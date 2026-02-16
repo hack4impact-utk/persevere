@@ -2,7 +2,7 @@ import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 
 import db from "@/db";
 import { admin, staff, users } from "@/db/schema";
-import { ConflictError } from "@/utils/errors";
+import { ConflictError, NotFoundError } from "@/utils/errors";
 import { sendWelcomeEmail } from "@/utils/server/email";
 import { generateSecurePassword, hashPassword } from "@/utils/server/password";
 
@@ -203,4 +203,112 @@ export async function createStaff(input: CreateStaffInput): Promise<{
   }
 
   return { staff: newStaff[0], emailSent, emailError };
+}
+
+export type StaffWithUser = {
+  staff: {
+    id: number;
+    userId: number;
+    notificationPreference: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+  users: typeof users.$inferSelect | undefined;
+  isAdmin: boolean;
+};
+
+/**
+ * Gets a single staff member by staff ID with their user and admin records.
+ */
+export async function getStaffById(staffId: number): Promise<StaffWithUser> {
+  const staffMember = await db.query.staff.findFirst({
+    where: eq(staff.id, staffId),
+    with: {
+      user: true,
+      admin: true,
+    },
+  });
+
+  if (!staffMember) {
+    throw new NotFoundError("Staff member not found");
+  }
+
+  return {
+    staff: {
+      id: staffMember.id,
+      userId: staffMember.userId,
+      notificationPreference: staffMember.notificationPreference,
+      createdAt: staffMember.createdAt,
+      updatedAt: staffMember.updatedAt,
+    },
+    users: staffMember.user,
+    isAdmin: !!staffMember.admin,
+  };
+}
+
+/**
+ * Updates a staff member's user and/or staff fields.
+ */
+export async function updateStaff(
+  staffId: number,
+  data: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string | null;
+    isActive?: boolean;
+    notificationPreference?: "email" | "sms" | "both" | "none";
+  },
+): Promise<void> {
+  const staffMember = await db.query.staff.findFirst({
+    where: eq(staff.id, staffId),
+  });
+
+  if (!staffMember) {
+    throw new NotFoundError("Staff member not found");
+  }
+
+  if (
+    data.firstName !== undefined ||
+    data.lastName !== undefined ||
+    data.email !== undefined ||
+    data.phone !== undefined ||
+    data.isActive !== undefined
+  ) {
+    await db
+      .update(users)
+      .set({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        isActive: data.isActive,
+      })
+      .where(eq(users.id, staffMember.userId));
+  }
+
+  if (data.notificationPreference !== undefined) {
+    await db
+      .update(staff)
+      .set({ notificationPreference: data.notificationPreference })
+      .where(eq(staff.id, staffId));
+  }
+}
+
+/**
+ * Soft-deletes a staff member by setting their user's isActive to false.
+ */
+export async function deactivateStaff(staffId: number): Promise<void> {
+  const staffMember = await db.query.staff.findFirst({
+    where: eq(staff.id, staffId),
+  });
+
+  if (!staffMember) {
+    throw new NotFoundError("Staff member not found");
+  }
+
+  await db
+    .update(users)
+    .set({ isActive: false })
+    .where(eq(users.id, staffMember.userId));
 }

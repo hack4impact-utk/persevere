@@ -1,11 +1,14 @@
-import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import db from "@/db";
-import { interests, volunteerInterests, volunteers } from "@/db/schema";
+import {
+  assignInterest,
+  getVolunteerInterests,
+} from "@/services/volunteer-interests.service";
+import { ConflictError, NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
+import { validateAndParseId } from "@/utils/validate-id";
 
 const addInterestSchema = z.object({
   interestId: z
@@ -25,46 +28,26 @@ export async function GET(
     }
 
     const { id } = await params;
-    const volunteerId = Number.parseInt(id, 10);
-
-    if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
         { message: "Invalid volunteer ID" },
         { status: 400 },
       );
     }
 
-    // Check if volunteer exists
-    const volunteer = await db
-      .select()
-      .from(volunteers)
-      .where(eq(volunteers.id, volunteerId));
+    const data = await getVolunteerInterests(volunteerId);
 
-    if (volunteer.length === 0) {
-      return NextResponse.json(
-        { message: "Volunteer not found" },
-        { status: 404 },
-      );
-    }
-
-    // Fetch volunteer's interests
-    const volunteerInterestsData = await db
-      .select({
-        interestId: volunteerInterests.interestId,
-        interestName: interests.name,
-        interestDescription: interests.description,
-      })
-      .from(volunteerInterests)
-      .leftJoin(interests, eq(volunteerInterests.interestId, interests.id))
-      .where(eq(volunteerInterests.volunteerId, volunteerId));
-
-    return NextResponse.json({ data: volunteerInterestsData });
+    return NextResponse.json({ data });
   } catch (error) {
     if (error instanceof AuthError) {
       return NextResponse.json(
         { error: error.code },
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
@@ -81,9 +64,8 @@ export async function POST(
     }
 
     const { id } = await params;
-    const volunteerId = Number.parseInt(id, 10);
-
-    if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
         { message: "Invalid volunteer ID" },
         { status: 400 },
@@ -102,56 +84,7 @@ export async function POST(
     }
 
     const { interestId } = result.data;
-
-    // Check if volunteer exists
-    const volunteer = await db
-      .select()
-      .from(volunteers)
-      .where(eq(volunteers.id, volunteerId));
-
-    if (volunteer.length === 0) {
-      return NextResponse.json(
-        { message: "Volunteer not found" },
-        { status: 404 },
-      );
-    }
-
-    // Check if interest exists
-    const interest = await db
-      .select()
-      .from(interests)
-      .where(eq(interests.id, interestId));
-
-    if (interest.length === 0) {
-      return NextResponse.json(
-        { message: "Interest not found" },
-        { status: 404 },
-      );
-    }
-
-    // Check if already assigned
-    const existing = await db
-      .select()
-      .from(volunteerInterests)
-      .where(
-        and(
-          eq(volunteerInterests.volunteerId, volunteerId),
-          eq(volunteerInterests.interestId, interestId),
-        ),
-      );
-
-    if (existing.length > 0) {
-      return NextResponse.json(
-        { message: "Interest is already assigned to this volunteer" },
-        { status: 400 },
-      );
-    }
-
-    // Add the interest assignment
-    await db.insert(volunteerInterests).values({
-      volunteerId,
-      interestId,
-    });
+    await assignInterest(volunteerId, interestId);
 
     return NextResponse.json(
       {
@@ -166,6 +99,12 @@ export async function POST(
         { error: error.code },
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+    if (error instanceof ConflictError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

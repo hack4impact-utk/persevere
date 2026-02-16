@@ -1,9 +1,8 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import db from "@/db";
-import { skills } from "@/db/schema";
+import { createSkill, listSkills } from "@/services/skills-server.service";
+import { ConflictError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
 
@@ -20,7 +19,7 @@ export async function GET(): Promise<NextResponse> {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const allSkills = await db.select().from(skills).orderBy(skills.name);
+    const allSkills = await listSkills();
 
     return NextResponse.json({ data: allSkills });
   } catch (error) {
@@ -52,32 +51,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    const data = result.data;
-
-    // Check if skill with same name already exists
-    const existing = await db
-      .select()
-      .from(skills)
-      .where(eq(skills.name, data.name));
-
-    if (existing.length > 0) {
-      return NextResponse.json(
-        { message: "A skill with this name already exists" },
-        { status: 400 },
-      );
-    }
-
-    const newSkill = await db
-      .insert(skills)
-      .values({
-        name: data.name,
-        description: data.description,
-        category: data.category,
-      })
-      .returning();
+    const newSkill = await createSkill(result.data);
 
     return NextResponse.json(
-      { message: "Skill created successfully", data: newSkill[0] },
+      { message: "Skill created successfully", data: newSkill },
       { status: 201 },
     );
   } catch (error) {
@@ -86,6 +63,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         { error: error.code },
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
+    }
+    if (error instanceof ConflictError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

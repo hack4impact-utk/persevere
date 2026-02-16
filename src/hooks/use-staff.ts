@@ -2,6 +2,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Staff } from "@/components/staff/people-management/types";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { AuthenticationError, fetchStaff } from "@/services/staff.service";
 
 export type StaffFiltersInput = {
@@ -54,7 +55,7 @@ export function useStaff(
   const [totalPendingStaff, setTotalPendingStaff] = useState(0);
   const [pendingPage, setPendingPage] = useState(1);
 
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

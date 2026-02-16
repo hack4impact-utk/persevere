@@ -1,9 +1,11 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import db from "@/db";
-import { opportunities } from "@/db/schema";
+import {
+  deleteCalendarEvent,
+  updateCalendarEvent,
+} from "@/services/calendar-events.service";
+import { NotFoundError, ValidationError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
 import { validateAndParseId } from "@/utils/validate-id";
@@ -27,7 +29,6 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    // Require staff or admin role
     const session = await requireAuth();
     if (!["staff", "admin"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -44,8 +45,6 @@ export async function PUT(
     }
 
     const json = await request.json();
-
-    // Validate the request body
     const result = eventUpdateSchema.safeParse(json);
     if (!result.success) {
       const firstError = result.error.issues[0];
@@ -56,95 +55,15 @@ export async function PUT(
     }
 
     const data = result.data;
-
-    // Check if event exists
-    const existingEvent = await db
-      .select()
-      .from(opportunities)
-      .where(eq(opportunities.id, eventId));
-
-    if (existingEvent.length === 0) {
-      return NextResponse.json({ message: "Event not found" }, { status: 404 });
-    }
-
-    // Validate date range if both dates are provided
-    if (data.startDate && data.endDate) {
-      const startDate = new Date(data.startDate);
-      const endDate = new Date(data.endDate);
-      if (endDate <= startDate) {
-        return NextResponse.json(
-          { message: "End date must be after start date" },
-          { status: 400 },
-        );
-      }
-    } else if (data.startDate) {
-      // If only start date is provided, validate against existing end date
-      const startDate = new Date(data.startDate);
-      if (startDate >= existingEvent[0].endDate) {
-        return NextResponse.json(
-          { message: "Start date must be before end date" },
-          { status: 400 },
-        );
-      }
-    } else if (data.endDate) {
-      // If only end date is provided, validate against existing start date
-      const endDate = new Date(data.endDate);
-      if (endDate <= existingEvent[0].startDate) {
-        return NextResponse.json(
-          { message: "End date must be after start date" },
-          { status: 400 },
-        );
-      }
-    }
-
-    // Build update object
-    const updateData: {
-      title?: string;
-      description?: string;
-      location?: string;
-      startDate?: Date;
-      endDate?: Date;
-      maxVolunteers?: number | null;
-      status?: "open" | "full" | "completed" | "canceled";
-      updatedAt?: Date;
-    } = {
-      updatedAt: new Date(),
-    };
-
-    if (data.title !== undefined) updateData.title = data.title;
-    if (data.description !== undefined)
-      updateData.description = data.description;
-    if (data.location !== undefined) updateData.location = data.location;
-    if (data.startDate !== undefined)
-      updateData.startDate = new Date(data.startDate);
-    if (data.endDate !== undefined) updateData.endDate = new Date(data.endDate);
-    if (data.maxVolunteers !== undefined)
-      updateData.maxVolunteers = data.maxVolunteers;
-    if (data.status !== undefined) updateData.status = data.status;
-
-    // Update the opportunity
-    const updatedEvent = await db
-      .update(opportunities)
-      .set(updateData)
-      .where(eq(opportunities.id, eventId))
-      .returning();
-
-    // Transform to FullCalendar format
-    const calendarEvent = {
-      id: updatedEvent[0].id.toString(),
-      title: updatedEvent[0].title,
-      description: updatedEvent[0].description,
-      location: updatedEvent[0].location,
-      start: updatedEvent[0].startDate.toISOString(),
-      end: updatedEvent[0].endDate.toISOString(),
-      extendedProps: {
-        maxVolunteers: updatedEvent[0].maxVolunteers,
-        status: updatedEvent[0].status,
-        createdById: updatedEvent[0].createdById,
-        isRecurring: updatedEvent[0].isRecurring,
-        recurrencePattern: updatedEvent[0].recurrencePattern,
-      },
-    };
+    const calendarEvent = await updateCalendarEvent(eventId, {
+      title: data.title,
+      description: data.description,
+      location: data.location,
+      startDate: data.startDate ? new Date(data.startDate) : undefined,
+      endDate: data.endDate ? new Date(data.endDate) : undefined,
+      maxVolunteers: data.maxVolunteers,
+      status: data.status,
+    });
 
     return NextResponse.json({
       message: "Event updated successfully",
@@ -156,6 +75,12 @@ export async function PUT(
         { error: error.code },
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
@@ -170,7 +95,6 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    // Require staff or admin role
     const session = await requireAuth();
     if (!["staff", "admin"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -186,28 +110,18 @@ export async function DELETE(
       );
     }
 
-    // Check if event exists
-    const existingEvent = await db
-      .select()
-      .from(opportunities)
-      .where(eq(opportunities.id, eventId));
+    await deleteCalendarEvent(eventId);
 
-    if (existingEvent.length === 0) {
-      return NextResponse.json({ message: "Event not found" }, { status: 404 });
-    }
-
-    // Delete the opportunity
-    await db.delete(opportunities).where(eq(opportunities.id, eventId));
-
-    return NextResponse.json({
-      message: "Event deleted successfully",
-    });
+    return NextResponse.json({ message: "Event deleted successfully" });
   } catch (error) {
     if (error instanceof AuthError) {
       return NextResponse.json(
         { error: error.code },
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
