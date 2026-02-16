@@ -71,3 +71,35 @@ export async function assignInterest(
 
   await db.insert(volunteerInterests).values({ volunteerId, interestId });
 }
+
+export async function removeInterest(
+  volunteerId: number,
+  interestId: number,
+): Promise<void> {
+  const volunteer = await db
+    .select()
+    .from(volunteers)
+    .where(eq(volunteers.id, volunteerId));
+  if (volunteer.length === 0) throw new NotFoundError("Volunteer not found");
+
+  const existing = await db
+    .select()
+    .from(volunteerInterests)
+    .where(
+      and(
+        eq(volunteerInterests.volunteerId, volunteerId),
+        eq(volunteerInterests.interestId, interestId),
+      ),
+    );
+  if (existing.length === 0)
+    throw new NotFoundError("Interest assignment not found");
+
+  await db
+    .delete(volunteerInterests)
+    .where(
+      and(
+        eq(volunteerInterests.volunteerId, volunteerId),
+        eq(volunteerInterests.interestId, interestId),
+      ),
+    );
+}

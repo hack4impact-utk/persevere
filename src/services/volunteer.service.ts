@@ -14,6 +14,8 @@ import {
   volunteerHours,
   volunteerRsvps,
 } from "@/db/schema/opportunities";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { NotFoundError } from "@/utils/errors";
 import { sendWelcomeEmail } from "@/utils/server/email";
 import { generateSecurePassword, hashPassword } from "@/utils/server/password";
 
@@ -373,7 +375,7 @@ export async function getVolunteerProfile(
     .leftJoin(opportunities, eq(volunteerHours.opportunityId, opportunities.id))
     .where(eq(volunteerHours.volunteerId, volunteerId))
     .orderBy(desc(volunteerHours.date))
-    .limit(10);
+    .limit(DEFAULT_PAGE_SIZE);
 
   return {
     volunteer: volunteer[0],
@@ -462,4 +464,29 @@ export async function updateVolunteerProfile(
     .where(eq(volunteers.id, volunteerId));
 
   return updatedVolunteer[0] ?? null;
+}
+
+export async function resetVolunteerCredentials(
+  volunteerId: number,
+): Promise<{ email: string; firstName: string; plainPassword: string }> {
+  const volunteerData = await db
+    .select()
+    .from(volunteers)
+    .leftJoin(users, eq(volunteers.userId, users.id))
+    .where(eq(volunteers.id, volunteerId));
+
+  if (volunteerData.length === 0 || !volunteerData[0]?.users) {
+    throw new NotFoundError("Volunteer not found");
+  }
+
+  const user = volunteerData[0].users;
+  const plainPassword = generateSecurePassword(12);
+  const hashedPassword = await hashPassword(plainPassword);
+
+  await db
+    .update(users)
+    .set({ password: hashedPassword, updatedAt: new Date() })
+    .where(eq(users.id, user.id));
+
+  return { email: user.email, firstName: user.firstName, plainPassword };
 }

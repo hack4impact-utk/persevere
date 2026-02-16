@@ -1,9 +1,6 @@
-import { desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import db from "@/db";
-import { volunteers } from "@/db/schema";
-import { opportunities, volunteerRsvps } from "@/db/schema/opportunities";
+import { getVolunteerRsvps, RsvpError } from "@/services/rsvp.service";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
 
@@ -20,43 +17,8 @@ export async function GET(): Promise<NextResponse> {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Get volunteer record for current user
     const userId = Number.parseInt(session.user.id, 10);
-    const volunteer = await db
-      .select()
-      .from(volunteers)
-      .where(eq(volunteers.userId, userId));
-
-    if (volunteer.length === 0) {
-      return NextResponse.json(
-        { message: "Volunteer profile not found" },
-        { status: 404 },
-      );
-    }
-
-    const volunteerId = volunteer[0].id;
-
-    // Fetch RSVPs with opportunity details
-    const rsvps = await db
-      .select({
-        opportunityId: volunteerRsvps.opportunityId,
-        rsvpStatus: volunteerRsvps.status,
-        rsvpAt: volunteerRsvps.rsvpAt,
-        notes: volunteerRsvps.notes,
-        opportunityTitle: opportunities.title,
-        opportunityDescription: opportunities.description,
-        opportunityLocation: opportunities.location,
-        opportunityStartDate: opportunities.startDate,
-        opportunityEndDate: opportunities.endDate,
-        opportunityStatus: opportunities.status,
-      })
-      .from(volunteerRsvps)
-      .leftJoin(
-        opportunities,
-        eq(volunteerRsvps.opportunityId, opportunities.id),
-      )
-      .where(eq(volunteerRsvps.volunteerId, volunteerId))
-      .orderBy(desc(opportunities.startDate));
+    const rsvps = await getVolunteerRsvps(userId);
 
     // Separate into upcoming and past
     const now = new Date();
@@ -80,6 +42,9 @@ export async function GET(): Promise<NextResponse> {
         { error: error.code },
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
+    }
+    if (error instanceof RsvpError && error.code === "VOLUNTEER_NOT_FOUND") {
+      return NextResponse.json({ message: error.message }, { status: 404 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

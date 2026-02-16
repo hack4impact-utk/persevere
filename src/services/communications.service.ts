@@ -11,7 +11,7 @@ import {
 import { NotFoundError } from "@/utils/errors";
 import { sendBulkEmail } from "@/utils/server/email";
 
-type CommunicationRecord = {
+export type CommunicationRecord = {
   id: number;
   senderId: number;
   subject: string;
@@ -232,4 +232,18 @@ export async function createCommunication(
     recipientCount: recipientEmails.length,
     emailResult: emailResult ?? undefined,
   };
+}
+
+export async function getCommunicationById(
+  id: number,
+): Promise<CommunicationRecord> {
+  const result = await db
+    .select(communicationSelect)
+    .from(bulkCommunicationLogs)
+    .leftJoin(users, eq(bulkCommunicationLogs.senderId, users.id))
+    .where(eq(bulkCommunicationLogs.id, id))
+    .limit(1);
+
+  if (!result[0]) throw new NotFoundError("Communication not found");
+  return result[0];
 }

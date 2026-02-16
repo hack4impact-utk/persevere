@@ -1,4 +1,4 @@
-import { and, count, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 
 import db from "@/db";
 import { volunteers } from "@/db/schema";
@@ -143,4 +143,52 @@ export async function cancelRsvp(
     );
 
   return { volunteerId, opportunityId };
+}
+
+export type RsvpWithOpportunity = {
+  opportunityId: number | null;
+  rsvpStatus:
+    | "pending"
+    | "confirmed"
+    | "declined"
+    | "attended"
+    | "no_show"
+    | null;
+  rsvpAt: Date | null;
+  notes: string | null;
+  opportunityTitle: string | null;
+  opportunityDescription: string | null;
+  opportunityLocation: string | null;
+  opportunityStartDate: Date | null;
+  opportunityEndDate: Date | null;
+  opportunityStatus: "open" | "full" | "completed" | "canceled" | null;
+};
+
+export async function getVolunteerRsvps(
+  userId: number,
+): Promise<RsvpWithOpportunity[]> {
+  const volunteer = await db
+    .select()
+    .from(volunteers)
+    .where(eq(volunteers.userId, userId));
+  if (volunteer.length === 0)
+    throw new RsvpError("VOLUNTEER_NOT_FOUND", "Volunteer profile not found");
+
+  return db
+    .select({
+      opportunityId: volunteerRsvps.opportunityId,
+      rsvpStatus: volunteerRsvps.status,
+      rsvpAt: volunteerRsvps.rsvpAt,
+      notes: volunteerRsvps.notes,
+      opportunityTitle: opportunities.title,
+      opportunityDescription: opportunities.description,
+      opportunityLocation: opportunities.location,
+      opportunityStartDate: opportunities.startDate,
+      opportunityEndDate: opportunities.endDate,
+      opportunityStatus: opportunities.status,
+    })
+    .from(volunteerRsvps)
+    .leftJoin(opportunities, eq(volunteerRsvps.opportunityId, opportunities.id))
+    .where(eq(volunteerRsvps.volunteerId, volunteer[0].id))
+    .orderBy(desc(opportunities.startDate));
 }

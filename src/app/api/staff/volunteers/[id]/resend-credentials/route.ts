@@ -1,12 +1,10 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import db from "@/db";
-import { users, volunteers } from "@/db/schema";
+import { resetVolunteerCredentials } from "@/services/volunteer.service";
+import { NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
 import { sendWelcomeEmail } from "@/utils/server/email";
-import { generateSecurePassword, hashPassword } from "@/utils/server/password";
 import { validateAndParseId } from "@/utils/validate-id";
 
 /**
@@ -35,44 +33,16 @@ export async function POST(
       );
     }
 
-    // Find the volunteer with their user information
-    const volunteerData = await db
-      .select()
-      .from(volunteers)
-      .leftJoin(users, eq(volunteers.userId, users.id))
-      .where(eq(volunteers.id, volunteerId));
-
-    if (volunteerData.length === 0 || !volunteerData[0]?.users) {
-      return NextResponse.json(
-        { message: "Volunteer not found" },
-        { status: 404 },
-      );
-    }
-
-    const volunteer = volunteerData[0].volunteers;
-    const user = volunteerData[0].users;
-
-    // Generate a new secure password
-    // This invalidates the old password, which is fine since they didn't have it
-    const plainPassword = generateSecurePassword(12);
-    const hashedPassword = await hashPassword(plainPassword);
-
-    // Update the password in the database
-    await db
-      .update(users)
-      .set({
-        password: hashedPassword,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, user.id));
+    const { email, firstName, plainPassword } =
+      await resetVolunteerCredentials(volunteerId);
 
     // Send welcome email with new credentials
     try {
-      await sendWelcomeEmail(user.email, user.firstName, plainPassword);
+      await sendWelcomeEmail(email, firstName, plainPassword);
     } catch (emailError) {
       // Log the error but still return success since password was updated
       console.error(
-        `Failed to send credentials email to ${user.email}:`,
+        `Failed to send credentials email to ${email}:`,
         emailError,
       );
       return NextResponse.json(
@@ -88,8 +58,8 @@ export async function POST(
     return NextResponse.json({
       message: "Credentials have been resent successfully",
       data: {
-        volunteerId: volunteer.id,
-        email: user.email,
+        volunteerId,
+        email,
       },
     });
   } catch (error) {
@@ -98,6 +68,9 @@ export async function POST(
         { error: error.code },
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ message: error.message }, { status: 404 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

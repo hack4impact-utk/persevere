@@ -85,3 +85,35 @@ export async function assignSkill(
   await db.insert(volunteerSkills).values({ volunteerId, skillId, level });
   return { created: true };
 }
+
+export async function removeSkill(
+  volunteerId: number,
+  skillId: number,
+): Promise<void> {
+  const volunteer = await db
+    .select()
+    .from(volunteers)
+    .where(eq(volunteers.id, volunteerId));
+  if (volunteer.length === 0) throw new NotFoundError("Volunteer not found");
+
+  const existing = await db
+    .select()
+    .from(volunteerSkills)
+    .where(
+      and(
+        eq(volunteerSkills.volunteerId, volunteerId),
+        eq(volunteerSkills.skillId, skillId),
+      ),
+    );
+  if (existing.length === 0)
+    throw new NotFoundError("Skill assignment not found");
+
+  await db
+    .delete(volunteerSkills)
+    .where(
+      and(
+        eq(volunteerSkills.volunteerId, volunteerId),
+        eq(volunteerSkills.skillId, skillId),
+      ),
+    );
+}

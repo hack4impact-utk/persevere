@@ -14,6 +14,7 @@ import {
   volunteerHours,
   volunteerRsvps,
 } from "@/db/schema/opportunities";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 
 export type VolunteerDetail = {
   volunteers: typeof import("@/db/schema").volunteers.$inferSelect;
@@ -156,7 +157,7 @@ export async function getVolunteerDetail(
       )
       .where(eq(volunteerHours.volunteerId, volunteerId))
       .orderBy(desc(volunteerHours.date))
-      .limit(10),
+      .limit(DEFAULT_PAGE_SIZE),
   ]);
 
   const totalHours =

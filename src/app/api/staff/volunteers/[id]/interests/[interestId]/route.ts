@@ -1,8 +1,7 @@
-import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import db from "@/db";
-import { volunteerInterests, volunteers } from "@/db/schema";
+import { removeInterest } from "@/services/volunteer-interests.service";
+import { NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
 
@@ -34,46 +33,7 @@ export async function DELETE(
       );
     }
 
-    // Check if volunteer exists
-    const volunteer = await db
-      .select()
-      .from(volunteers)
-      .where(eq(volunteers.id, volunteerId));
-
-    if (volunteer.length === 0) {
-      return NextResponse.json(
-        { message: "Volunteer not found" },
-        { status: 404 },
-      );
-    }
-
-    // Check if assignment exists
-    const existing = await db
-      .select()
-      .from(volunteerInterests)
-      .where(
-        and(
-          eq(volunteerInterests.volunteerId, volunteerId),
-          eq(volunteerInterests.interestId, interestId),
-        ),
-      );
-
-    if (existing.length === 0) {
-      return NextResponse.json(
-        { message: "Interest assignment not found" },
-        { status: 404 },
-      );
-    }
-
-    // Remove the interest assignment
-    await db
-      .delete(volunteerInterests)
-      .where(
-        and(
-          eq(volunteerInterests.volunteerId, volunteerId),
-          eq(volunteerInterests.interestId, interestId),
-        ),
-      );
+    await removeInterest(volunteerId, interestId);
 
     return NextResponse.json({
       message: "Interest removed from volunteer successfully",
@@ -85,6 +45,9 @@ export async function DELETE(
         { error: error.code },
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ message: error.message }, { status: 404 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
