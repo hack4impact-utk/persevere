@@ -2,6 +2,7 @@ import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 
 import db from "@/db";
 import { admin, staff, users } from "@/db/schema";
+import { ConflictError } from "@/utils/errors";
 import { sendWelcomeEmail } from "@/utils/server/email";
 import { generateSecurePassword, hashPassword } from "@/utils/server/password";
 
@@ -163,7 +164,7 @@ export async function createStaff(input: CreateStaffInput): Promise<{
   });
 
   if (existing) {
-    throw new Error("A user with this email already exists");
+    throw new ConflictError("A user with this email already exists");
   }
 
   const plainPassword = generateSecurePassword(12);

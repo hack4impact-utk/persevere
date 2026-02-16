@@ -26,4 +26,5 @@ export const env = {
   nextAuthUrl: getNextAuthUrl(),
   resendApiKey: getEnvVar("RESEND_API_KEY"),
   resendFromEmail: getEnvVar("RESEND_FROM_EMAIL"),
+  isProduction: process.env.NODE_ENV === "production",
 } as const;

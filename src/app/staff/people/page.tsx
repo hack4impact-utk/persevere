@@ -1,15 +1,14 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { type ReactElement } from "react";
 
-import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import PeopleList from "@/components/staff/people-management/people-list";
+import { requireAuth } from "@/utils/server/auth";
 
 /** Staff/admin management (admin only). */
 export default async function PeoplePage(): Promise<ReactElement> {
-  const session = await getServerSession(authOptions);
-
-  if (!session || session.user.role !== "admin") {
+  try {
+    await requireAuth("admin");
+  } catch {
     redirect("/staff/dashboard");
   }
 

@@ -22,21 +22,10 @@ import {
 import { enqueueSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useRef, useState } from "react";
 
-type CalendarEvent = {
-  id: string;
-  title: string;
-  description?: string;
-  location?: string;
-  start: string;
-  end: string;
-  extendedProps?: {
-    maxVolunteers?: number | null;
-    status?: string;
-    createdById?: number;
-    isRecurring?: boolean;
-    recurrencePattern?: unknown;
-  };
-};
+import {
+  type CalendarEvent,
+  useCalendarEvents,
+} from "@/hooks/use-calendar-events";
 
 type EventFormData = {
   title: string;
@@ -77,7 +66,8 @@ export default function Calendar({
   readOnly = false,
 }: CalendarProps): JSX.Element {
   const theme = useTheme();
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const { events, fetchEvents, createEvent, updateEvent, deleteEvent } =
+    useCalendarEvents();
   const [view, setView] = useState<
     "dayGridMonth" | "timeGridWeek" | "timeGridDay"
   >("dayGridMonth");
@@ -91,27 +81,18 @@ export default function Calendar({
   const [formData, setFormData] = useState<EventFormData>(initialFormData);
   const calendarRef = useRef<FullCalendar | null>(null);
 
-  // Fetch events from API
-  const fetchEvents = useCallback(async (start?: Date, end?: Date) => {
-    try {
-      const params = new URLSearchParams();
-      if (start) params.append("start", start.toISOString());
-      if (end) params.append("end", end.toISOString());
-
-      const response = await fetch(
-        `/api/staff/calendar/events?${params.toString()}`,
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch events");
+  // Wraps hook fetchEvents with error handling for snackbar
+  const loadEvents = useCallback(
+    async (start?: Date, end?: Date): Promise<void> => {
+      try {
+        await fetchEvents(start, end);
+      } catch (error) {
+        enqueueSnackbar("Failed to load events", { variant: "error" });
+        console.error("Error fetching events:", error);
       }
-
-      const result = await response.json();
-      setEvents(result.data || []);
-    } catch (error) {
-      enqueueSnackbar("Failed to load events", { variant: "error" });
-      console.error("Error fetching events:", error);
-    }
-  }, []);
+    },
+    [fetchEvents],
+  );
 
   // Helper function to get date range for fetching events
   const getEventsFetchDateRange = (): { start: Date; end: Date } => {
@@ -145,8 +126,8 @@ export default function Calendar({
   // Load events on mount and when view changes
   useEffect(() => {
     const { start, end } = getEventsFetchDateRange();
-    void fetchEvents(start, end);
-  }, [fetchEvents]);
+    void loadEvents(start, end);
+  }, [loadEvents]);
 
   // Handle date selection (create new event)
   const handleDateSelect = (selectInfo: { start: Date; end?: Date }): void => {
@@ -220,22 +201,14 @@ export default function Calendar({
     if (!newStart || !newEnd) return;
 
     try {
-      const response = await fetch(`/api/staff/calendar/events/${eventId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          startDate: newStart.toISOString(),
-          endDate: newEnd.toISOString(),
-        }),
+      await updateEvent(eventId, {
+        startDate: newStart.toISOString(),
+        endDate: newEnd.toISOString(),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to update event");
-      }
 
       // Refresh events
       const { start, end } = getEventsFetchDateRange();
-      await fetchEvents(start, end);
+      await loadEvents(start, end);
 
       enqueueSnackbar("Event rescheduled successfully", { variant: "success" });
     } catch (error) {
@@ -270,25 +243,16 @@ export default function Calendar({
       );
       const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
 
-      const response = await fetch("/api/staff/calendar/events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: formData.title,
-          description: formData.description || undefined,
-          location: formData.location || undefined,
-          startDate: startDateTime.toISOString(),
-          endDate: endDateTime.toISOString(),
-          maxVolunteers: formData.maxVolunteers
-            ? Number.parseInt(formData.maxVolunteers, 10)
-            : undefined,
-        }),
+      await createEvent({
+        title: formData.title,
+        description: formData.description || undefined,
+        location: formData.location || undefined,
+        startDate: startDateTime.toISOString(),
+        endDate: endDateTime.toISOString(),
+        maxVolunteers: formData.maxVolunteers
+          ? Number.parseInt(formData.maxVolunteers, 10)
+          : undefined,
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create event");
-      }
 
       enqueueSnackbar("Event created successfully", { variant: "success" });
       setIsCreateModalOpen(false);
@@ -296,7 +260,7 @@ export default function Calendar({
 
       // Refresh events
       const { start, end } = getEventsFetchDateRange();
-      await fetchEvents(start, end);
+      await loadEvents(start, end);
     } catch (error) {
       enqueueSnackbar(
         error instanceof Error ? error.message : "Failed to create event",
@@ -330,28 +294,16 @@ export default function Calendar({
       );
       const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
 
-      const response = await fetch(
-        `/api/staff/calendar/events/${selectedEvent.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: formData.title,
-            description: formData.description || undefined,
-            location: formData.location || undefined,
-            startDate: startDateTime.toISOString(),
-            endDate: endDateTime.toISOString(),
-            maxVolunteers: formData.maxVolunteers
-              ? Number.parseInt(formData.maxVolunteers, 10)
-              : undefined,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to update event");
-      }
+      await updateEvent(selectedEvent.id, {
+        title: formData.title,
+        description: formData.description || undefined,
+        location: formData.location || undefined,
+        startDate: startDateTime.toISOString(),
+        endDate: endDateTime.toISOString(),
+        maxVolunteers: formData.maxVolunteers
+          ? Number.parseInt(formData.maxVolunteers, 10)
+          : undefined,
+      });
 
       enqueueSnackbar("Event updated successfully", { variant: "success" });
       setIsEditModalOpen(false);
@@ -360,7 +312,7 @@ export default function Calendar({
 
       // Refresh events
       const { start, end } = getEventsFetchDateRange();
-      await fetchEvents(start, end);
+      await loadEvents(start, end);
     } catch (error) {
       enqueueSnackbar(
         error instanceof Error ? error.message : "Failed to update event",
@@ -375,17 +327,7 @@ export default function Calendar({
     if (!selectedEvent) return;
 
     try {
-      const response = await fetch(
-        `/api/staff/calendar/events/${selectedEvent.id}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to delete event");
-      }
-
+      await deleteEvent(selectedEvent.id);
       enqueueSnackbar("Event deleted successfully", { variant: "success" });
       setIsDeleteDialogOpen(false);
       setIsEditModalOpen(false);
@@ -394,7 +336,7 @@ export default function Calendar({
 
       // Refresh events
       const { start, end } = getEventsFetchDateRange();
-      await fetchEvents(start, end);
+      await loadEvents(start, end);
     } catch (error) {
       enqueueSnackbar("Failed to delete event", { variant: "error" });
       console.error("Error deleting event:", error);

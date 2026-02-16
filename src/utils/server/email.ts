@@ -1,9 +1,8 @@
 import { Resend } from "resend";
 
-// Initialize Resend client (only if API key is configured)
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
+import { env } from "@/utils/env";
+
+const resend = new Resend(env.resendApiKey);
 
 /**
  * Sends a welcome email to a new volunteer with their login credentials
@@ -17,11 +16,7 @@ export async function sendWelcomeEmail(
   firstName: string,
   password: string,
 ): Promise<unknown> {
-  if (!resend || !process.env.RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY is not configured");
-  }
-
-  const signInUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/auth/login`;
+  const signInUrl = `${env.nextAuthUrl}/auth/login`;
 
   const welcomeEmailHtml = `
 <!DOCTYPE html>
@@ -86,7 +81,7 @@ This is an automated message. Please do not reply to this email.
   // For development: use "onboarding@resend.dev" (Resend's test domain)
   // For production: use a verified custom domain (e.g., "noreply@yourdomain.com")
   // You must verify your domain in Resend dashboard before using it in production
-  const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+  const fromEmail = env.resendFromEmail;
 
   const result = await resend.emails.send({
     from: fromEmail,
@@ -116,11 +111,7 @@ export async function sendPasswordResetEmail(
   email: string,
   token: string,
 ): Promise<unknown> {
-  if (!resend || !process.env.RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY is not configured");
-  }
-
-  const resetUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/auth/reset-password?token=${encodeURIComponent(token)}`;
+  const resetUrl = `${env.nextAuthUrl}/auth/reset-password?token=${encodeURIComponent(token)}`;
 
   const forgotPasswordEmailHtml = `
 <!DOCTYPE html>
@@ -172,7 +163,7 @@ If you have any questions or need assistance, please don't hesitate to reach out
 This is an automated message. Please do not reply to this email.
   `;
 
-  const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+  const fromEmail = env.resendFromEmail;
 
   const result = await resend.emails.send({
     from: fromEmail,
@@ -206,11 +197,7 @@ export async function sendBulkEmail(
   failureCount: number;
   failures: { email: string; error: string }[];
 }> {
-  if (!resend || !process.env.RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY is not configured");
-  }
-
-  const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+  const fromEmail = env.resendFromEmail;
 
   // Convert body to plain text (simple HTML stripping)
   const plainTextBody = body

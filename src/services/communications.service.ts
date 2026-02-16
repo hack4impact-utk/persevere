@@ -8,6 +8,7 @@ import {
   users,
   volunteers,
 } from "@/db/schema";
+import { NotFoundError } from "@/utils/errors";
 import { sendBulkEmail } from "@/utils/server/email";
 
 type CommunicationRecord = {
@@ -130,7 +131,7 @@ export async function createCommunication(
 
   const senderUser = senderUserResult[0];
   if (!senderUser) {
-    throw new Error("Sender user not found");
+    throw new NotFoundError("Sender user not found");
   }
 
   const newCommunication = await db

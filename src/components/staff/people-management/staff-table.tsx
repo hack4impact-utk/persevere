@@ -27,6 +27,8 @@ import {
 } from "@mui/material";
 import { type ReactElement, useCallback, useMemo } from "react";
 
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+
 import { type Staff } from "./types";
 
 /**
@@ -330,7 +332,9 @@ export default function StaffTable({
               sx={{ fontSize: "0.875rem" }}
             >
               <MenuItem value="5">5</MenuItem>
-              <MenuItem value="10">10</MenuItem>
+              <MenuItem value={String(DEFAULT_PAGE_SIZE)}>
+                {DEFAULT_PAGE_SIZE}
+              </MenuItem>
               <MenuItem value="25">25</MenuItem>
             </Select>
           </FormControl>

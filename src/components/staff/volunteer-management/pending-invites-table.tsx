@@ -35,6 +35,9 @@ import {
 import { enqueueSnackbar } from "notistack";
 import { type ReactElement, useCallback, useMemo, useState } from "react";
 
+import { apiClient } from "@/lib/api-client";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+
 import { type Volunteer } from "./types";
 
 /**
@@ -203,16 +206,9 @@ export default function PendingInvitesTable({
     });
     setResendingEmails((prev) => new Set(prev).add(volunteerId));
     try {
-      const response = await fetch(
+      await apiClient.post(
         `/api/staff/volunteers/${volunteerId}/resend-credentials`,
-        {
-          method: "POST",
-        },
       );
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to resend email");
-      }
       enqueueSnackbar("Welcome email sent successfully", {
         variant: "success",
       });
@@ -296,15 +292,7 @@ export default function PendingInvitesTable({
     setDeleting((prev) => new Set(prev).add(volunteerId));
 
     try {
-      const response = await fetch(`/api/staff/volunteers/${volunteerId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to delete volunteer");
-      }
-
+      await apiClient.delete(`/api/staff/volunteers/${volunteerId}`);
       enqueueSnackbar("Volunteer deleted successfully", {
         variant: "success",
       });
@@ -350,21 +338,9 @@ export default function PendingInvitesTable({
 
     setUpdatingStatus((prev) => new Set(prev).add(volunteerId));
     try {
-      const response = await fetch(`/api/staff/volunteers/${volunteerId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          backgroundCheckStatus: statusValue,
-        }),
+      await apiClient.put(`/api/staff/volunteers/${volunteerId}`, {
+        backgroundCheckStatus: statusValue,
       });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          error.message || "Failed to update background check status",
-        );
-      }
       enqueueSnackbar("Background check status updated successfully", {
         variant: "success",
       });
@@ -372,24 +348,12 @@ export default function PendingInvitesTable({
       // If status is approved or not_required, automatically send welcome email
       if (statusValue === "approved" || statusValue === "not_required") {
         try {
-          const emailResponse = await fetch(
+          await apiClient.post(
             `/api/staff/volunteers/${volunteerId}/resend-credentials`,
-            {
-              method: "POST",
-            },
           );
-          if (emailResponse.ok) {
-            enqueueSnackbar("Welcome email sent successfully", {
-              variant: "success",
-            });
-          } else {
-            const emailError = await emailResponse.json();
-            console.error("Failed to send email:", emailError);
-            enqueueSnackbar(
-              emailError.message || "Status updated but failed to send email",
-              { variant: "warning" },
-            );
-          }
+          enqueueSnackbar("Welcome email sent successfully", {
+            variant: "success",
+          });
         } catch (emailError) {
           console.error("Failed to send email:", emailError);
           enqueueSnackbar(
@@ -778,7 +742,9 @@ export default function PendingInvitesTable({
               sx={{ fontSize: "0.875rem" }}
             >
               <MenuItem value="5">5</MenuItem>
-              <MenuItem value="10">10</MenuItem>
+              <MenuItem value={String(DEFAULT_PAGE_SIZE)}>
+                {DEFAULT_PAGE_SIZE}
+              </MenuItem>
               <MenuItem value="25">25</MenuItem>
             </Select>
           </FormControl>

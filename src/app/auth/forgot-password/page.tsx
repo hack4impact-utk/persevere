@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { JSX, useState } from "react";
 
+import { apiClient } from "@/lib/api-client";
+
 import styles from "../login/page.module.css";
 
 export default function ForgotPasswordPage(): JSX.Element {
@@ -17,16 +19,7 @@ export default function ForgotPasswordPage(): JSX.Element {
     setError(null);
 
     try {
-      const response = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Something went wrong. Please try again.");
-      }
-
+      await apiClient.post("/api/auth/forgot-password", { email });
       setIsSubmitted(true);
     } catch (error_) {
       setError(

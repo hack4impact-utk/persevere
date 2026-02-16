@@ -41,6 +41,7 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
+import { apiClient } from "@/lib/api-client";
 import type { FetchVolunteerByIdResult } from "@/services/volunteer-client.service";
 
 import SkillsModal from "./skills-modal";
@@ -130,20 +131,7 @@ export default function VolunteerProfile({
 
       setSaving(true);
       try {
-        const response = await fetch(`/api/staff/volunteers/${vol.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-          const body = await response.json().catch(() => ({}));
-          throw new Error(
-            (body as { message?: string }).message ||
-              "Failed to update volunteer",
-          );
-        }
-
+        await apiClient.put(`/api/staff/volunteers/${vol.id}`, data);
         enqueueSnackbar("Volunteer updated successfully", {
           variant: "success",
         });
@@ -172,15 +160,7 @@ export default function VolunteerProfile({
     setDeleting(true);
 
     try {
-      const response = await fetch(`/api/staff/volunteers/${volunteerId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to delete volunteer");
-      }
-
+      await apiClient.delete(`/api/staff/volunteers/${volunteerId}`);
       enqueueSnackbar("Volunteer deleted successfully", {
         variant: "success",
       });

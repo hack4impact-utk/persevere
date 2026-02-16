@@ -15,7 +15,7 @@ const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days in seconds
   },
-  useSecureCookies: process.env.NODE_ENV === "production",
+  useSecureCookies: env.isProduction,
   providers: [
     CredentialsProvider({
       name: "Credentials",

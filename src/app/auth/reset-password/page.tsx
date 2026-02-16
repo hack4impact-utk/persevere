@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { JSX, Suspense, useState } from "react";
 
+import { apiClient } from "@/lib/api-client";
+
 import styles from "../login/page.module.css";
 
 function ResetPasswordForm(): JSX.Element {
@@ -33,22 +35,14 @@ function ResetPasswordForm(): JSX.Element {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, newPassword }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Something went wrong. Please try again.");
-        return;
-      }
-
+      await apiClient.post("/api/auth/reset-password", { token, newPassword });
       setIsSuccess(true);
-    } catch {
-      setError("An unexpected error occurred. Please try again.");
+    } catch (error_) {
+      setError(
+        error_ instanceof Error
+          ? error_.message
+          : "An unexpected error occurred. Please try again.",
+      );
     } finally {
       setIsLoading(false);
     }

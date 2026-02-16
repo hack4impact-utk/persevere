@@ -20,18 +20,7 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-type CatalogSkill = {
-  id: number;
-  name: string;
-  description: string | null;
-  category: string | null;
-};
-
-type CatalogInterest = {
-  id: number;
-  name: string;
-  description: string | null;
-};
+import { useSkills } from "@/hooks/use-skills";
 
 type CurrentSkill = {
   skillId: number;
@@ -67,74 +56,81 @@ export default function SkillsModal({
   onSaved,
 }: SkillsModalProps): JSX.Element {
   const { enqueueSnackbar } = useSnackbar();
-  const [loading, setLoading] = useState(true);
+  const {
+    skills: catalogSkills,
+    interests: catalogInterests,
+    isLoadingSkills,
+    isLoadingInterests,
+    fetchSkills,
+    fetchInterests,
+    addSkill,
+    removeSkill,
+    addInterest,
+    removeInterest,
+  } = useSkills();
   const [saving, setSaving] = useState(false);
 
   // Skills mode state
-  const [catalogSkills, setCatalogSkills] = useState<CatalogSkill[]>([]);
   const [skillSelections, setSkillSelections] = useState<
     Record<number, SkillSelection>
   >({});
 
   // Interests mode state
-  const [catalogInterests, setCatalogInterests] = useState<CatalogInterest[]>(
-    [],
-  );
   const [interestSelections, setInterestSelections] = useState<
     Record<number, boolean>
   >({});
+
+  const loading = mode === "skills" ? isLoadingSkills : isLoadingInterests;
 
   useEffect(() => {
     if (!open) return;
 
     const loadCatalog = async (): Promise<void> => {
-      setLoading(true);
       try {
-        if (mode === "skills") {
-          const res = await fetch("/api/staff/skills");
-          if (!res.ok) throw new Error("Failed to load skills catalog");
-          const json = await res.json();
-          setCatalogSkills(json.data);
-
-          // Initialize selections from current assignments
-          const selections: Record<number, SkillSelection> = {};
-          for (const skill of json.data as CatalogSkill[]) {
-            const current = currentSkills.find((s) => s.skillId === skill.id);
-            selections[skill.id] = {
-              checked: !!current,
-              level:
-                (current?.proficiencyLevel as SkillSelection["level"]) ||
-                "beginner",
-            };
-          }
-          setSkillSelections(selections);
-        } else {
-          const res = await fetch("/api/staff/interests");
-          if (!res.ok) throw new Error("Failed to load interests catalog");
-          const json = await res.json();
-          setCatalogInterests(json.data);
-
-          // Initialize selections from current assignments
-          const selections: Record<number, boolean> = {};
-          for (const interest of json.data as CatalogInterest[]) {
-            selections[interest.id] = currentInterests.some(
-              (i) => i.interestId === interest.id,
-            );
-          }
-          setInterestSelections(selections);
-        }
+        await (mode === "skills" ? fetchSkills() : fetchInterests());
       } catch {
         enqueueSnackbar(
           `Failed to load ${mode === "skills" ? "skills" : "interests"} catalog`,
           { variant: "error" },
         );
-      } finally {
-        setLoading(false);
       }
     };
 
     void loadCatalog();
-  }, [open, mode, currentSkills, currentInterests, enqueueSnackbar]);
+  }, [open, mode, fetchSkills, fetchInterests, enqueueSnackbar]);
+
+  // Update selections when catalog loads or modal opens
+  useEffect(() => {
+    if (!open) return;
+    if (mode === "skills" && catalogSkills.length > 0) {
+      const selections: Record<number, SkillSelection> = {};
+      for (const skill of catalogSkills) {
+        const current = currentSkills.find((s) => s.skillId === skill.id);
+        selections[skill.id] = {
+          checked: !!current,
+          level:
+            (current?.proficiencyLevel as SkillSelection["level"]) ||
+            "beginner",
+        };
+      }
+      setSkillSelections(selections);
+    } else if (mode === "interests" && catalogInterests.length > 0) {
+      const selections: Record<number, boolean> = {};
+      for (const interest of catalogInterests) {
+        selections[interest.id] = currentInterests.some(
+          (i) => i.interestId === interest.id,
+        );
+      }
+      setInterestSelections(selections);
+    }
+  }, [
+    open,
+    mode,
+    catalogSkills,
+    catalogInterests,
+    currentSkills,
+    currentInterests,
+  ]);
 
   const handleSave = useCallback(async () => {
     setSaving(true);
@@ -144,7 +140,7 @@ export default function SkillsModal({
           currentSkills.map((s) => [s.skillId, s.proficiencyLevel]),
         );
 
-        const promises: Promise<Response>[] = [];
+        const promises: Promise<void>[] = [];
 
         for (const [idStr, selection] of Object.entries(skillSelections)) {
           const skillId = Number(idStr);
@@ -152,71 +148,36 @@ export default function SkillsModal({
 
           if (selection.checked && !wasAssigned) {
             // New assignment
-            promises.push(
-              fetch(`/api/staff/volunteers/${volunteerId}/skills`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ skillId, level: selection.level }),
-              }),
-            );
+            promises.push(addSkill(volunteerId, skillId, selection.level));
           } else if (selection.checked && wasAssigned) {
             // Check if level changed
             if (currentMap.get(skillId) !== selection.level) {
-              promises.push(
-                fetch(`/api/staff/volunteers/${volunteerId}/skills`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ skillId, level: selection.level }),
-                }),
-              );
+              promises.push(addSkill(volunteerId, skillId, selection.level));
             }
           } else if (!selection.checked && wasAssigned) {
             // Removal
-            promises.push(
-              fetch(`/api/staff/volunteers/${volunteerId}/skills/${skillId}`, {
-                method: "DELETE",
-              }),
-            );
+            promises.push(removeSkill(volunteerId, skillId));
           }
         }
 
-        const results = await Promise.all(promises);
-        const failed = results.filter((r) => !r.ok);
-        if (failed.length > 0) {
-          throw new Error(`${failed.length} operation(s) failed`);
-        }
+        await Promise.all(promises);
       } else {
         const currentIds = new Set(currentInterests.map((i) => i.interestId));
 
-        const promises: Promise<Response>[] = [];
+        const promises: Promise<void>[] = [];
 
         for (const [idStr, checked] of Object.entries(interestSelections)) {
           const interestId = Number(idStr);
           const wasAssigned = currentIds.has(interestId);
 
           if (checked && !wasAssigned) {
-            promises.push(
-              fetch(`/api/staff/volunteers/${volunteerId}/interests`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ interestId }),
-              }),
-            );
+            promises.push(addInterest(volunteerId, interestId));
           } else if (!checked && wasAssigned) {
-            promises.push(
-              fetch(
-                `/api/staff/volunteers/${volunteerId}/interests/${interestId}`,
-                { method: "DELETE" },
-              ),
-            );
+            promises.push(removeInterest(volunteerId, interestId));
           }
         }
 
-        const results = await Promise.all(promises);
-        const failed = results.filter((r) => !r.ok);
-        if (failed.length > 0) {
-          throw new Error(`${failed.length} operation(s) failed`);
-        }
+        await Promise.all(promises);
       }
 
       enqueueSnackbar(
@@ -240,6 +201,10 @@ export default function SkillsModal({
     currentSkills,
     currentInterests,
     volunteerId,
+    addSkill,
+    removeSkill,
+    addInterest,
+    removeInterest,
     enqueueSnackbar,
     onSaved,
     onClose,

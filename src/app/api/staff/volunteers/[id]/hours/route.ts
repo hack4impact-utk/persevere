@@ -4,6 +4,7 @@ import {
   listVolunteerHours,
   logHours,
 } from "@/services/volunteer-hours.service";
+import { NotFoundError } from "@/utils/errors";
 import { AuthError, requireAuth } from "@/utils/server/auth";
 
 export async function GET(
@@ -90,11 +91,7 @@ export async function POST(
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
     }
-    if (
-      error instanceof Error &&
-      (error.message === "Volunteer not found" ||
-        error.message === "Opportunity not found")
-    ) {
+    if (error instanceof NotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
     console.error("POST Hours Error:", error);

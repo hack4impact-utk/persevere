@@ -5,6 +5,7 @@ import { z } from "zod";
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { createStaff, listStaff } from "@/services/staff-server.service";
+import { ConflictError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 
 const staffCreateSchema = z.object({
@@ -78,10 +79,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: 201 },
     );
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message === "A user with this email already exists"
-    ) {
+    if (error instanceof ConflictError) {
       return NextResponse.json({ message: error.message }, { status: 400 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });

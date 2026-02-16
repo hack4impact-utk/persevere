@@ -30,6 +30,8 @@ import {
   useState,
 } from "react";
 
+import { apiClient } from "@/lib/api-client";
+
 import RichTextEditor from "./rich-text-editor";
 import type { Attachment, RecipientType } from "./types";
 
@@ -165,26 +167,18 @@ export default function ComposeModal({
       setSubmitting(true);
 
       try {
-        const response = await fetch("/api/staff/communications", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            subject: subject.trim(),
-            body: body.trim(),
-            recipientType,
-            // Note: attachments would be handled separately when storage is implemented
-          }),
+        const result = await apiClient.post<{
+          recipientCount?: number;
+          emailSent?: boolean;
+          emailError?: boolean;
+        }>("/api/staff/communications", {
+          subject: subject.trim(),
+          body: body.trim(),
+          recipientType,
+          // Note: attachments would be handled separately when storage is implemented
         });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || "Failed to send communication");
-        }
-
-        const result = await response.json();
-        const recipientCount = result.recipientCount || 0;
+        const recipientCount = result.recipientCount ?? 0;
         const emailSent = result.emailSent;
         const emailError = result.emailError;
 

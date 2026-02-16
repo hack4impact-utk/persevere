@@ -1,10 +1,11 @@
-import React, { JSX } from "react";
+import Typography from "@mui/material/Typography";
+import { JSX } from "react";
 
 export default function StaffReportsPage(): JSX.Element {
   return (
     <>
-      <h1 style={{ margin: 0 }}>Reports</h1>
-      <p>This is the Reports page</p>
+      <Typography variant="h4">Reports</Typography>
+      <Typography color="text.secondary">Reports coming soon.</Typography>
     </>
   );
 }

@@ -88,9 +88,6 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(output, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message === "Sender user not found") {
-      return NextResponse.json({ message: error.message }, { status: 404 });
-    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

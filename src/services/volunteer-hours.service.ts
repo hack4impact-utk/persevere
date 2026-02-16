@@ -2,6 +2,7 @@ import { and, eq, gte, isNotNull, isNull, lte, sql } from "drizzle-orm";
 
 import db from "@/db";
 import { opportunities, volunteerHours, volunteers } from "@/db/schema";
+import { NotFoundError } from "@/utils/errors";
 
 export type HoursFilters = {
   volunteerId: number;
@@ -100,10 +101,10 @@ export async function logHours(input: LogHoursInput): Promise<{
   ]);
 
   if (volunteerExists.length === 0) {
-    throw new Error("Volunteer not found");
+    throw new NotFoundError("Volunteer not found");
   }
   if (opportunityExists.length === 0) {
-    throw new Error("Opportunity not found");
+    throw new NotFoundError("Opportunity not found");
   }
 
   const newEntry = await db

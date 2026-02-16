@@ -24,6 +24,8 @@ import {
 import { type ReactElement, useCallback, useMemo, useState } from "react";
 import validator from "validator";
 
+import { apiClient } from "@/lib/api-client";
+
 import type { Staff } from "./types";
 
 export type AddStaffModalProps = {
@@ -107,33 +109,12 @@ export default function AddStaffModal({
           phone: phone.trim() || undefined,
         };
 
-        const response: Response = await fetch("/api/staff/staff", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const json: {
+        const json = await apiClient.post<{
           message?: string;
           data?: Staff;
-          error?: string | unknown;
           emailSent?: boolean;
           emailError?: boolean;
-        } | null = await response.json().catch(() => null);
-
-        if (!response.ok) {
-          let msg = response.statusText || "Failed to create staff member";
-          if (json?.message) msg = json.message;
-          else if (json?.error) {
-            msg =
-              typeof json.error === "string"
-                ? json.error
-                : JSON.stringify(json.error);
-          }
-          throw new Error(msg);
-        }
+        }>("/api/staff/staff", payload);
 
         const created: Staff = json?.data ?? (json as unknown as Staff);
         const emailSent = json?.emailSent ?? false;

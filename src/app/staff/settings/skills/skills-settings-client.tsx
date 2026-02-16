@@ -28,6 +28,8 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
+import { useSkills } from "@/hooks/use-skills";
+
 type Skill = {
   id: number;
   name: string;
@@ -52,25 +54,24 @@ type InterestForm = {
   description: string;
 };
 
-/** Extracts the best error message from a non-ok API response body. */
-async function parseErrorMessage(
-  res: Response,
-  fallback: string,
-): Promise<string> {
-  try {
-    const body = await res.json();
-    return (body.message ?? body.error ?? fallback) as string;
-  } catch {
-    return fallback;
-  }
-}
-
 export default function SkillsSettingsClient(): JSX.Element {
   const { enqueueSnackbar } = useSnackbar();
+  const {
+    skills,
+    interests,
+    isLoadingSkills: skillsLoading,
+    isLoadingInterests: interestsLoading,
+    fetchSkills,
+    fetchInterests,
+    createSkill: hookCreateSkill,
+    updateSkill: hookUpdateSkill,
+    deleteSkill: hookDeleteSkill,
+    createInterest: hookCreateInterest,
+    updateInterest: hookUpdateInterest,
+    deleteInterest: hookDeleteInterest,
+  } = useSkills();
 
-  // Skills state
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [skillsLoading, setSkillsLoading] = useState(true);
+  // Skills UI state
   const [skillDialogOpen, setSkillDialogOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
   const [skillForm, setSkillForm] = useState<SkillForm>({
@@ -83,9 +84,7 @@ export default function SkillsSettingsClient(): JSX.Element {
     null,
   );
 
-  // Interests state
-  const [interests, setInterests] = useState<Interest[]>([]);
-  const [interestsLoading, setInterestsLoading] = useState(true);
+  // Interests UI state
   const [interestDialogOpen, setInterestDialogOpen] = useState(false);
   const [editingInterest, setEditingInterest] = useState<Interest | null>(null);
   const [interestForm, setInterestForm] = useState<InterestForm>({
@@ -96,50 +95,10 @@ export default function SkillsSettingsClient(): JSX.Element {
   const [deleteInterestConfirm, setDeleteInterestConfirm] =
     useState<Interest | null>(null);
 
-  const loadSkills = useCallback(async () => {
-    setSkillsLoading(true);
-    try {
-      const res = await fetch("/api/staff/skills");
-      if (!res.ok)
-        throw new Error(await parseErrorMessage(res, "Failed to load skills"));
-      const json = await res.json();
-      if (!Array.isArray(json.data)) {
-        throw new TypeError("Unexpected response from server");
-      }
-      setSkills(json.data as Skill[]);
-    } catch (error) {
-      console.error("Failed to load skills:", error);
-      enqueueSnackbar("Failed to load skills", { variant: "error" });
-    } finally {
-      setSkillsLoading(false);
-    }
-  }, [enqueueSnackbar]);
-
-  const loadInterests = useCallback(async () => {
-    setInterestsLoading(true);
-    try {
-      const res = await fetch("/api/staff/interests");
-      if (!res.ok)
-        throw new Error(
-          await parseErrorMessage(res, "Failed to load interests"),
-        );
-      const json = await res.json();
-      if (!Array.isArray(json.data)) {
-        throw new TypeError("Unexpected response from server");
-      }
-      setInterests(json.data as Interest[]);
-    } catch (error) {
-      console.error("Failed to load interests:", error);
-      enqueueSnackbar("Failed to load interests", { variant: "error" });
-    } finally {
-      setInterestsLoading(false);
-    }
-  }, [enqueueSnackbar]);
-
   useEffect(() => {
-    void loadSkills();
-    void loadInterests();
-  }, [loadSkills, loadInterests]);
+    void fetchSkills();
+    void fetchInterests();
+  }, [fetchSkills, fetchInterests]);
 
   // Skill handlers
   const openAddSkill = useCallback(() => {
@@ -166,36 +125,24 @@ export default function SkillsSettingsClient(): JSX.Element {
 
     setSkillSaving(true);
     try {
-      const body: Record<string, string> = { name: skillForm.name.trim() };
-      if (skillForm.description.trim())
-        body.description = skillForm.description.trim();
-      if (skillForm.category.trim()) body.category = skillForm.category.trim();
+      const description = skillForm.description.trim() || undefined;
+      const category = skillForm.category.trim() || undefined;
 
-      const url = editingSkill
-        ? `/api/staff/skills/${editingSkill.id}`
-        : "/api/staff/skills";
-      const method = editingSkill ? "PUT" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        throw new Error(await parseErrorMessage(res, "Failed to save skill"));
+      if (editingSkill) {
+        await hookUpdateSkill(
+          editingSkill.id,
+          skillForm.name.trim(),
+          description,
+          category,
+        );
+        enqueueSnackbar("Skill updated successfully", { variant: "success" });
+      } else {
+        await hookCreateSkill(skillForm.name.trim(), description, category);
+        enqueueSnackbar("Skill created successfully", { variant: "success" });
       }
-
-      enqueueSnackbar(
-        editingSkill
-          ? "Skill updated successfully"
-          : "Skill created successfully",
-        { variant: "success" },
-      );
       setSkillDialogOpen(false);
-      void loadSkills();
+      void fetchSkills();
     } catch (error) {
-      console.error("Failed to save skill:", error);
       enqueueSnackbar(
         error instanceof Error ? error.message : "Failed to save skill",
         { variant: "error" },
@@ -203,25 +150,22 @@ export default function SkillsSettingsClient(): JSX.Element {
     } finally {
       setSkillSaving(false);
     }
-  }, [skillForm, editingSkill, enqueueSnackbar, loadSkills]);
+  }, [
+    skillForm,
+    editingSkill,
+    enqueueSnackbar,
+    hookCreateSkill,
+    hookUpdateSkill,
+    fetchSkills,
+  ]);
 
   const handleDeleteSkill = useCallback(
     async (skill: Skill) => {
       try {
-        const res = await fetch(`/api/staff/skills/${skill.id}`, {
-          method: "DELETE",
-        });
-
-        if (!res.ok) {
-          throw new Error(
-            await parseErrorMessage(res, "Failed to delete skill"),
-          );
-        }
-
+        await hookDeleteSkill(skill.id);
         enqueueSnackbar("Skill deleted successfully", { variant: "success" });
-        void loadSkills();
+        void fetchSkills();
       } catch (error) {
-        console.error("Failed to delete skill:", error);
         enqueueSnackbar(
           error instanceof Error ? error.message : "Failed to delete skill",
           { variant: "error" },
@@ -230,7 +174,7 @@ export default function SkillsSettingsClient(): JSX.Element {
         setDeleteSkillConfirm(null);
       }
     },
-    [enqueueSnackbar, loadSkills],
+    [enqueueSnackbar, hookDeleteSkill, fetchSkills],
   );
 
   // Interest handlers
@@ -257,37 +201,26 @@ export default function SkillsSettingsClient(): JSX.Element {
 
     setInterestSaving(true);
     try {
-      const body: Record<string, string> = { name: interestForm.name.trim() };
-      if (interestForm.description.trim())
-        body.description = interestForm.description.trim();
+      const description = interestForm.description.trim() || undefined;
 
-      const url = editingInterest
-        ? `/api/staff/interests/${editingInterest.id}`
-        : "/api/staff/interests";
-      const method = editingInterest ? "PUT" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        throw new Error(
-          await parseErrorMessage(res, "Failed to save interest"),
+      if (editingInterest) {
+        await hookUpdateInterest(
+          editingInterest.id,
+          interestForm.name.trim(),
+          description,
         );
+        enqueueSnackbar("Interest updated successfully", {
+          variant: "success",
+        });
+      } else {
+        await hookCreateInterest(interestForm.name.trim(), description);
+        enqueueSnackbar("Interest created successfully", {
+          variant: "success",
+        });
       }
-
-      enqueueSnackbar(
-        editingInterest
-          ? "Interest updated successfully"
-          : "Interest created successfully",
-        { variant: "success" },
-      );
       setInterestDialogOpen(false);
-      void loadInterests();
+      void fetchInterests();
     } catch (error) {
-      console.error("Failed to save interest:", error);
       enqueueSnackbar(
         error instanceof Error ? error.message : "Failed to save interest",
         { variant: "error" },
@@ -295,27 +228,24 @@ export default function SkillsSettingsClient(): JSX.Element {
     } finally {
       setInterestSaving(false);
     }
-  }, [interestForm, editingInterest, enqueueSnackbar, loadInterests]);
+  }, [
+    interestForm,
+    editingInterest,
+    enqueueSnackbar,
+    hookCreateInterest,
+    hookUpdateInterest,
+    fetchInterests,
+  ]);
 
   const handleDeleteInterest = useCallback(
     async (interest: Interest) => {
       try {
-        const res = await fetch(`/api/staff/interests/${interest.id}`, {
-          method: "DELETE",
-        });
-
-        if (!res.ok) {
-          throw new Error(
-            await parseErrorMessage(res, "Failed to delete interest"),
-          );
-        }
-
+        await hookDeleteInterest(interest.id);
         enqueueSnackbar("Interest deleted successfully", {
           variant: "success",
         });
-        void loadInterests();
+        void fetchInterests();
       } catch (error) {
-        console.error("Failed to delete interest:", error);
         enqueueSnackbar(
           error instanceof Error ? error.message : "Failed to delete interest",
           { variant: "error" },
@@ -324,7 +254,7 @@ export default function SkillsSettingsClient(): JSX.Element {
         setDeleteInterestConfirm(null);
       }
     },
-    [enqueueSnackbar, loadInterests],
+    [enqueueSnackbar, hookDeleteInterest, fetchInterests],
   );
 
   return (

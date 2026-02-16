@@ -2,6 +2,7 @@ import { useSnackbar } from "notistack";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Opportunity, RsvpItem } from "@/components/volunteer/types";
+import { apiClient } from "@/lib/api-client";
 
 const LIMIT = 12;
 
@@ -46,28 +47,28 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
         ...(search && { search }),
       });
 
-      const [oppsRes, rsvpsRes] = await Promise.all([
-        fetch(`/api/volunteer/opportunities?${params}`),
-        fetch("/api/volunteer/rsvps"),
+      const [oppsResult, rsvpsResult] = await Promise.allSettled([
+        apiClient.get<{ data: Opportunity[] }>(
+          `/api/volunteer/opportunities?${params}`,
+        ),
+        apiClient.get<{ data: { all: RsvpItem[] } }>("/api/volunteer/rsvps"),
       ]);
 
-      if (!oppsRes.ok) {
-        throw new Error(`Failed to load opportunities (${oppsRes.status})`);
+      if (oppsResult.status === "rejected") {
+        throw oppsResult.reason as Error;
       }
 
-      const oppsJson = (await oppsRes.json()) as { data: Opportunity[] };
-      setOpportunities(oppsJson.data);
-      setHasMore(oppsJson.data.length === LIMIT);
+      setOpportunities(oppsResult.value.data);
+      setHasMore(oppsResult.value.data.length === LIMIT);
 
-      if (rsvpsRes.ok) {
-        const rsvpsJson = (await rsvpsRes.json()) as {
-          data: { all: RsvpItem[] };
-        };
-        setRsvpedIds(new Set(rsvpsJson.data.all.map((r) => r.opportunityId)));
+      if (rsvpsResult.status === "fulfilled") {
+        setRsvpedIds(
+          new Set(rsvpsResult.value.data.all.map((r) => r.opportunityId)),
+        );
       } else {
         console.error(
           "[useOpportunities] RSVP status fetch failed:",
-          rsvpsRes.status,
+          rsvpsResult.reason,
         );
         setRsvpWarning(true);
       }
@@ -135,9 +136,9 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
       ...(search && { search }),
     });
     try {
-      const res = await fetch(`/api/volunteer/opportunities?${params}`);
-      if (!res.ok) throw new Error(`Failed to load more (${res.status})`);
-      const json = (await res.json()) as { data: Opportunity[] };
+      const json = await apiClient.get<{ data: Opportunity[] }>(
+        `/api/volunteer/opportunities?${params}`,
+      );
       setOpportunities((prev) => [...prev, ...json.data]);
       setPage(nextPage);
       setHasMore(json.data.length === LIMIT);

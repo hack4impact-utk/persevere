@@ -31,6 +31,8 @@ import {
 import { type ReactElement, useCallback, useMemo, useState } from "react";
 import validator from "validator";
 
+import { apiClient } from "@/lib/api-client";
+
 import type { Volunteer } from "./types";
 
 export type AddVolunteerModalProps = {
@@ -154,36 +156,13 @@ export default function AddVolunteerModal({
 
         // This just adds a volunteer without verifying them first
         // #TODO: volunteer is only added to database after they have been verified
-        const response: Response = await fetch("/api/staff/volunteers", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        // Try to parse JSON body
-        const json: {
+        const json = await apiClient.post<{
           message?: string;
           data?: Volunteer;
-          error?: string | unknown;
           emailSent?: boolean;
           emailError?: boolean;
           backgroundCheckStatus?: string;
-        } | null = await response.json().catch(() => null);
-
-        if (!response.ok) {
-          // Prefer backend message, then error, then statusText
-          let msg = response.statusText || "Failed to create volunteer";
-          if (json?.message) msg = json.message;
-          else if (json?.error) {
-            msg =
-              typeof json.error === "string"
-                ? json.error
-                : JSON.stringify(json.error);
-          }
-          throw new Error(msg);
-        }
+        }>("/api/staff/volunteers", payload);
 
         // Backend returns { message, data, emailSent, emailError, backgroundCheckStatus }
         const created: Volunteer = json?.data ?? (json as unknown as Volunteer);

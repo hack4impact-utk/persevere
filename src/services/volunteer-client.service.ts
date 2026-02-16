@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api-client";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 
 export { AuthenticationError } from "@/lib/api-client";
 
@@ -108,7 +109,7 @@ export async function fetchVolunteers(
     })),
     total: data.total,
     page: filters.page || 1,
-    limit: filters.limit || 10,
+    limit: filters.limit || DEFAULT_PAGE_SIZE,
   };
 }
 
