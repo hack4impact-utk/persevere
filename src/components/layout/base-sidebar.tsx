@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { ReactNode } from "react";
+import { type ReactElement, type ReactNode } from "react";
 
 import styles from "./base-sidebar.module.css";
 
@@ -16,8 +16,9 @@ type BaseSidebarProps = {
   navItems: NavItem[];
 };
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export default function BaseSidebar({ navItems }: BaseSidebarProps) {
+export default function BaseSidebar({
+  navItems,
+}: BaseSidebarProps): ReactElement {
   const pathname = usePathname();
 
   // Determine dashboard route based on current pathname

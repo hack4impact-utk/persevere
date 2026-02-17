@@ -5,7 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import db from "@/db";
 import { users } from "@/db/schema";
 import { env } from "@/utils/env";
-import { verifyPassword } from "@/utils/password";
+import { verifyPassword } from "@/utils/server/password";
 
 const authOptions: NextAuthOptions = {
   // Note: Using custom credentials provider instead of adapter
@@ -15,7 +15,7 @@ const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days in seconds
   },
-  useSecureCookies: false,
+  useSecureCookies: env.isProduction,
   providers: [
     CredentialsProvider({
       name: "Credentials",

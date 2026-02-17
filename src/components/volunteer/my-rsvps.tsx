@@ -12,10 +12,12 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { JSX, useCallback, useEffect, useState } from "react";
+import { JSX } from "react";
+
+import { useRsvps } from "@/hooks/use-rsvps";
 
 import RsvpButton from "./rsvp-button";
-import type { RsvpItem, RsvpStatus } from "./types";
+import type { RsvpStatus } from "./types";
 import { formatDate } from "./utils";
 
 function getRsvpStatusColor(
@@ -41,53 +43,7 @@ function getRsvpStatusColor(
 }
 
 export default function MyRsvps(): JSX.Element {
-  const [upcoming, setUpcoming] = useState<RsvpItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadRsvps = useCallback(async (): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/volunteer/rsvps");
-      if (!res.ok) {
-        const json = (await res.json().catch(() => ({}))) as {
-          error?: string;
-          message?: string;
-        };
-        throw new Error(
-          json.message ?? json.error ?? `Request failed (${res.status})`,
-        );
-      }
-      const json = (await res.json()) as {
-        data: { upcoming: RsvpItem[] };
-      };
-      setUpcoming(json.data.upcoming);
-    } catch (error_) {
-      console.error("[MyRsvps] Failed to load RSVPs:", error_);
-      setError("Failed to load your RSVPs.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadRsvps();
-  }, [loadRsvps]);
-
-  const handleRsvpChange = useCallback(
-    (opportunityId: number, newIsRsvped: boolean): void => {
-      if (newIsRsvped) {
-        // A new RSVP was created — re-fetch to get full details for the new item
-        void loadRsvps();
-      } else {
-        setUpcoming((prev) =>
-          prev.filter((r) => r.opportunityId !== opportunityId),
-        );
-      }
-    },
-    [loadRsvps],
-  );
+  const { upcoming, loading, error, loadRsvps } = useRsvps();
 
   return (
     <Card sx={{ borderRadius: 2, boxShadow: 2 }}>
@@ -183,9 +139,7 @@ export default function MyRsvps(): JSX.Element {
                   opportunityId={rsvp.opportunityId}
                   isRsvped={true}
                   isFull={false}
-                  onRsvpChange={(newIsRsvped) =>
-                    handleRsvpChange(rsvp.opportunityId, newIsRsvped)
-                  }
+                  onRsvpChange={() => void loadRsvps()}
                 />
               </Box>
             ))}

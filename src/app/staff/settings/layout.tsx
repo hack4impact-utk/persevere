@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { type ReactNode } from "react";
 
 import SettingsNav from "@/components/layout/settings-nav";
-import { getServerSession } from "@/utils/auth";
+import { requireAuth } from "@/utils/server/auth";
 
 type SettingsLayoutProps = {
   children: ReactNode;
@@ -12,15 +12,9 @@ type SettingsLayoutProps = {
 export default async function SettingsLayout({
   children,
 }: SettingsLayoutProps): Promise<ReactNode> {
-  let session;
   try {
-    session = await getServerSession();
-  } catch (error) {
-    console.error("SettingsLayout: failed to retrieve session:", error);
-    redirect("/staff/dashboard");
-  }
-
-  if (!session || session.user.role !== "admin") {
+    await requireAuth("admin");
+  } catch {
     redirect("/staff/dashboard");
   }
 

@@ -1,10 +1,7 @@
-import { and, eq, gt } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import db from "@/db";
-import { users, verificationTokens } from "@/db/schema";
+import { redeemPasswordResetToken } from "@/services/auth-tokens.service";
 import handleError from "@/utils/handle-error";
-import { hashPassword } from "@/utils/password";
 
 export async function POST(request: Request): Promise<NextResponse> {
   let token: unknown;
@@ -30,39 +27,13 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    // Delete token first to prevent reuse (atomic claim)
-    const deletedTokens = await db
-      .delete(verificationTokens)
-      .where(
-        and(
-          eq(verificationTokens.token, token),
-          gt(verificationTokens.expires, new Date()),
-        ),
-      )
-      .returning();
+    const success = await redeemPasswordResetToken(token, newPassword);
 
-    if (deletedTokens.length === 0) {
+    if (!success) {
       return NextResponse.json(
         { error: "Invalid or expired reset token" },
         { status: 400 },
       );
-    }
-
-    const { identifier } = deletedTokens[0];
-
-    // Hash new password
-    const hashedPassword = await hashPassword(newPassword);
-
-    // Update user's password
-    const updatedUser = await db
-      .update(users)
-      .set({ password: hashedPassword, updatedAt: new Date() })
-      .where(eq(users.email, identifier))
-      .returning({ id: users.id });
-
-    // User was deleted after token was created
-    if (updatedUser.length === 0) {
-      return NextResponse.json({ error: "User not found" }, { status: 400 });
     }
 
     return NextResponse.json({

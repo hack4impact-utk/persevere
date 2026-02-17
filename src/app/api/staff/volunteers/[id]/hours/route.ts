@@ -1,9 +1,11 @@
-import { and, eq, gte, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import db from "@/db";
-import { opportunities, volunteerHours, volunteers } from "@/db/schema";
-import { requireAuth } from "@/utils/auth";
+import {
+  listVolunteerHours,
+  logHours,
+} from "@/services/volunteer-hours.service";
+import { NotFoundError } from "@/utils/errors";
+import { AuthError, requireAuth } from "@/utils/server/auth";
 
 export async function GET(
   req: Request,
@@ -11,10 +13,9 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     await requireAuth("staff");
+
     const { id } = await params;
     const volunteerId = Number.parseInt(id, 10);
-
-    // Validate volunteer ID
     if (Number.isNaN(volunteerId)) {
       return NextResponse.json(
         { error: "Invalid volunteer ID" },
@@ -22,50 +23,22 @@ export async function GET(
       );
     }
 
-    // Extract query params for filtering
     const { searchParams } = new URL(req.url);
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
-    const verified = searchParams.get("verified");
-
-    // Build dynamic filters
-    const filters = [eq(volunteerHours.volunteerId, volunteerId)];
-    if (startDate) filters.push(gte(volunteerHours.date, new Date(startDate)));
-    if (endDate) filters.push(lte(volunteerHours.date, new Date(endDate)));
-    if (verified === "true") filters.push(isNotNull(volunteerHours.verifiedAt));
-    if (verified === "false") filters.push(isNull(volunteerHours.verifiedAt));
-
-    // 1. Fetch the list of hour records with opportunity titles
-    const hoursRecords = await db
-      .select({
-        id: volunteerHours.id,
-        date: volunteerHours.date,
-        hours: volunteerHours.hours,
-        notes: volunteerHours.notes,
-        verifiedAt: volunteerHours.verifiedAt,
-        opportunityTitle: opportunities.title,
-      })
-      .from(volunteerHours)
-      .leftJoin(
-        opportunities,
-        eq(volunteerHours.opportunityId, opportunities.id),
-      )
-      .where(and(...filters))
-      .orderBy(volunteerHours.date);
-
-    // 2. Fetch the total sum
-    const totalResult = await db
-      .select({
-        total: sql<number>`sum(${volunteerHours.hours})`,
-      })
-      .from(volunteerHours)
-      .where(and(...filters));
-
-    return NextResponse.json({
-      data: hoursRecords,
-      totalHours: totalResult[0]?.total || 0,
+    const result = await listVolunteerHours({
+      volunteerId,
+      startDate: searchParams.get("startDate"),
+      endDate: searchParams.get("endDate"),
+      verified: searchParams.get("verified"),
     });
+
+    return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
+    }
     console.error("GET Hours Error:", error);
     return NextResponse.json(
       { error: "Failed to fetch hours" },
@@ -80,10 +53,9 @@ export async function POST(
 ): Promise<NextResponse> {
   try {
     await requireAuth("staff");
+
     const { id } = await params;
     const volunteerId = Number.parseInt(id, 10);
-
-    // Validate volunteer ID
     if (Number.isNaN(volunteerId)) {
       return NextResponse.json(
         { error: "Invalid volunteer ID" },
@@ -91,7 +63,6 @@ export async function POST(
       );
     }
 
-    // 2. Parse and validate basic body requirements
     const body = await req.json();
     const { opportunityId, date, hours, notes } = body;
 
@@ -104,48 +75,25 @@ export async function POST(
       );
     }
 
-    // 3. Validate existence of Volunteer and Opportunity
-    // We run these in parallel to keep the API snappy
-    const [volunteerExists, opportunityExists] = await Promise.all([
-      db
-        .select()
-        .from(volunteers)
-        .where(eq(volunteers.id, volunteerId))
-        .limit(1),
-      db
-        .select()
-        .from(opportunities)
-        .where(eq(opportunities.id, opportunityId))
-        .limit(1),
-    ]);
+    const entry = await logHours({
+      volunteerId,
+      opportunityId,
+      date,
+      hours,
+      notes,
+    });
 
-    if (volunteerExists.length === 0) {
-      return NextResponse.json(
-        { error: "Volunteer not found" },
-        { status: 404 },
-      );
-    }
-    if (opportunityExists.length === 0) {
-      return NextResponse.json(
-        { error: "Opportunity not found" },
-        { status: 404 },
-      );
-    }
-
-    // 4. Insert the record
-    const newEntry = await db
-      .insert(volunteerHours)
-      .values({
-        volunteerId,
-        opportunityId,
-        date: new Date(date),
-        hours,
-        notes,
-      })
-      .returning();
-
-    return NextResponse.json(newEntry[0], { status: 201 });
+    return NextResponse.json(entry, { status: 201 });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
+    }
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
     console.error("POST Hours Error:", error);
     return NextResponse.json({ error: "Failed to log hours" }, { status: 500 });
   }

@@ -1,5 +1,5 @@
 {
-  "name": "add-project-name-in-package-json",
+  "name": "persevere",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,7 +11,6 @@
     "check": "concurrently --kill-others-on-fail 'pnpm lint' 'tsc --noEmit'"
   },
   "dependencies": {
-    "@auth/drizzle-adapter": "^1.10.0",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
@@ -33,9 +32,7 @@
     "@tiptap/pm": "^3.16.0",
     "@tiptap/react": "^3.16.0",
     "@tiptap/starter-kit": "^3.16.0",
-    "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
-    "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.4",
     "next": "15.5.9",
@@ -52,6 +49,7 @@
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.33.0",
     "@next/eslint-plugin-next": "^15.4.7",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

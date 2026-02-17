@@ -2,8 +2,11 @@
 
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
+import { useRouter } from "next/navigation";
 import { useSnackbar } from "notistack";
 import { JSX, useState } from "react";
+
+import { apiClient, AuthenticationError } from "@/lib/api-client";
 
 type RsvpButtonProps = {
   opportunityId: number;
@@ -19,21 +22,14 @@ export default function RsvpButton({
   onRsvpChange,
 }: RsvpButtonProps): JSX.Element {
   const { enqueueSnackbar } = useSnackbar();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleClick = async (): Promise<void> => {
     setLoading(true);
     try {
-      const method = isRsvped ? "DELETE" : "POST";
-      const res = await fetch(
-        `/api/volunteer/opportunities/${opportunityId}/rsvp`,
-        { method },
-      );
-
-      if (!res.ok) {
-        const json = (await res.json()) as { message?: string; error?: string };
-        throw new Error(json.message ?? json.error ?? "Request failed");
-      }
+      const url = `/api/volunteer/opportunities/${opportunityId}/rsvp`;
+      await (isRsvped ? apiClient.delete(url) : apiClient.post(url));
 
       const newIsRsvped = !isRsvped;
       enqueueSnackbar(newIsRsvped ? "RSVP confirmed!" : "RSVP cancelled.", {
@@ -41,6 +37,10 @@ export default function RsvpButton({
       });
       onRsvpChange?.(newIsRsvped);
     } catch (error) {
+      if (error instanceof AuthenticationError) {
+        router.push("/auth/login");
+        return;
+      }
       enqueueSnackbar(
         error instanceof Error ? error.message : "Something went wrong",
         { variant: "error" },

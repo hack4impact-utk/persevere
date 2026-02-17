@@ -21,30 +21,12 @@ import {
 } from "@mui/material";
 import { useSession } from "next-auth/react";
 import { useSnackbar } from "notistack";
-import { JSX, useCallback, useEffect, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 
 import type { AvailabilityData } from "@/components/volunteer/availability-editor";
 import ProfileEditForm from "@/components/volunteer/profile-edit-form";
-import { useSignOut } from "@/utils/auth-hooks";
-
-type VolunteerProfileData = {
-  volunteers: {
-    id: number;
-    volunteerType?: string | null;
-    notificationPreference?: "email" | "sms" | "both" | "none" | null;
-    availability?: AvailabilityData | null;
-  };
-  users: {
-    id: number;
-    firstName?: string | null;
-    lastName?: string | null;
-    email: string;
-    phone?: string | null;
-    bio?: string | null;
-    profilePicture?: string | null;
-  };
-  totalHours: number;
-};
+import { useSignOut } from "@/hooks/use-auth";
+import { useVolunteerProfile } from "@/hooks/use-volunteer-profile";
 
 function formatTime(hhmm: string): string {
   const parts = hhmm.split(":");
@@ -128,36 +110,15 @@ export default function VolunteerProfilePage(): JSX.Element {
   const { data: session } = useSession();
   const handleSignOut = useSignOut();
   const { enqueueSnackbar } = useSnackbar();
+  const {
+    profile: profileData,
+    isLoading: loading,
+    fetchProfile,
+    updateProfile,
+  } = useVolunteerProfile();
 
-  const [profileData, setProfileData] = useState<VolunteerProfileData | null>(
-    null,
-  );
-  const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  const fetchProfile = useCallback(async (): Promise<void> => {
-    try {
-      const response = await fetch("/api/volunteer/profile");
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        const message =
-          (body as { message?: string }).message ||
-          `Request failed with status ${response.status}`;
-        throw new Error(message);
-      }
-      const result = await response.json();
-      setProfileData(result.data);
-    } catch (error) {
-      console.error("[VolunteerProfilePage] fetchProfile failed:", error);
-      enqueueSnackbar(
-        error instanceof Error ? error.message : "Failed to load profile",
-        { variant: "error" },
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [enqueueSnackbar]);
 
   useEffect(() => {
     void fetchProfile();
@@ -171,19 +132,7 @@ export default function VolunteerProfilePage(): JSX.Element {
   }): Promise<void> => {
     setSaving(true);
     try {
-      const response = await fetch("/api/volunteer/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(
-          (body as { message?: string }).message || "Failed to update profile",
-        );
-      }
-
+      await updateProfile(data);
       await fetchProfile();
       setEditMode(false);
       enqueueSnackbar("Profile updated successfully", { variant: "success" });
@@ -224,7 +173,6 @@ export default function VolunteerProfilePage(): JSX.Element {
           variant="outlined"
           size="small"
           onClick={() => {
-            setLoading(true);
             void fetchProfile();
           }}
         >

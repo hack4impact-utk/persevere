@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import { JSX } from "react";
 
-import { Calendar } from "@/components/calendar";
+import { Calendar } from "@/components/staff/calendar";
 
 /** Calendar view for managing events and schedules. */
 export default function StaffCalendarPage(): JSX.Element {

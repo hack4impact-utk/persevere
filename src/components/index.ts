@@ -11,8 +11,10 @@ export * from "./auth";
 // Layout Components
 export * from "./layout";
 
+// Staff Components
+export * from "./staff/calendar";
+export * from "./staff/people-management";
+export * from "./staff/volunteer-management";
+
 // UI Components
 export * from "./ui";
-
-// Volunteer Management Components
-export * from "./volunteer-management";

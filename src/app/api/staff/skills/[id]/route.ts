@@ -1,11 +1,15 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import db from "@/db";
-import { skills, volunteerSkills } from "@/db/schema";
-import { requireAuth } from "@/utils/auth";
+import {
+  deleteSkill,
+  getSkillById,
+  updateSkill,
+} from "@/services/skills-server.service";
+import { ConflictError, NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
+import { AuthError, requireAuth } from "@/utils/server/auth";
+import { validateAndParseId } from "@/utils/validate-id";
 
 const skillUpdateSchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
@@ -24,28 +28,26 @@ export async function GET(
     }
 
     const { id } = await params;
-    const skillId = Number.parseInt(id, 10);
-
-    if (!Number.isInteger(skillId) || skillId <= 0) {
+    const skillId = validateAndParseId(id);
+    if (skillId === null) {
       return NextResponse.json(
         { message: "Invalid skill ID" },
         { status: 400 },
       );
     }
 
-    const skill = await db.select().from(skills).where(eq(skills.id, skillId));
+    const skill = await getSkillById(skillId);
 
-    if (skill.length === 0) {
-      return NextResponse.json({ message: "Skill not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ data: skill[0] });
+    return NextResponse.json({ data: skill });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
     }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
@@ -62,9 +64,8 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const skillId = Number.parseInt(id, 10);
-
-    if (!Number.isInteger(skillId) || skillId <= 0) {
+    const skillId = validateAndParseId(id);
+    if (skillId === null) {
       return NextResponse.json(
         { message: "Invalid skill ID" },
         { status: 400 },
@@ -82,59 +83,24 @@ export async function PUT(
       );
     }
 
-    const data = result.data;
-
-    const skill = await db.select().from(skills).where(eq(skills.id, skillId));
-
-    if (skill.length === 0) {
-      return NextResponse.json({ message: "Skill not found" }, { status: 404 });
-    }
-
-    // Check if updating name and if it conflicts with existing
-    if (data.name && data.name !== skill[0].name) {
-      const existing = await db
-        .select()
-        .from(skills)
-        .where(eq(skills.name, data.name));
-
-      if (existing.length > 0) {
-        return NextResponse.json(
-          { message: "A skill with this name already exists" },
-          { status: 400 },
-        );
-      }
-    }
-
-    const updateData: {
-      name?: string;
-      description?: string;
-      category?: string;
-    } = {};
-
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.description !== undefined)
-      updateData.description = data.description;
-    if (data.category !== undefined) updateData.category = data.category;
-
-    if (Object.keys(updateData).length > 0) {
-      await db.update(skills).set(updateData).where(eq(skills.id, skillId));
-    }
-
-    const updatedSkill = await db
-      .select()
-      .from(skills)
-      .where(eq(skills.id, skillId));
+    const updatedSkill = await updateSkill(skillId, result.data);
 
     return NextResponse.json({
       message: "Skill updated successfully",
-      data: updatedSkill[0],
+      data: updatedSkill,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
     }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+    if (error instanceof ConflictError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
@@ -151,48 +117,29 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const skillId = Number.parseInt(id, 10);
-
-    if (!Number.isInteger(skillId) || skillId <= 0) {
+    const skillId = validateAndParseId(id);
+    if (skillId === null) {
       return NextResponse.json(
         { message: "Invalid skill ID" },
         { status: 400 },
       );
     }
 
-    const skill = await db.select().from(skills).where(eq(skills.id, skillId));
+    await deleteSkill(skillId);
 
-    if (skill.length === 0) {
-      return NextResponse.json({ message: "Skill not found" }, { status: 404 });
-    }
-
-    // Check if skill is in use by any volunteers
-    const usageCount = await db
-      .select()
-      .from(volunteerSkills)
-      .where(eq(volunteerSkills.skillId, skillId));
-
-    if (usageCount.length > 0) {
+    return NextResponse.json({ message: "Skill deleted successfully" });
+  } catch (error) {
+    if (error instanceof AuthError) {
       return NextResponse.json(
-        {
-          message: `Cannot delete skill: it is assigned to ${usageCount.length} volunteer(s)`,
-        },
-        { status: 400 },
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
       );
     }
-
-    await db.delete(skills).where(eq(skills.id, skillId));
-
-    return NextResponse.json({
-      message: "Skill deleted successfully",
-      data: skill[0],
-    });
-  } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof ConflictError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

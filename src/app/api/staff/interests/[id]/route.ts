@@ -1,11 +1,15 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import db from "@/db";
-import { interests, volunteerInterests } from "@/db/schema";
-import { requireAuth } from "@/utils/auth";
+import {
+  deleteInterest,
+  getInterestById,
+  updateInterest,
+} from "@/services/interests-server.service";
+import { ConflictError, NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
+import { AuthError, requireAuth } from "@/utils/server/auth";
+import { validateAndParseId } from "@/utils/validate-id";
 
 const interestUpdateSchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
@@ -23,34 +27,26 @@ export async function GET(
     }
 
     const { id } = await params;
-    const interestId = Number.parseInt(id, 10);
-
-    if (!Number.isInteger(interestId) || interestId <= 0) {
+    const interestId = validateAndParseId(id);
+    if (interestId === null) {
       return NextResponse.json(
         { message: "Invalid interest ID" },
         { status: 400 },
       );
     }
 
-    const interest = await db
-      .select()
-      .from(interests)
-      .where(eq(interests.id, interestId));
+    const interest = await getInterestById(interestId);
 
-    if (interest.length === 0) {
+    return NextResponse.json({ data: interest });
+  } catch (error) {
+    if (error instanceof AuthError) {
       return NextResponse.json(
-        { message: "Interest not found" },
-        { status: 404 },
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
       );
     }
-
-    return NextResponse.json({ data: interest[0] });
-  } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
@@ -67,9 +63,8 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const interestId = Number.parseInt(id, 10);
-
-    if (!Number.isInteger(interestId) || interestId <= 0) {
+    const interestId = validateAndParseId(id);
+    if (interestId === null) {
       return NextResponse.json(
         { message: "Invalid interest ID" },
         { status: 400 },
@@ -87,66 +82,24 @@ export async function PUT(
       );
     }
 
-    const data = result.data;
-
-    const interest = await db
-      .select()
-      .from(interests)
-      .where(eq(interests.id, interestId));
-
-    if (interest.length === 0) {
-      return NextResponse.json(
-        { message: "Interest not found" },
-        { status: 404 },
-      );
-    }
-
-    // Check if updating name and if it conflicts with existing
-    if (data.name && data.name !== interest[0].name) {
-      const existing = await db
-        .select()
-        .from(interests)
-        .where(eq(interests.name, data.name));
-
-      if (existing.length > 0) {
-        return NextResponse.json(
-          { message: "An interest with this name already exists" },
-          { status: 400 },
-        );
-      }
-    }
-
-    const updateData: {
-      name?: string;
-      description?: string;
-    } = {};
-
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.description !== undefined)
-      updateData.description = data.description;
-
-    if (Object.keys(updateData).length > 0) {
-      await db
-        .update(interests)
-        .set(updateData)
-        .where(eq(interests.id, interestId));
-    }
-
-    const updatedInterest = await db
-      .select()
-      .from(interests)
-      .where(eq(interests.id, interestId));
+    const updatedInterest = await updateInterest(interestId, result.data);
 
     return NextResponse.json({
       message: "Interest updated successfully",
-      data: updatedInterest[0],
+      data: updatedInterest,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
     }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+    if (error instanceof ConflictError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
@@ -163,54 +116,29 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const interestId = Number.parseInt(id, 10);
-
-    if (!Number.isInteger(interestId) || interestId <= 0) {
+    const interestId = validateAndParseId(id);
+    if (interestId === null) {
       return NextResponse.json(
         { message: "Invalid interest ID" },
         { status: 400 },
       );
     }
 
-    const interest = await db
-      .select()
-      .from(interests)
-      .where(eq(interests.id, interestId));
+    await deleteInterest(interestId);
 
-    if (interest.length === 0) {
-      return NextResponse.json(
-        { message: "Interest not found" },
-        { status: 404 },
-      );
-    }
-
-    // Check if interest is in use by any volunteers
-    const usageCount = await db
-      .select()
-      .from(volunteerInterests)
-      .where(eq(volunteerInterests.interestId, interestId));
-
-    if (usageCount.length > 0) {
-      return NextResponse.json(
-        {
-          message: `Cannot delete interest: it is assigned to ${usageCount.length} volunteer(s)`,
-        },
-        { status: 400 },
-      );
-    }
-
-    await db.delete(interests).where(eq(interests.id, interestId));
-
-    return NextResponse.json({
-      message: "Interest deleted successfully",
-      data: interest[0],
-    });
+    return NextResponse.json({ message: "Interest deleted successfully" });
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
     }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+    if (error instanceof ConflictError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

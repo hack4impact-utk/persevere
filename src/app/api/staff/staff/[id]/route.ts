@@ -1,69 +1,41 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 
-import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
-import db from "@/db";
-import { staff, users } from "@/db/schema";
+import {
+  deactivateStaff,
+  getStaffById,
+  updateStaff,
+} from "@/services/staff-server.service";
+import { NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
+import { AuthError, requireAuth } from "@/utils/server/auth";
+import { validateAndParseId } from "@/utils/validate-id";
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Only admins can access staff details
-    const user = session.user as {
-      role?: string;
-    };
-    if (user.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireAuth("admin");
 
     const { id } = await params;
-    const staffId = Number.parseInt(id);
-    if (Number.isNaN(staffId)) {
+    const staffId = validateAndParseId(id);
+    if (staffId === null) {
       return NextResponse.json({ error: "Invalid staff ID" }, { status: 400 });
     }
 
-    const staffMember = await db.query.staff.findFirst({
-      where: eq(staff.id, staffId),
-      with: {
-        user: true,
-        admin: true,
-      },
-    });
+    const data = await getStaffById(staffId);
 
-    if (!staffMember) {
+    return NextResponse.json({ data });
+  } catch (error) {
+    if (error instanceof AuthError) {
       return NextResponse.json(
-        { error: "Staff member not found" },
-        { status: 404 },
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
       );
     }
-
-    return NextResponse.json(
-      {
-        data: {
-          staff: {
-            id: staffMember.id,
-            userId: staffMember.userId,
-            notificationPreference: staffMember.notificationPreference,
-            createdAt: staffMember.createdAt,
-            updatedAt: staffMember.updatedAt,
-          },
-          users: staffMember.user,
-          isAdmin: !!staffMember.admin,
-        },
-      },
-      { status: 200 },
-    );
-  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
@@ -73,127 +45,60 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Only admins can update staff
-    const user = session.user as {
-      role?: string;
-    };
-    if (user.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireAuth("admin");
 
     const { id } = await params;
-    const staffId = Number.parseInt(id);
-    if (Number.isNaN(staffId)) {
+    const staffId = validateAndParseId(id);
+    if (staffId === null) {
       return NextResponse.json({ error: "Invalid staff ID" }, { status: 400 });
     }
 
     const json = await request.json();
+    await updateStaff(staffId, json);
 
-    // Find staff member
-    const staffMember = await db.query.staff.findFirst({
-      where: eq(staff.id, staffId),
-    });
-
-    if (!staffMember) {
+    return NextResponse.json({ message: "Staff member updated successfully" });
+  } catch (error) {
+    if (error instanceof AuthError) {
       return NextResponse.json(
-        { error: "Staff member not found" },
-        { status: 404 },
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
       );
     }
-
-    // Update user fields if provided
-    if (
-      json.firstName ||
-      json.lastName ||
-      json.email ||
-      json.phone !== undefined ||
-      json.isActive !== undefined
-    ) {
-      await db
-        .update(users)
-        .set({
-          firstName: json.firstName,
-          lastName: json.lastName,
-          email: json.email,
-          phone: json.phone,
-          isActive: json.isActive,
-        })
-        .where(eq(users.id, staffMember.userId));
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
-
-    // Update staff fields if provided
-    if (json.notificationPreference) {
-      await db
-        .update(staff)
-        .set({
-          notificationPreference: json.notificationPreference,
-        })
-        .where(eq(staff.id, staffId));
-    }
-
-    return NextResponse.json(
-      { message: "Staff member updated successfully" },
-      { status: 200 },
-    );
-  } catch (error) {
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
 export async function DELETE(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Only admins can deactivate staff
-    const user = session.user as {
-      role?: string;
-    };
-    if (user.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireAuth("admin");
 
     const { id } = await params;
-    const staffId = Number.parseInt(id);
-    if (Number.isNaN(staffId)) {
+    const staffId = validateAndParseId(id);
+    if (staffId === null) {
       return NextResponse.json({ error: "Invalid staff ID" }, { status: 400 });
     }
 
-    // Find staff member
-    const staffMember = await db.query.staff.findFirst({
-      where: eq(staff.id, staffId),
-    });
+    await deactivateStaff(staffId);
 
-    if (!staffMember) {
+    return NextResponse.json({
+      message: "Staff member deactivated successfully",
+    });
+  } catch (error) {
+    if (error instanceof AuthError) {
       return NextResponse.json(
-        { error: "Staff member not found" },
-        { status: 404 },
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
       );
     }
-
-    // Deactivate user instead of deleting (soft delete)
-    await db
-      .update(users)
-      .set({ isActive: false })
-      .where(eq(users.id, staffMember.userId));
-
-    return NextResponse.json(
-      { message: "Staff member deactivated successfully" },
-      { status: 200 },
-    );
-  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

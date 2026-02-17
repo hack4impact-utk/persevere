@@ -1,10 +1,8 @@
-import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { JSX } from "react";
 
-import VolunteerProfile from "@/components/volunteer-management/volunteer-profile";
-import db from "@/db";
-import { users, volunteers } from "@/db/schema";
+import VolunteerProfile from "@/components/staff/volunteer-management/volunteer-profile";
+import { getVolunteerProfile } from "@/services/volunteer.service";
 
 /** Individual volunteer profile page. */
 export default async function VolunteerDetailsPage({
@@ -19,26 +17,48 @@ export default async function VolunteerDetailsPage({
     notFound();
   }
 
-  const volunteerWithUser = await db
-    .select()
-    .from(volunteers)
-    .leftJoin(users, eq(volunteers.userId, users.id))
-    .where(eq(volunteers.id, volunteerId))
-    .then((results) => results[0]);
+  const profile = await getVolunteerProfile(volunteerId);
 
-  if (!volunteerWithUser || !volunteerWithUser.users) {
+  if (!profile || !profile.volunteer.users) {
     notFound();
   }
+
+  const volunteer = {
+    volunteers: profile.volunteer.volunteers,
+    users: profile.volunteer.users,
+    totalHours: profile.totalHours,
+    skills: profile.skills.filter(
+      (
+        s,
+      ): s is typeof s & {
+        proficiencyLevel: "beginner" | "intermediate" | "advanced";
+      } => s.proficiencyLevel !== null,
+    ),
+    interests: profile.interests,
+    recentOpportunities: profile.recentOpportunities.filter(
+      (
+        o,
+      ): o is typeof o & {
+        rsvpStatus:
+          | "pending"
+          | "confirmed"
+          | "declined"
+          | "attended"
+          | "no_show";
+      } => o.rsvpStatus !== null,
+    ),
+    hoursBreakdown: profile.hoursBreakdown,
+  };
 
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">
-          Volunteer Profile: {volunteerWithUser.users.firstName}{" "}
-          {volunteerWithUser.users.lastName}
+          Volunteer Profile: {profile.volunteer.users.firstName}{" "}
+          {profile.volunteer.users.lastName}
         </h1>
       </div>
-      <VolunteerProfile volunteer={volunteerWithUser} />
+      <VolunteerProfile volunteer={volunteer} />
     </div>
   );
 }
