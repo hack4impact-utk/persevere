@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { z } from "zod";
 
-import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { createVolunteer, listVolunteers } from "@/services/volunteer.service";
 import handleError from "@/utils/handle-error";
+import { AuthError, requireAuth } from "@/utils/server/auth";
 
 const volunteerCreateSchema = z.object({
   // User fields
@@ -36,17 +35,8 @@ const volunteerCreateSchema = z.object({
 
 export async function GET(request: Request): Promise<NextResponse> {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user has staff or admin role
-    const user = session.user as {
-      role?: string;
-    };
-    if (!user.role || !["staff", "admin"].includes(user.role)) {
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -73,29 +63,24 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ data, total });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
+    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user has staff or admin role
-    const user = session.user as {
-      role?: string;
-    };
-    if (!user.role || !["staff", "admin"].includes(user.role)) {
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const json = await request.json();
-
-    // Validate the request body with better error handling
     const result = volunteerCreateSchema.safeParse(json);
     if (!result.success) {
       const firstError = result.error.issues[0];
@@ -121,6 +106,12 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: 201 },
     );
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
+    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

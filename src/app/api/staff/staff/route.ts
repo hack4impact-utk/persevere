@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { z } from "zod";
 
-import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { createStaff, listStaff } from "@/services/staff-server.service";
 import { ConflictError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
+import { AuthError, requireAuth } from "@/utils/server/auth";
 
 const staffCreateSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -18,13 +17,7 @@ const staffCreateSchema = z.object({
 
 export async function GET(request: Request): Promise<NextResponse> {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if ((session.user as { role?: string }).role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireAuth("admin");
 
     const { searchParams } = new URL(request.url);
     const page = Number.parseInt(searchParams.get("page") || "1");
@@ -43,19 +36,19 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
+    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if ((session.user as { role?: string }).role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireAuth("admin");
 
     const json = await request.json();
     const result = staffCreateSchema.safeParse(json);
@@ -79,6 +72,12 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: 201 },
     );
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
+    }
     if (error instanceof ConflictError) {
       return NextResponse.json({ message: error.message }, { status: 400 });
     }

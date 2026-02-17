@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { z } from "zod";
 
-import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import {
   createCommunication,
@@ -10,6 +8,7 @@ import {
 } from "@/services/communications.service";
 import { NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
+import { AuthError, requireAuth } from "@/utils/server/auth";
 
 const createCommunicationSchema = z.object({
   subject: z.string().min(1, "Subject is required"),
@@ -19,11 +18,8 @@ const createCommunicationSchema = z.object({
 
 export async function GET(request: Request): Promise<NextResponse> {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (!session.user.role || !["staff", "admin"].includes(session.user.role)) {
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -41,17 +37,20 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
+    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (!session.user.role || !["staff", "admin"].includes(session.user.role)) {
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -89,6 +88,12 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(output, { status: 201 });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
+    }
     if (error instanceof NotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
