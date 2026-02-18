@@ -2,7 +2,7 @@ import { and, eq, gte, lte } from "drizzle-orm";
 
 import db from "@/db";
 import { opportunities } from "@/db/schema";
-import { NotFoundError, ValidationError } from "@/utils/errors";
+import { ConflictError, NotFoundError, ValidationError } from "@/utils/errors";
 
 export type CalendarEvent = {
   id: string;
@@ -18,6 +18,13 @@ export type CalendarEvent = {
     isRecurring: boolean;
     recurrencePattern: unknown;
   };
+};
+
+export type RecurrencePattern = {
+  frequency: "daily" | "weekly" | "monthly";
+  interval: number;
+  endDate?: string;
+  count?: number;
 };
 
 function toCalendarEvent(
@@ -38,6 +45,48 @@ function toCalendarEvent(
       recurrencePattern: row.recurrencePattern,
     },
   };
+}
+
+function computeOccurrences(
+  start: Date,
+  end: Date,
+  pattern: RecurrencePattern,
+): { startDate: Date; endDate: Date }[] {
+  const durationMs = end.getTime() - start.getTime();
+  const occurrences: { startDate: Date; endDate: Date }[] = [];
+
+  let current = new Date(start);
+  const patternEndDate = pattern.endDate ? new Date(pattern.endDate) : null;
+  const maxCount = pattern.count ?? Infinity;
+
+  while (occurrences.length < maxCount) {
+    if (patternEndDate && current >= patternEndDate) break;
+
+    occurrences.push({
+      startDate: new Date(current),
+      endDate: new Date(current.getTime() + durationMs),
+    });
+
+    // Advance by interval × frequency
+    const next = new Date(current);
+    switch (pattern.frequency) {
+      case "daily": {
+        next.setDate(next.getDate() + pattern.interval);
+        break;
+      }
+      case "weekly": {
+        next.setDate(next.getDate() + pattern.interval * 7);
+        break;
+      }
+      case "monthly": {
+        next.setMonth(next.getMonth() + pattern.interval);
+        break;
+      }
+    }
+    current = next;
+  }
+
+  return occurrences;
 }
 
 export async function listCalendarEvents(
@@ -67,27 +116,52 @@ export async function createCalendarEvent(data: {
   maxVolunteers?: number;
   status?: "open" | "full" | "completed" | "canceled";
   createdById: number;
-}): Promise<CalendarEvent> {
-  const rows = await db
-    .insert(opportunities)
-    .values({
-      title: data.title,
-      description: data.description || "",
-      location: data.location || "",
-      startDate: data.startDate,
-      endDate: data.endDate,
-      createdById: data.createdById,
-      status: data.status || "open",
-      maxVolunteers: data.maxVolunteers,
-      isRecurring: false,
-    })
-    .returning();
+  isRecurring?: boolean;
+  recurrencePattern?: RecurrencePattern;
+}): Promise<CalendarEvent[]> {
+  const occurrences =
+    data.isRecurring && data.recurrencePattern
+      ? computeOccurrences(data.startDate, data.endDate, data.recurrencePattern)
+      : [{ startDate: data.startDate, endDate: data.endDate }];
 
-  if (!rows || rows.length === 0 || !rows[0]) {
+  // Check for duplicates: same title + same startDate
+  for (const occ of occurrences) {
+    const existing = await db
+      .select({ id: opportunities.id })
+      .from(opportunities)
+      .where(
+        and(
+          eq(opportunities.title, data.title),
+          eq(opportunities.startDate, occ.startDate),
+        ),
+      );
+    if (existing.length > 0) {
+      throw new ConflictError(
+        `An event named "${data.title}" already exists at that start time`,
+      );
+    }
+  }
+
+  const values = occurrences.map((occ) => ({
+    title: data.title,
+    description: data.description ?? "",
+    location: data.location ?? "",
+    startDate: occ.startDate,
+    endDate: occ.endDate,
+    createdById: data.createdById,
+    status: data.status ?? ("open" as const),
+    maxVolunteers: data.maxVolunteers,
+    isRecurring: data.isRecurring ?? false,
+    recurrencePattern: data.recurrencePattern ?? null,
+  }));
+
+  const rows = await db.insert(opportunities).values(values).returning();
+
+  if (!rows || rows.length === 0) {
     throw new Error("Failed to create event: no data returned from database");
   }
 
-  return toCalendarEvent(rows[0]);
+  return rows.map((r) => toCalendarEvent(r));
 }
 
 export async function updateCalendarEvent(

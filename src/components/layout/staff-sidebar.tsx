@@ -157,7 +157,11 @@ export default function StaffSidebar(): JSX.Element {
   const navItems: NavItem[] = useMemo(() => {
     const baseItems: NavItem[] = [
       { label: "Dashboard", href: "/staff/dashboard", icon: <DashboardIcon /> },
-      { label: "Calendar", href: "/staff/calendar", icon: <CalendarIcon /> },
+      {
+        label: "Opportunities",
+        href: "/staff/opportunities",
+        icon: <CalendarIcon />,
+      },
       {
         label: "Onboarding",
         href: "/staff/onboarding",

@@ -1,7 +1,9 @@
 "use client";
 
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import EventIcon from "@mui/icons-material/Event";
+import ListIcon from "@mui/icons-material/List";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import PeopleIcon from "@mui/icons-material/People";
 import SearchIcon from "@mui/icons-material/Search";
@@ -9,20 +11,24 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
 import Skeleton from "@mui/material/Skeleton";
 import TextField from "@mui/material/TextField";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import { JSX, useState } from "react";
 
-import RsvpButton from "@/components/volunteer/rsvp-button";
+import { Calendar } from "@/components/staff/calendar";
+import OpportunityDetailModal from "@/components/volunteer/opportunity-detail-modal";
 import type { Opportunity } from "@/components/volunteer/types";
 import { formatDate, formatTime } from "@/components/volunteer/utils";
 import { useOpportunities } from "@/hooks/use-opportunities";
+
+type View = "list" | "calendar";
 
 function SpotsChip({ opp }: { opp: Opportunity }): JSX.Element {
   if (opp.spotsRemaining === null) {
@@ -51,27 +57,22 @@ function SpotsChip({ opp }: { opp: Opportunity }): JSX.Element {
 
 type OpportunityCardProps = {
   opportunity: Opportunity;
-  isRsvped: boolean;
-  onRsvpChange: (newIsRsvped: boolean) => void;
+  onClick: () => void;
 };
 
 function OpportunityCard({
   opportunity,
-  isRsvped,
-  onRsvpChange,
+  onClick,
 }: OpportunityCardProps): JSX.Element {
-  const isFull =
-    !isRsvped &&
-    opportunity.spotsRemaining !== null &&
-    opportunity.spotsRemaining <= 0;
-
   return (
     <Card
+      onClick={onClick}
       sx={{
         borderRadius: 2,
         boxShadow: 2,
         display: "flex",
         flexDirection: "column",
+        cursor: "pointer",
         transition: "transform 0.2s, box-shadow 0.2s",
         "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
       }}
@@ -148,15 +149,6 @@ function OpportunityCard({
           </Box>
         )}
       </CardContent>
-
-      <CardActions sx={{ px: 2.5, pb: 2, pt: 0 }}>
-        <RsvpButton
-          opportunityId={opportunity.id}
-          isRsvped={isRsvped}
-          isFull={isFull}
-          onRsvpChange={onRsvpChange}
-        />
-      </CardActions>
     </Card>
   );
 }
@@ -182,11 +174,6 @@ function SkeletonGrid(): JSX.Element {
             <Skeleton variant="text" width="80%" sx={{ mb: 1.5 }} />
             <Skeleton variant="text" width="55%" />
             <Skeleton variant="text" width="50%" sx={{ mb: 2 }} />
-            <Skeleton
-              variant="rectangular"
-              height={36}
-              sx={{ borderRadius: 1 }}
-            />
           </CardContent>
         </Card>
       ))}
@@ -196,6 +183,10 @@ function SkeletonGrid(): JSX.Element {
 
 export default function OpportunitiesPage(): JSX.Element {
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<View>("list");
+  const [selectedOpportunityId, setSelectedOpportunityId] = useState<
+    number | null
+  >(null);
 
   const {
     opportunities,
@@ -220,119 +211,185 @@ export default function OpportunitiesPage(): JSX.Element {
         overflow: "hidden",
       }}
     >
-      <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
-        Opportunities
-      </Typography>
-      <Typography variant="body1" color="text.secondary" mb={3}>
-        Browse and sign up for volunteer opportunities
-      </Typography>
-
-      {/* Search toolbar */}
+      {/* Header */}
       <Box
         sx={{
           display: "flex",
-          gap: 2,
-          mb: 3,
-          flexShrink: 0,
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          mb: 1,
           flexWrap: "wrap",
-          alignItems: "center",
+          gap: 2,
         }}
       >
-        <TextField
+        <Box>
+          <Typography variant="h4" component="h1" fontWeight={700}>
+            Opportunities
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Browse and sign up for volunteer opportunities
+          </Typography>
+        </Box>
+
+        <ToggleButtonGroup
+          value={view}
+          exclusive
+          onChange={(_, newView: View | null) => {
+            if (newView) setView(newView);
+          }}
           size="small"
-          label="Search opportunities"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-          }}
-          placeholder="Search by title, description, or location..."
-          sx={{ flex: 1, minWidth: 240 }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+          aria-label="view toggle"
+        >
+          <ToggleButton value="list" aria-label="list view">
+            <ListIcon fontSize="small" sx={{ mr: 0.5 }} />
+            List
+          </ToggleButton>
+          <ToggleButton value="calendar" aria-label="calendar view">
+            <CalendarMonthIcon fontSize="small" sx={{ mr: 0.5 }} />
+            Calendar
+          </ToggleButton>
+        </ToggleButtonGroup>
       </Box>
 
-      {error && (
+      {/* Search toolbar (list view only) */}
+      {view === "list" && (
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            mt: 2,
+            mb: 3,
+            flexShrink: 0,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <TextField
+            size="small"
+            label="Search opportunities"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
+            placeholder="Search by title, description, or location..."
+            sx={{ flex: 1, minWidth: 240 }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        </Box>
+      )}
+
+      {view === "list" && error && (
         <Alert severity="error" sx={{ mb: 2, flexShrink: 0 }}>
           {error}
         </Alert>
       )}
 
-      {rsvpWarning && (
+      {view === "list" && rsvpWarning && (
         <Alert severity="warning" sx={{ mb: 2, flexShrink: 0 }}>
           Could not load your RSVP status — button states may be inaccurate.
         </Alert>
       )}
 
-      {/* Scrollable content area */}
+      {/* Body */}
       <Box sx={{ flex: 1, overflow: "auto", minHeight: 0 }}>
-        {loading && <SkeletonGrid />}
+        {view === "list" ? (
+          <>
+            {loading && <SkeletonGrid />}
 
-        {!loading && opportunities.length === 0 && (
-          <Box sx={{ textAlign: "center", py: 8 }}>
-            <EventIcon sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No opportunities found
-            </Typography>
-            <Typography variant="body2" color="text.disabled">
-              {search
-                ? "Try a different search term"
-                : "Check back soon for new opportunities"}
-            </Typography>
-          </Box>
-        )}
+            {!loading && opportunities.length === 0 && (
+              <Box sx={{ textAlign: "center", py: 8 }}>
+                <EventIcon
+                  sx={{ fontSize: 64, color: "text.disabled", mb: 2 }}
+                />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No opportunities found
+                </Typography>
+                <Typography variant="body2" color="text.disabled">
+                  {search
+                    ? "Try a different search term"
+                    : "Check back soon for new opportunities"}
+                </Typography>
+              </Box>
+            )}
 
-        {opportunities.length > 0 && (
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, 1fr)",
-                md: "repeat(3, 1fr)",
-              },
-              gap: 3,
+            {opportunities.length > 0 && (
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    sm: "repeat(2, 1fr)",
+                    md: "repeat(3, 1fr)",
+                  },
+                  gap: 3,
+                }}
+              >
+                {opportunities.map((opp) => (
+                  <OpportunityCard
+                    key={opp.id}
+                    opportunity={opp}
+                    onClick={() => {
+                      setSelectedOpportunityId(opp.id);
+                    }}
+                  />
+                ))}
+              </Box>
+            )}
+
+            {hasMore && !loading && (
+              <Box sx={{ textAlign: "center", mt: 4, mb: 2 }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    void loadMore();
+                  }}
+                  disabled={loadingMore}
+                  startIcon={
+                    loadingMore ? (
+                      <CircularProgress size={16} color="inherit" />
+                    ) : undefined
+                  }
+                >
+                  {loadingMore ? "Loading..." : "Load More"}
+                </Button>
+              </Box>
+            )}
+          </>
+        ) : (
+          <Calendar
+            readOnly
+            onEventClick={(id) => {
+              setSelectedOpportunityId(Number.parseInt(id, 10));
             }}
-          >
-            {opportunities.map((opp) => (
-              <OpportunityCard
-                key={opp.id}
-                opportunity={opp}
-                isRsvped={rsvpedIds.has(opp.id)}
-                onRsvpChange={(newIsRsvped) =>
-                  handleRsvpChange(opp.id, newIsRsvped)
-                }
-              />
-            ))}
-          </Box>
-        )}
-
-        {hasMore && !loading && (
-          <Box sx={{ textAlign: "center", mt: 4, mb: 2 }}>
-            <Button
-              variant="outlined"
-              onClick={() => {
-                void loadMore();
-              }}
-              disabled={loadingMore}
-              startIcon={
-                loadingMore ? (
-                  <CircularProgress size={16} color="inherit" />
-                ) : undefined
-              }
-            >
-              {loadingMore ? "Loading..." : "Load More"}
-            </Button>
-          </Box>
+          />
         )}
       </Box>
+
+      <OpportunityDetailModal
+        opportunityId={selectedOpportunityId}
+        isRsvped={
+          selectedOpportunityId === null
+            ? false
+            : rsvpedIds.has(selectedOpportunityId)
+        }
+        open={selectedOpportunityId !== null}
+        onClose={() => {
+          setSelectedOpportunityId(null);
+        }}
+        onRsvpChange={(newIsRsvped) => {
+          if (selectedOpportunityId !== null) {
+            handleRsvpChange(selectedOpportunityId, newIsRsvped);
+          }
+        }}
+      />
     </Box>
   );
 }

@@ -19,6 +19,13 @@ export type CalendarEvent = {
   };
 };
 
+type RecurrencePattern = {
+  frequency: "daily" | "weekly" | "monthly";
+  interval: number;
+  endDate?: string;
+  count?: number;
+};
+
 type CreateEventData = {
   title: string;
   description?: string;
@@ -26,6 +33,8 @@ type CreateEventData = {
   startDate: string;
   endDate: string;
   maxVolunteers?: number;
+  isRecurring?: boolean;
+  recurrencePattern?: RecurrencePattern;
 };
 
 type UpdateEventData = Partial<CreateEventData>;
