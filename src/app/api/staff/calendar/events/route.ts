@@ -5,8 +5,16 @@ import {
   createCalendarEvent,
   listCalendarEvents,
 } from "@/services/calendar-events.service";
+import { ConflictError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
+
+const recurrencePatternSchema = z.object({
+  frequency: z.enum(["daily", "weekly", "monthly"]),
+  interval: z.number().int().positive(),
+  endDate: z.string().optional(),
+  count: z.number().int().positive().optional(),
+});
 
 const eventCreateSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -16,6 +24,8 @@ const eventCreateSchema = z.object({
   endDate: z.string().datetime("Invalid end date"),
   maxVolunteers: z.number().int().positive().optional(),
   status: z.enum(["open", "full", "completed", "canceled"]).optional(),
+  isRecurring: z.boolean().optional(),
+  recurrencePattern: recurrencePatternSchema.optional(),
 });
 
 /**
@@ -102,7 +112,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    const calendarEvent = await createCalendarEvent({
+    const calendarEvents = await createCalendarEvent({
       title: data.title,
       description: data.description,
       location: data.location,
@@ -111,10 +121,12 @@ export async function POST(request: Request): Promise<NextResponse> {
       createdById: Number.parseInt(session.user.id, 10),
       status: data.status,
       maxVolunteers: data.maxVolunteers,
+      isRecurring: data.isRecurring,
+      recurrencePattern: data.recurrencePattern,
     });
 
     return NextResponse.json(
-      { message: "Event created successfully", data: calendarEvent },
+      { message: "Event created successfully", data: calendarEvents },
       { status: 201 },
     );
   } catch (error) {
@@ -123,6 +135,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         { error: error.code },
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
+    }
+    if (error instanceof ConflictError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

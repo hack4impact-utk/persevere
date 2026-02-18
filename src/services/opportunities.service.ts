@@ -2,6 +2,7 @@ import { and, count, eq, gt, sql } from "drizzle-orm";
 
 import db from "@/db";
 import { opportunities, volunteerRsvps } from "@/db/schema/opportunities";
+import { NotFoundError } from "@/utils/errors";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -107,4 +108,61 @@ export async function listOpenOpportunities(
         opp.maxVolunteers === null ? null : opp.maxVolunteers - rsvpCount,
     };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Get a single open opportunity by ID
+// ---------------------------------------------------------------------------
+
+export async function getOpenOpportunityById(
+  id: number,
+): Promise<OpportunityWithSpots> {
+  const now = new Date();
+
+  const rsvpCountSubquery = db
+    .select({
+      opportunityId: volunteerRsvps.opportunityId,
+      rsvpCount: count(volunteerRsvps.volunteerId).as("rsvp_count"),
+    })
+    .from(volunteerRsvps)
+    .groupBy(volunteerRsvps.opportunityId)
+    .as("rsvp_counts");
+
+  const rows = await db
+    .select({
+      id: opportunities.id,
+      title: opportunities.title,
+      description: opportunities.description,
+      location: opportunities.location,
+      startDate: opportunities.startDate,
+      endDate: opportunities.endDate,
+      status: opportunities.status,
+      maxVolunteers: opportunities.maxVolunteers,
+      rsvpCount: sql<number>`COALESCE(${rsvpCountSubquery.rsvpCount}, 0)`,
+    })
+    .from(opportunities)
+    .leftJoin(
+      rsvpCountSubquery,
+      eq(opportunities.id, rsvpCountSubquery.opportunityId),
+    )
+    .where(
+      and(
+        eq(opportunities.id, id),
+        eq(opportunities.status, "open"),
+        gt(opportunities.startDate, now),
+      ),
+    );
+
+  if (rows.length === 0) {
+    throw new NotFoundError("Opportunity not found");
+  }
+
+  const opp = rows[0];
+  const rsvpCount = Number(opp.rsvpCount);
+  return {
+    ...opp,
+    rsvpCount,
+    spotsRemaining:
+      opp.maxVolunteers === null ? null : opp.maxVolunteers - rsvpCount,
+  };
 }
