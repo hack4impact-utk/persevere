@@ -1,7 +1,13 @@
-import { and, count, eq, gt, sql } from "drizzle-orm";
+import { and, count, eq, gt, inArray, sql } from "drizzle-orm";
 
 import db from "@/db";
-import { opportunities, volunteerRsvps } from "@/db/schema/opportunities";
+import {
+  opportunities,
+  opportunityInterests,
+  opportunityRequiredSkills,
+  volunteerRsvps,
+} from "@/db/schema/opportunities";
+import { interests, skills } from "@/db/schema/users";
 import { NotFoundError } from "@/utils/errors";
 
 // ---------------------------------------------------------------------------
@@ -25,6 +31,8 @@ export type OpportunityWithSpots = {
   maxVolunteers: number | null;
   rsvpCount: number;
   spotsRemaining: number | null;
+  requiredSkills: { skillId: number; skillName: string | null }[];
+  interests: { interestId: number; interestName: string | null }[];
 };
 
 // ---------------------------------------------------------------------------
@@ -97,6 +105,53 @@ export async function listOpenOpportunities(
     return Number(opp.rsvpCount) < opp.maxVolunteers;
   });
 
+  // Batch-fetch required skills and interests for the returned opportunities
+  const opportunityIds = availableOpportunities.map((o) => o.id);
+  const requiredSkillsMap: Record<
+    number,
+    { skillId: number; skillName: string | null }[]
+  > = {};
+  const interestsMap: Record<
+    number,
+    { interestId: number; interestName: string | null }[]
+  > = {};
+
+  if (opportunityIds.length > 0) {
+    const skillRows = await db
+      .select({
+        opportunityId: opportunityRequiredSkills.opportunityId,
+        skillId: opportunityRequiredSkills.skillId,
+        skillName: skills.name,
+      })
+      .from(opportunityRequiredSkills)
+      .leftJoin(skills, eq(opportunityRequiredSkills.skillId, skills.id))
+      .where(inArray(opportunityRequiredSkills.opportunityId, opportunityIds));
+
+    for (const row of skillRows) {
+      (requiredSkillsMap[row.opportunityId] ??= []).push({
+        skillId: row.skillId,
+        skillName: row.skillName,
+      });
+    }
+
+    const interestRows = await db
+      .select({
+        opportunityId: opportunityInterests.opportunityId,
+        interestId: opportunityInterests.interestId,
+        interestName: interests.name,
+      })
+      .from(opportunityInterests)
+      .leftJoin(interests, eq(opportunityInterests.interestId, interests.id))
+      .where(inArray(opportunityInterests.opportunityId, opportunityIds));
+
+    for (const row of interestRows) {
+      (interestsMap[row.opportunityId] ??= []).push({
+        interestId: row.interestId,
+        interestName: row.interestName,
+      });
+    }
+  }
+
   // Calculate spots remaining; coerce rsvpCount to number here since
   // SQL COALESCE expressions arrive as strings on the wire despite the sql<number> annotation.
   return availableOpportunities.map((opp) => {
@@ -106,6 +161,8 @@ export async function listOpenOpportunities(
       rsvpCount,
       spotsRemaining:
         opp.maxVolunteers === null ? null : opp.maxVolunteers - rsvpCount,
+      requiredSkills: requiredSkillsMap[opp.id] ?? [],
+      interests: interestsMap[opp.id] ?? [],
     };
   });
 }
@@ -159,10 +216,31 @@ export async function getOpenOpportunityById(
 
   const opp = rows[0];
   const rsvpCount = Number(opp.rsvpCount);
+
+  const skillRows = await db
+    .select({
+      skillId: opportunityRequiredSkills.skillId,
+      skillName: skills.name,
+    })
+    .from(opportunityRequiredSkills)
+    .leftJoin(skills, eq(opportunityRequiredSkills.skillId, skills.id))
+    .where(eq(opportunityRequiredSkills.opportunityId, id));
+
+  const interestRows = await db
+    .select({
+      interestId: opportunityInterests.interestId,
+      interestName: interests.name,
+    })
+    .from(opportunityInterests)
+    .leftJoin(interests, eq(opportunityInterests.interestId, interests.id))
+    .where(eq(opportunityInterests.opportunityId, id));
+
   return {
     ...opp,
     rsvpCount,
     spotsRemaining:
       opp.maxVolunteers === null ? null : opp.maxVolunteers - rsvpCount,
+    requiredSkills: skillRows,
+    interests: interestRows,
   };
 }
