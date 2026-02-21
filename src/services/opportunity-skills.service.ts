@@ -32,14 +32,17 @@ export async function removeRequiredSkill(
   skillId: number,
 ): Promise<void> {
   await requireEvent(eventId);
-  await db
+  const deleted = await db
     .delete(opportunityRequiredSkills)
     .where(
       and(
         eq(opportunityRequiredSkills.opportunityId, eventId),
         eq(opportunityRequiredSkills.skillId, skillId),
       ),
-    );
+    )
+    .returning();
+  if (deleted.length === 0)
+    throw new NotFoundError("Skill assignment not found");
 }
 
 export async function addRequiredInterest(
@@ -58,12 +61,15 @@ export async function removeRequiredInterest(
   interestId: number,
 ): Promise<void> {
   await requireEvent(eventId);
-  await db
+  const deleted = await db
     .delete(opportunityInterests)
     .where(
       and(
         eq(opportunityInterests.opportunityId, eventId),
         eq(opportunityInterests.interestId, interestId),
       ),
-    );
+    )
+    .returning();
+  if (deleted.length === 0)
+    throw new NotFoundError("Interest assignment not found");
 }
