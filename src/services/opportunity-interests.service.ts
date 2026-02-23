@@ -1,0 +1,48 @@
+import { and, eq } from "drizzle-orm";
+
+import db from "@/db";
+import { interests } from "@/db/schema";
+import { opportunities, opportunityInterests } from "@/db/schema/opportunities";
+import { NotFoundError } from "@/utils/errors";
+
+async function requireEvent(eventId: number): Promise<void> {
+  const [event] = await db
+    .select({ id: opportunities.id })
+    .from(opportunities)
+    .where(eq(opportunities.id, eventId));
+  if (!event) throw new NotFoundError("Calendar event not found");
+}
+
+export async function addRequiredInterest(
+  eventId: number,
+  interestId: number,
+): Promise<void> {
+  await requireEvent(eventId);
+  const [interest] = await db
+    .select({ id: interests.id })
+    .from(interests)
+    .where(eq(interests.id, interestId));
+  if (!interest) throw new NotFoundError("Interest not found");
+  await db
+    .insert(opportunityInterests)
+    .values({ opportunityId: eventId, interestId })
+    .onConflictDoNothing();
+}
+
+export async function removeRequiredInterest(
+  eventId: number,
+  interestId: number,
+): Promise<void> {
+  await requireEvent(eventId);
+  const deleted = await db
+    .delete(opportunityInterests)
+    .where(
+      and(
+        eq(opportunityInterests.opportunityId, eventId),
+        eq(opportunityInterests.interestId, interestId),
+      ),
+    )
+    .returning();
+  if (deleted.length === 0)
+    throw new NotFoundError("Interest assignment not found");
+}
