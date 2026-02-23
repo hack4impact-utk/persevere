@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   addRequiredInterest,
   removeRequiredInterest,
-} from "@/services/opportunity-skills.service";
+} from "@/services/opportunity-interests.service";
 import { NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";

@@ -1,9 +1,9 @@
 import { and, eq } from "drizzle-orm";
 
 import db from "@/db";
+import { skills } from "@/db/schema";
 import {
   opportunities,
-  opportunityInterests,
   opportunityRequiredSkills,
 } from "@/db/schema/opportunities";
 import { NotFoundError } from "@/utils/errors";
@@ -21,6 +21,11 @@ export async function addRequiredSkill(
   skillId: number,
 ): Promise<void> {
   await requireEvent(eventId);
+  const [skill] = await db
+    .select({ id: skills.id })
+    .from(skills)
+    .where(eq(skills.id, skillId));
+  if (!skill) throw new NotFoundError("Skill not found");
   await db
     .insert(opportunityRequiredSkills)
     .values({ opportunityId: eventId, skillId })
@@ -43,33 +48,4 @@ export async function removeRequiredSkill(
     .returning();
   if (deleted.length === 0)
     throw new NotFoundError("Skill assignment not found");
-}
-
-export async function addRequiredInterest(
-  eventId: number,
-  interestId: number,
-): Promise<void> {
-  await requireEvent(eventId);
-  await db
-    .insert(opportunityInterests)
-    .values({ opportunityId: eventId, interestId })
-    .onConflictDoNothing();
-}
-
-export async function removeRequiredInterest(
-  eventId: number,
-  interestId: number,
-): Promise<void> {
-  await requireEvent(eventId);
-  const deleted = await db
-    .delete(opportunityInterests)
-    .where(
-      and(
-        eq(opportunityInterests.opportunityId, eventId),
-        eq(opportunityInterests.interestId, interestId),
-      ),
-    )
-    .returning();
-  if (deleted.length === 0)
-    throw new NotFoundError("Interest assignment not found");
 }
