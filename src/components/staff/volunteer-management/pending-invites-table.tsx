@@ -7,6 +7,7 @@ import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import LastPageIcon from "@mui/icons-material/LastPage";
 import PersonIcon from "@mui/icons-material/Person";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import WarningIcon from "@mui/icons-material/Warning";
 import {
   Avatar,
@@ -78,9 +79,12 @@ const getRequirements = (
 ): {
   emailVerified: boolean;
   backgroundCheckPending: boolean;
+  backgroundCheckNotRequired: boolean;
 } => ({
   emailVerified: volunteer.isEmailVerified,
   backgroundCheckPending: volunteer.backgroundCheckStatus === "pending",
+  backgroundCheckNotRequired:
+    volunteer.backgroundCheckStatus === "not_required",
 });
 
 export default function PendingInvitesTable({
@@ -568,7 +572,9 @@ export default function PendingInvitesTable({
                           title={
                             requirements.backgroundCheckPending
                               ? "Background check pending"
-                              : "Background check complete"
+                              : requirements.backgroundCheckNotRequired
+                                ? "Background check not required"
+                                : "Background check complete"
                           }
                         >
                           <Box
@@ -580,6 +586,11 @@ export default function PendingInvitesTable({
                           >
                             {requirements.backgroundCheckPending ? (
                               <WarningIcon fontSize="small" color="warning" />
+                            ) : requirements.backgroundCheckNotRequired ? (
+                              <RemoveCircleOutlineIcon
+                                fontSize="small"
+                                color="disabled"
+                              />
                             ) : (
                               <CheckCircleIcon
                                 fontSize="small"
