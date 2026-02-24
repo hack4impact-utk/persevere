@@ -49,7 +49,7 @@ export default function Calendar({
   const { events, fetchEvents, updateEvent } = useCalendarEvents();
   const [view, setView] = useState<
     "dayGridMonth" | "timeGridWeek" | "timeGridDay"
-  >("dayGridMonth");
+  >("timeGridWeek");
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null,
   );
@@ -147,6 +147,9 @@ export default function Calendar({
       dropInfo.revert();
     }
   };
+
+  const now = new Date();
+  const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`;
 
   return (
     <Box
@@ -327,8 +330,9 @@ export default function Calendar({
           select={readOnly ? undefined : handleDateSelect}
           eventClick={handleEventClick}
           eventDrop={readOnly ? undefined : handleEventDrop}
-          height="auto"
-          aspectRatio={1.8}
+          height="100%"
+          nowIndicator
+          scrollTime={currentTimeStr}
           datesSet={(arg) => {
             const currentView = arg.view.type;
             if (
