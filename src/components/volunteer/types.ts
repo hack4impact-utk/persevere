@@ -15,6 +15,7 @@ export type Opportunity = {
   endDate: string | null;
   status: OpportunityStatus;
   maxVolunteers: number | null;
+  isRecurring: boolean;
   rsvpCount: number;
   /** Always equals maxVolunteers - rsvpCount when maxVolunteers is non-null. */
   spotsRemaining: number | null;

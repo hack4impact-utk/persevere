@@ -54,7 +54,10 @@ export async function POST(request: Request): Promise<NextResponse> {
     const result = staffCreateSchema.safeParse(json);
     if (!result.success) {
       const firstError = result.error.issues[0];
-      return NextResponse.json({ error: firstError.message }, { status: 400 });
+      return NextResponse.json(
+        { message: firstError.message },
+        { status: 400 },
+      );
     }
 
     const { staff, emailSent, emailError } = await createStaff(result.data);
@@ -76,7 +79,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
     if (error instanceof ConflictError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
