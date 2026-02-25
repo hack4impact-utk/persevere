@@ -6,19 +6,22 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import PeopleIcon from "@mui/icons-material/People";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
+import Collapse from "@mui/material/Collapse";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
-import { JSX } from "react";
+import { JSX, useState } from "react";
 
 import RsvpButton from "@/components/volunteer/rsvp-button";
 import type { Opportunity } from "@/components/volunteer/types";
 import { formatDate, formatTime } from "@/components/volunteer/utils";
+import { useAttendees } from "@/hooks/use-attendees";
 import { useOpportunity } from "@/hooks/use-opportunity";
 
 type Props = {
@@ -64,6 +67,8 @@ export default function OpportunityDetailModal({
   const { opportunity, loading, error } = useOpportunity(
     open ? opportunityId : null,
   );
+  const { attendees } = useAttendees(open ? opportunityId : null);
+  const [attendeesExpanded, setAttendeesExpanded] = useState(false);
 
   const isFull =
     !isRsvped &&
@@ -159,6 +164,45 @@ export default function OpportunityDetailModal({
                 </Box>
               )}
             </Box>
+
+            {attendees.length > 0 && (
+              <>
+                <Divider />
+                <Box>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      <PeopleIcon sx={{ fontSize: 14, mr: 0.5 }} />
+                      {attendees.length}{" "}
+                      {attendees.length === 1 ? "person" : "people"} attending
+                    </Typography>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        setAttendeesExpanded((prev) => !prev);
+                      }}
+                      sx={{ textTransform: "none", minWidth: 0 }}
+                    >
+                      {attendeesExpanded ? "Hide" : "Show names"}
+                    </Button>
+                  </Box>
+                  <Collapse in={attendeesExpanded}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 1 }}
+                    >
+                      {attendees.map((a) => a.firstName).join(", ")}
+                    </Typography>
+                  </Collapse>
+                </Box>
+              </>
+            )}
 
             <Box sx={{ pt: 1 }}>
               {opportunityId !== null && (

@@ -1,7 +1,11 @@
 import { useSnackbar } from "notistack";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { Opportunity, RsvpItem } from "@/components/volunteer/types";
+import type {
+  Opportunity,
+  RsvpItem,
+  RsvpStatus,
+} from "@/components/volunteer/types";
 import { apiClient } from "@/lib/api-client";
 
 const LIMIT = 12;
@@ -9,6 +13,7 @@ const LIMIT = 12;
 export type UseOpportunitiesResult = {
   opportunities: Opportunity[];
   rsvpedIds: Set<number>;
+  rsvpStatusMap: Map<number, RsvpStatus>;
   loading: boolean;
   error: string | null;
   rsvpWarning: boolean;
@@ -24,6 +29,9 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
 
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [rsvpedIds, setRsvpedIds] = useState<Set<number>>(new Set());
+  const [rsvpStatusMap, setRsvpStatusMap] = useState<Map<number, RsvpStatus>>(
+    new Map(),
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rsvpWarning, setRsvpWarning] = useState(false);
@@ -65,6 +73,11 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
         setRsvpedIds(
           new Set(rsvpsResult.value.data.all.map((r) => r.opportunityId)),
         );
+        const statusMap = new Map<number, RsvpStatus>();
+        for (const r of rsvpsResult.value.data.all) {
+          statusMap.set(r.opportunityId, r.rsvpStatus);
+        }
+        setRsvpStatusMap(statusMap);
       } else {
         console.error(
           "[useOpportunities] RSVP status fetch failed:",
@@ -106,6 +119,15 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
           next.delete(opportunityId);
         }
         return next;
+      });
+      setRsvpStatusMap((prev) => {
+        const m = new Map(prev);
+        if (newIsRsvped) {
+          m.set(opportunityId, "pending");
+        } else {
+          m.delete(opportunityId);
+        }
+        return m;
       });
       setOpportunities((prev) =>
         prev.map((opp) => {
@@ -155,6 +177,7 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
   return {
     opportunities,
     rsvpedIds,
+    rsvpStatusMap,
     loading,
     error,
     rsvpWarning,

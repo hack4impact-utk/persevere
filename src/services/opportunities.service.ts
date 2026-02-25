@@ -29,6 +29,7 @@ export type OpportunityWithSpots = {
   endDate: Date | null;
   status: string | null;
   maxVolunteers: number | null;
+  isRecurring: boolean;
   rsvpCount: number;
   spotsRemaining: number | null;
   requiredSkills: { skillId: number; skillName: string | null }[];
@@ -73,6 +74,7 @@ export async function listOpenOpportunities(
       endDate: opportunities.endDate,
       status: opportunities.status,
       maxVolunteers: opportunities.maxVolunteers,
+      isRecurring: opportunities.isRecurring,
       rsvpCount: sql<number>`COALESCE(${rsvpCountSubquery.rsvpCount}, 0)`,
     })
     .from(opportunities)
@@ -195,6 +197,7 @@ export async function getOpenOpportunityById(
       endDate: opportunities.endDate,
       status: opportunities.status,
       maxVolunteers: opportunities.maxVolunteers,
+      isRecurring: opportunities.isRecurring,
       rsvpCount: sql<number>`COALESCE(${rsvpCountSubquery.rsvpCount}, 0)`,
     })
     .from(opportunities)
