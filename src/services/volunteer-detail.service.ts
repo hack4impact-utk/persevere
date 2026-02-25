@@ -14,7 +14,7 @@ import {
   volunteerHours,
   volunteerRsvps,
 } from "@/db/schema/opportunities";
-import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { DEFAULT_PAGE_SIZE, RECENT_OPPORTUNITIES_LIMIT } from "@/lib/constants";
 
 export type VolunteerDetail = {
   volunteers: typeof import("@/db/schema").volunteers.$inferSelect;
@@ -138,7 +138,7 @@ export async function getVolunteerDetail(
       )
       .where(eq(volunteerRsvps.volunteerId, volunteerId))
       .orderBy(desc(volunteerRsvps.rsvpAt))
-      .limit(5),
+      .limit(RECENT_OPPORTUNITIES_LIMIT),
 
     db
       .select({

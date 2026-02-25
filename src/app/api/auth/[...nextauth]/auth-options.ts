@@ -26,7 +26,6 @@ const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         try {
           if (!credentials?.email || !credentials?.password) {
-            console.error("[authorize] Called with missing credentials");
             return null;
           }
 
