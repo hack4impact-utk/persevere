@@ -42,7 +42,7 @@ export type OpportunityWithSpots = {
 
 export async function listOpenOpportunities(
   params: ListOpportunitiesParams,
-): Promise<OpportunityWithSpots[]> {
+): Promise<{ data: OpportunityWithSpots[]; total: number }> {
   const { limit, offset, search } = params;
 
   const now = new Date();
@@ -94,6 +94,12 @@ export async function listOpenOpportunities(
       ),
     );
   }
+
+  // Count open+future opportunities (approximate total, before in-memory spot filter)
+  const [countResult] = await db
+    .select({ total: count(opportunities.id) })
+    .from(opportunities)
+    .where(baseConditions);
 
   // Execute query with pagination
   const allOpportunities = await query
@@ -156,7 +162,7 @@ export async function listOpenOpportunities(
 
   // Calculate spots remaining; coerce rsvpCount to number here since
   // SQL COALESCE expressions arrive as strings on the wire despite the sql<number> annotation.
-  return availableOpportunities.map((opp) => {
+  const data = availableOpportunities.map((opp) => {
     const rsvpCount = Number(opp.rsvpCount);
     return {
       ...opp,
@@ -167,6 +173,8 @@ export async function listOpenOpportunities(
       interests: interestsMap[opp.id] ?? [],
     };
   });
+
+  return { data, total: countResult?.total ?? 0 };
 }
 
 // ---------------------------------------------------------------------------

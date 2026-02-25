@@ -18,18 +18,17 @@ export async function DELETE(
 
     const { id, skillId: skillIdParam } = await params;
     const volunteerId = validateAndParseId(id);
+    const skillId = validateAndParseId(skillIdParam);
+
     if (volunteerId === null) {
       return NextResponse.json(
-        { message: "Invalid volunteer ID" },
+        { error: "Invalid volunteer ID" },
         { status: 400 },
       );
     }
-    const skillId = validateAndParseId(skillIdParam);
+
     if (skillId === null) {
-      return NextResponse.json(
-        { message: "Invalid skill ID" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid skill ID" }, { status: 400 });
     }
 
     await removeSkill(volunteerId, skillId);
@@ -46,7 +45,7 @@ export async function DELETE(
       );
     }
     if (error instanceof NotFoundError) {
-      return NextResponse.json({ message: error.message }, { status: 404 });
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

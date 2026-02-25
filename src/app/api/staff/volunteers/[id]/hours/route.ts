@@ -44,6 +44,7 @@ export async function GET(
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
     }
+    console.error("GET Hours Error:", error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
@@ -98,6 +99,7 @@ export async function POST(
     if (error instanceof NotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
+    console.error("POST Hours Error:", error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

@@ -30,10 +30,7 @@ export async function GET(
     const { id } = await params;
     const skillId = validateAndParseId(id);
     if (skillId === null) {
-      return NextResponse.json(
-        { message: "Invalid skill ID" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid skill ID" }, { status: 400 });
     }
 
     const skill = await getSkillById(skillId);
@@ -66,10 +63,7 @@ export async function PUT(
     const { id } = await params;
     const skillId = validateAndParseId(id);
     if (skillId === null) {
-      return NextResponse.json(
-        { message: "Invalid skill ID" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid skill ID" }, { status: 400 });
     }
 
     const json = await request.json();
@@ -77,10 +71,7 @@ export async function PUT(
 
     if (!result.success) {
       const firstError = result.error.issues[0];
-      return NextResponse.json(
-        { message: firstError.message },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: firstError.message }, { status: 400 });
     }
 
     const updatedSkill = await updateSkill(skillId, result.data);
@@ -119,10 +110,7 @@ export async function DELETE(
     const { id } = await params;
     const skillId = validateAndParseId(id);
     if (skillId === null) {
-      return NextResponse.json(
-        { message: "Invalid skill ID" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid skill ID" }, { status: 400 });
     }
 
     await deleteSkill(skillId);

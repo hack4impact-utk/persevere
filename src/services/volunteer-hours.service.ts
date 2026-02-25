@@ -2,7 +2,7 @@ import { and, eq, gte, isNotNull, isNull, lte, sql } from "drizzle-orm";
 
 import db from "@/db";
 import { opportunities, volunteerHours, volunteers } from "@/db/schema";
-import { ConflictError, NotFoundError } from "@/utils/errors";
+import { ConflictError, NotFoundError, ValidationError } from "@/utils/errors";
 
 export type HoursFilters = {
   volunteerId: number;
@@ -105,6 +105,10 @@ export async function logHours(input: LogHoursInput): Promise<{
   }
   if (opportunityExists.length === 0) {
     throw new NotFoundError("Opportunity not found");
+  }
+
+  if (input.hours <= 0 || input.hours > 24) {
+    throw new ValidationError("Hours must be between 0 and 24");
   }
 
   const newEntry = await db

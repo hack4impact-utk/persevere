@@ -28,7 +28,7 @@ export async function POST(
 
     if (volunteerId === null) {
       return NextResponse.json(
-        { message: "Invalid volunteer ID" },
+        { error: "Invalid volunteer ID" },
         { status: 400 },
       );
     }
@@ -70,7 +70,7 @@ export async function POST(
       );
     }
     if (error instanceof NotFoundError) {
-      return NextResponse.json({ message: error.message }, { status: 404 });
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
