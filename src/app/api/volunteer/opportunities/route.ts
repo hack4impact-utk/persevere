@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { listOpenOpportunities } from "@/services/opportunities.service";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
@@ -20,7 +21,13 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const { searchParams } = new URL(request.url);
     const limit = Math.min(
-      Math.max(Number.parseInt(searchParams.get("limit") || "20", 10), 1),
+      Math.max(
+        Number.parseInt(
+          searchParams.get("limit") || String(DEFAULT_PAGE_SIZE),
+          10,
+        ),
+        1,
+      ),
       100,
     );
     const offset = Math.max(

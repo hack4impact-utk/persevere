@@ -10,7 +10,12 @@ import { getServerSession } from "@/utils/server/auth";
  * Protected by middleware - unauthenticated users are redirected to login.
  */
 export default async function HomePage(): Promise<never> {
-  const session = await getServerSession();
+  let session;
+  try {
+    session = await getServerSession();
+  } catch {
+    redirect("/auth/login");
+  }
 
   if (!session) {
     redirect("/auth/login");

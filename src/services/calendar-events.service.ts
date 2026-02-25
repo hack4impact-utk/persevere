@@ -94,7 +94,7 @@ export async function listCalendarEvents(
   endDate?: Date,
 ): Promise<CalendarEvent[]> {
   const whereClauses = [];
-  if (startDate) whereClauses.push(gte(opportunities.startDate, startDate));
+  if (startDate) whereClauses.push(gte(opportunities.endDate, startDate));
   if (endDate) whereClauses.push(lte(opportunities.startDate, endDate));
 
   const events = await (whereClauses.length > 0

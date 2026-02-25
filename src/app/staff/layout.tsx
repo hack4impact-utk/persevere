@@ -14,7 +14,12 @@ type StaffLayoutProps = {
 export default async function StaffLayout({
   children,
 }: StaffLayoutProps): Promise<ReactNode> {
-  const session = await getServerSession();
+  let session;
+  try {
+    session = await getServerSession();
+  } catch {
+    redirect("/auth/login");
+  }
 
   if (!session) {
     redirect("/auth/login");

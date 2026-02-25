@@ -273,6 +273,20 @@ export async function deleteVolunteer(
 
   if (volunteer.length === 0) return null;
 
+  await db
+    .delete(volunteerHours)
+    .where(eq(volunteerHours.volunteerId, volunteerId));
+  await db
+    .delete(volunteerRsvps)
+    .where(eq(volunteerRsvps.volunteerId, volunteerId));
+  await db
+    .delete(volunteerSkills)
+    .where(eq(volunteerSkills.volunteerId, volunteerId));
+  await db
+    .delete(volunteerInterests)
+    .where(eq(volunteerInterests.volunteerId, volunteerId));
+  await db.delete(volunteers).where(eq(volunteers.id, volunteerId));
+
   const deletedUser = await db
     .delete(users)
     .where(eq(users.id, volunteer[0].userId))

@@ -1,6 +1,7 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { JSX, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -19,6 +20,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginForm(): JSX.Element {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -45,7 +47,7 @@ export default function LoginForm(): JSX.Element {
         setError(result.error);
       } else if (result?.ok) {
         // NextAuth's redirect callback will handle routing to role-specific dashboard
-        globalThis.location.href = "/home";
+        router.push("/home");
       } else {
         setError("Login failed. Please try again.");
       }

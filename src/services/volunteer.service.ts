@@ -422,20 +422,6 @@ export async function updateVolunteerProfile(
     volunteerData.notificationPreference = notificationPreference;
 
   // Update both tables sequentially (neon-http doesn't support transactions)
-  if (Object.keys(userData).length > 0) {
-    try {
-      await db
-        .update(users)
-        .set(userData)
-        .where(eq(users.id, volunteer[0].userId));
-    } catch (error) {
-      console.error(
-        `[volunteer.service] Failed updating users table for volunteerId=${volunteerId}:`,
-        error,
-      );
-      throw error;
-    }
-  }
   if (Object.keys(volunteerData).length > 0) {
     try {
       await db
@@ -444,7 +430,21 @@ export async function updateVolunteerProfile(
         .where(eq(volunteers.id, volunteerId));
     } catch (error) {
       console.error(
-        `[volunteer.service] PARTIAL WRITE: users table may have been updated but volunteers table failed for volunteerId=${volunteerId}:`,
+        `[volunteer.service] Failed updating volunteers table for volunteerId=${volunteerId}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+  if (Object.keys(userData).length > 0) {
+    try {
+      await db
+        .update(users)
+        .set(userData)
+        .where(eq(users.id, volunteer[0].userId));
+    } catch (error) {
+      console.error(
+        `[volunteer.service] PARTIAL WRITE: volunteers table may have been updated but users table failed for volunteerId=${volunteerId}:`,
         error,
       );
       throw error;

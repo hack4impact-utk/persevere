@@ -14,7 +14,12 @@ type VolunteerLayoutProps = {
 export default async function VolunteerLayout({
   children,
 }: VolunteerLayoutProps): Promise<ReactNode> {
-  const session = await getServerSession();
+  let session;
+  try {
+    session = await getServerSession();
+  } catch {
+    redirect("/auth/login");
+  }
 
   if (!session) {
     redirect("/auth/login");
