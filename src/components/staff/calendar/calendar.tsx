@@ -27,6 +27,7 @@ type CalendarProps = {
   readOnly?: boolean;
   onEventClick?: (id: string) => void;
   onDateSelect?: (startDate: string, endDate: string) => void;
+  eventColors?: Record<string, string>;
 };
 
 /**
@@ -44,6 +45,7 @@ export default function Calendar({
   readOnly = false,
   onEventClick,
   onDateSelect,
+  eventColors,
 }: CalendarProps): JSX.Element {
   const theme = useTheme();
   const { events, fetchEvents, updateEvent } = useCalendarEvents();
@@ -150,6 +152,14 @@ export default function Calendar({
 
   const now = new Date();
   const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`;
+
+  const displayEvents = events.map((e) => ({
+    ...e,
+    title: e.extendedProps?.isRecurring ? `${e.title} ↻` : e.title,
+    ...(eventColors?.[e.id]
+      ? { backgroundColor: eventColors[e.id], borderColor: eventColors[e.id] }
+      : {}),
+  }));
 
   return (
     <Box
@@ -326,7 +336,7 @@ export default function Calendar({
           selectMirror={!readOnly}
           dayMaxEvents
           weekends
-          events={events}
+          events={displayEvents}
           select={readOnly ? undefined : handleDateSelect}
           eventClick={handleEventClick}
           eventDrop={readOnly ? undefined : handleEventDrop}
