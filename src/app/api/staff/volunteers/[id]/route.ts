@@ -44,8 +44,8 @@ export async function GET(
     }
 
     const { id } = await params;
-    const volunteerId = Number.parseInt(id, 10);
-    if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
         { message: "Invalid volunteer ID" },
         { status: 400 },
@@ -135,8 +135,8 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const volunteerId = Number(id);
-    if (!Number.isFinite(volunteerId)) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
         { message: "Invalid volunteer id" },
         { status: 400 },

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { cancelRsvp, createRsvp, RsvpError } from "@/services/rsvp.service";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
+import { validateAndParseId } from "@/utils/validate-id";
 
 /**
  * POST /api/volunteer/opportunities/[id]/rsvp
@@ -20,8 +21,8 @@ export async function POST(
     }
 
     const { id } = await params;
-    const opportunityId = Number.parseInt(id, 10);
-    if (!Number.isInteger(opportunityId) || opportunityId <= 0) {
+    const opportunityId = validateAndParseId(id);
+    if (opportunityId === null) {
       return NextResponse.json(
         { message: "Invalid opportunity ID" },
         { status: 400 },
@@ -70,8 +71,8 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const opportunityId = Number.parseInt(id, 10);
-    if (!Number.isInteger(opportunityId) || opportunityId <= 0) {
+    const opportunityId = validateAndParseId(id);
+    if (opportunityId === null) {
       return NextResponse.json(
         { message: "Invalid opportunity ID" },
         { status: 400 },

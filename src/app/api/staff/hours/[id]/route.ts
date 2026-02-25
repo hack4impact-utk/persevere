@@ -11,7 +11,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const session = await requireAuth("staff");
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { id } = await params;
     const hourId = validateAndParseId(id);
@@ -52,7 +55,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    await requireAuth("staff");
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { id } = await params;
     const hourId = validateAndParseId(id);

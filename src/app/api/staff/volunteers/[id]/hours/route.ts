@@ -6,17 +6,21 @@ import {
 } from "@/services/volunteer-hours.service";
 import { NotFoundError } from "@/utils/errors";
 import { AuthError, requireAuth } from "@/utils/server/auth";
+import { validateAndParseId } from "@/utils/validate-id";
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    await requireAuth("staff");
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { id } = await params;
-    const volunteerId = Number.parseInt(id, 10);
-    if (Number.isNaN(volunteerId)) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
         { error: "Invalid volunteer ID" },
         { status: 400 },
@@ -52,11 +56,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    await requireAuth("staff");
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { id } = await params;
-    const volunteerId = Number.parseInt(id, 10);
-    if (Number.isNaN(volunteerId)) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
         { error: "Invalid volunteer ID" },
         { status: 400 },

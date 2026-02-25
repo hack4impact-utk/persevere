@@ -1,11 +1,10 @@
 //import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { JSX } from "react";
 
-import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import { LoginForm } from "@/components";
 import { getDashboardRoute } from "@/utils/routes";
+import { getServerSession } from "@/utils/server/auth";
 
 import styles from "./page.module.css";
 
@@ -14,7 +13,7 @@ export default async function LoginPage(): Promise<JSX.Element> {
   // This can happen if NEXTAUTH_SECRET changed or cookies are corrupted
   let session;
   try {
-    session = await getServerSession(authOptions);
+    session = await getServerSession();
   } catch {
     // If session decryption fails, treat as no session
     // User will need to log in again
