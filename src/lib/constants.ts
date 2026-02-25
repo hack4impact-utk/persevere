@@ -11,3 +11,8 @@ export const DEFAULT_PAGE = 1;
 
 export const HOURS_BREAKDOWN_LIMIT = DEFAULT_PAGE_SIZE;
 export const RECENT_OPPORTUNITIES_LIMIT = 5;
+export const RSVP_STATUS_COLORS = {
+  confirmed: "#4caf50",
+  pending: "#ff9800",
+  default: "#9e9e9e",
+} as const;
