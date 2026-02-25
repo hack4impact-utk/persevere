@@ -16,7 +16,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
-import { JSX, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 
 import RsvpButton from "@/components/volunteer/rsvp-button";
 import type { Opportunity } from "@/components/volunteer/types";
@@ -69,6 +69,10 @@ export default function OpportunityDetailModal({
   );
   const { attendees } = useAttendees(open ? opportunityId : null);
   const [attendeesExpanded, setAttendeesExpanded] = useState(false);
+
+  useEffect(() => {
+    setAttendeesExpanded(false);
+  }, [opportunityId]);
 
   const isFull =
     !isRsvped &&

@@ -14,7 +14,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    await requireAuth("volunteer");
+    const session = await requireAuth();
+    if (session.user.role !== "volunteer") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { id } = await params;
     const parsedId = validateAndParseId(id);

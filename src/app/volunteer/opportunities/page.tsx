@@ -211,7 +211,9 @@ export default function OpportunitiesPage(): JSX.Element {
       map[String(id)] =
         status === "confirmed"
           ? RSVP_STATUS_COLORS.confirmed
-          : RSVP_STATUS_COLORS.pending;
+          : status === "pending"
+            ? RSVP_STATUS_COLORS.pending
+            : RSVP_STATUS_COLORS.default;
     }
     return map;
   }, [rsvpStatusMap]);
