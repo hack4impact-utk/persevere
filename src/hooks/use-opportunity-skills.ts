@@ -163,24 +163,41 @@ export function useOpportunitySkills(
       try {
         const skillPromises = eventIds.flatMap((eid) =>
           skillIds.map((sid) =>
-            apiClient.post(`/api/staff/calendar/events/${eid}/skills`, {
-              skillId: sid,
-            }),
-          ),
-        );
-        const interestPromises = eventIds.flatMap((eid) =>
-          interestIds.map((iid) =>
-            apiClient.post(`/api/staff/calendar/events/${eid}/interests`, {
-              interestId: iid,
-            }),
-          ),
-        );
-        await Promise.all([...skillPromises, ...interestPromises]);
-      } catch (error) {
-        handleAuthError(error);
-        if (!(error instanceof AuthenticationError)) {
-          throw error;
+      const skillPromises = eventIds.flatMap((eid) =>
+        skillIds.map((sid) =>
+          apiClient.post(`/api/staff/calendar/events/${eid}/skills`, {
+            skillId: sid,
+          }),
+        ),
+      );
+      const interestPromises = eventIds.flatMap((eid) =>
+        interestIds.map((iid) =>
+          apiClient.post(`/api/staff/calendar/events/${eid}/interests`, {
+            interestId: iid,
+          }),
+        ),
+      );
+      const results = await Promise.allSettled([
+        ...skillPromises,
+        ...interestPromises,
+      ]);
+
+      let firstNonAuthError: unknown | null = null;
+
+      for (const result of results) {
+        if (result.status === "rejected") {
+          const error = result.reason;
+          if (error instanceof AuthenticationError) {
+            handleAuthError(error);
+          } else if (firstNonAuthError === null) {
+            firstNonAuthError = error;
+          }
         }
+      }
+
+      if (firstNonAuthError !== null) {
+        // Preserve rejection behavior for non-authentication errors
+        throw firstNonAuthError;
       }
     },
     [handleAuthError],
