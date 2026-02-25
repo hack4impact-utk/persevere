@@ -161,11 +161,18 @@ export async function listVolunteers(
     whereClauses.push(eq(users.isActive, isActive === "true"));
   }
 
-  // Build volunteer list query with hours calculation
+  // Build volunteer list query with hours aggregated via LEFT JOIN (eliminates N+1)
   const baseQuery = db
-    .select()
+    .select({
+      volunteers: volunteers,
+      users: users,
+      totalHours: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)`,
+    })
     .from(volunteers)
-    .leftJoin(users, eq(volunteers.userId, users.id));
+    .leftJoin(users, eq(volunteers.userId, users.id))
+    .leftJoin(volunteerHours, eq(volunteerHours.volunteerId, volunteers.id))
+    .groupBy(volunteers.id, users.id)
+    .$dynamic();
 
   const volunteerListRaw = await (whereClauses.length > 0
     ? baseQuery
@@ -178,26 +185,14 @@ export async function listVolunteers(
         .offset(offset)
         .orderBy(desc(volunteers.createdAt)));
 
-  // Calculate total hours for each volunteer
-  const data = await Promise.all(
-    volunteerListRaw.map(async (volunteer) => {
-      const hoursResult = await db
-        .select({
-          total: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)`,
-        })
-        .from(volunteerHours)
-        .where(eq(volunteerHours.volunteerId, volunteer.volunteers.id));
-
-      const totalHours =
-        typeof hoursResult[0]?.total === "number" ? hoursResult[0].total : 0;
-
-      return {
-        volunteers: volunteer.volunteers,
-        users: volunteer.users,
-        totalHours,
-      };
-    }),
-  );
+  const data = volunteerListRaw.map((row) => ({
+    volunteers: row.volunteers,
+    users: row.users,
+    totalHours:
+      typeof row.totalHours === "number"
+        ? row.totalHours
+        : Number(row.totalHours),
+  }));
 
   // Build count query conditionally
   const countBaseQuery = db
