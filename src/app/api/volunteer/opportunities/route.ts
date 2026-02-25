@@ -36,13 +36,13 @@ export async function GET(request: Request): Promise<NextResponse> {
     );
     const search = searchParams.get("search")?.trim() || "";
 
-    const opportunitiesWithSpots = await listOpenOpportunities({
+    const { data, total } = await listOpenOpportunities({
       limit,
       offset,
       search,
     });
 
-    return NextResponse.json({ data: opportunitiesWithSpots });
+    return NextResponse.json({ data, total });
   } catch (error) {
     if (error instanceof AuthError) {
       const status = error.code === "Unauthorized" ? 401 : 403;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { checkRateLimit } from "@/lib/rate-limit";
 import { initiatePasswordReset } from "@/services/auth-tokens.service";
 import handleError from "@/utils/handle-error";
 import { sendPasswordResetEmail } from "@/utils/server/email";
@@ -7,8 +8,12 @@ import { sendPasswordResetEmail } from "@/utils/server/email";
 const SUCCESS_MESSAGE =
   "If an account with that email exists, a password reset link has been sent.";
 
-// TODO: Add rate limiting to prevent abuse
 export async function POST(request: Request): Promise<NextResponse> {
+  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json({ message: SUCCESS_MESSAGE });
+  }
+
   let email: unknown;
   try {
     ({ email } = await request.json());

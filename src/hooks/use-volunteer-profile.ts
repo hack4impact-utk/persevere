@@ -1,5 +1,5 @@
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type { AvailabilityData } from "@/components/volunteer/availability-editor";
 import { apiClient, AuthenticationError } from "@/lib/api-client";
@@ -71,6 +71,10 @@ export function useVolunteerProfile(): UseVolunteerProfileResult {
     },
     [],
   );
+
+  useEffect(() => {
+    void fetchProfile();
+  }, [fetchProfile]);
 
   return { profile, isLoading, error, fetchProfile, updateProfile };
 }

@@ -1,5 +1,5 @@
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { apiClient, AuthenticationError } from "@/lib/api-client";
 
@@ -242,6 +242,11 @@ export function useSkills(): UseSkillsResult {
     },
     [handleAuthError],
   );
+
+  useEffect(() => {
+    void fetchSkills();
+    void fetchInterests();
+  }, [fetchSkills, fetchInterests]);
 
   return {
     skills,
