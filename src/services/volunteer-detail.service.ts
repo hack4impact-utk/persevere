@@ -14,7 +14,7 @@ import {
   volunteerHours,
   volunteerRsvps,
 } from "@/db/schema/opportunities";
-import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { DEFAULT_PAGE_SIZE, RECENT_OPPORTUNITIES_LIMIT } from "@/lib/constants";
 
 export type VolunteerDetail = {
   volunteers: typeof import("@/db/schema").volunteers.$inferSelect;
@@ -138,7 +138,7 @@ export async function getVolunteerDetail(
       )
       .where(eq(volunteerRsvps.volunteerId, volunteerId))
       .orderBy(desc(volunteerRsvps.rsvpAt))
-      .limit(5),
+      .limit(RECENT_OPPORTUNITIES_LIMIT),
 
     db
       .select({
@@ -272,6 +272,20 @@ export async function deleteVolunteer(
     .where(eq(volunteers.id, volunteerId));
 
   if (volunteer.length === 0) return null;
+
+  await db
+    .delete(volunteerHours)
+    .where(eq(volunteerHours.volunteerId, volunteerId));
+  await db
+    .delete(volunteerRsvps)
+    .where(eq(volunteerRsvps.volunteerId, volunteerId));
+  await db
+    .delete(volunteerSkills)
+    .where(eq(volunteerSkills.volunteerId, volunteerId));
+  await db
+    .delete(volunteerInterests)
+    .where(eq(volunteerInterests.volunteerId, volunteerId));
+  await db.delete(volunteers).where(eq(volunteers.id, volunteerId));
 
   const deletedUser = await db
     .delete(users)

@@ -47,10 +47,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     if (!result.success) {
       const firstError = result.error.issues[0];
-      return NextResponse.json(
-        { message: firstError.message },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: firstError.message }, { status: 400 });
     }
 
     const newInterest = await createInterest(result.data);

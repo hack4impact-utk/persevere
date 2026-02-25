@@ -44,10 +44,10 @@ export async function GET(
     }
 
     const { id } = await params;
-    const volunteerId = Number.parseInt(id, 10);
-    if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
-        { message: "Invalid volunteer ID" },
+        { error: "Invalid volunteer ID" },
         { status: 400 },
       );
     }
@@ -55,7 +55,7 @@ export async function GET(
     const data = await getVolunteerDetail(volunteerId);
     if (!data) {
       return NextResponse.json(
-        { message: "Volunteer not found" },
+        { error: "Volunteer not found" },
         { status: 404 },
       );
     }
@@ -86,7 +86,7 @@ export async function PUT(
     const volunteerId = validateAndParseId(id);
     if (volunteerId === null) {
       return NextResponse.json(
-        { message: "Invalid volunteer ID" },
+        { error: "Invalid volunteer ID" },
         { status: 400 },
       );
     }
@@ -95,16 +95,13 @@ export async function PUT(
     const result = volunteerUpdateSchema.safeParse(json);
     if (!result.success) {
       const firstError = result.error.issues[0];
-      return NextResponse.json(
-        { message: firstError.message },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: firstError.message }, { status: 400 });
     }
 
     const updated = await updateVolunteerDetail(volunteerId, result.data);
     if (!updated) {
       return NextResponse.json(
-        { message: "Volunteer not found" },
+        { error: "Volunteer not found" },
         { status: 404 },
       );
     }
@@ -135,10 +132,10 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const volunteerId = Number(id);
-    if (!Number.isFinite(volunteerId)) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
-        { message: "Invalid volunteer id" },
+        { error: "Invalid volunteer id" },
         { status: 400 },
       );
     }
@@ -146,7 +143,7 @@ export async function DELETE(
     const deleted = await deleteVolunteer(volunteerId);
     if (!deleted) {
       return NextResponse.json(
-        { message: "Volunteer not found" },
+        { error: "Volunteer not found" },
         { status: 404 },
       );
     }

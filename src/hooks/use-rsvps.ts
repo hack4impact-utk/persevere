@@ -39,8 +39,30 @@ export function useRsvps(): UseRsvpsResult {
   }, [router]);
 
   useEffect(() => {
-    void loadRsvps();
-  }, [loadRsvps]);
+    let cancelled = false;
+    void (async (): Promise<void> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const json = await apiClient.get<{ data: { upcoming: RsvpItem[] } }>(
+          "/api/volunteer/rsvps",
+        );
+        if (!cancelled) setUpcoming(json.data.upcoming);
+      } catch (error_) {
+        if (error_ instanceof AuthenticationError) {
+          router.push("/auth/login");
+          return;
+        }
+        console.error("[useRsvps] Failed to load RSVPs:", error_);
+        if (!cancelled) setError("Failed to load your RSVPs.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return (): void => {
+      cancelled = true;
+    };
+  }, [router]);
 
   return { upcoming, loading, error, loadRsvps };
 }

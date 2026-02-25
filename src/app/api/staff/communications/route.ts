@@ -58,17 +58,14 @@ export async function POST(request: Request): Promise<NextResponse> {
     const result = createCommunicationSchema.safeParse(json);
     if (!result.success) {
       const firstError = result.error.issues[0];
-      return NextResponse.json(
-        { message: firstError.message },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: firstError.message }, { status: 400 });
     }
 
     const { recipientType } = result.data;
 
     if (session.user.role === "staff" && recipientType !== "volunteers") {
       return NextResponse.json(
-        { message: "Staff can only send communications to volunteers" },
+        { error: "Staff can only send communications to volunteers" },
         { status: 403 },
       );
     }
@@ -81,7 +78,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     if (!output.communication) {
       return NextResponse.json(
-        { message: "Sender user not found" },
+        { error: "Sender user not found" },
         { status: 404 },
       );
     }

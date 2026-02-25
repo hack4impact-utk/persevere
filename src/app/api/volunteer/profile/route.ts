@@ -5,6 +5,7 @@ import {
   getVolunteerProfile,
   updateVolunteerProfile,
 } from "@/services/volunteer.service";
+import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
 
 const timeRangeSchema = z
@@ -52,7 +53,7 @@ export async function GET(): Promise<NextResponse> {
     const volunteerId = session.user.volunteerId;
     if (!volunteerId) {
       return NextResponse.json(
-        { message: "Volunteer profile not found" },
+        { error: "Volunteer profile not found" },
         { status: 404 },
       );
     }
@@ -61,7 +62,7 @@ export async function GET(): Promise<NextResponse> {
 
     if (result === null) {
       return NextResponse.json(
-        { message: "Volunteer not found" },
+        { error: "Volunteer not found" },
         { status: 404 },
       );
     }
@@ -70,7 +71,7 @@ export async function GET(): Promise<NextResponse> {
 
     if (!volunteerData) {
       return NextResponse.json(
-        { message: "Volunteer not found" },
+        { error: "Volunteer not found" },
         { status: 404 },
       );
     }
@@ -79,7 +80,7 @@ export async function GET(): Promise<NextResponse> {
         `[GET /api/volunteer/profile] Volunteer ${volunteerId} has no associated user record — data integrity issue`,
       );
       return NextResponse.json(
-        { message: "Your account data is incomplete. Please contact support." },
+        { error: "Your account data is incomplete. Please contact support." },
         { status: 500 },
       );
     }
@@ -97,10 +98,7 @@ export async function GET(): Promise<NextResponse> {
       return NextResponse.json({ error: error.code }, { status });
     }
     console.error("[GET /api/volunteer/profile] Unhandled error:", error);
-    return NextResponse.json(
-      { error: "An unexpected error occurred. Please try again." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
@@ -116,7 +114,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
     const volunteerId = session.user.volunteerId;
     if (!volunteerId) {
       return NextResponse.json(
-        { message: "Volunteer profile not found" },
+        { error: "Volunteer profile not found" },
         { status: 404 },
       );
     }
@@ -126,7 +124,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
       json = await request.json();
     } catch {
       return NextResponse.json(
-        { message: "Invalid request body: expected JSON" },
+        { error: "Invalid request body: expected JSON" },
         { status: 400 },
       );
     }
@@ -135,10 +133,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
     const result = volunteerSelfUpdateSchema.safeParse(json);
     if (!result.success) {
       const firstError = result.error.issues[0];
-      return NextResponse.json(
-        { message: firstError.message },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: firstError.message }, { status: 400 });
     }
 
     const data = result.data;
@@ -153,7 +148,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
 
     if (updatedVolunteer === null) {
       return NextResponse.json(
-        { message: "Volunteer not found" },
+        { error: "Volunteer not found" },
         { status: 404 },
       );
     }
@@ -168,9 +163,6 @@ export async function PUT(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: error.code }, { status });
     }
     console.error("[PUT /api/volunteer/profile] Unhandled error:", error);
-    return NextResponse.json(
-      { error: "An unexpected error occurred. Please try again." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

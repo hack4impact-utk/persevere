@@ -94,10 +94,7 @@ export default function ComposeModal({
 
   // Check if body has actual content (not just empty HTML tags)
   const getPlainTextContent = useCallback((html: string): string => {
-    // Handle SSR and empty cases
-    if (!html || globalThis.window === undefined) {
-      return html || "";
-    }
+    if (!html) return "";
     const temp = document.createElement("div");
     temp.innerHTML = html;
     return temp.textContent || "";

@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import db from "@/db";
 import { interests } from "@/db/schema";
 import { opportunities, opportunityInterests } from "@/db/schema/opportunities";
-import { NotFoundError } from "@/utils/errors";
+import { ConflictError, NotFoundError } from "@/utils/errors";
 
 async function requireEvent(eventId: number): Promise<void> {
   const [event] = await db
@@ -23,10 +23,21 @@ export async function addRequiredInterest(
     .from(interests)
     .where(eq(interests.id, interestId));
   if (!interest) throw new NotFoundError("Interest not found");
+  const existing = await db
+    .select()
+    .from(opportunityInterests)
+    .where(
+      and(
+        eq(opportunityInterests.opportunityId, eventId),
+        eq(opportunityInterests.interestId, interestId),
+      ),
+    );
+  if (existing.length > 0) {
+    throw new ConflictError("Interest already required for this opportunity");
+  }
   await db
     .insert(opportunityInterests)
-    .values({ opportunityId: eventId, interestId })
-    .onConflictDoNothing();
+    .values({ opportunityId: eventId, interestId });
 }
 
 export async function removeRequiredInterest(

@@ -1,11 +1,10 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { ReactNode } from "react";
 
-import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import RoleLayout from "@/components/layout/role-layout";
 import StaffSidebar from "@/components/layout/staff-sidebar";
 import { getDashboardRoute } from "@/utils/routes";
+import { getServerSession } from "@/utils/server/auth";
 
 type StaffLayoutProps = {
   children: ReactNode;
@@ -15,7 +14,12 @@ type StaffLayoutProps = {
 export default async function StaffLayout({
   children,
 }: StaffLayoutProps): Promise<ReactNode> {
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession();
+  } catch {
+    redirect("/auth/login");
+  }
 
   if (!session) {
     redirect("/auth/login");

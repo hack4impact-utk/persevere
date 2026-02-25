@@ -38,20 +38,14 @@ export async function PUT(
     const eventId = validateAndParseId(id);
 
     if (eventId === null) {
-      return NextResponse.json(
-        { message: "Invalid event ID" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid event ID" }, { status: 400 });
     }
 
     const json = await request.json();
     const result = eventUpdateSchema.safeParse(json);
     if (!result.success) {
       const firstError = result.error.issues[0];
-      return NextResponse.json(
-        { message: firstError.message },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: firstError.message }, { status: 400 });
     }
 
     const data = result.data;
@@ -104,10 +98,7 @@ export async function DELETE(
     const eventId = validateAndParseId(id);
 
     if (eventId === null) {
-      return NextResponse.json(
-        { message: "Invalid event ID" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid event ID" }, { status: 400 });
     }
 
     await deleteCalendarEvent(eventId);

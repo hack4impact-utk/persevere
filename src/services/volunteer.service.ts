@@ -161,11 +161,18 @@ export async function listVolunteers(
     whereClauses.push(eq(users.isActive, isActive === "true"));
   }
 
-  // Build volunteer list query with hours calculation
+  // Build volunteer list query with hours aggregated via LEFT JOIN (eliminates N+1)
   const baseQuery = db
-    .select()
+    .select({
+      volunteers: volunteers,
+      users: users,
+      totalHours: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)`,
+    })
     .from(volunteers)
-    .leftJoin(users, eq(volunteers.userId, users.id));
+    .leftJoin(users, eq(volunteers.userId, users.id))
+    .leftJoin(volunteerHours, eq(volunteerHours.volunteerId, volunteers.id))
+    .groupBy(volunteers.id, users.id)
+    .$dynamic();
 
   const volunteerListRaw = await (whereClauses.length > 0
     ? baseQuery
@@ -178,26 +185,14 @@ export async function listVolunteers(
         .offset(offset)
         .orderBy(desc(volunteers.createdAt)));
 
-  // Calculate total hours for each volunteer
-  const data = await Promise.all(
-    volunteerListRaw.map(async (volunteer) => {
-      const hoursResult = await db
-        .select({
-          total: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)`,
-        })
-        .from(volunteerHours)
-        .where(eq(volunteerHours.volunteerId, volunteer.volunteers.id));
-
-      const totalHours =
-        typeof hoursResult[0]?.total === "number" ? hoursResult[0].total : 0;
-
-      return {
-        volunteers: volunteer.volunteers,
-        users: volunteer.users,
-        totalHours,
-      };
-    }),
-  );
+  const data = volunteerListRaw.map((row) => ({
+    volunteers: row.volunteers,
+    users: row.users,
+    totalHours:
+      typeof row.totalHours === "number"
+        ? row.totalHours
+        : Number(row.totalHours),
+  }));
 
   // Build count query conditionally
   const countBaseQuery = db
@@ -427,20 +422,6 @@ export async function updateVolunteerProfile(
     volunteerData.notificationPreference = notificationPreference;
 
   // Update both tables sequentially (neon-http doesn't support transactions)
-  if (Object.keys(userData).length > 0) {
-    try {
-      await db
-        .update(users)
-        .set(userData)
-        .where(eq(users.id, volunteer[0].userId));
-    } catch (error) {
-      console.error(
-        `[volunteer.service] Failed updating users table for volunteerId=${volunteerId}:`,
-        error,
-      );
-      throw error;
-    }
-  }
   if (Object.keys(volunteerData).length > 0) {
     try {
       await db
@@ -449,7 +430,21 @@ export async function updateVolunteerProfile(
         .where(eq(volunteers.id, volunteerId));
     } catch (error) {
       console.error(
-        `[volunteer.service] PARTIAL WRITE: users table may have been updated but volunteers table failed for volunteerId=${volunteerId}:`,
+        `[volunteer.service] Failed updating volunteers table for volunteerId=${volunteerId}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+  if (Object.keys(userData).length > 0) {
+    try {
+      await db
+        .update(users)
+        .set(userData)
+        .where(eq(users.id, volunteer[0].userId));
+    } catch (error) {
+      console.error(
+        `[volunteer.service] PARTIAL WRITE: volunteers table may have been updated but users table failed for volunteerId=${volunteerId}:`,
         error,
       );
       throw error;
