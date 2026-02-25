@@ -2,17 +2,24 @@ import { NextResponse } from "next/server";
 
 import { getStaffDashboardStats } from "@/services/dashboard.service";
 import handleError from "@/utils/handle-error";
-import { requireAuth } from "@/utils/server/auth";
+import { AuthError, requireAuth } from "@/utils/server/auth";
 
-export async function GET(request: Request): Promise<NextResponse> {
+export async function GET(): Promise<NextResponse> {
   try {
-    new URL(request.url);
-
-    await requireAuth("staff");
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const stats = await getStaffDashboardStats();
     return NextResponse.json({ data: stats }, { status: 200 });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.code },
+        { status: error.code === "Unauthorized" ? 401 : 403 },
+      );
+    }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

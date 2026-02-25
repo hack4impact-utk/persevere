@@ -41,24 +41,24 @@ export async function getStaffDashboardStats(): Promise<StaffDashboardStats> {
     volunteerRsvpsCount,
   ] = await Promise.all([
     db
-      .select({ count: sql<number>`count(*)` })
+      .select({ count: sql<string>`count(*)` })
       .from(volunteers)
       .innerJoin(users, eq(volunteers.userId, users.id))
       .where(eq(users.isActive, true)),
 
     db
       .select({
-        total: sql<number>`coalesce(sum(${volunteerHours.hours}), 0)`,
+        total: sql<string>`coalesce(sum(${volunteerHours.hours}), 0)`,
       })
       .from(volunteerHours),
 
     db
-      .select({ count: sql<number>`count(*)` })
+      .select({ count: sql<string>`count(*)` })
       .from(opportunities)
       .where(gte(opportunities.startDate, now)),
 
     db
-      .select({ count: sql<number>`count(*)` })
+      .select({ count: sql<string>`count(*)` })
       .from(volunteerRsvps)
       .where(eq(volunteerRsvps.status, "pending")),
   ]);
@@ -100,7 +100,7 @@ export async function getVolunteerDashboard(
     // VERIFIED = verifiedAt IS NOT NULL
     db
       .select({
-        total: sql<number>`coalesce(sum(${volunteerHours.hours}), 0)`,
+        total: sql<string>`coalesce(sum(${volunteerHours.hours}), 0)`,
       })
       .from(volunteerHours)
       .where(
@@ -113,7 +113,7 @@ export async function getVolunteerDashboard(
     // PENDING = verifiedAt IS NULL
     db
       .select({
-        total: sql<number>`coalesce(sum(${volunteerHours.hours}), 0)`,
+        total: sql<string>`coalesce(sum(${volunteerHours.hours}), 0)`,
       })
       .from(volunteerHours)
       .where(
