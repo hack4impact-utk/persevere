@@ -30,7 +30,7 @@ export async function GET(
     const interestId = validateAndParseId(id);
     if (interestId === null) {
       return NextResponse.json(
-        { message: "Invalid interest ID" },
+        { error: "Invalid interest ID" },
         { status: 400 },
       );
     }
@@ -66,7 +66,7 @@ export async function PUT(
     const interestId = validateAndParseId(id);
     if (interestId === null) {
       return NextResponse.json(
-        { message: "Invalid interest ID" },
+        { error: "Invalid interest ID" },
         { status: 400 },
       );
     }
@@ -76,10 +76,7 @@ export async function PUT(
 
     if (!result.success) {
       const firstError = result.error.issues[0];
-      return NextResponse.json(
-        { message: firstError.message },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: firstError.message }, { status: 400 });
     }
 
     const updatedInterest = await updateInterest(interestId, result.data);
@@ -119,7 +116,7 @@ export async function DELETE(
     const interestId = validateAndParseId(id);
     if (interestId === null) {
       return NextResponse.json(
-        { message: "Invalid interest ID" },
+        { error: "Invalid interest ID" },
         { status: 400 },
       );
     }

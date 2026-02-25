@@ -6,7 +6,7 @@ import {
   opportunities,
   opportunityRequiredSkills,
 } from "@/db/schema/opportunities";
-import { NotFoundError } from "@/utils/errors";
+import { ConflictError, NotFoundError } from "@/utils/errors";
 
 async function requireEvent(eventId: number): Promise<void> {
   const [event] = await db
@@ -26,10 +26,21 @@ export async function addRequiredSkill(
     .from(skills)
     .where(eq(skills.id, skillId));
   if (!skill) throw new NotFoundError("Skill not found");
+  const existing = await db
+    .select()
+    .from(opportunityRequiredSkills)
+    .where(
+      and(
+        eq(opportunityRequiredSkills.opportunityId, eventId),
+        eq(opportunityRequiredSkills.skillId, skillId),
+      ),
+    );
+  if (existing.length > 0) {
+    throw new ConflictError("Skill already required for this opportunity");
+  }
   await db
     .insert(opportunityRequiredSkills)
-    .values({ opportunityId: eventId, skillId })
-    .onConflictDoNothing();
+    .values({ opportunityId: eventId, skillId });
 }
 
 export async function removeRequiredSkill(

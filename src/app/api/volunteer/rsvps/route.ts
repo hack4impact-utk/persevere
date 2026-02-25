@@ -44,7 +44,7 @@ export async function GET(): Promise<NextResponse> {
       );
     }
     if (error instanceof RsvpError && error.code === "VOLUNTEER_NOT_FOUND") {
-      return NextResponse.json({ message: error.message }, { status: 404 });
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

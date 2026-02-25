@@ -51,7 +51,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       startDate = new Date(startStr);
       if (Number.isNaN(startDate.getTime())) {
         return NextResponse.json(
-          { message: "Invalid start date parameter" },
+          { error: "Invalid start date parameter" },
           { status: 400 },
         );
       }
@@ -60,7 +60,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       endDate = new Date(endStr);
       if (Number.isNaN(endDate.getTime())) {
         return NextResponse.json(
-          { message: "Invalid end date parameter" },
+          { error: "Invalid end date parameter" },
           { status: 400 },
         );
       }
@@ -95,10 +95,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const result = eventCreateSchema.safeParse(json);
     if (!result.success) {
       const firstError = result.error.issues[0];
-      return NextResponse.json(
-        { message: firstError.message },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: firstError.message }, { status: 400 });
     }
 
     const data = result.data;
@@ -107,7 +104,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     if (endDate <= startDate) {
       return NextResponse.json(
-        { message: "End date must be after start date" },
+        { error: "End date must be after start date" },
         { status: 400 },
       );
     }

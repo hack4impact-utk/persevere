@@ -29,7 +29,7 @@ export async function GET(
     const volunteerId = validateAndParseId(id);
     if (volunteerId === null) {
       return NextResponse.json(
-        { message: "Invalid volunteer ID" },
+        { error: "Invalid volunteer ID" },
         { status: 400 },
       );
     }
@@ -65,7 +65,7 @@ export async function POST(
     const volunteerId = validateAndParseId(id);
     if (volunteerId === null) {
       return NextResponse.json(
-        { message: "Invalid volunteer ID" },
+        { error: "Invalid volunteer ID" },
         { status: 400 },
       );
     }
@@ -75,10 +75,7 @@ export async function POST(
 
     if (!result.success) {
       const firstError = result.error.issues[0];
-      return NextResponse.json(
-        { message: firstError.message },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: firstError.message }, { status: 400 });
     }
 
     const { skillId, level } = result.data;

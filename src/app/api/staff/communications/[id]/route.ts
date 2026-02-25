@@ -4,6 +4,7 @@ import { getCommunicationById } from "@/services/communications.service";
 import { NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
+import { validateAndParseId } from "@/utils/validate-id";
 
 export async function GET(
   request: Request,
@@ -18,11 +19,11 @@ export async function GET(
     }
 
     const { id } = await params;
-    const communicationId = Number.parseInt(id);
+    const communicationId = validateAndParseId(id);
 
-    if (Number.isNaN(communicationId)) {
+    if (communicationId === null) {
       return NextResponse.json(
-        { message: "Invalid communication ID" },
+        { error: "Invalid communication ID" },
         { status: 400 },
       );
     }
@@ -38,7 +39,7 @@ export async function GET(
       );
     }
     if (error instanceof NotFoundError) {
-      return NextResponse.json({ message: error.message }, { status: 404 });
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
