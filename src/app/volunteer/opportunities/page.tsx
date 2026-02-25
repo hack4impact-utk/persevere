@@ -152,6 +152,29 @@ function OpportunityCard({
             </Typography>
           </Box>
         )}
+
+        {(opportunity.requiredSkills.length > 0 ||
+          opportunity.requiredInterests.length > 0) && (
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 1.5 }}>
+            {opportunity.requiredSkills.map((s) => (
+              <Chip
+                key={s.skillId}
+                label={s.skillName ?? "Unknown"}
+                size="small"
+                variant="outlined"
+              />
+            ))}
+            {opportunity.requiredInterests.map((i) => (
+              <Chip
+                key={i.interestId}
+                label={i.interestName ?? "Unknown"}
+                size="small"
+                variant="outlined"
+                color="primary"
+              />
+            ))}
+          </Box>
+        )}
       </CardContent>
     </Card>
   );

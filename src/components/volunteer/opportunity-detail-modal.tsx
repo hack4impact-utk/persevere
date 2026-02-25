@@ -169,6 +169,72 @@ export default function OpportunityDetailModal({
               )}
             </Box>
 
+            {(opportunity.requiredSkills.length > 0 ||
+              opportunity.requiredInterests.length > 0) && (
+              <>
+                <Divider />
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {opportunity.requiredSkills.length > 0 && (
+                    <Box>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ fontWeight: 600, textTransform: "uppercase" }}
+                      >
+                        Required Skills
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 0.5,
+                          mt: 0.5,
+                        }}
+                      >
+                        {opportunity.requiredSkills.map((s) => (
+                          <Chip
+                            key={s.skillId}
+                            label={s.skillName ?? "Unknown"}
+                            size="small"
+                            variant="outlined"
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                  {opportunity.requiredInterests.length > 0 && (
+                    <Box>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ fontWeight: 600, textTransform: "uppercase" }}
+                      >
+                        Related Interests
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 0.5,
+                          mt: 0.5,
+                        }}
+                      >
+                        {opportunity.requiredInterests.map((i) => (
+                          <Chip
+                            key={i.interestId}
+                            label={i.interestName ?? "Unknown"}
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                </Box>
+              </>
+            )}
+
             {attendees.length > 0 && (
               <>
                 <Divider />

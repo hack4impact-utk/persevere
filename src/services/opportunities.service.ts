@@ -33,7 +33,7 @@ export type OpportunityWithSpots = {
   rsvpCount: number;
   spotsRemaining: number | null;
   requiredSkills: { skillId: number; skillName: string | null }[];
-  interests: { interestId: number; interestName: string | null }[];
+  requiredInterests: { interestId: number; interestName: string | null }[];
 };
 
 // ---------------------------------------------------------------------------
@@ -119,7 +119,7 @@ export async function listOpenOpportunities(
     number,
     { skillId: number; skillName: string | null }[]
   > = {};
-  const interestsMap: Record<
+  const requiredInterestsMap: Record<
     number,
     { interestId: number; interestName: string | null }[]
   > = {};
@@ -153,7 +153,7 @@ export async function listOpenOpportunities(
       .where(inArray(opportunityInterests.opportunityId, opportunityIds));
 
     for (const row of interestRows) {
-      (interestsMap[row.opportunityId] ??= []).push({
+      (requiredInterestsMap[row.opportunityId] ??= []).push({
         interestId: row.interestId,
         interestName: row.interestName,
       });
@@ -170,7 +170,7 @@ export async function listOpenOpportunities(
       spotsRemaining:
         opp.maxVolunteers === null ? null : opp.maxVolunteers - rsvpCount,
       requiredSkills: requiredSkillsMap[opp.id] ?? [],
-      interests: interestsMap[opp.id] ?? [],
+      requiredInterests: requiredInterestsMap[opp.id] ?? [],
     };
   });
 
@@ -252,6 +252,6 @@ export async function getOpenOpportunityById(
     spotsRemaining:
       opp.maxVolunteers === null ? null : opp.maxVolunteers - rsvpCount,
     requiredSkills: skillRows,
-    interests: interestRows,
+    requiredInterests: interestRows,
   };
 }
