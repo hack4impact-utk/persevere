@@ -101,10 +101,7 @@ export default function OnboardingChecklist(): JSX.Element {
                 {item.done ? (
                   <CheckCircleIcon color="success" fontSize="small" />
                 ) : (
-                  <RadioButtonUncheckedIcon
-                    color="disabled"
-                    fontSize="small"
-                  />
+                  <RadioButtonUncheckedIcon color="disabled" fontSize="small" />
                 )}
               </ListItemIcon>
               <ListItemText

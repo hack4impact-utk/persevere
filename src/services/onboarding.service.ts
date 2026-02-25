@@ -1,12 +1,7 @@
 import { and, count, eq, ilike, or, sql } from "drizzle-orm";
 
 import db from "@/db";
-import {
-  users,
-  volunteerInterests,
-  volunteers,
-  volunteerSkills,
-} from "@/db/schema";
+import { users, volunteers } from "@/db/schema";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 
 // ---------------------------------------------------------------------------
@@ -62,8 +57,11 @@ function buildChecklist(
   mediaRelease: boolean,
 ): OnboardingChecklist {
   return {
-    profileFilled: Boolean(phone && phone.trim() !== "" && bio && bio.trim() !== ""),
-    availabilitySet: availability != null && JSON.stringify(availability) !== "{}",
+    profileFilled: Boolean(
+      phone && phone.trim() !== "" && bio && bio.trim() !== "",
+    ),
+    availabilitySet:
+      availability != null && JSON.stringify(availability) !== "{}",
     skillsAdded: skillsCount > 0,
     interestsAdded: interestsCount > 0,
     mediaReleaseSigned: mediaRelease,
