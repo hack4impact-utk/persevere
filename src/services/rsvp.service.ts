@@ -1,7 +1,7 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 
 import db from "@/db";
-import { volunteers } from "@/db/schema";
+import { users, volunteers } from "@/db/schema";
 import { opportunities, volunteerRsvps } from "@/db/schema/opportunities";
 
 export class RsvpError extends Error {
@@ -191,4 +191,20 @@ export async function getVolunteerRsvps(
     .leftJoin(opportunities, eq(volunteerRsvps.opportunityId, opportunities.id))
     .where(eq(volunteerRsvps.volunteerId, volunteer[0].id))
     .orderBy(desc(opportunities.startDate));
+}
+
+export async function getOpportunityAttendees(
+  opportunityId: number,
+): Promise<{ firstName: string }[]> {
+  return db
+    .select({ firstName: users.firstName })
+    .from(volunteerRsvps)
+    .innerJoin(volunteers, eq(volunteerRsvps.volunteerId, volunteers.id))
+    .innerJoin(users, eq(volunteers.userId, users.id))
+    .where(
+      and(
+        eq(volunteerRsvps.opportunityId, opportunityId),
+        inArray(volunteerRsvps.status, ["confirmed", "pending"]),
+      ),
+    );
 }

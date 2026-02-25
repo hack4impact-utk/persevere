@@ -3,6 +3,7 @@ import { JSX } from "react";
 
 import VolunteerProfile from "@/components/staff/volunteer-management/volunteer-profile";
 import { getVolunteerProfile } from "@/services/volunteer.service";
+import { validateAndParseId } from "@/utils/validate-id";
 
 /** Individual volunteer profile page. */
 export default async function VolunteerDetailsPage({
@@ -11,9 +12,8 @@ export default async function VolunteerDetailsPage({
   params: Promise<{ id: string }>;
 }): Promise<JSX.Element> {
   const { id } = await params;
-  const volunteerId = Number.parseInt(id, 10);
-
-  if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
+  const volunteerId = validateAndParseId(id);
+  if (volunteerId === null) {
     notFound();
   }
 

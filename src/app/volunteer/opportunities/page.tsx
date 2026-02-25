@@ -20,13 +20,14 @@ import TextField from "@mui/material/TextField";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
-import { JSX, useState } from "react";
+import { JSX, useMemo, useState } from "react";
 
 import { Calendar } from "@/components/staff/calendar";
 import OpportunityDetailModal from "@/components/volunteer/opportunity-detail-modal";
 import type { Opportunity } from "@/components/volunteer/types";
 import { formatDate, formatTime } from "@/components/volunteer/utils";
 import { useOpportunities } from "@/hooks/use-opportunities";
+import { RSVP_STATUS_COLORS } from "@/lib/constants";
 
 type View = "list" | "calendar";
 
@@ -100,6 +101,9 @@ function OpportunityCard({
             {opportunity.title}
           </Typography>
           <SpotsChip opp={opportunity} />
+          {opportunity.isRecurring && (
+            <Chip label="↻ Recurring" size="small" variant="outlined" />
+          )}
         </Box>
 
         {opportunity.description && (
@@ -191,6 +195,7 @@ export default function OpportunitiesPage(): JSX.Element {
   const {
     opportunities,
     rsvpedIds,
+    rsvpStatusMap,
     loading,
     error,
     rsvpWarning,
@@ -199,6 +204,19 @@ export default function OpportunitiesPage(): JSX.Element {
     loadMore,
     handleRsvpChange,
   } = useOpportunities(search);
+
+  const rsvpColorMap = useMemo((): Record<string, string> => {
+    const map: Record<string, string> = {};
+    for (const [id, status] of rsvpStatusMap) {
+      map[String(id)] =
+        status === "confirmed"
+          ? RSVP_STATUS_COLORS.confirmed
+          : status === "pending"
+            ? RSVP_STATUS_COLORS.pending
+            : RSVP_STATUS_COLORS.default;
+    }
+    return map;
+  }, [rsvpStatusMap]);
 
   return (
     <Box
@@ -369,6 +387,7 @@ export default function OpportunitiesPage(): JSX.Element {
             onEventClick={(id) => {
               setSelectedOpportunityId(Number.parseInt(id, 10));
             }}
+            eventColors={rsvpColorMap}
           />
         )}
       </Box>
