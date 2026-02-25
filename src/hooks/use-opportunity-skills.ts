@@ -178,6 +178,9 @@ export function useOpportunitySkills(
         await Promise.all([...skillPromises, ...interestPromises]);
       } catch (error) {
         handleAuthError(error);
+        if (!(error instanceof AuthenticationError)) {
+          throw error;
+        }
       }
     },
     [handleAuthError],
