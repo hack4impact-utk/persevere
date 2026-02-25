@@ -49,7 +49,7 @@ export async function POST(
         error.code === "OPPORTUNITY_NOT_FOUND"
           ? 404
           : 400;
-      return NextResponse.json({ message: error.message }, { status });
+      return NextResponse.json({ error: error.message }, { status });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
@@ -95,7 +95,7 @@ export async function DELETE(
         error.code === "RSVP_NOT_FOUND" || error.code === "VOLUNTEER_NOT_FOUND"
           ? 404
           : 400;
-      return NextResponse.json({ message: error.message }, { status });
+      return NextResponse.json({ error: error.message }, { status });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

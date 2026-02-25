@@ -5,6 +5,7 @@ import {
   logHours,
 } from "@/services/volunteer-hours.service";
 import { NotFoundError } from "@/utils/errors";
+import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
 import { validateAndParseId } from "@/utils/validate-id";
 
@@ -44,10 +45,7 @@ export async function GET(
       );
     }
     console.error("GET Hours Error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch hours" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
@@ -102,6 +100,6 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
     console.error("POST Hours Error:", error);
-    return NextResponse.json({ error: "Failed to log hours" }, { status: 500 });
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

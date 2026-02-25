@@ -22,14 +22,14 @@ export async function DELETE(
 
     if (volunteerId === null) {
       return NextResponse.json(
-        { message: "Invalid volunteer ID" },
+        { error: "Invalid volunteer ID" },
         { status: 400 },
       );
     }
 
     if (interestId === null) {
       return NextResponse.json(
-        { message: "Invalid interest ID" },
+        { error: "Invalid interest ID" },
         { status: 400 },
       );
     }
@@ -48,7 +48,7 @@ export async function DELETE(
       );
     }
     if (error instanceof NotFoundError) {
-      return NextResponse.json({ message: error.message }, { status: 404 });
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

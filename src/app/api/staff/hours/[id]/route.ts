@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { deleteHours, updateHours } from "@/services/volunteer-hours.service";
 import { ConflictError, NotFoundError } from "@/utils/errors";
+import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
 import { validateAndParseId } from "@/utils/validate-id";
 
@@ -45,7 +46,7 @@ export async function PUT(
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
     console.error("Update error:", error);
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
@@ -83,6 +84,6 @@ export async function DELETE(
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
     console.error("Delete Error:", error);
-    return NextResponse.json({ error: "Delete failed" }, { status: 500 });
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
