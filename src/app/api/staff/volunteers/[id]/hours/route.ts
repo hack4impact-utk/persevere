@@ -5,18 +5,23 @@ import {
   logHours,
 } from "@/services/volunteer-hours.service";
 import { NotFoundError } from "@/utils/errors";
+import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
+import { validateAndParseId } from "@/utils/validate-id";
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    await requireAuth("staff");
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { id } = await params;
-    const volunteerId = Number.parseInt(id, 10);
-    if (Number.isNaN(volunteerId)) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
         { error: "Invalid volunteer ID" },
         { status: 400 },
@@ -39,11 +44,7 @@ export async function GET(
         { status: error.code === "Unauthorized" ? 401 : 403 },
       );
     }
-    console.error("GET Hours Error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch hours" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
@@ -52,11 +53,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    await requireAuth("staff");
+    const session = await requireAuth();
+    if (!["staff", "admin"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { id } = await params;
-    const volunteerId = Number.parseInt(id, 10);
-    if (Number.isNaN(volunteerId)) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
         { error: "Invalid volunteer ID" },
         { status: 400 },
@@ -94,7 +98,6 @@ export async function POST(
     if (error instanceof NotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
-    console.error("POST Hours Error:", error);
-    return NextResponse.json({ error: "Failed to log hours" }, { status: 500 });
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

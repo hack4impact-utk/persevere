@@ -4,6 +4,7 @@ import { removeSkill } from "@/services/volunteer-skills.service";
 import { NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
+import { validateAndParseId } from "@/utils/validate-id";
 
 export async function DELETE(
   _request: Request,
@@ -16,17 +17,15 @@ export async function DELETE(
     }
 
     const { id, skillId: skillIdParam } = await params;
-    const volunteerId = Number.parseInt(id, 10);
-    const skillId = Number.parseInt(skillIdParam, 10);
-
-    if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
         { message: "Invalid volunteer ID" },
         { status: 400 },
       );
     }
-
-    if (!Number.isInteger(skillId) || skillId <= 0) {
+    const skillId = validateAndParseId(skillIdParam);
+    if (skillId === null) {
       return NextResponse.json(
         { message: "Invalid skill ID" },
         { status: 400 },

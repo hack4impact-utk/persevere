@@ -1,3 +1,4 @@
+import { useRouter } from "next/navigation";
 import { useSnackbar } from "notistack";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -6,7 +7,7 @@ import type {
   RsvpItem,
   RsvpStatus,
 } from "@/components/volunteer/types";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, AuthenticationError } from "@/lib/api-client";
 
 const LIMIT = 12;
 
@@ -25,6 +26,7 @@ export type UseOpportunitiesResult = {
 };
 
 export function useOpportunities(search: string): UseOpportunitiesResult {
+  const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
 
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -86,13 +88,16 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
         setRsvpWarning(true);
       }
     } catch (error_) {
-      console.error("[useOpportunities] Failed to load opportunities:", error_);
+      if (error_ instanceof AuthenticationError) {
+        router.push("/auth/login");
+        return;
+      }
       setError("Failed to load opportunities. Please try again.");
       setOpportunities([]);
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [router, search]);
 
   loadOpportunitiesRef.current = loadOpportunities;
 
@@ -165,14 +170,17 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
       setPage(nextPage);
       setHasMore(json.data.length === LIMIT);
     } catch (error_) {
-      console.error("[useOpportunities] loadMore failed:", error_);
+      if (error_ instanceof AuthenticationError) {
+        router.push("/auth/login");
+        return;
+      }
       enqueueSnackbar("Failed to load more opportunities", {
         variant: "error",
       });
     } finally {
       setLoadingMore(false);
     }
-  }, [hasMore, loadingMore, page, search, enqueueSnackbar]);
+  }, [router, hasMore, loadingMore, page, search, enqueueSnackbar]);
 
   return {
     opportunities,

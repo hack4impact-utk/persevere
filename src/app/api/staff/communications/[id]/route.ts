@@ -4,6 +4,7 @@ import { getCommunicationById } from "@/services/communications.service";
 import { NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
+import { validateAndParseId } from "@/utils/validate-id";
 
 export async function GET(
   request: Request,
@@ -18,9 +19,8 @@ export async function GET(
     }
 
     const { id } = await params;
-    const communicationId = Number.parseInt(id);
-
-    if (Number.isNaN(communicationId)) {
+    const communicationId = validateAndParseId(id);
+    if (communicationId === null) {
       return NextResponse.json(
         { message: "Invalid communication ID" },
         { status: 400 },

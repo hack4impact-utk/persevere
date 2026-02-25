@@ -5,6 +5,7 @@ import {
   getVolunteerProfile,
   updateVolunteerProfile,
 } from "@/services/volunteer.service";
+import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
 
 const timeRangeSchema = z
@@ -96,11 +97,7 @@ export async function GET(): Promise<NextResponse> {
       const status = error.code === "Unauthorized" ? 401 : 403;
       return NextResponse.json({ error: error.code }, { status });
     }
-    console.error("[GET /api/volunteer/profile] Unhandled error:", error);
-    return NextResponse.json(
-      { error: "An unexpected error occurred. Please try again." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
@@ -167,10 +164,6 @@ export async function PUT(request: Request): Promise<NextResponse> {
       const status = error.code === "Unauthorized" ? 401 : 403;
       return NextResponse.json({ error: error.code }, { status });
     }
-    console.error("[PUT /api/volunteer/profile] Unhandled error:", error);
-    return NextResponse.json(
-      { error: "An unexpected error occurred. Please try again." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

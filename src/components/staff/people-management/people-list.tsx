@@ -30,10 +30,7 @@ import { type ReactElement, useCallback, useState } from "react";
 
 import VolunteerList from "@/components/staff/volunteer-management/volunteer-list";
 import { useStaff } from "@/hooks/use-staff";
-import {
-  fetchStaffById,
-  type FetchStaffByIdResult,
-} from "@/services/staff.service";
+import { useStaffProfile } from "@/hooks/use-staff-profile";
 
 import AddStaffModal from "./staff-add-modal";
 import StaffTable from "./staff-table";
@@ -75,11 +72,13 @@ export default function PeopleList(): ReactElement {
 
   // Staff profile state
   const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
-  const [staffProfile, setStaffProfile] = useState<FetchStaffByIdResult | null>(
-    null,
-  );
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
+  const {
+    profile: staffProfile,
+    loading: profileLoading,
+    error: profileError,
+    loadProfile: loadStaffProfile,
+    clearProfile,
+  } = useStaffProfile();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
@@ -181,27 +180,15 @@ export default function PeopleList(): ReactElement {
   const handleStaffClick = useCallback(
     async (staffId: number): Promise<void> => {
       setSelectedStaffId(staffId);
-      setProfileLoading(true);
-      setProfileError(null);
-      try {
-        const data = await fetchStaffById(staffId);
-        setStaffProfile(data);
-      } catch (error) {
-        console.error("Failed to fetch staff profile:", error);
-        setProfileError("Failed to load staff profile. Please try again.");
-        setStaffProfile(null);
-      } finally {
-        setProfileLoading(false);
-      }
+      await loadStaffProfile(staffId);
     },
-    [],
+    [loadStaffProfile],
   );
 
   const handleCloseModal = useCallback((): void => {
     setSelectedStaffId(null);
-    setStaffProfile(null);
-    setProfileError(null);
-  }, []);
+    clearProfile();
+  }, [clearProfile]);
 
   return (
     <Box

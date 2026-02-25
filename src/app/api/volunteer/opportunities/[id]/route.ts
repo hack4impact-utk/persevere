@@ -15,6 +15,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    const session = await requireAuth();
+    if (session.user.role !== "volunteer") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { id } = await params;
     const parsedId = validateAndParseId(id);
     if (parsedId === null) {
@@ -22,11 +27,6 @@ export async function GET(
         { error: "Invalid opportunity ID" },
         { status: 400 },
       );
-    }
-
-    const session = await requireAuth();
-    if (session.user.role !== "volunteer") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const opportunity = await getOpenOpportunityById(parsedId);
