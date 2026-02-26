@@ -43,7 +43,7 @@ export type UseCalendarEventsResult = {
   events: CalendarEvent[];
   isLoading: boolean;
   fetchEvents: (startDate?: Date, endDate?: Date) => Promise<void>;
-  createEvent: (data: CreateEventData) => Promise<void>;
+  createEvent: (data: CreateEventData) => Promise<CalendarEvent[]>;
   updateEvent: (id: string, data: UpdateEventData) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
 };
@@ -79,13 +79,17 @@ export function useCalendarEvents(): UseCalendarEventsResult {
   );
 
   const createEvent = useCallback(
-    async (data: CreateEventData): Promise<void> => {
+    async (data: CreateEventData): Promise<CalendarEvent[]> => {
       try {
-        await apiClient.post("/api/staff/calendar/events", data);
+        const result = await apiClient.post<{ data: CalendarEvent[] }>(
+          "/api/staff/calendar/events",
+          data,
+        );
+        return result.data;
       } catch (error) {
         if (error instanceof AuthenticationError) {
           router.push("/auth/login");
-          return;
+          return [];
         }
         throw error;
       }

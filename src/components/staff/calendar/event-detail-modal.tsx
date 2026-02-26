@@ -2,6 +2,7 @@
 
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import {
+  Autocomplete,
   Box,
   Button,
   Chip,
@@ -20,6 +21,9 @@ import { JSX, useEffect, useState } from "react";
 import type { CalendarEvent } from "@/hooks/use-calendar-events";
 import { useCalendarEvents } from "@/hooks/use-calendar-events";
 import { useEventRsvps } from "@/hooks/use-event-rsvps";
+import { useOpportunitySkills } from "@/hooks/use-opportunity-skills";
+import type { CatalogInterest, CatalogSkill } from "@/hooks/use-skills";
+import { useSkills } from "@/hooks/use-skills";
 
 type EventDetailModalProps = {
   event: CalendarEvent | null;
@@ -64,6 +68,25 @@ export default function EventDetailModal({
 }: EventDetailModalProps): JSX.Element {
   const { updateEvent, deleteEvent } = useCalendarEvents();
   const { rsvps, isLoading: rsvpsLoading, fetchRsvps } = useEventRsvps();
+  const {
+    skills: catalogSkills,
+    interests: catalogInterests,
+    isLoadingSkills,
+    isLoadingInterests,
+  } = useSkills();
+
+  const numericEventId = eventId ? Number.parseInt(eventId, 10) : null;
+  const {
+    requiredSkills,
+    requiredInterests,
+    isLoading: skillsLoading,
+    addSkill,
+    removeSkill,
+    addInterest,
+    removeInterest,
+    refetch: refetchSkills,
+  } = useOpportunitySkills(numericEventId);
+
   const [mode, setMode] = useState<Mode>("view");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editForm, setEditForm] = useState<EditFormData>({
@@ -76,6 +99,18 @@ export default function EventDetailModal({
     endTime: "",
     maxVolunteers: "",
   });
+  const [editSelectedSkills, setEditSelectedSkills] = useState<CatalogSkill[]>(
+    [],
+  );
+  const [editSelectedInterests, setEditSelectedInterests] = useState<
+    CatalogInterest[]
+  >([]);
+  const [editInitialSkillIds, setEditInitialSkillIds] = useState<Set<number>>(
+    new Set(),
+  );
+  const [editInitialInterestIds, setEditInitialInterestIds] = useState<
+    Set<number>
+  >(new Set());
 
   // Fetch RSVPs and reset mode when event opens
   useEffect(() => {
@@ -88,6 +123,15 @@ export default function EventDetailModal({
 
   const handleEditClick = (): void => {
     if (!event) return;
+    if (skillsLoading || isLoadingSkills || isLoadingInterests) {
+      enqueueSnackbar(
+        "Skills and interests are still loading. Try again shortly.",
+        {
+          variant: "info",
+        },
+      );
+      return;
+    }
     const start = new Date(event.start);
     const end = new Date(event.end);
     setEditForm({
@@ -100,6 +144,23 @@ export default function EventDetailModal({
       endTime: end.toTimeString().slice(0, 5),
       maxVolunteers: event.extendedProps?.maxVolunteers?.toString() ?? "",
     });
+
+    const currentSkillIds = new Set(requiredSkills.map((s) => s.skillId));
+    const resolvedSkills = catalogSkills.filter((s) =>
+      currentSkillIds.has(s.id),
+    );
+    setEditSelectedSkills(resolvedSkills);
+    setEditInitialSkillIds(new Set(resolvedSkills.map((s) => s.id)));
+
+    const currentInterestIds = new Set(
+      requiredInterests.map((i) => i.interestId),
+    );
+    const resolvedInterests = catalogInterests.filter((i) =>
+      currentInterestIds.has(i.id),
+    );
+    setEditSelectedInterests(resolvedInterests);
+    setEditInitialInterestIds(new Set(resolvedInterests.map((i) => i.id)));
+
     setMode("edit");
   };
 
@@ -132,7 +193,55 @@ export default function EventDetailModal({
           ? Number.parseInt(editForm.maxVolunteers, 10)
           : undefined,
       });
-      enqueueSnackbar("Event updated successfully", { variant: "success" });
+
+      const latestRequirements = await refetchSkills();
+
+      // Diff and apply skill changes
+      const currentSkillIds = new Set(
+        latestRequirements.requiredSkills.map((s) => s.skillId),
+      );
+      const selectedSkillIds = new Set(editSelectedSkills.map((s) => s.id));
+      const skillsToAdd = editSelectedSkills.filter(
+        (s) => !currentSkillIds.has(s.id),
+      );
+      const skillsToRemove = latestRequirements.requiredSkills.filter(
+        (s) =>
+          editInitialSkillIds.has(s.skillId) &&
+          !selectedSkillIds.has(s.skillId),
+      );
+
+      // Diff and apply interest changes
+      const currentInterestIds = new Set(
+        latestRequirements.requiredInterests.map((i) => i.interestId),
+      );
+      const selectedInterestIds = new Set(
+        editSelectedInterests.map((i) => i.id),
+      );
+      const interestsToAdd = editSelectedInterests.filter(
+        (i) => !currentInterestIds.has(i.id),
+      );
+      const interestsToRemove = latestRequirements.requiredInterests.filter(
+        (i) =>
+          editInitialInterestIds.has(i.interestId) &&
+          !selectedInterestIds.has(i.interestId),
+      );
+
+      const tagResults = await Promise.allSettled([
+        ...skillsToAdd.map((s) => addSkill(s.id)),
+        ...skillsToRemove.map((s) => removeSkill(s.skillId)),
+        ...interestsToAdd.map((i) => addInterest(i.id)),
+        ...interestsToRemove.map((i) => removeInterest(i.interestId)),
+      ]);
+      const tagError = tagResults.some((r) => r.status === "rejected");
+
+      await refetchSkills();
+
+      enqueueSnackbar(
+        tagError
+          ? "Event updated but some skill/interest changes failed"
+          : "Event updated successfully",
+        { variant: tagError ? "warning" : "success" },
+      );
       onUpdated();
       setMode("view");
     } catch (error) {
@@ -340,9 +449,59 @@ export default function EventDetailModal({
                   >
                     Required Skills
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Skills not yet tagged
+                  {skillsLoading ? (
+                    <CircularProgress size={16} />
+                  ) : requiredSkills.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">
+                      No skills tagged
+                    </Typography>
+                  ) : (
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                      {requiredSkills.map((s) => (
+                        <Chip
+                          key={s.skillId}
+                          label={s.skillName ?? "Unknown"}
+                          size="small"
+                          variant="outlined"
+                        />
+                      ))}
+                    </Box>
+                  )}
+                </Box>
+
+                <Box>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{
+                      textTransform: "uppercase",
+                      fontSize: "0.75rem",
+                      letterSpacing: "0.05em",
+                      fontWeight: 600,
+                      mb: 0.5,
+                    }}
+                  >
+                    Related Interests
                   </Typography>
+                  {skillsLoading ? (
+                    <CircularProgress size={16} />
+                  ) : requiredInterests.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">
+                      No interests tagged
+                    </Typography>
+                  ) : (
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                      {requiredInterests.map((i) => (
+                        <Chip
+                          key={i.interestId}
+                          label={i.interestName ?? "Unknown"}
+                          size="small"
+                          variant="outlined"
+                          color="primary"
+                        />
+                      ))}
+                    </Box>
+                  )}
                 </Box>
               </Box>
             ) : (
@@ -359,6 +518,7 @@ export default function EventDetailModal({
             <Button
               onClick={handleEditClick}
               variant="contained"
+              disabled={skillsLoading || isLoadingSkills || isLoadingInterests}
               sx={{
                 borderRadius: 2,
                 textTransform: "none",
@@ -470,6 +630,62 @@ export default function EventDetailModal({
                   setEditForm({ ...editForm, maxVolunteers: e.target.value });
                 }}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              />
+
+              <Autocomplete
+                multiple
+                options={catalogSkills}
+                getOptionLabel={(o) => o.name}
+                value={editSelectedSkills}
+                onChange={(_, value) => {
+                  setEditSelectedSkills(value);
+                }}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      label={option.name}
+                      size="small"
+                      {...getTagProps({ index })}
+                      key={option.id}
+                    />
+                  ))
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Required Skills"
+                    placeholder="Add skills..."
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                  />
+                )}
+              />
+
+              <Autocomplete
+                multiple
+                options={catalogInterests}
+                getOptionLabel={(o) => o.name}
+                value={editSelectedInterests}
+                onChange={(_, value) => {
+                  setEditSelectedInterests(value);
+                }}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      label={option.name}
+                      size="small"
+                      {...getTagProps({ index })}
+                      key={option.id}
+                    />
+                  ))
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Related Interests"
+                    placeholder="Add interests..."
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                  />
+                )}
               />
 
               {showDeleteConfirm ? (

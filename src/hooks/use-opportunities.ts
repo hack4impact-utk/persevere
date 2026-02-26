@@ -58,7 +58,7 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
       });
 
       const [oppsResult, rsvpsResult] = await Promise.allSettled([
-        apiClient.get<{ data: Opportunity[] }>(
+        apiClient.get<{ data: Opportunity[]; total: number }>(
           `/api/volunteer/opportunities?${params}`,
         ),
         apiClient.get<{ data: { all: RsvpItem[] } }>("/api/volunteer/rsvps"),
@@ -163,7 +163,7 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
       ...(search && { search }),
     });
     try {
-      const json = await apiClient.get<{ data: Opportunity[] }>(
+      const json = await apiClient.get<{ data: Opportunity[]; total: number }>(
         `/api/volunteer/opportunities?${params}`,
       );
       setOpportunities((prev) => [...prev, ...json.data]);
