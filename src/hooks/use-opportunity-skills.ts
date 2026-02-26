@@ -160,9 +160,6 @@ export function useOpportunitySkills(
       skillIds: number[],
       interestIds: number[],
     ): Promise<void> => {
-      try {
-        const skillPromises = eventIds.flatMap((eid) =>
-          skillIds.map((sid) =>
       const skillPromises = eventIds.flatMap((eid) =>
         skillIds.map((sid) =>
           apiClient.post(`/api/staff/calendar/events/${eid}/skills`, {
@@ -196,7 +193,6 @@ export function useOpportunitySkills(
       }
 
       if (firstNonAuthError !== null) {
-        // Preserve rejection behavior for non-authentication errors
         throw firstNonAuthError;
       }
     },
