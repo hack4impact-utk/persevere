@@ -123,7 +123,15 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid event ID" }, { status: 400 });
     }
 
-    const json = await request.json();
+    let json: unknown;
+    try {
+      json = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Request body is required" },
+        { status: 400 },
+      );
+    }
     const result = bodySchema.safeParse(json);
     if (!result.success) {
       return NextResponse.json(

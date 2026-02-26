@@ -226,17 +226,13 @@ export default function EventDetailModal({
           !selectedInterestIds.has(i.interestId),
       );
 
-      let tagError = false;
-      try {
-        await Promise.all([
-          ...skillsToAdd.map((s) => addSkill(s.id)),
-          ...skillsToRemove.map((s) => removeSkill(s.skillId)),
-          ...interestsToAdd.map((i) => addInterest(i.id)),
-          ...interestsToRemove.map((i) => removeInterest(i.interestId)),
-        ]);
-      } catch {
-        tagError = true;
-      }
+      const tagResults = await Promise.allSettled([
+        ...skillsToAdd.map((s) => addSkill(s.id)),
+        ...skillsToRemove.map((s) => removeSkill(s.skillId)),
+        ...interestsToAdd.map((i) => addInterest(i.id)),
+        ...interestsToRemove.map((i) => removeInterest(i.interestId)),
+      ]);
+      const tagError = tagResults.some((r) => r.status === "rejected");
 
       await refetchSkills();
 
