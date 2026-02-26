@@ -17,9 +17,14 @@ export class AuthError extends Error {
 
 /**
  * Gets the current server session. Returns null if not authenticated.
+ * Catches JWT decode errors (e.g. corrupted/expired tokens) and returns null.
  */
 export async function getServerSession(): Promise<Session | null> {
-  return await nextAuthGetServerSession(authOptions);
+  try {
+    return await nextAuthGetServerSession(authOptions);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -28,7 +33,7 @@ export async function getServerSession(): Promise<Session | null> {
  * @throws {AuthError} code "Forbidden" if role doesn't match
  */
 export async function requireAuth(
-  role?: "volunteer" | "staff" | "admin",
+  role?: "volunteer" | "admin",
 ): Promise<Session> {
   const session = await getServerSession();
 

@@ -1,4 +1,5 @@
 import { compare, hash } from "bcrypt";
+import { randomInt } from "crypto";
 
 /**
  * Generates a secure random password
@@ -14,19 +15,25 @@ export function generateSecurePassword(length = 12): string {
   const allChars = lowercase + uppercase + numbers + special;
 
   // Ensure at least one character from each category
-  let password = "";
-  password += lowercase[Math.floor(Math.random() * lowercase.length)];
-  password += uppercase[Math.floor(Math.random() * uppercase.length)];
-  password += numbers[Math.floor(Math.random() * numbers.length)];
-  password += special[Math.floor(Math.random() * special.length)];
+  const chars: string[] = [
+    lowercase[randomInt(lowercase.length)],
+    uppercase[randomInt(uppercase.length)],
+    numbers[randomInt(numbers.length)],
+    special[randomInt(special.length)],
+  ];
 
   // Fill the rest randomly
-  for (let i = password.length; i < length; i++) {
-    password += allChars[Math.floor(Math.random() * allChars.length)];
+  for (let i = chars.length; i < length; i++) {
+    chars.push(allChars[randomInt(allChars.length)]);
   }
 
-  // Shuffle the password to avoid predictable patterns
-  return [...password].sort(() => Math.random() - 0.5).join("");
+  // Fisher-Yates shuffle for uniform randomness
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+
+  return chars.join("");
 }
 
 /**
