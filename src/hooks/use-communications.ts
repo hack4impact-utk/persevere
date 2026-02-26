@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   AuthenticationError,
+  AuthorizationError,
   fetchCommunicationById,
   fetchCommunications,
 } from "@/components/staff/communications/communication-service";
@@ -45,6 +46,10 @@ export function useCommunications(): UseCommunicationsResult {
     } catch (error_) {
       if (error_ instanceof AuthenticationError) {
         router.push("/auth/login");
+        return;
+      }
+      if (error_ instanceof AuthorizationError) {
+        setError("Access denied");
         return;
       }
 

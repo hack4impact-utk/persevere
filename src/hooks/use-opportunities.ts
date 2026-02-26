@@ -7,7 +7,11 @@ import type {
   RsvpItem,
   RsvpStatus,
 } from "@/components/volunteer/types";
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import {
+  apiClient,
+  AuthenticationError,
+  AuthorizationError,
+} from "@/lib/api-client";
 
 const LIMIT = 12;
 
@@ -92,6 +96,10 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
         router.push("/auth/login");
         return;
       }
+      if (error_ instanceof AuthorizationError) {
+        setError("Access denied");
+        return;
+      }
       setError("Failed to load opportunities. Please try again.");
       setOpportunities([]);
     } finally {
@@ -172,6 +180,10 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
     } catch (error_) {
       if (error_ instanceof AuthenticationError) {
         router.push("/auth/login");
+        return;
+      }
+      if (error_ instanceof AuthorizationError) {
+        setError("Access denied");
         return;
       }
       enqueueSnackbar("Failed to load more opportunities", {

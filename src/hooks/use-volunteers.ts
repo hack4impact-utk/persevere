@@ -5,6 +5,7 @@ import type { Volunteer } from "@/components/staff/volunteer-management/types";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import {
   AuthenticationError,
+  AuthorizationError,
   fetchActiveVolunteers,
   fetchInactiveVolunteers,
   fetchPendingInvites,
@@ -114,6 +115,10 @@ export function useVolunteers(
     } catch (error_) {
       if (error_ instanceof AuthenticationError) {
         router.push("/auth/login");
+        return;
+      }
+      if (error_ instanceof AuthorizationError) {
+        setError("Access denied");
         return;
       }
 

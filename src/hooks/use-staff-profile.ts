@@ -1,7 +1,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
-import { AuthenticationError } from "@/lib/api-client";
+import { AuthenticationError, AuthorizationError } from "@/lib/api-client";
 import {
   fetchStaffById,
   type FetchStaffByIdResult,
@@ -29,6 +29,10 @@ export function useStaffProfile(): {
       } catch (error_) {
         if (error_ instanceof AuthenticationError) {
           router.push("/auth/login");
+          return;
+        }
+        if (error_ instanceof AuthorizationError) {
+          setError("Access denied");
           return;
         }
         setProfile(null);

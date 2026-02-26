@@ -2,7 +2,11 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import type { AvailabilityData } from "@/components/volunteer/availability-editor";
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import {
+  apiClient,
+  AuthenticationError,
+  AuthorizationError,
+} from "@/lib/api-client";
 
 type VolunteerProfileData = {
   volunteers: {
@@ -55,6 +59,10 @@ export function useVolunteerProfile(): UseVolunteerProfileResult {
     } catch (error_) {
       if (error_ instanceof AuthenticationError) {
         router.push("/auth/login");
+        return;
+      }
+      if (error_ instanceof AuthorizationError) {
+        setError("Access denied");
         return;
       }
       const message =

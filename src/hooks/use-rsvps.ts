@@ -2,7 +2,11 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import type { RsvpItem } from "@/components/volunteer/types";
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import {
+  apiClient,
+  AuthenticationError,
+  AuthorizationError,
+} from "@/lib/api-client";
 
 export type UseRsvpsResult = {
   upcoming: RsvpItem[];
@@ -30,6 +34,10 @@ export function useRsvps(): UseRsvpsResult {
         router.push("/auth/login");
         return;
       }
+      if (error_ instanceof AuthorizationError) {
+        setError("Access denied");
+        return;
+      }
 
       console.error("[useRsvps] Failed to load RSVPs:", error_);
       setError("Failed to load your RSVPs.");
@@ -51,6 +59,10 @@ export function useRsvps(): UseRsvpsResult {
       } catch (error_) {
         if (error_ instanceof AuthenticationError) {
           router.push("/auth/login");
+          return;
+        }
+        if (error_ instanceof AuthorizationError) {
+          if (!cancelled) setError("Access denied");
           return;
         }
         console.error("[useRsvps] Failed to load RSVPs:", error_);

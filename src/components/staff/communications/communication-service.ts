@@ -8,7 +8,7 @@ import {
   type RecipientType,
 } from "./types";
 
-export { AuthenticationError } from "@/lib/api-client";
+export { AuthenticationError, AuthorizationError } from "@/lib/api-client";
 
 /**
  * Fetches a paginated list of bulk communications with optional search and filtering.

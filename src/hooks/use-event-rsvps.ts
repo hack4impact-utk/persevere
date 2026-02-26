@@ -1,7 +1,11 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import {
+  apiClient,
+  AuthenticationError,
+  AuthorizationError,
+} from "@/lib/api-client";
 import type { EventRsvp } from "@/services/event-rsvps.service";
 
 export type UseEventRsvpsResult = {
@@ -29,6 +33,10 @@ export function useEventRsvps(): UseEventRsvpsResult {
       } catch (error_) {
         if (error_ instanceof AuthenticationError) {
           router.push("/auth/login");
+          return;
+        }
+        if (error_ instanceof AuthorizationError) {
+          setError("Access denied");
           return;
         }
         setError("Failed to load RSVPs.");

@@ -2,7 +2,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import type { Opportunity } from "@/components/volunteer/types";
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import {
+  apiClient,
+  AuthenticationError,
+  AuthorizationError,
+} from "@/lib/api-client";
 
 export type UseOpportunityResult = {
   opportunity: Opportunity | null;
@@ -39,6 +43,10 @@ export function useOpportunity(id: number | null): UseOpportunityResult {
         if (cancelled) return;
         if (error_ instanceof AuthenticationError) {
           router.push("/auth/login");
+          return;
+        }
+        if (error_ instanceof AuthorizationError) {
+          setError("Access denied");
           return;
         }
         setError(

@@ -3,7 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Staff } from "@/components/staff/people-management/types";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
-import { AuthenticationError, fetchStaff } from "@/services/staff.service";
+import {
+  AuthenticationError,
+  AuthorizationError,
+  fetchStaff,
+} from "@/services/staff.service";
 
 export type StaffFiltersInput = {
   role?: "admin" | "staff";
@@ -103,6 +107,10 @@ export function useStaff(
     } catch (error_) {
       if (error_ instanceof AuthenticationError) {
         router.push("/auth/login");
+        return;
+      }
+      if (error_ instanceof AuthorizationError) {
+        setError("Access denied");
         return;
       }
 
