@@ -49,6 +49,7 @@ ARCHITECTURE.md
 # local files
 *.local
 *.local.*
+.claude/
 
 .vscode/
 
