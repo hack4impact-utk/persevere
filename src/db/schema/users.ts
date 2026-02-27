@@ -17,10 +17,8 @@ import {
 } from "./enums";
 
 // Core user table - shared by all user types (volunteers, staff, admin)
-// nextAuthId links to NextAuth.js sessions
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  nextAuthId: text("nextauth_id").unique(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").unique().notNull(),
@@ -40,6 +38,7 @@ export const volunteers = pgTable("volunteers", {
   id: serial("id").primaryKey(),
   userId: integer("user_id")
     .notNull()
+    .unique()
     .references(() => users.id, { onDelete: "cascade" }),
   volunteerType: text("volunteer_type"),
   isAlumni: boolean("is_alumni").default(false).notNull(),
@@ -60,6 +59,7 @@ export const staff = pgTable("staff", {
   id: serial("id").primaryKey(),
   userId: integer("user_id")
     .notNull()
+    .unique()
     .references(() => users.id, { onDelete: "cascade" }),
   notificationPreference: notificationPreferenceEnum("notification_preference")
     .default("email")
@@ -82,7 +82,7 @@ export const admin = pgTable("admin", {
 // Skills catalog - available skills volunteers can have
 export const skills = pgTable("skills", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
+  name: text("name").notNull().unique(),
   description: text("description"),
   category: text("category"),
 });
@@ -90,7 +90,7 @@ export const skills = pgTable("skills", {
 // Interests catalog - available interests volunteers can have
 export const interests = pgTable("interests", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
+  name: text("name").notNull().unique(),
   description: text("description"),
 });
 
@@ -127,39 +127,7 @@ export const volunteerInterests = pgTable(
   }),
 );
 
-// NextAuth.js accounts table - OAuth provider accounts
-export const accounts = pgTable(
-  "account",
-  {
-    userId: text("userId")
-      .notNull()
-      .references(() => users.nextAuthId, { onDelete: "cascade" }),
-    type: text("type").notNull(),
-    provider: text("provider").notNull(),
-    providerAccountId: text("providerAccountId").notNull(),
-    refresh_token: text("refresh_token"),
-    access_token: text("access_token"),
-    expires_at: integer("expires_at"),
-    token_type: text("token_type"),
-    scope: text("scope"),
-    id_token: text("id_token"),
-    session_state: text("session_state"),
-  },
-  (table) => ({
-    pk: primaryKey({ columns: [table.provider, table.providerAccountId] }),
-  }),
-);
-
-// NextAuth.js sessions table - user sessions
-export const sessions = pgTable("session", {
-  sessionToken: text("sessionToken").primaryKey().notNull(),
-  userId: text("userId")
-    .notNull()
-    .references(() => users.nextAuthId, { onDelete: "cascade" }),
-  expires: timestamp("expires").notNull(),
-});
-
-// NextAuth.js verification tokens - for email verification, password reset
+// Verification tokens - for password reset
 export const verificationTokens = pgTable(
   "verificationToken",
   {
@@ -173,11 +141,9 @@ export const verificationTokens = pgTable(
 );
 
 // Table relationships - define how tables connect to each other
-export const usersRelations = relations(users, ({ one, many }) => ({
+export const usersRelations = relations(users, ({ one }) => ({
   volunteer: one(volunteers),
   staff: one(staff),
-  accounts: many(accounts),
-  sessions: many(sessions),
 }));
 
 export const volunteersRelations = relations(volunteers, ({ one, many }) => ({

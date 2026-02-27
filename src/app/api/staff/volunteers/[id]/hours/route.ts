@@ -80,10 +80,7 @@ export async function POST(
     const result = logHoursSchema.safeParse(body);
     if (!result.success) {
       const firstError = result.error.issues[0];
-      return NextResponse.json(
-        { error: firstError.message },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: firstError.message }, { status: 400 });
     }
 
     const entry = await logHours({
