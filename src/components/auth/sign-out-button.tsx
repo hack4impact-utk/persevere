@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@mui/material";
 import { JSX } from "react";
 
 import { useSignOut } from "@/hooks/use-auth";
@@ -11,18 +12,8 @@ export default function SignOutButton(): JSX.Element {
   const handleSignOut = useSignOut();
 
   return (
-    <button
-      onClick={handleSignOut}
-      style={{
-        padding: "10px",
-        backgroundColor: "#ff0000",
-        color: "white",
-        border: "none",
-        borderRadius: "4px",
-        cursor: "pointer",
-      }}
-    >
+    <Button variant="contained" color="error" onClick={handleSignOut}>
       Sign Out
-    </button>
+    </Button>
   );
 }
