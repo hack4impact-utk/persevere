@@ -45,7 +45,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({ session, status }) => {
       sx={{ width: 32, height: 32 }}
     />
   ) : (
-    <Avatar sx={{ width: 32, height: 32, bgcolor: "#1f2937" }}>
+    <Avatar sx={{ width: 32, height: 32, bgcolor: "primary.dark" }}>
       <PersonIcon fontSize="small" />
     </Avatar>
   );
@@ -61,8 +61,8 @@ const UserHeader: React.FC<UserHeaderProps> = ({ session, status }) => {
       position="sticky"
       elevation={0}
       sx={{
-        backgroundColor: "#ffffff",
-        color: "#111827",
+        backgroundColor: "background.paper",
+        color: "text.primary",
         borderBottom: "none",
         top: 0,
         zIndex: 1100,
@@ -91,7 +91,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({ session, status }) => {
               variant="body2"
               sx={{
                 display: { xs: "none", sm: "block" },
-                color: "#4b5563",
+                color: "text.secondary",
               }}
             >
               Hi, <strong>{session.user.name}</strong>
@@ -102,8 +102,8 @@ const UserHeader: React.FC<UserHeaderProps> = ({ session, status }) => {
           <IconButton
             aria-label="notifications"
             sx={{
-              color: "#4b5563",
-              "&:hover": { color: "#111827" },
+              color: "text.secondary",
+              "&:hover": { color: "text.primary" },
             }}
           >
             <NotificationsIcon />
@@ -118,7 +118,8 @@ const UserHeader: React.FC<UserHeaderProps> = ({ session, status }) => {
               sx={{
                 p: 0,
                 borderRadius: "999px",
-                border: "1px solid #e5e7eb",
+                border: "1px solid",
+                borderColor: "divider",
               }}
             >
               {avatarElement}
