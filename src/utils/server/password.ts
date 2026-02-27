@@ -1,5 +1,6 @@
+import { randomInt } from "node:crypto";
+
 import { compare, hash } from "bcrypt";
-import { randomInt } from "crypto";
 
 /**
  * Generates a secure random password

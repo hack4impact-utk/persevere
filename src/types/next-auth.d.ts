@@ -1,41 +1,37 @@
 import "next-auth";
 
+export type UserRole = "volunteer" | "staff" | "admin";
+export type VolunteerType = "mentor" | "speaker" | "flexible";
+
+export type SessionUserPayload = {
+  id: string;
+  email: string;
+  name: string;
+  image?: string;
+  role: UserRole;
+  volunteerType?: VolunteerType | null;
+  volunteerId: number | null;
+  isEmailVerified: boolean;
+};
+
 declare module "next-auth" {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- NextAuth requires interface augmentation
   interface User {
-    role: "volunteer" | "staff" | "admin";
-    volunteerType?: "mentor" | "speaker" | "flexible" | null;
+    role: UserRole;
+    volunteerType?: VolunteerType | null;
     volunteerId: number | null;
     isEmailVerified: boolean;
   }
 
   type Session = {
-    user: {
-      id: string;
-      email: string;
-      name: string;
-      image?: string;
-      role: "volunteer" | "staff" | "admin";
-      volunteerType?: "mentor" | "speaker" | "flexible" | null;
-      volunteerId: number | null;
-      isEmailVerified: boolean;
-    };
+    user: SessionUserPayload;
     expires: string;
   };
 }
 
 declare module "next-auth/jwt" {
   type JWT = {
-    user: {
-      id: string;
-      email: string;
-      name: string;
-      image?: string;
-      role: "volunteer" | "staff" | "admin";
-      volunteerType?: "mentor" | "speaker" | "flexible" | null;
-      volunteerId: number | null;
-      isEmailVerified: boolean;
-    };
+    user: SessionUserPayload;
     exp?: number;
   };
 }

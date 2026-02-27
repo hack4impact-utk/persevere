@@ -1,11 +1,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
-import {
-  apiClient,
-  AuthenticationError,
-  AuthorizationError,
-} from "@/lib/api-client";
+import { apiClient, AuthenticationError } from "@/lib/api-client";
 
 export type CalendarEvent = {
   id: string;

@@ -7,6 +7,7 @@ import type { Session } from "next-auth";
 import { getServerSession as nextAuthGetServerSession } from "next-auth";
 
 import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
+import type { UserRole } from "@/types/next-auth";
 
 export class AuthError extends Error {
   constructor(public readonly code: "Unauthorized" | "Forbidden") {
@@ -33,7 +34,7 @@ export async function getServerSession(): Promise<Session | null> {
  * @throws {AuthError} code "Forbidden" if role doesn't match
  */
 export async function requireAuth(
-  role?: "volunteer" | "admin",
+  role?: Extract<UserRole, "volunteer" | "admin">,
 ): Promise<Session> {
   const session = await getServerSession();
 
