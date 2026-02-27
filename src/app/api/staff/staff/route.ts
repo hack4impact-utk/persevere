@@ -55,7 +55,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (!result.success) {
       const firstError = result.error.issues[0];
       return NextResponse.json(
-        { message: firstError.message },
+        { error: firstError.message },
         { status: 400 },
       );
     }

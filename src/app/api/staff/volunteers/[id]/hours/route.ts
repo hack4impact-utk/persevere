@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 import {
   listVolunteerHours,
@@ -8,6 +9,13 @@ import { NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
 import { validateAndParseId } from "@/utils/validate-id";
+
+const logHoursSchema = z.object({
+  opportunityId: z.number().int().positive(),
+  date: z.string().min(1, "Date is required"),
+  hours: z.number().positive("Hours must be positive"),
+  notes: z.string().optional(),
+});
 
 export async function GET(
   req: Request,
@@ -69,23 +77,21 @@ export async function POST(
     }
 
     const body = await req.json();
-    const { opportunityId, date, hours, notes } = body;
-
-    if (!opportunityId || !date || typeof hours !== "number" || hours <= 0) {
+    const result = logHoursSchema.safeParse(body);
+    if (!result.success) {
+      const firstError = result.error.issues[0];
       return NextResponse.json(
-        {
-          error: "Valid opportunityId, date, and positive hours are required.",
-        },
+        { error: firstError.message },
         { status: 400 },
       );
     }
 
     const entry = await logHours({
       volunteerId,
-      opportunityId,
-      date,
-      hours,
-      notes,
+      opportunityId: result.data.opportunityId,
+      date: result.data.date,
+      hours: result.data.hours,
+      notes: result.data.notes,
     });
 
     return NextResponse.json(entry, { status: 201 });

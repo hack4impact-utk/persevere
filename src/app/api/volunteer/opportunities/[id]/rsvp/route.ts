@@ -24,7 +24,7 @@ export async function POST(
     const opportunityId = validateAndParseId(id);
     if (opportunityId === null) {
       return NextResponse.json(
-        { message: "Invalid opportunity ID" },
+        { error: "Invalid opportunity ID" },
         { status: 400 },
       );
     }
@@ -74,7 +74,7 @@ export async function DELETE(
     const opportunityId = validateAndParseId(id);
     if (opportunityId === null) {
       return NextResponse.json(
-        { message: "Invalid opportunity ID" },
+        { error: "Invalid opportunity ID" },
         { status: 400 },
       );
     }

@@ -43,7 +43,7 @@ export async function PUT(
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
     if (error instanceof ConflictError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     console.error("Update error:", error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
@@ -81,7 +81,7 @@ export async function DELETE(
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
     if (error instanceof ConflictError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     console.error("Delete Error:", error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
