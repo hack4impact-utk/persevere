@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 import { deleteHours, updateHours } from "@/services/volunteer-hours.service";
 import { ConflictError, NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import {
+  AuthError,
+  authErrorResponse,
+  requireStaffAuth,
+} from "@/utils/server/auth";
 import { validateAndParseId } from "@/utils/validate-id";
 
 // PUT: Update or Verify hours
@@ -12,10 +16,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const session = await requireStaffAuth();
 
     const { id } = await params;
     const hourId = validateAndParseId(id);
@@ -33,12 +34,7 @@ export async function PUT(
 
     return NextResponse.json(updated);
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof NotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
@@ -56,10 +52,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireStaffAuth();
 
     const { id } = await params;
     const hourId = validateAndParseId(id);
@@ -71,12 +64,7 @@ export async function DELETE(
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof NotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }

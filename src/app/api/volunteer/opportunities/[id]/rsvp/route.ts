@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { cancelRsvp, createRsvp, RsvpError } from "@/services/rsvp.service";
 import handleError from "@/utils/handle-error";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
 import { validateAndParseId } from "@/utils/validate-id";
 
 /**
@@ -37,12 +37,7 @@ export async function POST(
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof RsvpError) {
       const status =
         error.code === "VOLUNTEER_NOT_FOUND" ||
@@ -84,12 +79,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: "RSVP cancelled successfully", data });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof RsvpError) {
       const status =
         error.code === "RSVP_NOT_FOUND" || error.code === "VOLUNTEER_NOT_FOUND"

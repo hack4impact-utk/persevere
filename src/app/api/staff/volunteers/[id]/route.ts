@@ -7,7 +7,12 @@ import {
   updateVolunteerDetail,
 } from "@/services/volunteer-detail.service";
 import handleError from "@/utils/handle-error";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import {
+  AuthError,
+  authErrorResponse,
+  requireStaffAuth,
+} from "@/utils/server/auth";
+import { parseBodyOrError } from "@/utils/server/route-helpers";
 import { validateAndParseId } from "@/utils/validate-id";
 
 const volunteerUpdateSchema = z.object({
@@ -38,10 +43,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireStaffAuth();
 
     const { id } = await params;
     const volunteerId = validateAndParseId(id);
@@ -62,12 +64,7 @@ export async function GET(
 
     return NextResponse.json({ data });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
@@ -77,10 +74,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireStaffAuth();
 
     const { id } = await params;
     const volunteerId = validateAndParseId(id);
@@ -91,14 +85,10 @@ export async function PUT(
       );
     }
 
-    const json = await request.json();
-    const result = volunteerUpdateSchema.safeParse(json);
-    if (!result.success) {
-      const firstError = result.error.issues[0];
-      return NextResponse.json({ error: firstError.message }, { status: 400 });
-    }
+    const parsed = await parseBodyOrError(request, volunteerUpdateSchema);
+    if ("response" in parsed) return parsed.response;
 
-    const updated = await updateVolunteerDetail(volunteerId, result.data);
+    const updated = await updateVolunteerDetail(volunteerId, parsed.data);
     if (!updated) {
       return NextResponse.json(
         { error: "Volunteer not found" },
@@ -111,12 +101,7 @@ export async function PUT(
       data: updated,
     });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
@@ -126,10 +111,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireStaffAuth();
 
     const { id } = await params;
     const volunteerId = validateAndParseId(id);
@@ -153,12 +135,7 @@ export async function DELETE(
       data: deleted,
     });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
