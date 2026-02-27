@@ -54,6 +54,14 @@ async function handleResponse<T>(response: Response): Promise<T> {
   ) {
     return undefined as T;
   }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    throw new Error(
+      `Expected JSON response but received ${contentType || "no content-type"}`,
+    );
+  }
+
   return response.json() as Promise<T>;
 }
 
