@@ -215,9 +215,9 @@ export async function updateVolunteerDetail(
     notificationPreference?: "email" | "sms" | "both" | "none";
   } = {};
 
-  if (data.firstName) userData.firstName = data.firstName;
-  if (data.lastName) userData.lastName = data.lastName;
-  if (data.email) userData.email = data.email;
+  if (data.firstName !== undefined) userData.firstName = data.firstName;
+  if (data.lastName !== undefined) userData.lastName = data.lastName;
+  if (data.email !== undefined) userData.email = data.email;
   if (data.phone !== undefined) userData.phone = data.phone;
   if (data.bio !== undefined) userData.bio = data.bio;
   if (data.profilePicture !== undefined)
@@ -273,26 +273,9 @@ export async function deleteVolunteer(
 
   if (volunteer.length === 0) return null;
 
-  await db
-    .delete(volunteerHours)
-    .where(eq(volunteerHours.volunteerId, volunteerId));
-  await db
-    .delete(volunteerRsvps)
-    .where(eq(volunteerRsvps.volunteerId, volunteerId));
-  await db
-    .delete(volunteerSkills)
-    .where(eq(volunteerSkills.volunteerId, volunteerId));
-  await db
-    .delete(volunteerInterests)
-    .where(eq(volunteerInterests.volunteerId, volunteerId));
-  await db.delete(volunteers).where(eq(volunteers.id, volunteerId));
-
-  const deletedUser = await db
-    .delete(users)
-    .where(eq(users.id, volunteer[0].userId))
-    .returning();
-
-  if (deletedUser.length === 0) return null;
+  // Deleting the user cascades to volunteer, which cascades to
+  // volunteer_hours, volunteer_rsvps, volunteer_skills, volunteer_interests
+  await db.delete(users).where(eq(users.id, volunteer[0].userId));
 
   return volunteer[0];
 }

@@ -8,6 +8,7 @@ import {
   volunteerRsvps,
   volunteers,
 } from "@/db/schema";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 
 export type StaffDashboardStats = {
   activeVolunteers: number;
@@ -95,7 +96,7 @@ export async function getVolunteerDashboard(
         ),
       )
       .orderBy(opportunities.startDate)
-      .limit(10),
+      .limit(DEFAULT_PAGE_SIZE),
 
     // VERIFIED = verifiedAt IS NOT NULL
     db

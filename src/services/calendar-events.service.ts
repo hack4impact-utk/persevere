@@ -1,4 +1,4 @@
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, lte } from "drizzle-orm";
 
 import db from "@/db";
 import { opportunities } from "@/db/schema";
@@ -57,7 +57,8 @@ function computeOccurrences(
 
   let current = new Date(start);
   const patternEndDate = pattern.endDate ? new Date(pattern.endDate) : null;
-  const maxCount = pattern.count ?? Infinity;
+  const MAX_OCCURRENCES = 365;
+  const maxCount = Math.min(pattern.count ?? MAX_OCCURRENCES, MAX_OCCURRENCES);
 
   while (occurrences.length < maxCount) {
     if (patternEndDate && current >= patternEndDate) break;
@@ -124,22 +125,22 @@ export async function createCalendarEvent(data: {
       ? computeOccurrences(data.startDate, data.endDate, data.recurrencePattern)
       : [{ startDate: data.startDate, endDate: data.endDate }];
 
-  // Check for duplicates: same title + same startDate
-  for (const occ of occurrences) {
-    const existing = await db
-      .select({ id: opportunities.id })
-      .from(opportunities)
-      .where(
-        and(
-          eq(opportunities.title, data.title),
-          eq(opportunities.startDate, occ.startDate),
-        ),
-      );
-    if (existing.length > 0) {
-      throw new ConflictError(
-        `An event named "${data.title}" already exists at that start time`,
-      );
-    }
+  // Batch duplicate check: same title + any of the start dates
+  const startDates = occurrences.map((occ) => occ.startDate);
+  const duplicates = await db
+    .select({ id: opportunities.id })
+    .from(opportunities)
+    .where(
+      and(
+        eq(opportunities.title, data.title),
+        inArray(opportunities.startDate, startDates),
+      ),
+    )
+    .limit(1);
+  if (duplicates.length > 0) {
+    throw new ConflictError(
+      `An event named "${data.title}" already exists at that start time`,
+    );
   }
 
   const values = occurrences.map((occ) => ({

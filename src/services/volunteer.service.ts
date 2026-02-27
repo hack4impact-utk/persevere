@@ -302,75 +302,91 @@ export async function getVolunteerProfile(
     return null;
   }
 
-  // Calculate total hours
-  const hoursResult = await db
-    .select({
-      total: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)`,
-    })
-    .from(volunteerHours)
-    .where(eq(volunteerHours.volunteerId, volunteerId));
+  const RECENT_OPPORTUNITIES_LIMIT = 5;
+
+  const [
+    hoursResult,
+    volunteerSkillsData,
+    volunteerInterestsData,
+    recentOpportunities,
+    hoursBreakdown,
+  ] = await Promise.all([
+    // Calculate total hours
+    db
+      .select({
+        total: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)`,
+      })
+      .from(volunteerHours)
+      .where(eq(volunteerHours.volunteerId, volunteerId)),
+
+    // Fetch skills with proficiency levels
+    db
+      .select({
+        skillId: volunteerSkills.skillId,
+        skillName: skills.name,
+        skillDescription: skills.description,
+        skillCategory: skills.category,
+        proficiencyLevel: volunteerSkills.level,
+      })
+      .from(volunteerSkills)
+      .leftJoin(skills, eq(volunteerSkills.skillId, skills.id))
+      .where(eq(volunteerSkills.volunteerId, volunteerId)),
+
+    // Fetch interests
+    db
+      .select({
+        interestId: volunteerInterests.interestId,
+        interestName: interests.name,
+        interestDescription: interests.description,
+      })
+      .from(volunteerInterests)
+      .leftJoin(interests, eq(volunteerInterests.interestId, interests.id))
+      .where(eq(volunteerInterests.volunteerId, volunteerId)),
+
+    // Fetch recent opportunities
+    db
+      .select({
+        opportunityId: volunteerRsvps.opportunityId,
+        opportunityTitle: opportunities.title,
+        opportunityLocation: opportunities.location,
+        opportunityStartDate: opportunities.startDate,
+        opportunityEndDate: opportunities.endDate,
+        rsvpStatus: volunteerRsvps.status,
+        rsvpAt: volunteerRsvps.rsvpAt,
+        rsvpNotes: volunteerRsvps.notes,
+      })
+      .from(volunteerRsvps)
+      .leftJoin(
+        opportunities,
+        eq(volunteerRsvps.opportunityId, opportunities.id),
+      )
+      .where(eq(volunteerRsvps.volunteerId, volunteerId))
+      .orderBy(desc(volunteerRsvps.rsvpAt))
+      .limit(RECENT_OPPORTUNITIES_LIMIT),
+
+    // Fetch hours breakdown
+    db
+      .select({
+        id: volunteerHours.id,
+        opportunityId: volunteerHours.opportunityId,
+        opportunityTitle: opportunities.title,
+        date: volunteerHours.date,
+        hours: volunteerHours.hours,
+        notes: volunteerHours.notes,
+        verifiedAt: volunteerHours.verifiedAt,
+      })
+      .from(volunteerHours)
+      .leftJoin(
+        opportunities,
+        eq(volunteerHours.opportunityId, opportunities.id),
+      )
+      .where(eq(volunteerHours.volunteerId, volunteerId))
+      .orderBy(desc(volunteerHours.date))
+      .limit(DEFAULT_PAGE_SIZE),
+  ]);
 
   const totalHours =
     typeof hoursResult[0]?.total === "number" ? hoursResult[0].total : 0;
-
-  // Fetch skills with proficiency levels
-  const volunteerSkillsData = await db
-    .select({
-      skillId: volunteerSkills.skillId,
-      skillName: skills.name,
-      skillDescription: skills.description,
-      skillCategory: skills.category,
-      proficiencyLevel: volunteerSkills.level,
-    })
-    .from(volunteerSkills)
-    .leftJoin(skills, eq(volunteerSkills.skillId, skills.id))
-    .where(eq(volunteerSkills.volunteerId, volunteerId));
-
-  // Fetch interests
-  const volunteerInterestsData = await db
-    .select({
-      interestId: volunteerInterests.interestId,
-      interestName: interests.name,
-      interestDescription: interests.description,
-    })
-    .from(volunteerInterests)
-    .leftJoin(interests, eq(volunteerInterests.interestId, interests.id))
-    .where(eq(volunteerInterests.volunteerId, volunteerId));
-
-  // Fetch recent opportunities (last 5)
-  const recentOpportunities = await db
-    .select({
-      opportunityId: volunteerRsvps.opportunityId,
-      opportunityTitle: opportunities.title,
-      opportunityLocation: opportunities.location,
-      opportunityStartDate: opportunities.startDate,
-      opportunityEndDate: opportunities.endDate,
-      rsvpStatus: volunteerRsvps.status,
-      rsvpAt: volunteerRsvps.rsvpAt,
-      rsvpNotes: volunteerRsvps.notes,
-    })
-    .from(volunteerRsvps)
-    .leftJoin(opportunities, eq(volunteerRsvps.opportunityId, opportunities.id))
-    .where(eq(volunteerRsvps.volunteerId, volunteerId))
-    .orderBy(desc(volunteerRsvps.rsvpAt))
-    .limit(5);
-
-  // Fetch hours breakdown (last 10 entries)
-  const hoursBreakdown = await db
-    .select({
-      id: volunteerHours.id,
-      opportunityId: volunteerHours.opportunityId,
-      opportunityTitle: opportunities.title,
-      date: volunteerHours.date,
-      hours: volunteerHours.hours,
-      notes: volunteerHours.notes,
-      verifiedAt: volunteerHours.verifiedAt,
-    })
-    .from(volunteerHours)
-    .leftJoin(opportunities, eq(volunteerHours.opportunityId, opportunities.id))
-    .where(eq(volunteerHours.volunteerId, volunteerId))
-    .orderBy(desc(volunteerHours.date))
-    .limit(DEFAULT_PAGE_SIZE);
 
   return {
     volunteer: volunteer[0],

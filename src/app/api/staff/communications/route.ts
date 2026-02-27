@@ -73,7 +73,6 @@ export async function POST(request: Request): Promise<NextResponse> {
     const output = await createCommunication({
       ...result.data,
       senderEmail: session.user.email ?? "",
-      senderRole: session.user.role,
     });
 
     if (!output.communication) {
