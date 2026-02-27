@@ -1,11 +1,15 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { BulkCommunicationLog } from "@/components/staff/communications/types";
+import type {
+  BulkCommunicationLog,
+  CreateCommunicationRequest,
+} from "@/components/staff/communications/types";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import {
   AuthenticationError,
   AuthorizationError,
+  createCommunication as createCommunicationApi,
   fetchCommunicationById,
   fetchCommunications,
 } from "@/services/communications-client.service";
@@ -17,6 +21,9 @@ export type UseCommunicationsResult = {
   error: string | null;
   loadCommunications: () => Promise<void>;
   selectCommunication: (id: number) => Promise<void>;
+  sendCommunication: (
+    payload: CreateCommunicationRequest,
+  ) => Promise<BulkCommunicationLog | null>;
 };
 
 export function useCommunications(): UseCommunicationsResult {
@@ -79,6 +86,29 @@ export function useCommunications(): UseCommunicationsResult {
     }
   }, []);
 
+  const sendCommunication = useCallback(
+    async (
+      payload: CreateCommunicationRequest,
+    ): Promise<BulkCommunicationLog | null> => {
+      try {
+        const created = await createCommunicationApi(payload);
+        void loadCommunications();
+        return created;
+      } catch (error_) {
+        if (error_ instanceof AuthenticationError) {
+          router.push("/auth/login");
+          return null;
+        }
+        if (error_ instanceof AuthorizationError) {
+          setError("Access denied");
+          return null;
+        }
+        throw error_;
+      }
+    },
+    [router, loadCommunications],
+  );
+
   return {
     communications,
     selectedCommunication,
@@ -86,5 +116,6 @@ export function useCommunications(): UseCommunicationsResult {
     error,
     loadCommunications,
     selectCommunication,
+    sendCommunication,
   };
 }

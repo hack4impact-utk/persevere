@@ -16,6 +16,7 @@ export type CalendarEvent = {
   end: string;
   extendedProps?: {
     maxVolunteers?: number | null;
+    rsvpCount?: number;
     status?: string;
     createdById?: number;
     isRecurring?: boolean;

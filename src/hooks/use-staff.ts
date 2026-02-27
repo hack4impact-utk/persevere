@@ -2,12 +2,13 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Staff } from "@/components/staff/people-management/types";
-import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import {
+  apiClient,
   AuthenticationError,
   AuthorizationError,
-  fetchStaff,
-} from "@/services/staff.service";
+} from "@/lib/api-client";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { fetchStaff } from "@/services/staff.service";
 
 export type StaffFiltersInput = {
   role?: "admin" | "staff";
@@ -39,6 +40,7 @@ export type UseStaffResult = {
   error: string | null;
 
   loadStaff: () => Promise<void>;
+  createStaff: (data: Record<string, unknown>) => Promise<boolean>;
 };
 
 export function useStaff(
@@ -135,6 +137,26 @@ export function useStaff(
     router,
   ]);
 
+  const createStaff = useCallback(
+    async (data: Record<string, unknown>): Promise<boolean> => {
+      try {
+        await apiClient.post("/api/staff/staff", data);
+        void loadStaff();
+        return true;
+      } catch (error_) {
+        if (error_ instanceof AuthenticationError) {
+          router.push("/auth/login");
+        } else if (error_ instanceof AuthorizationError) {
+          setError("Access denied");
+        } else {
+          console.error("[useStaff] createStaff:", error_);
+        }
+        return false;
+      }
+    },
+    [router, loadStaff],
+  );
+
   loadStaffRef.current = loadStaff;
 
   useEffect(() => {
@@ -176,5 +198,6 @@ export function useStaff(
     error,
 
     loadStaff,
+    createStaff,
   };
 }

@@ -2,10 +2,13 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Volunteer } from "@/components/staff/volunteer-management/types";
-import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import {
+  apiClient,
   AuthenticationError,
   AuthorizationError,
+} from "@/lib/api-client";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import {
   fetchActiveVolunteers,
   fetchInactiveVolunteers,
   fetchPendingInvites,
@@ -42,6 +45,11 @@ export type UseVolunteersResult = {
   error: string | null;
 
   loadVolunteers: () => Promise<void>;
+  resendCredentials: (volunteerId: number) => Promise<boolean>;
+  updateBackgroundStatus: (
+    volunteerId: number,
+    status: "not_required" | "pending" | "approved",
+  ) => Promise<boolean>;
 };
 
 export function useVolunteers(
@@ -161,6 +169,51 @@ export function useVolunteers(
     };
   }, [searchQuery]);
 
+  const resendCredentials = useCallback(
+    async (volunteerId: number): Promise<boolean> => {
+      try {
+        await apiClient.post(
+          `/api/staff/volunteers/${volunteerId}/resend-credentials`,
+        );
+        return true;
+      } catch (error_) {
+        if (error_ instanceof AuthenticationError) {
+          router.push("/auth/login");
+        } else if (error_ instanceof AuthorizationError) {
+          setError("Access denied");
+        } else {
+          console.error("[useVolunteers] resendCredentials:", error_);
+        }
+        return false;
+      }
+    },
+    [router],
+  );
+
+  const updateBackgroundStatus = useCallback(
+    async (
+      volunteerId: number,
+      status: "not_required" | "pending" | "approved",
+    ): Promise<boolean> => {
+      try {
+        await apiClient.put(`/api/staff/volunteers/${volunteerId}`, {
+          backgroundCheckStatus: status,
+        });
+        return true;
+      } catch (error_) {
+        if (error_ instanceof AuthenticationError) {
+          router.push("/auth/login");
+        } else if (error_ instanceof AuthorizationError) {
+          setError("Access denied");
+        } else {
+          console.error("[useVolunteers] updateBackgroundStatus:", error_);
+        }
+        return false;
+      }
+    },
+    [router],
+  );
+
   // Load immediately when pagination, limit, or filters change (no debounce)
   useEffect(() => {
     void loadVolunteersRef.current?.();
@@ -195,5 +248,7 @@ export function useVolunteers(
     error,
 
     loadVolunteers,
+    resendCredentials,
+    updateBackgroundStatus,
   };
 }
