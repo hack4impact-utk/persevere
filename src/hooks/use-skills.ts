@@ -1,7 +1,11 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import {
+  apiClient,
+  AuthenticationError,
+  AuthorizationError,
+} from "@/lib/api-client";
 
 export type CatalogSkill = {
   id: number;
@@ -21,6 +25,7 @@ export type UseSkillsResult = {
   interests: CatalogInterest[];
   isLoadingSkills: boolean;
   isLoadingInterests: boolean;
+  error: string | null;
   fetchSkills: () => Promise<void>;
   fetchInterests: () => Promise<void>;
   // Volunteer-specific actions
@@ -60,13 +65,17 @@ export function useSkills(): UseSkillsResult {
   const [interests, setInterests] = useState<CatalogInterest[]>([]);
   const [isLoadingSkills, setIsLoadingSkills] = useState(false);
   const [isLoadingInterests, setIsLoadingInterests] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAuthError = useCallback(
+  const handleError = useCallback(
     (err: unknown): void => {
       if (err instanceof AuthenticationError) {
         router.push("/auth/login");
+      } else if (err instanceof AuthorizationError) {
+        setError("Access denied");
       } else {
-        throw err;
+        console.error("[useSkills]", err);
+        setError("An unexpected error occurred.");
       }
     },
     [router],
@@ -80,11 +89,11 @@ export function useSkills(): UseSkillsResult {
       );
       setSkills(json.data);
     } catch (error) {
-      handleAuthError(error);
+      handleError(error);
     } finally {
       setIsLoadingSkills(false);
     }
-  }, [handleAuthError]);
+  }, [handleError]);
 
   const fetchInterests = useCallback(async (): Promise<void> => {
     setIsLoadingInterests(true);
@@ -94,11 +103,11 @@ export function useSkills(): UseSkillsResult {
       );
       setInterests(json.data);
     } catch (error) {
-      handleAuthError(error);
+      handleError(error);
     } finally {
       setIsLoadingInterests(false);
     }
-  }, [handleAuthError]);
+  }, [handleError]);
 
   const addSkill = useCallback(
     async (
@@ -112,10 +121,10 @@ export function useSkills(): UseSkillsResult {
           level: proficiency ?? "beginner",
         });
       } catch (error) {
-        handleAuthError(error);
+        handleError(error);
       }
     },
-    [handleAuthError],
+    [handleError],
   );
 
   const removeSkill = useCallback(
@@ -125,10 +134,10 @@ export function useSkills(): UseSkillsResult {
           `/api/staff/volunteers/${volunteerId}/skills/${skillId}`,
         );
       } catch (error) {
-        handleAuthError(error);
+        handleError(error);
       }
     },
-    [handleAuthError],
+    [handleError],
   );
 
   const addInterest = useCallback(
@@ -138,10 +147,10 @@ export function useSkills(): UseSkillsResult {
           interestId,
         });
       } catch (error) {
-        handleAuthError(error);
+        handleError(error);
       }
     },
-    [handleAuthError],
+    [handleError],
   );
 
   const removeInterest = useCallback(
@@ -151,10 +160,10 @@ export function useSkills(): UseSkillsResult {
           `/api/staff/volunteers/${volunteerId}/interests/${interestId}`,
         );
       } catch (error) {
-        handleAuthError(error);
+        handleError(error);
       }
     },
-    [handleAuthError],
+    [handleError],
   );
 
   const createSkill = useCallback(
@@ -170,10 +179,10 @@ export function useSkills(): UseSkillsResult {
           category,
         });
       } catch (error) {
-        handleAuthError(error);
+        handleError(error);
       }
     },
-    [handleAuthError],
+    [handleError],
   );
 
   const updateSkill = useCallback(
@@ -190,10 +199,10 @@ export function useSkills(): UseSkillsResult {
           category,
         });
       } catch (error) {
-        handleAuthError(error);
+        handleError(error);
       }
     },
-    [handleAuthError],
+    [handleError],
   );
 
   const deleteSkill = useCallback(
@@ -201,10 +210,10 @@ export function useSkills(): UseSkillsResult {
       try {
         await apiClient.delete(`/api/staff/skills/${id}`);
       } catch (error) {
-        handleAuthError(error);
+        handleError(error);
       }
     },
-    [handleAuthError],
+    [handleError],
   );
 
   const createInterest = useCallback(
@@ -212,10 +221,10 @@ export function useSkills(): UseSkillsResult {
       try {
         await apiClient.post("/api/staff/interests", { name, description });
       } catch (error) {
-        handleAuthError(error);
+        handleError(error);
       }
     },
-    [handleAuthError],
+    [handleError],
   );
 
   const updateInterest = useCallback(
@@ -226,10 +235,10 @@ export function useSkills(): UseSkillsResult {
           description,
         });
       } catch (error) {
-        handleAuthError(error);
+        handleError(error);
       }
     },
-    [handleAuthError],
+    [handleError],
   );
 
   const deleteInterest = useCallback(
@@ -237,10 +246,10 @@ export function useSkills(): UseSkillsResult {
       try {
         await apiClient.delete(`/api/staff/interests/${id}`);
       } catch (error) {
-        handleAuthError(error);
+        handleError(error);
       }
     },
-    [handleAuthError],
+    [handleError],
   );
 
   useEffect(() => {
@@ -253,6 +262,7 @@ export function useSkills(): UseSkillsResult {
     interests,
     isLoadingSkills,
     isLoadingInterests,
+    error,
     fetchSkills,
     fetchInterests,
     addSkill,

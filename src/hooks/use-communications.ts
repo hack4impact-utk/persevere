@@ -1,13 +1,14 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { BulkCommunicationLog } from "@/components/staff/communications/types";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import {
   AuthenticationError,
   AuthorizationError,
   fetchCommunicationById,
   fetchCommunications,
-} from "@/components/staff/communications/communication-service";
-import type { BulkCommunicationLog } from "@/components/staff/communications/types";
+} from "@/services/communications-client.service";
 
 export type UseCommunicationsResult = {
   communications: BulkCommunicationLog[];
@@ -34,7 +35,10 @@ export function useCommunications(): UseCommunicationsResult {
     setError(null);
     setLoading(true);
     try {
-      const response = await fetchCommunications({ page: 1, limit: 50 });
+      const response = await fetchCommunications({
+        page: 1,
+        limit: DEFAULT_PAGE_SIZE,
+      });
       const list = response.communications ?? [];
       setCommunications(list);
 

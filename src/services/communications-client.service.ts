@@ -1,12 +1,11 @@
+import type {
+  BulkCommunicationLog,
+  CommunicationFilters,
+  CommunicationResponse,
+  CreateCommunicationRequest,
+  RecipientType,
+} from "@/components/staff/communications/types";
 import { apiClient } from "@/lib/api-client";
-
-import {
-  type BulkCommunicationLog,
-  type CommunicationFilters,
-  type CommunicationResponse,
-  type CreateCommunicationRequest,
-  type RecipientType,
-} from "./types";
 
 export { AuthenticationError, AuthorizationError } from "@/lib/api-client";
 

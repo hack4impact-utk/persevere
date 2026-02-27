@@ -13,7 +13,8 @@ import {
   AuthorizationError,
 } from "@/lib/api-client";
 
-const LIMIT = 12;
+/** Page size for infinite-scroll opportunity listing (larger than default table page size) */
+const OPPORTUNITIES_PAGE_SIZE = 12;
 
 export type UseOpportunitiesResult = {
   opportunities: Opportunity[];
@@ -56,7 +57,7 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
     setPage(0);
     try {
       const params = new URLSearchParams({
-        limit: String(LIMIT),
+        limit: String(OPPORTUNITIES_PAGE_SIZE),
         offset: "0",
         ...(search && { search }),
       });
@@ -73,7 +74,7 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
       }
 
       setOpportunities(oppsResult.value.data);
-      setHasMore(oppsResult.value.data.length === LIMIT);
+      setHasMore(oppsResult.value.data.length === OPPORTUNITIES_PAGE_SIZE);
 
       if (rsvpsResult.status === "fulfilled") {
         setRsvpedIds(
@@ -166,8 +167,8 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
     setLoadingMore(true);
     const nextPage = page + 1;
     const params = new URLSearchParams({
-      limit: String(LIMIT),
-      offset: String(nextPage * LIMIT),
+      limit: String(OPPORTUNITIES_PAGE_SIZE),
+      offset: String(nextPage * OPPORTUNITIES_PAGE_SIZE),
       ...(search && { search }),
     });
     try {
@@ -176,7 +177,7 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
       );
       setOpportunities((prev) => [...prev, ...json.data]);
       setPage(nextPage);
-      setHasMore(json.data.length === LIMIT);
+      setHasMore(json.data.length === OPPORTUNITIES_PAGE_SIZE);
     } catch (error_) {
       if (error_ instanceof AuthenticationError) {
         router.push("/auth/login");
