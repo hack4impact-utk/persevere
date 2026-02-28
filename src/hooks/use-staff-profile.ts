@@ -1,7 +1,6 @@
-import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
-import { AuthenticationError, AuthorizationError } from "@/lib/api-client";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
 import {
   fetchStaffById,
   type FetchStaffByIdResult,
@@ -14,10 +13,10 @@ export function useStaffProfile(): {
   loadProfile: (staffId: number) => Promise<void>;
   clearProfile: () => void;
 } {
-  const router = useRouter();
   const [profile, setProfile] = useState<FetchStaffByIdResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
 
   const loadProfile = useCallback(
     async (staffId: number): Promise<void> => {
@@ -27,21 +26,19 @@ export function useStaffProfile(): {
         const data = await fetchStaffById(staffId);
         setProfile(data);
       } catch (error_) {
-        if (error_ instanceof AuthenticationError) {
-          router.push("/auth/login");
+        if (
+          handleApiError(
+            error_,
+            "Failed to load staff profile. Please try again.",
+          )
+        )
           return;
-        }
-        if (error_ instanceof AuthorizationError) {
-          setError("Access denied");
-          return;
-        }
         setProfile(null);
-        setError("Failed to load staff profile. Please try again.");
       } finally {
         setLoading(false);
       }
     },
-    [router],
+    [handleApiError],
   );
 
   const clearProfile = useCallback((): void => {

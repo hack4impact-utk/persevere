@@ -1,20 +1,10 @@
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 
 import db from "@/db";
-import {
-  interests,
-  skills,
-  users,
-  volunteerInterests,
-  volunteers,
-  volunteerSkills,
-} from "@/db/schema";
-import {
-  opportunities,
-  volunteerHours,
-  volunteerRsvps,
-} from "@/db/schema/opportunities";
-import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { users, volunteers } from "@/db/schema";
+import { volunteerHours } from "@/db/schema/opportunities";
+import { toNumber } from "@/services/shared/db-helpers";
+import { fetchVolunteerDetailData } from "@/services/shared/volunteer-data";
 import { NotFoundError } from "@/utils/errors";
 import { sendWelcomeEmail } from "@/utils/server/email";
 import { generateSecurePassword, hashPassword } from "@/utils/server/password";
@@ -188,10 +178,7 @@ export async function listVolunteers(
   const data = volunteerListRaw.map((row) => ({
     volunteers: row.volunteers,
     users: row.users,
-    totalHours:
-      typeof row.totalHours === "number"
-        ? row.totalHours
-        : Number(row.totalHours),
+    totalHours: toNumber(row.totalHours),
   }));
 
   // Build count query conditionally
@@ -204,10 +191,7 @@ export async function listVolunteers(
     ? countBaseQuery.where(and(...whereClauses))
     : countBaseQuery);
 
-  const total =
-    typeof totalResult[0]?.count === "bigint"
-      ? Number(totalResult[0].count)
-      : (totalResult[0]?.count ?? 0);
+  const total = toNumber(totalResult[0]?.count);
 
   return { data, total };
 }
@@ -302,99 +286,11 @@ export async function getVolunteerProfile(
     return null;
   }
 
-  const RECENT_OPPORTUNITIES_LIMIT = 5;
-
-  const [
-    hoursResult,
-    volunteerSkillsData,
-    volunteerInterestsData,
-    recentOpportunities,
-    hoursBreakdown,
-  ] = await Promise.all([
-    // Calculate total hours
-    db
-      .select({
-        total: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)`,
-      })
-      .from(volunteerHours)
-      .where(eq(volunteerHours.volunteerId, volunteerId)),
-
-    // Fetch skills with proficiency levels
-    db
-      .select({
-        skillId: volunteerSkills.skillId,
-        skillName: skills.name,
-        skillDescription: skills.description,
-        skillCategory: skills.category,
-        proficiencyLevel: volunteerSkills.level,
-      })
-      .from(volunteerSkills)
-      .leftJoin(skills, eq(volunteerSkills.skillId, skills.id))
-      .where(eq(volunteerSkills.volunteerId, volunteerId)),
-
-    // Fetch interests
-    db
-      .select({
-        interestId: volunteerInterests.interestId,
-        interestName: interests.name,
-        interestDescription: interests.description,
-      })
-      .from(volunteerInterests)
-      .leftJoin(interests, eq(volunteerInterests.interestId, interests.id))
-      .where(eq(volunteerInterests.volunteerId, volunteerId)),
-
-    // Fetch recent opportunities
-    db
-      .select({
-        opportunityId: volunteerRsvps.opportunityId,
-        opportunityTitle: opportunities.title,
-        opportunityLocation: opportunities.location,
-        opportunityStartDate: opportunities.startDate,
-        opportunityEndDate: opportunities.endDate,
-        rsvpStatus: volunteerRsvps.status,
-        rsvpAt: volunteerRsvps.rsvpAt,
-        rsvpNotes: volunteerRsvps.notes,
-      })
-      .from(volunteerRsvps)
-      .leftJoin(
-        opportunities,
-        eq(volunteerRsvps.opportunityId, opportunities.id),
-      )
-      .where(eq(volunteerRsvps.volunteerId, volunteerId))
-      .orderBy(desc(volunteerRsvps.rsvpAt))
-      .limit(RECENT_OPPORTUNITIES_LIMIT),
-
-    // Fetch hours breakdown
-    db
-      .select({
-        id: volunteerHours.id,
-        opportunityId: volunteerHours.opportunityId,
-        opportunityTitle: opportunities.title,
-        date: volunteerHours.date,
-        hours: volunteerHours.hours,
-        notes: volunteerHours.notes,
-        verifiedAt: volunteerHours.verifiedAt,
-      })
-      .from(volunteerHours)
-      .leftJoin(
-        opportunities,
-        eq(volunteerHours.opportunityId, opportunities.id),
-      )
-      .where(eq(volunteerHours.volunteerId, volunteerId))
-      .orderBy(desc(volunteerHours.date))
-      .limit(DEFAULT_PAGE_SIZE),
-  ]);
-
-  const totalHours =
-    typeof hoursResult[0]?.total === "number" ? hoursResult[0].total : 0;
+  const detailData = await fetchVolunteerDetailData(volunteerId);
 
   return {
     volunteer: volunteer[0],
-    totalHours,
-    skills: volunteerSkillsData,
-    interests: volunteerInterestsData,
-    recentOpportunities,
-    hoursBreakdown,
+    ...detailData,
   };
 }
 

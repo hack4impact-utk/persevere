@@ -82,6 +82,7 @@ export default function LoginForm(): JSX.Element {
         sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}
       >
         <TextField
+          id="login-email"
           {...register("email")}
           type="email"
           label="Email Address"
@@ -94,6 +95,7 @@ export default function LoginForm(): JSX.Element {
 
         <Box>
           <TextField
+            id="login-password"
             {...register("password")}
             type="password"
             label="Password"

@@ -1,12 +1,8 @@
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import type { RsvpItem } from "@/components/volunteer/types";
-import {
-  apiClient,
-  AuthenticationError,
-  AuthorizationError,
-} from "@/lib/api-client";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
 
 export type UseRsvpsResult = {
   upcoming: RsvpItem[];
@@ -16,10 +12,10 @@ export type UseRsvpsResult = {
 };
 
 export function useRsvps(): UseRsvpsResult {
-  const router = useRouter();
   const [upcoming, setUpcoming] = useState<RsvpItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
 
   const loadRsvps = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -30,21 +26,11 @@ export function useRsvps(): UseRsvpsResult {
       );
       setUpcoming(json.data.upcoming);
     } catch (error_) {
-      if (error_ instanceof AuthenticationError) {
-        router.push("/auth/login");
-        return;
-      }
-      if (error_ instanceof AuthorizationError) {
-        setError("Access denied");
-        return;
-      }
-
-      console.error("[useRsvps] Failed to load RSVPs:", error_);
-      setError("Failed to load your RSVPs.");
+      handleApiError(error_, "Failed to load your RSVPs.");
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [handleApiError]);
 
   useEffect(() => {
     void loadRsvps();

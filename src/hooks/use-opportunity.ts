@@ -1,12 +1,8 @@
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import type { Opportunity } from "@/components/volunteer/types";
-import {
-  apiClient,
-  AuthenticationError,
-  AuthorizationError,
-} from "@/lib/api-client";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
 
 export type UseOpportunityResult = {
   opportunity: Opportunity | null;
@@ -15,10 +11,10 @@ export type UseOpportunityResult = {
 };
 
 export function useOpportunity(id: number | null): UseOpportunityResult {
-  const router = useRouter();
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
 
   useEffect(() => {
     if (id === null) {
@@ -41,14 +37,7 @@ export function useOpportunity(id: number | null): UseOpportunityResult {
         }
       } catch (error_) {
         if (cancelled) return;
-        if (error_ instanceof AuthenticationError) {
-          router.push("/auth/login");
-          return;
-        }
-        if (error_ instanceof AuthorizationError) {
-          setError("Access denied");
-          return;
-        }
+        if (handleApiError(error_)) return;
         setError(
           error_ instanceof Error
             ? error_.message
@@ -64,7 +53,7 @@ export function useOpportunity(id: number | null): UseOpportunityResult {
     return (): void => {
       cancelled = true;
     };
-  }, [id, router]);
+  }, [id, handleApiError]);
 
   return { opportunity, loading, error };
 }

@@ -1,20 +1,8 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import db from "@/db";
-import {
-  interests,
-  skills,
-  users,
-  volunteerInterests,
-  volunteers,
-  volunteerSkills,
-} from "@/db/schema";
-import {
-  opportunities,
-  volunteerHours,
-  volunteerRsvps,
-} from "@/db/schema/opportunities";
-import { DEFAULT_PAGE_SIZE, RECENT_OPPORTUNITIES_LIMIT } from "@/lib/constants";
+import { users, volunteers } from "@/db/schema";
+import { fetchVolunteerDetailData } from "@/services/shared/volunteer-data";
 
 export type VolunteerDetail = {
   volunteers: typeof import("@/db/schema").volunteers.$inferSelect;
@@ -86,91 +74,12 @@ export async function getVolunteerDetail(
 
   if (volunteer.length === 0) return null;
 
-  const [
-    hoursResult,
-    volunteerSkillsData,
-    volunteerInterestsData,
-    recentOpportunities,
-    hoursBreakdown,
-  ] = await Promise.all([
-    db
-      .select({ total: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)` })
-      .from(volunteerHours)
-      .where(eq(volunteerHours.volunteerId, volunteerId)),
-
-    db
-      .select({
-        skillId: volunteerSkills.skillId,
-        skillName: skills.name,
-        skillDescription: skills.description,
-        skillCategory: skills.category,
-        proficiencyLevel: volunteerSkills.level,
-      })
-      .from(volunteerSkills)
-      .leftJoin(skills, eq(volunteerSkills.skillId, skills.id))
-      .where(eq(volunteerSkills.volunteerId, volunteerId)),
-
-    db
-      .select({
-        interestId: volunteerInterests.interestId,
-        interestName: interests.name,
-        interestDescription: interests.description,
-      })
-      .from(volunteerInterests)
-      .leftJoin(interests, eq(volunteerInterests.interestId, interests.id))
-      .where(eq(volunteerInterests.volunteerId, volunteerId)),
-
-    db
-      .select({
-        opportunityId: volunteerRsvps.opportunityId,
-        opportunityTitle: opportunities.title,
-        opportunityLocation: opportunities.location,
-        opportunityStartDate: opportunities.startDate,
-        opportunityEndDate: opportunities.endDate,
-        rsvpStatus: volunteerRsvps.status,
-        rsvpAt: volunteerRsvps.rsvpAt,
-        rsvpNotes: volunteerRsvps.notes,
-      })
-      .from(volunteerRsvps)
-      .leftJoin(
-        opportunities,
-        eq(volunteerRsvps.opportunityId, opportunities.id),
-      )
-      .where(eq(volunteerRsvps.volunteerId, volunteerId))
-      .orderBy(desc(volunteerRsvps.rsvpAt))
-      .limit(RECENT_OPPORTUNITIES_LIMIT),
-
-    db
-      .select({
-        id: volunteerHours.id,
-        opportunityId: volunteerHours.opportunityId,
-        opportunityTitle: opportunities.title,
-        date: volunteerHours.date,
-        hours: volunteerHours.hours,
-        notes: volunteerHours.notes,
-        verifiedAt: volunteerHours.verifiedAt,
-      })
-      .from(volunteerHours)
-      .leftJoin(
-        opportunities,
-        eq(volunteerHours.opportunityId, opportunities.id),
-      )
-      .where(eq(volunteerHours.volunteerId, volunteerId))
-      .orderBy(desc(volunteerHours.date))
-      .limit(DEFAULT_PAGE_SIZE),
-  ]);
-
-  const totalHours =
-    typeof hoursResult[0]?.total === "number" ? hoursResult[0].total : 0;
+  const detailData = await fetchVolunteerDetailData(volunteerId);
 
   return {
     volunteers: volunteer[0].volunteers,
     users: volunteer[0].users,
-    totalHours,
-    skills: volunteerSkillsData,
-    interests: volunteerInterestsData,
-    recentOpportunities,
-    hoursBreakdown,
+    ...detailData,
   };
 }
 

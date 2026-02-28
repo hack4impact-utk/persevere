@@ -1,11 +1,7 @@
-import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
-import {
-  apiClient,
-  AuthenticationError,
-  AuthorizationError,
-} from "@/lib/api-client";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
 import {
   fetchVolunteerById,
   type FetchVolunteerByIdResult,
@@ -23,26 +19,10 @@ export function useVolunteerDetail(): {
   ) => Promise<boolean>;
   deleteVolunteer: (volunteerId: number) => Promise<boolean>;
 } {
-  const router = useRouter();
   const [profile, setProfile] = useState<FetchVolunteerByIdResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const handleError = useCallback(
-    (err: unknown): void => {
-      if (err instanceof AuthenticationError) {
-        router.push("/auth/login");
-      } else if (err instanceof AuthorizationError) {
-        setError("Access denied");
-      } else {
-        console.error("[useVolunteerDetail]", err);
-        setError(
-          err instanceof Error ? err.message : "An unexpected error occurred.",
-        );
-      }
-    },
-    [router],
-  );
+  const handleApiError = useApiErrorHandler(setError);
 
   const loadProfile = useCallback(
     async (volunteerId: number): Promise<void> => {
@@ -52,13 +32,19 @@ export function useVolunteerDetail(): {
         const data = await fetchVolunteerById(volunteerId);
         setProfile(data);
       } catch (error_) {
-        handleError(error_);
+        if (handleApiError(error_)) return;
+        console.error("[useVolunteerDetail]", error_);
+        setError(
+          error_ instanceof Error
+            ? error_.message
+            : "An unexpected error occurred.",
+        );
         setProfile(null);
       } finally {
         setLoading(false);
       }
     },
-    [handleError],
+    [handleApiError],
   );
 
   const clearProfile = useCallback((): void => {
@@ -75,11 +61,17 @@ export function useVolunteerDetail(): {
         await apiClient.put(`/api/staff/volunteers/${volunteerId}`, data);
         return true;
       } catch (error_) {
-        handleError(error_);
+        if (handleApiError(error_)) return false;
+        console.error("[useVolunteerDetail]", error_);
+        setError(
+          error_ instanceof Error
+            ? error_.message
+            : "An unexpected error occurred.",
+        );
         return false;
       }
     },
-    [handleError],
+    [handleApiError],
   );
 
   const deleteVolunteer = useCallback(
@@ -88,11 +80,17 @@ export function useVolunteerDetail(): {
         await apiClient.delete(`/api/staff/volunteers/${volunteerId}`);
         return true;
       } catch (error_) {
-        handleError(error_);
+        if (handleApiError(error_)) return false;
+        console.error("[useVolunteerDetail]", error_);
+        setError(
+          error_ instanceof Error
+            ? error_.message
+            : "An unexpected error occurred.",
+        );
         return false;
       }
     },
-    [handleError],
+    [handleApiError],
   );
 
   return {
