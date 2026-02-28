@@ -1,14 +1,12 @@
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type {
   BulkCommunicationLog,
   CreateCommunicationRequest,
 } from "@/components/staff/communications/types";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import {
-  AuthenticationError,
-  AuthorizationError,
   createCommunication as createCommunicationApi,
   fetchCommunicationById,
   fetchCommunications,
@@ -18,6 +16,7 @@ export type UseCommunicationsResult = {
   communications: BulkCommunicationLog[];
   selectedCommunication: BulkCommunicationLog | null;
   loading: boolean;
+  isMutating: boolean;
   error: string | null;
   loadCommunications: () => Promise<void>;
   selectCommunication: (id: number) => Promise<void>;
@@ -27,14 +26,15 @@ export type UseCommunicationsResult = {
 };
 
 export function useCommunications(): UseCommunicationsResult {
-  const router = useRouter();
   const [communications, setCommunications] = useState<BulkCommunicationLog[]>(
     [],
   );
   const [selectedCommunication, setSelectedCommunication] =
     useState<BulkCommunicationLog | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isMutating, setIsMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
 
   const isFirstLoad = useRef(true);
 
@@ -55,22 +55,18 @@ export function useCommunications(): UseCommunicationsResult {
         isFirstLoad.current = false;
       }
     } catch (error_) {
-      if (error_ instanceof AuthenticationError) {
-        router.push("/auth/login");
+      if (
+        handleApiError(
+          error_,
+          "Failed to load communications. Please try again later.",
+        )
+      )
         return;
-      }
-      if (error_ instanceof AuthorizationError) {
-        setError("Access denied");
-        return;
-      }
-
-      console.error("Failed to fetch communications:", error_);
-      setError("Failed to load communications. Please try again later.");
       setCommunications([]);
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [handleApiError]);
 
   useEffect(() => {
     void loadCommunications();
@@ -90,29 +86,26 @@ export function useCommunications(): UseCommunicationsResult {
     async (
       payload: CreateCommunicationRequest,
     ): Promise<BulkCommunicationLog | null> => {
+      setIsMutating(true);
       try {
         const created = await createCommunicationApi(payload);
         void loadCommunications();
         return created;
       } catch (error_) {
-        if (error_ instanceof AuthenticationError) {
-          router.push("/auth/login");
-          return null;
-        }
-        if (error_ instanceof AuthorizationError) {
-          setError("Access denied");
-          return null;
-        }
+        if (handleApiError(error_)) return null;
         throw error_;
+      } finally {
+        setIsMutating(false);
       }
     },
-    [router, loadCommunications],
+    [handleApiError, loadCommunications],
   );
 
   return {
     communications,
     selectedCommunication,
     loading,
+    isMutating,
     error,
     loadCommunications,
     selectCommunication,

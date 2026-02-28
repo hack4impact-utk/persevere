@@ -1,12 +1,8 @@
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import type { AvailabilityData } from "@/components/volunteer/availability-editor";
-import {
-  apiClient,
-  AuthenticationError,
-  AuthorizationError,
-} from "@/lib/api-client";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
 
 type VolunteerProfileData = {
   volunteers: {
@@ -36,20 +32,20 @@ type UpdateProfileData = {
 
 export type UseVolunteerProfileResult = {
   profile: VolunteerProfileData | null;
-  isLoading: boolean;
+  loading: boolean;
   error: string | null;
   fetchProfile: () => Promise<void>;
   updateProfile: (data: UpdateProfileData) => Promise<void>;
 };
 
 export function useVolunteerProfile(): UseVolunteerProfileResult {
-  const router = useRouter();
   const [profile, setProfile] = useState<VolunteerProfileData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
 
   const fetchProfile = useCallback(async (): Promise<void> => {
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
     try {
       const result = await apiClient.get<{ data: VolunteerProfileData }>(
@@ -57,21 +53,14 @@ export function useVolunteerProfile(): UseVolunteerProfileResult {
       );
       setProfile(result.data);
     } catch (error_) {
-      if (error_ instanceof AuthenticationError) {
-        router.push("/auth/login");
-        return;
-      }
-      if (error_ instanceof AuthorizationError) {
-        setError("Access denied");
-        return;
-      }
+      if (handleApiError(error_)) return;
       const message =
         error_ instanceof Error ? error_.message : "Failed to load profile";
       setError(message);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [router]);
+  }, [handleApiError]);
 
   const updateProfile = useCallback(
     async (data: UpdateProfileData): Promise<void> => {
@@ -84,5 +73,5 @@ export function useVolunteerProfile(): UseVolunteerProfileResult {
     void fetchProfile();
   }, [fetchProfile]);
 
-  return { profile, isLoading, error, fetchProfile, updateProfile };
+  return { profile, loading, error, fetchProfile, updateProfile };
 }

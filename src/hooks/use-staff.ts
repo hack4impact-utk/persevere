@@ -1,12 +1,8 @@
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Staff } from "@/components/staff/people-management/types";
-import {
-  apiClient,
-  AuthenticationError,
-  AuthorizationError,
-} from "@/lib/api-client";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { fetchStaff } from "@/services/staff.service";
 
@@ -37,6 +33,7 @@ export type UseStaffResult = {
   limit: number;
   setLimit: (limit: number) => void;
   loading: boolean;
+  isMutating: boolean;
   error: string | null;
 
   loadStaff: () => Promise<void>;
@@ -47,8 +44,6 @@ export function useStaff(
   searchQuery: string,
   filters: StaffFiltersInput,
 ): UseStaffResult {
-  const router = useRouter();
-
   const [activeStaff, setActiveStaff] = useState<Staff[]>([]);
   const [totalActiveStaff, setTotalActiveStaff] = useState(0);
   const [activePage, setActivePage] = useState(1);
@@ -63,7 +58,9 @@ export function useStaff(
 
   const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const [loading, setLoading] = useState(false);
+  const [isMutating, setIsMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
 
   const loadStaffRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
@@ -107,17 +104,10 @@ export function useStaff(
       setPendingStaff(pendingResponse.staff ?? []);
       setTotalPendingStaff(pendingResponse.total ?? 0);
     } catch (error_) {
-      if (error_ instanceof AuthenticationError) {
-        router.push("/auth/login");
+      if (
+        handleApiError(error_, "Failed to load staff. Please try again later.")
+      )
         return;
-      }
-      if (error_ instanceof AuthorizationError) {
-        setError("Access denied");
-        return;
-      }
-
-      console.error("Failed to fetch staff:", error_);
-      setError("Failed to load staff. Please try again later.");
       setActiveStaff([]);
       setTotalActiveStaff(0);
       setInactiveStaff([]);
@@ -134,27 +124,26 @@ export function useStaff(
     pendingPage,
     limit,
     filters.role,
-    router,
+    handleApiError,
   ]);
 
   const createStaff = useCallback(
     async (data: Record<string, unknown>): Promise<boolean> => {
+      setIsMutating(true);
       try {
         await apiClient.post("/api/staff/staff", data);
         void loadStaff();
         return true;
       } catch (error_) {
-        if (error_ instanceof AuthenticationError) {
-          router.push("/auth/login");
-        } else if (error_ instanceof AuthorizationError) {
-          setError("Access denied");
-        } else {
+        if (!handleApiError(error_)) {
           console.error("[useStaff] createStaff:", error_);
         }
         return false;
+      } finally {
+        setIsMutating(false);
       }
     },
-    [router, loadStaff],
+    [handleApiError, loadStaff],
   );
 
   loadStaffRef.current = loadStaff;
@@ -195,6 +184,7 @@ export function useStaff(
     limit,
     setLimit,
     loading,
+    isMutating,
     error,
 
     loadStaff,

@@ -112,7 +112,7 @@ export default function VolunteerProfilePage(): JSX.Element {
   const { enqueueSnackbar } = useSnackbar();
   const {
     profile: profileData,
-    isLoading: loading,
+    loading,
     fetchProfile,
     updateProfile,
   } = useVolunteerProfile();

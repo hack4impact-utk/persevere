@@ -59,8 +59,8 @@ export default function SkillsSettingsClient(): JSX.Element {
   const {
     skills,
     interests,
-    isLoadingSkills: skillsLoading,
-    isLoadingInterests: interestsLoading,
+    loadingSkills: skillsLoading,
+    loadingInterests: interestsLoading,
     fetchSkills,
     fetchInterests,
     createSkill: hookCreateSkill,
