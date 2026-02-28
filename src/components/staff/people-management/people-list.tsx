@@ -28,6 +28,7 @@ import {
 } from "@mui/material";
 import { type ReactElement, useCallback, useState } from "react";
 
+import { ModalTitleBar } from "@/components/shared";
 import VolunteerList from "@/components/staff/volunteer-management/volunteer-list";
 import { useStaff } from "@/hooks/use-staff";
 import { useStaffProfile } from "@/hooks/use-staff-profile";
@@ -478,24 +479,7 @@ export default function PeopleList(): ReactElement {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="h6">Staff Profile</Typography>
-            <IconButton
-              aria-label="close"
-              onClick={handleCloseModal}
-              sx={{ color: (theme) => theme.palette.grey[500] }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
+        <ModalTitleBar title="Staff Profile" onClose={handleCloseModal} />
         <DialogContent>
           {profileLoading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>

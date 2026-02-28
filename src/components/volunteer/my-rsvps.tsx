@@ -3,17 +3,16 @@
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import EventIcon from "@mui/icons-material/Event";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
-import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
-import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { JSX } from "react";
 
+import { AsyncContent } from "@/components/shared";
 import { useRsvps } from "@/hooks/use-rsvps";
 
 import RsvpButton from "./rsvp-button";
@@ -56,25 +55,12 @@ export default function MyRsvps(): JSX.Element {
         </Box>
         <Divider sx={{ mb: 2 }} />
 
-        {loading && (
-          <Box display="flex" justifyContent="center" py={3}>
-            <CircularProgress />
-          </Box>
-        )}
-
-        {!loading && error && <Alert severity="error">{error}</Alert>}
-
-        {!loading && !error && upcoming.length === 0 && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ fontStyle: "italic", py: 2 }}
-          >
-            No upcoming RSVPs. Browse opportunities to sign up!
-          </Typography>
-        )}
-
-        {!loading && !error && upcoming.length > 0 && (
+        <AsyncContent
+          loading={loading}
+          error={error}
+          empty={upcoming.length === 0}
+          emptyMessage="No upcoming RSVPs. Browse opportunities to sign up!"
+        >
           <Stack spacing={2}>
             {upcoming.map((rsvp) => (
               <Box
@@ -144,7 +130,7 @@ export default function MyRsvps(): JSX.Element {
               </Box>
             ))}
           </Stack>
-        )}
+        </AsyncContent>
       </CardContent>
     </Card>
   );

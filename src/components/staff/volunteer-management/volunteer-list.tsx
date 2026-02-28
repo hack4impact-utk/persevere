@@ -31,6 +31,7 @@ import {
 } from "@mui/material";
 import { type ReactElement, useCallback, useState } from "react";
 
+import { ModalTitleBar } from "@/components/shared";
 import { useVolunteerDetail } from "@/hooks/use-volunteer-detail";
 import { useVolunteers } from "@/hooks/use-volunteers";
 
@@ -407,24 +408,7 @@ export default function VolunteerList(): ReactElement {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="h6">Volunteer Profile</Typography>
-            <IconButton
-              aria-label="close"
-              onClick={handleCloseModal}
-              sx={{ color: (theme) => theme.palette.grey[500] }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
+        <ModalTitleBar title="Volunteer Profile" onClose={handleCloseModal} />
         <DialogContent>
           {profileLoading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>

@@ -41,6 +41,7 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
+import { DetailField } from "@/components/shared";
 import { apiClient } from "@/lib/api-client";
 import type { FetchVolunteerByIdResult } from "@/services/volunteer-client.service";
 
@@ -530,54 +531,27 @@ export default function VolunteerProfile({
                     gap: 2,
                   }}
                 >
-                  <Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: "block", mb: 0.5 }}
-                    >
-                      Joined Date
-                    </Typography>
-                    <Typography variant="body2" fontWeight={500}>
-                      {new Date(vol.createdAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: "block", mb: 0.5 }}
-                    >
-                      Last Updated
-                    </Typography>
-                    <Typography variant="body2" fontWeight={500}>
-                      {new Date(vol.updatedAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: "block", mb: 0.5 }}
-                    >
-                      Notification Preference
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      fontWeight={500}
-                      textTransform="capitalize"
-                    >
-                      {vol.notificationPreference}
-                    </Typography>
-                  </Box>
+                  <DetailField
+                    label="Joined Date"
+                    value={new Date(vol.createdAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  />
+                  <DetailField
+                    label="Last Updated"
+                    value={new Date(vol.updatedAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  />
+                  <DetailField
+                    label="Notification Preference"
+                    value={vol.notificationPreference}
+                    valueSx={{ textTransform: "capitalize" }}
+                  />
                   {user.emailVerifiedAt !== undefined && (
                     <Box>
                       <Typography
