@@ -15,6 +15,7 @@ import {
   notificationPreferenceEnum,
   proficiencyLevelEnum,
 } from "./enums";
+import { timestamps } from "./helpers";
 
 // Core user table - shared by all user types (volunteers, staff, admin)
 export const users = pgTable("users", {
@@ -29,8 +30,7 @@ export const users = pgTable("users", {
   isActive: boolean("is_active").default(true).notNull(),
   isEmailVerified: boolean("is_email_verified").default(false).notNull(),
   emailVerifiedAt: timestamp("email_verified_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  ...timestamps,
 });
 
 // Volunteer-specific data - references users table
@@ -50,8 +50,7 @@ export const volunteers = pgTable("volunteers", {
   notificationPreference: notificationPreferenceEnum("notification_preference")
     .default("email")
     .notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  ...timestamps,
 });
 
 // Staff-specific data - references users table
@@ -64,8 +63,7 @@ export const staff = pgTable("staff", {
   notificationPreference: notificationPreferenceEnum("notification_preference")
     .default("email")
     .notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  ...timestamps,
 });
 
 // Admin data - extends staff with admin-specific fields
@@ -75,8 +73,7 @@ export const admin = pgTable("admin", {
     .notNull()
     .references(() => staff.id, { onDelete: "cascade" }),
   lastLoginAt: timestamp("last_login_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  ...timestamps,
 });
 
 // Skills catalog - available skills volunteers can have

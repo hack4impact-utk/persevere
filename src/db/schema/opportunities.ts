@@ -12,6 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { opportunityStatusEnum, rsvpStatusEnum } from "./enums";
+import { timestamps } from "./helpers";
 import { interests, skills, users, volunteers } from "./users";
 
 // Volunteer opportunities/events - main events volunteers can sign up for
@@ -29,8 +30,7 @@ export const opportunities = pgTable("opportunities", {
     .references(() => users.id, { onDelete: "restrict" }),
   recurrencePattern: jsonb("recurrence_pattern"),
   isRecurring: boolean("is_recurring").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  ...timestamps,
 });
 
 // Many-to-many: opportunities and their required skills
