@@ -1,9 +1,11 @@
 "use client";
 
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import AddIcon from "@mui/icons-material/Add";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DescriptionIcon from "@mui/icons-material/Description";
 import EditIcon from "@mui/icons-material/Edit";
 import EmailIcon from "@mui/icons-material/Email";
@@ -13,6 +15,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import PhoneIcon from "@mui/icons-material/Phone";
 import SecurityIcon from "@mui/icons-material/Security";
 import StarIcon from "@mui/icons-material/Star";
+import VerifiedIcon from "@mui/icons-material/Verified";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import WorkIcon from "@mui/icons-material/Work";
 import {
@@ -22,9 +25,11 @@ import {
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
+  DialogContentText,
   DialogTitle,
   Divider,
   FormControl,
@@ -36,6 +41,7 @@ import {
   Stack,
   Switch,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
@@ -44,6 +50,7 @@ import { JSX, useCallback, useEffect, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import type { FetchVolunteerByIdResult } from "@/services/volunteer-client.service";
 
+import LogHoursModal from "./log-hours-modal";
 import SkillsModal from "./skills-modal";
 
 /**
@@ -56,6 +63,8 @@ type VolunteerProfileProps = {
   volunteer: FetchVolunteerByIdResult;
   onDelete?: () => void;
   onVolunteerUpdated?: () => void;
+  /** Defaults to staff. */
+  viewerRole?: "volunteer" | "staff";
 };
 
 function formatStaffTime(hhmm: string): string {
@@ -96,6 +105,7 @@ export default function VolunteerProfile({
   volunteer,
   onDelete,
   onVolunteerUpdated,
+  viewerRole = "staff",
 }: VolunteerProfileProps): JSX.Element {
   const { volunteers: vol, users: user } = volunteer;
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -106,7 +116,60 @@ export default function VolunteerProfile({
   const [skillsModalMode, setSkillsModalMode] = useState<
     "skills" | "interests"
   >("skills");
+
+  const [logHoursOpen, setLogHoursOpen] = useState(false);
+  const [hoursDeleteTargetId, setHoursDeleteTargetId] = useState<number | null>(
+    null,
+  );
+  const [hoursActionLoading, setHoursActionLoading] = useState<number | null>(
+    null,
+  );
+
   const { enqueueSnackbar } = useSnackbar();
+
+  const canVerify = viewerRole === "staff";
+
+  const handleVerifyHours = useCallback(
+    async (hoursId: number): Promise<void> => {
+      setHoursActionLoading(hoursId);
+      try {
+        await apiClient.put(`/api/staff/hours/${hoursId}`, { verify: true });
+        enqueueSnackbar("Hours verified successfully", { variant: "success" });
+        if (onVolunteerUpdated) onVolunteerUpdated();
+      } catch (error) {
+        console.error("Failed to verify hours:", error);
+        enqueueSnackbar(
+          error instanceof Error ? error.message : "Failed to verify hours",
+          { variant: "error" },
+        );
+      } finally {
+        setHoursActionLoading(null);
+      }
+    },
+    [enqueueSnackbar, onVolunteerUpdated],
+  );
+
+  const handleDeleteHoursConfirm = useCallback(async (): Promise<void> => {
+    if (hoursDeleteTargetId == null) return;
+    const id = hoursDeleteTargetId;
+    setHoursDeleteTargetId(null);
+    setHoursActionLoading(id);
+    try {
+      await apiClient.delete(`/api/staff/hours/${id}`);
+      enqueueSnackbar("Hours entry deleted", { variant: "success" });
+      if (onVolunteerUpdated) onVolunteerUpdated();
+    } catch (error) {
+      console.error("Failed to delete hours:", error);
+      enqueueSnackbar(
+        error instanceof Error ? error.message : "Failed to delete hours entry",
+        { variant: "error" },
+      );
+    } finally {
+      setHoursActionLoading(null);
+    }
+  }, [hoursDeleteTargetId, enqueueSnackbar, onVolunteerUpdated]);
+
+  // ── Volunteer Edit / Delete ────────────────────────────────────────────────
 
   const handleEditVolunteer = useCallback(
     async (data: {
@@ -290,10 +353,7 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
@@ -390,10 +450,7 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
@@ -434,10 +491,7 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
@@ -509,10 +563,7 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
@@ -644,10 +695,7 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
@@ -724,10 +772,7 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
@@ -779,10 +824,7 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
@@ -868,62 +910,171 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
+                {/* Header row with Log Hours button */}
                 <Box display="flex" alignItems="center" gap={1} mb={2}>
                   <AccessTimeIcon color="primary" />
-                  <Typography variant="h6" fontWeight={600}>
+                  <Typography variant="h6" fontWeight={600} sx={{ flex: 1 }}>
                     Hours Breakdown
                   </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<AddIcon fontSize="small" />}
+                    onClick={() => setLogHoursOpen(true)}
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: 600,
+                      borderRadius: 1.5,
+                      py: 0.5,
+                    }}
+                  >
+                    Log Hours
+                  </Button>
                 </Box>
                 <Divider sx={{ mb: 2 }} />
+
                 {volunteer.hoursBreakdown &&
                 volunteer.hoursBreakdown.length > 0 ? (
                   <Stack spacing={1.5}>
-                    {volunteer.hoursBreakdown.map((entry) => (
-                      <Box key={entry.id}>
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="space-between"
-                          mb={0.5}
-                        >
-                          <Typography variant="body2" fontWeight={500}>
-                            {entry.opportunityTitle || "Unknown Opportunity"}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            fontWeight={600}
-                            color="primary"
+                    {volunteer.hoursBreakdown.map((entry) => {
+                      const isVerified = !!entry.verifiedAt;
+                      const isBusy = hoursActionLoading === entry.id;
+
+                      return (
+                        <Box key={entry.id}>
+                          <Box
+                            display="flex"
+                            alignItems="flex-start"
+                            justifyContent="space-between"
+                            mb={0.5}
+                            gap={1}
                           >
-                            {entry.hours.toFixed(1)} hrs
-                          </Typography>
+                            {/* Left: title + hours */}
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Box
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="space-between"
+                                mb={0.25}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={500}
+                                  noWrap
+                                  sx={{ flex: 1, mr: 1 }}
+                                >
+                                  {entry.opportunityTitle ||
+                                    "Unknown Opportunity"}
+                                </Typography>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  color="primary"
+                                  sx={{ flexShrink: 0 }}
+                                >
+                                  {entry.hours.toFixed(1)} hrs
+                                </Typography>
+                              </Box>
+
+                              {/* Date + verified chip */}
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  {new Date(entry.date).toLocaleDateString(
+                                    "en-US",
+                                    {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                    },
+                                  )}
+                                </Typography>
+                                {isVerified ? (
+                                  <Chip
+                                    label="Verified"
+                                    size="small"
+                                    color="success"
+                                    icon={<CheckCircleIcon fontSize="small" />}
+                                    sx={{ fontSize: "0.65rem", height: "18px" }}
+                                  />
+                                ) : (
+                                  <Chip
+                                    label="Pending"
+                                    size="small"
+                                    color="warning"
+                                    variant="outlined"
+                                    sx={{ fontSize: "0.65rem", height: "18px" }}
+                                  />
+                                )}
+                              </Box>
+                            </Box>
+
+                            {/* Right: action buttons */}
+                            <Stack
+                              direction="row"
+                              spacing={0.25}
+                              sx={{ flexShrink: 0 }}
+                            >
+                              {/* Verify — staff/admin only, unverified rows only */}
+                              {canVerify && !isVerified && (
+                                <Tooltip title="Mark as verified">
+                                  <span>
+                                    <IconButton
+                                      size="small"
+                                      color="success"
+                                      onClick={() =>
+                                        handleVerifyHours(entry.id)
+                                      }
+                                      disabled={isBusy}
+                                      sx={{ p: 0.5 }}
+                                    >
+                                      {isBusy ? (
+                                        <CircularProgress size={14} />
+                                      ) : (
+                                        <VerifiedIcon
+                                          sx={{ fontSize: "1rem" }}
+                                        />
+                                      )}
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                              )}
+
+                              {/* Delete — hidden for verified rows */}
+                              {!isVerified && (
+                                <Tooltip title="Delete entry">
+                                  <span>
+                                    <IconButton
+                                      size="small"
+                                      color="error"
+                                      onClick={() =>
+                                        setHoursDeleteTargetId(entry.id)
+                                      }
+                                      disabled={isBusy}
+                                      sx={{ p: 0.5 }}
+                                    >
+                                      {isBusy ? (
+                                        <CircularProgress size={14} />
+                                      ) : (
+                                        <DeleteOutlineIcon
+                                          sx={{ fontSize: "1rem" }}
+                                        />
+                                      )}
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                              )}
+                            </Stack>
+                          </Box>
                         </Box>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Typography variant="caption" color="text.secondary">
-                            {new Date(entry.date).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </Typography>
-                          {entry.verifiedAt && (
-                            <Chip
-                              label="Verified"
-                              size="small"
-                              color="success"
-                              icon={<CheckCircleIcon fontSize="small" />}
-                              sx={{ fontSize: "0.65rem", height: "18px" }}
-                            />
-                          )}
-                        </Box>
-                      </Box>
-                    ))}
+                      );
+                    })}
                   </Stack>
                 ) : (
                   <Typography
@@ -1002,7 +1153,19 @@ export default function VolunteerProfile({
         }}
       />
 
-      {/* Delete User Confirmation Dialog */}
+      {/* Log Hours Modal */}
+      <LogHoursModal
+        open={logHoursOpen}
+        volunteerId={vol.id}
+        viewerRole={viewerRole}
+        onClose={() => setLogHoursOpen(false)}
+        onSuccess={() => {
+          setLogHoursOpen(false);
+          if (onVolunteerUpdated) onVolunteerUpdated();
+        }}
+      />
+
+      {/* Delete Volunteer Confirmation Dialog */}
       <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)}>
         <DialogTitle>Delete Volunteer</DialogTitle>
         <DialogContent>
@@ -1026,6 +1189,32 @@ export default function VolunteerProfile({
             disabled={deleting}
           >
             {deleting ? "Deleting..." : "Delete Volunteer"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Hours Entry Confirmation Dialog */}
+      <Dialog
+        open={hoursDeleteTargetId !== null}
+        onClose={() => setHoursDeleteTargetId(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Delete Hours Entry</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this hours entry? This action cannot
+            be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setHoursDeleteTargetId(null)}>Cancel</Button>
+          <Button
+            onClick={handleDeleteHoursConfirm}
+            variant="contained"
+            color="error"
+          >
+            Delete
           </Button>
         </DialogActions>
       </Dialog>
