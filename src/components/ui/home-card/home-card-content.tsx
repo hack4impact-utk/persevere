@@ -2,7 +2,7 @@
 import { Button, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { Session } from "next-auth";
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 
 import { getDashboardRoute } from "@/utils/routes";
 
@@ -23,18 +23,19 @@ export default function HomeCardContent({
 }: HomeCardContentProps): ReactNode {
   const router = useRouter();
 
-  if (status === "loading") {
+  useEffect(() => {
+    if (session) {
+      const dashboardRoute = getDashboardRoute(session.user?.role);
+      router.push(dashboardRoute);
+    }
+  }, [session, router]);
+
+  if (status === "loading" || session) {
     return (
       <Typography variant="h6" color="text.secondary">
         Loading...
       </Typography>
     );
-  }
-
-  if (session) {
-    const dashboardRoute = getDashboardRoute(session.user?.role);
-    router.push(dashboardRoute);
-    return null;
   }
 
   return (

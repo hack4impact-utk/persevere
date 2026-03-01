@@ -1,25 +1,23 @@
 import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { JSX } from "react";
 
-import MyRsvps from "@/components/volunteer/my-rsvps";
 import OnboardingChecklist from "@/components/volunteer/onboarding-checklist";
 
-/** Volunteer dashboard with portal overview. */
-export default function VolunteerDashboardPage(): JSX.Element {
+/** Full-page onboarding checklist for new volunteers. */
+export default function VolunteerOnboardingPage(): JSX.Element {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        Dashboard
+        Welcome! Complete Your Onboarding
       </Typography>
       <Typography color="text.secondary" mb={3}>
-        Overview of the whole portal.
+        Please complete the steps below to finish setting up your volunteer
+        profile.
       </Typography>
-      <Stack spacing={3} sx={{ maxWidth: 600 }}>
+      <Box sx={{ maxWidth: 600 }}>
         <OnboardingChecklist />
-        <MyRsvps />
-      </Stack>
+      </Box>
     </Box>
   );
 }

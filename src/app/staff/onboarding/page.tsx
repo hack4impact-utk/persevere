@@ -1,16 +1,8 @@
-import { Typography } from "@mui/material";
-import { JSX } from "react";
+import { type ReactElement } from "react";
+
+import OnboardingList from "@/components/staff/onboarding/onboarding-list";
 
 /** Volunteer onboarding management. */
-export default function StaffOnboardingPage(): JSX.Element {
-  return (
-    <>
-      <Typography variant="h4" gutterBottom>
-        Onboarding
-      </Typography>
-      <Typography color="text.secondary">
-        Manage volunteer onboarding processes and workflows.
-      </Typography>
-    </>
-  );
+export default function StaffOnboardingPage(): ReactElement {
+  return <OnboardingList />;
 }
