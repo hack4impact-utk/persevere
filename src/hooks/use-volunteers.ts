@@ -1,10 +1,10 @@
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Volunteer } from "@/components/staff/volunteer-management/types";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import {
-  AuthenticationError,
   fetchActiveVolunteers,
   fetchInactiveVolunteers,
   fetchPendingInvites,
@@ -38,17 +38,21 @@ export type UseVolunteersResult = {
   limit: number;
   setLimit: (limit: number) => void;
   loading: boolean;
+  isMutating: boolean;
   error: string | null;
 
   loadVolunteers: () => Promise<void>;
+  resendCredentials: (volunteerId: number) => Promise<boolean>;
+  updateBackgroundStatus: (
+    volunteerId: number,
+    status: "not_required" | "pending" | "approved",
+  ) => Promise<boolean>;
 };
 
 export function useVolunteers(
   searchQuery: string,
   filters: VolunteerFiltersInput,
 ): UseVolunteersResult {
-  const router = useRouter();
-
   // Active volunteers state
   const [activeVolunteers, setActiveVolunteers] = useState<Volunteer[]>([]);
   const [totalActiveVolunteers, setTotalActiveVolunteers] = useState(0);
@@ -67,7 +71,9 @@ export function useVolunteers(
   // Shared state
   const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const [loading, setLoading] = useState(false);
+  const [isMutating, setIsMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
 
   // Use ref to store latest loadVolunteers to avoid dependency issues
   const loadVolunteersRef = useRef<(() => Promise<void>) | undefined>(
@@ -112,13 +118,13 @@ export function useVolunteers(
       setPendingInvites(pendingResponse.volunteers ?? []);
       setTotalPendingInvites(pendingResponse.total ?? 0);
     } catch (error_) {
-      if (error_ instanceof AuthenticationError) {
-        router.push("/auth/login");
+      if (
+        handleApiError(
+          error_,
+          "Failed to load volunteers. Please try again later.",
+        )
+      )
         return;
-      }
-
-      console.error("Failed to fetch volunteers:", error_);
-      setError("Failed to load volunteers. Please try again later.");
       setActiveVolunteers([]);
       setTotalActiveVolunteers(0);
       setInactiveVolunteers([]);
@@ -136,7 +142,7 @@ export function useVolunteers(
     limit,
     filters.type,
     filters.alumni,
-    router,
+    handleApiError,
   ]);
 
   // Keep ref updated with latest loadVolunteers
@@ -155,6 +161,49 @@ export function useVolunteers(
       clearTimeout(debounceTimer);
     };
   }, [searchQuery]);
+
+  const resendCredentials = useCallback(
+    async (volunteerId: number): Promise<boolean> => {
+      setIsMutating(true);
+      try {
+        await apiClient.post(
+          `/api/staff/volunteers/${volunteerId}/resend-credentials`,
+        );
+        return true;
+      } catch (error_) {
+        if (!handleApiError(error_)) {
+          console.error("[useVolunteers] resendCredentials:", error_);
+        }
+        return false;
+      } finally {
+        setIsMutating(false);
+      }
+    },
+    [handleApiError],
+  );
+
+  const updateBackgroundStatus = useCallback(
+    async (
+      volunteerId: number,
+      status: "not_required" | "pending" | "approved",
+    ): Promise<boolean> => {
+      setIsMutating(true);
+      try {
+        await apiClient.put(`/api/staff/volunteers/${volunteerId}`, {
+          backgroundCheckStatus: status,
+        });
+        return true;
+      } catch (error_) {
+        if (!handleApiError(error_)) {
+          console.error("[useVolunteers] updateBackgroundStatus:", error_);
+        }
+        return false;
+      } finally {
+        setIsMutating(false);
+      }
+    },
+    [handleApiError],
+  );
 
   // Load immediately when pagination, limit, or filters change (no debounce)
   useEffect(() => {
@@ -187,8 +236,11 @@ export function useVolunteers(
     limit,
     setLimit,
     loading,
+    isMutating,
     error,
 
     loadVolunteers,
+    resendCredentials,
+    updateBackgroundStatus,
   };
 }

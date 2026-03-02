@@ -2,22 +2,15 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { JSX } from "react";
 
-import OnboardingChecklist from "@/components/volunteer/onboarding-checklist";
-
-/** Full-page onboarding checklist for new volunteers. */
-export default function VolunteerOnboardingPage(): JSX.Element {
+export default function OnboardingPage(): JSX.Element {
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Welcome! Complete Your Onboarding
+    <Box sx={{ px: 3, pt: { xs: 1, md: 1.5 } }}>
+      <Typography variant="h6" fontWeight={600} gutterBottom>
+        Onboarding
       </Typography>
-      <Typography color="text.secondary" mb={3}>
-        Please complete the steps below to finish setting up your volunteer
-        profile.
+      <Typography variant="body2" color="text.secondary">
+        Coming soon.
       </Typography>
-      <Box sx={{ maxWidth: 600 }}>
-        <OnboardingChecklist />
-      </Box>
     </Box>
   );
 }

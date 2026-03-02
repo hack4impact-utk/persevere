@@ -8,12 +8,31 @@ import {
 } from "@/db/schema/opportunities";
 import { ConflictError, NotFoundError } from "@/utils/errors";
 
+export type RequiredSkill = {
+  skillId: number;
+  skillName: string | null;
+};
+
 async function requireEvent(eventId: number): Promise<void> {
   const [event] = await db
     .select({ id: opportunities.id })
     .from(opportunities)
     .where(eq(opportunities.id, eventId));
   if (!event) throw new NotFoundError("Calendar event not found");
+}
+
+export async function getRequiredSkills(
+  eventId: number,
+): Promise<RequiredSkill[]> {
+  await requireEvent(eventId);
+  return db
+    .select({
+      skillId: opportunityRequiredSkills.skillId,
+      skillName: skills.name,
+    })
+    .from(opportunityRequiredSkills)
+    .leftJoin(skills, eq(opportunityRequiredSkills.skillId, skills.id))
+    .where(eq(opportunityRequiredSkills.opportunityId, eventId));
 }
 
 export async function addRequiredSkill(

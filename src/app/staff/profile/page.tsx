@@ -23,11 +23,9 @@ export default function StaffProfilePage(): JSX.Element {
   }
 
   return (
-    <Box sx={{ padding: "20px", maxWidth: 600, margin: "0 auto" }}>
-      <Typography variant="h4" gutterBottom>
-        Profile
-      </Typography>
-
+    <Box
+      sx={{ pt: 1, px: "20px", pb: "20px", maxWidth: 600, margin: "0 auto" }}
+    >
       <Box sx={{ textAlign: "center", mb: 4 }}>
         <Avatar
           src={session.user?.image || undefined}

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { listOpenOpportunities } from "@/services/opportunities.service";
 import handleError from "@/utils/handle-error";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
 
 /**
  * GET /api/volunteer/opportunities
@@ -44,10 +44,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ data, total });
   } catch (error) {
-    if (error instanceof AuthError) {
-      const status = error.code === "Unauthorized" ? 401 : 403;
-      return NextResponse.json({ error: error.code }, { status });
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

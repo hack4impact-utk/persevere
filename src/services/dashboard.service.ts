@@ -8,6 +8,8 @@ import {
   volunteerRsvps,
   volunteers,
 } from "@/db/schema";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { toNumber } from "@/services/shared/db-helpers";
 
 export type StaffDashboardStats = {
   activeVolunteers: number;
@@ -64,10 +66,10 @@ export async function getStaffDashboardStats(): Promise<StaffDashboardStats> {
   ]);
 
   return {
-    activeVolunteers: Number(volunteersCount[0]?.count ?? 0),
-    totalVolunteerHours: Number(volunteerHoursAggregate[0]?.total ?? 0),
-    upcomingOpportunities: Number(opportunitiesCount[0]?.count ?? 0),
-    pendingRsvps: Number(volunteerRsvpsCount[0]?.count ?? 0),
+    activeVolunteers: toNumber(volunteersCount[0]?.count),
+    totalVolunteerHours: toNumber(volunteerHoursAggregate[0]?.total),
+    upcomingOpportunities: toNumber(opportunitiesCount[0]?.count),
+    pendingRsvps: toNumber(volunteerRsvpsCount[0]?.count),
   };
 }
 
@@ -95,7 +97,7 @@ export async function getVolunteerDashboard(
         ),
       )
       .orderBy(opportunities.startDate)
-      .limit(10),
+      .limit(DEFAULT_PAGE_SIZE),
 
     // VERIFIED = verifiedAt IS NOT NULL
     db
@@ -124,8 +126,8 @@ export async function getVolunteerDashboard(
       ),
   ]);
 
-  const verified = Number(verifiedAgg[0]?.total ?? 0);
-  const pending = Number(pendingAgg[0]?.total ?? 0);
+  const verified = toNumber(verifiedAgg[0]?.total);
+  const pending = toNumber(pendingAgg[0]?.total);
 
   return {
     upcomingRsvps: upcoming.map((row) => ({

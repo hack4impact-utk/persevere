@@ -108,7 +108,11 @@ export default function EventList({
 
               {/* Capacity chip */}
               {maxVol != null && (
-                <Chip label={`0 / ${maxVol}`} size="small" variant="outlined" />
+                <Chip
+                  label={`${event.extendedProps?.rsvpCount ?? 0} / ${maxVol}`}
+                  size="small"
+                  variant="outlined"
+                />
               )}
 
               <ChevronRightIcon color="action" />

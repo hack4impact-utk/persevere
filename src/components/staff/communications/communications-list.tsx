@@ -6,9 +6,9 @@ import {
   Alert,
   Avatar,
   Box,
-  Button,
   CircularProgress,
   Divider,
+  Fab,
   List,
   ListItem,
   ListItemButton,
@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import { type ReactElement, useCallback, useState } from "react";
 
+import { EmptyState } from "@/components/ui";
 import { useCommunications } from "@/hooks/use-communications";
 
 import ComposeModal from "./compose-modal";
@@ -90,24 +91,6 @@ export default function CommunicationsList({
         minHeight: 0,
       }}
     >
-      {/* Header with Compose button */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "flex-end",
-          mb: 2,
-          flexShrink: 0,
-        }}
-      >
-        <Button
-          variant="contained"
-          startIcon={<CreateIcon />}
-          onClick={() => setComposeModalOpen(true)}
-        >
-          Compose
-        </Button>
-      </Box>
-
       {/* Main content area */}
       <Box
         sx={{
@@ -144,19 +127,7 @@ export default function CommunicationsList({
               {error}
             </Alert>
           ) : communications.length === 0 ? (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                height: "100%",
-                p: 2,
-              }}
-            >
-              <Typography color="text.secondary">
-                No communications yet. Click Compose to send your first message.
-              </Typography>
-            </Box>
+            <EmptyState message="No communications yet. Click Compose to send your first message." />
           ) : (
             <List
               sx={{
@@ -319,6 +290,16 @@ export default function CommunicationsList({
           )}
         </Paper>
       </Box>
+
+      {/* Compose FAB */}
+      <Fab
+        color="primary"
+        aria-label="compose"
+        onClick={() => setComposeModalOpen(true)}
+        sx={{ position: "fixed", bottom: 32, right: 32 }}
+      >
+        <CreateIcon />
+      </Fab>
 
       {/* Compose Modal */}
       <ComposeModal

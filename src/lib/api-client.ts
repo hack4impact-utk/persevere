@@ -12,14 +12,25 @@ export class AuthenticationError extends Error {
   }
 }
 
+export class AuthorizationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AuthorizationError";
+  }
+}
+
 type ApiErrorBody = {
   error?: string;
   message?: string;
 };
 
 async function handleResponse<T>(response: Response): Promise<T> {
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401) {
     throw new AuthenticationError("Unauthorized access");
+  }
+
+  if (response.status === 403) {
+    throw new AuthorizationError("Access denied");
   }
 
   if (!response.ok) {
@@ -43,6 +54,14 @@ async function handleResponse<T>(response: Response): Promise<T> {
   ) {
     return undefined as T;
   }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    throw new Error(
+      `Expected JSON response but received ${contentType || "no content-type"}`,
+    );
+  }
+
   return response.json() as Promise<T>;
 }
 
@@ -79,10 +98,12 @@ export const apiClient = {
     return handleResponse<T>(response);
   },
 
-  async delete<T>(path: string): Promise<T> {
+  async delete<T>(path: string, body?: unknown): Promise<T> {
     const response = await fetch(path, {
       method: "DELETE",
+      ...(body === undefined ? {} : { headers: defaultHeaders }),
       cache: "no-store",
+      body: body === undefined ? undefined : JSON.stringify(body),
     });
     return handleResponse<T>(response);
   },
