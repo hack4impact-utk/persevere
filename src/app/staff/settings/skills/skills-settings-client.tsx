@@ -7,7 +7,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -28,6 +27,7 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
+import { LoadingSkeleton } from "@/components/ui";
 import { useSkills } from "@/hooks/use-skills";
 
 type Skill = {
@@ -295,9 +295,7 @@ export default function SkillsSettingsClient(): JSX.Element {
           </Box>
 
           {skillsLoading ? (
-            <Box display="flex" justifyContent="center" py={6}>
-              <CircularProgress size={32} />
-            </Box>
+            <LoadingSkeleton variant="lines" count={5} />
           ) : (
             <TableContainer component={Paper} variant="outlined">
               <Table size="small">
@@ -441,9 +439,7 @@ export default function SkillsSettingsClient(): JSX.Element {
           </Box>
 
           {interestsLoading ? (
-            <Box display="flex" justifyContent="center" py={6}>
-              <CircularProgress size={32} />
-            </Box>
+            <LoadingSkeleton variant="lines" count={5} />
           ) : (
             <TableContainer component={Paper} variant="outlined">
               <Table size="small">

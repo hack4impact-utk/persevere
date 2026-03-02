@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import { type ReactElement, useCallback, useState } from "react";
 
+import { EmptyState } from "@/components/ui";
 import { useCommunications } from "@/hooks/use-communications";
 
 import ComposeModal from "./compose-modal";
@@ -144,19 +145,7 @@ export default function CommunicationsList({
               {error}
             </Alert>
           ) : communications.length === 0 ? (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                height: "100%",
-                p: 2,
-              }}
-            >
-              <Typography color="text.secondary">
-                No communications yet. Click Compose to send your first message.
-              </Typography>
-            </Box>
+            <EmptyState message="No communications yet. Click Compose to send your first message." />
           ) : (
             <List
               sx={{

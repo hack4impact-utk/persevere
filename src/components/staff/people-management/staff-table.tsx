@@ -5,7 +5,6 @@ import PersonIcon from "@mui/icons-material/Person";
 import {
   Avatar,
   Box,
-  Chip,
   CircularProgress,
   Paper,
   Table,
@@ -19,6 +18,7 @@ import {
 import { type ReactElement, useCallback } from "react";
 
 import { TablePaginationFooter } from "@/components/shared";
+import { EmptyState, StatusBadge } from "@/components/ui";
 
 import { type Staff } from "./types";
 
@@ -173,21 +173,19 @@ export default function StaffTable({
                   </TableCell>
                   <TableCell>
                     {staffMember.isAdmin ? (
-                      <Chip
+                      <StatusBadge
                         icon={<AdminPanelSettingsIcon />}
                         label="Admin"
                         color="primary"
-                        size="small"
                       />
                     ) : (
-                      <Chip label="Staff" size="small" variant="outlined" />
+                      <StatusBadge label="Staff" variant="outlined" />
                     )}
                   </TableCell>
                   <TableCell>
-                    <Chip
+                    <StatusBadge
                       label={staffMember.isActive ? "Active" : "Inactive"}
                       color={staffMember.isActive ? "success" : "default"}
-                      size="small"
                     />
                   </TableCell>
                   <TableCell>
@@ -212,8 +210,8 @@ export default function StaffTable({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} align="center">
-                  No staff members found
+                <TableCell colSpan={4}>
+                  <EmptyState message="No staff members found" />
                 </TableCell>
               </TableRow>
             )}

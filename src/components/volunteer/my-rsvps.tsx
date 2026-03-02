@@ -6,40 +6,17 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { JSX } from "react";
 
 import { AsyncContent } from "@/components/shared";
+import { getRsvpStatusColor, StatusBadge } from "@/components/ui";
 import { useRsvps } from "@/hooks/use-rsvps";
 
 import RsvpButton from "./rsvp-button";
-import type { RsvpStatus } from "./types";
 import { formatDate } from "./utils";
-
-function getRsvpStatusColor(
-  status: RsvpStatus,
-): "success" | "primary" | "error" | "warning" | "default" {
-  switch (status) {
-    case "confirmed": {
-      return "primary";
-    }
-    case "attended": {
-      return "success";
-    }
-    case "declined": {
-      return "error";
-    }
-    case "pending": {
-      return "warning";
-    }
-    case "no_show": {
-      return "default";
-    }
-  }
-}
 
 export default function MyRsvps(): JSX.Element {
   const { upcoming, loading, error, loadRsvps } = useRsvps();
@@ -86,11 +63,10 @@ export default function MyRsvps(): JSX.Element {
                   >
                     {rsvp.opportunityTitle ?? "Untitled Opportunity"}
                   </Typography>
-                  <Chip
+                  <StatusBadge
                     label={rsvp.rsvpStatus}
                     color={getRsvpStatusColor(rsvp.rsvpStatus)}
-                    size="small"
-                    sx={{ flexShrink: 0, textTransform: "capitalize" }}
+                    sx={{ flexShrink: 0 }}
                   />
                 </Box>
 

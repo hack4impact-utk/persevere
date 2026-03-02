@@ -17,6 +17,7 @@ import {
 import { type ReactElement, useCallback } from "react";
 
 import { TablePaginationFooter } from "@/components/shared";
+import { EmptyState } from "@/components/ui";
 
 import { type Volunteer } from "./types";
 
@@ -193,8 +194,8 @@ export default function VolunteerTable({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} align="center">
-                  No volunteers found
+                <TableCell colSpan={4}>
+                  <EmptyState message="No volunteers found" />
                 </TableCell>
               </TableRow>
             )}

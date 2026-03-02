@@ -15,7 +15,6 @@ import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
-import Skeleton from "@mui/material/Skeleton";
 import TextField from "@mui/material/TextField";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
@@ -23,38 +22,15 @@ import Typography from "@mui/material/Typography";
 import { JSX, useMemo, useState } from "react";
 
 import { Calendar } from "@/components/staff/calendar";
+import { EmptyState, LoadingSkeleton } from "@/components/ui";
 import OpportunityDetailModal from "@/components/volunteer/opportunity-detail-modal";
+import { SpotsChip } from "@/components/volunteer/spots-chip";
 import type { Opportunity } from "@/components/volunteer/types";
 import { formatDate, formatTime } from "@/components/volunteer/utils";
 import { useOpportunities } from "@/hooks/use-opportunities";
 import { RSVP_STATUS_COLORS } from "@/lib/constants";
 
 type View = "list" | "calendar";
-
-function SpotsChip({ opp }: { opp: Opportunity }): JSX.Element {
-  if (opp.spotsRemaining === null) {
-    return <Chip label="Open enrollment" color="success" size="small" />;
-  }
-  if (opp.spotsRemaining <= 0) {
-    return <Chip label="Full" color="default" size="small" />;
-  }
-  if (opp.spotsRemaining <= 3) {
-    return (
-      <Chip
-        label={`${opp.spotsRemaining} spot${opp.spotsRemaining === 1 ? "" : "s"} left`}
-        color="warning"
-        size="small"
-      />
-    );
-  }
-  return (
-    <Chip
-      label={`${opp.spotsRemaining} spots left`}
-      color="success"
-      size="small"
-    />
-  );
-}
 
 type OpportunityCardProps = {
   opportunity: Opportunity;
@@ -177,34 +153,6 @@ function OpportunityCard({
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function SkeletonGrid(): JSX.Element {
-  return (
-    <Box
-      sx={{
-        display: "grid",
-        gridTemplateColumns: {
-          xs: "1fr",
-          sm: "repeat(2, 1fr)",
-          md: "repeat(3, 1fr)",
-        },
-        gap: 3,
-      }}
-    >
-      {Array.from({ length: 6 }).map((_, i) => (
-        <Card key={i} sx={{ borderRadius: 2, boxShadow: 2 }}>
-          <CardContent sx={{ p: 2.5 }}>
-            <Skeleton variant="text" width="70%" height={32} sx={{ mb: 1 }} />
-            <Skeleton variant="text" width="90%" />
-            <Skeleton variant="text" width="80%" sx={{ mb: 1.5 }} />
-            <Skeleton variant="text" width="55%" />
-            <Skeleton variant="text" width="50%" sx={{ mb: 2 }} />
-          </CardContent>
-        </Card>
-      ))}
-    </Box>
   );
 }
 
@@ -343,22 +291,18 @@ export default function OpportunitiesPage(): JSX.Element {
       <Box sx={{ flex: 1, overflow: "auto", minHeight: 0 }}>
         {view === "list" ? (
           <>
-            {loading && <SkeletonGrid />}
+            {loading && <LoadingSkeleton variant="card-grid" />}
 
             {!loading && opportunities.length === 0 && (
-              <Box sx={{ textAlign: "center", py: 8 }}>
-                <EventIcon
-                  sx={{ fontSize: 64, color: "text.disabled", mb: 2 }}
-                />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No opportunities found
-                </Typography>
-                <Typography variant="body2" color="text.disabled">
-                  {search
+              <EmptyState
+                icon={<EventIcon sx={{ fontSize: 64 }} />}
+                message="No opportunities found"
+                subMessage={
+                  search
                     ? "Try a different search term"
-                    : "Check back soon for new opportunities"}
-                </Typography>
-              </Box>
+                    : "Check back soon for new opportunities"
+                }
+              />
             )}
 
             {opportunities.length > 0 && (

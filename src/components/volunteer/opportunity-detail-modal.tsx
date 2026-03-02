@@ -18,7 +18,7 @@ import { JSX, useEffect, useState } from "react";
 
 import { AsyncContent } from "@/components/shared";
 import RsvpButton from "@/components/volunteer/rsvp-button";
-import type { Opportunity } from "@/components/volunteer/types";
+import { SpotsChip } from "@/components/volunteer/spots-chip";
 import { formatDate, formatTime } from "@/components/volunteer/utils";
 import { useAttendees } from "@/hooks/use-attendees";
 import { useOpportunity } from "@/hooks/use-opportunity";
@@ -30,31 +30,6 @@ type Props = {
   onClose: () => void;
   onRsvpChange: (newIsRsvped: boolean) => void;
 };
-
-function SpotsChip({ opp }: { opp: Opportunity }): JSX.Element {
-  if (opp.spotsRemaining === null) {
-    return <Chip label="Open enrollment" color="success" size="small" />;
-  }
-  if (opp.spotsRemaining <= 0) {
-    return <Chip label="Full" color="default" size="small" />;
-  }
-  if (opp.spotsRemaining <= 3) {
-    return (
-      <Chip
-        label={`${opp.spotsRemaining} spot${opp.spotsRemaining === 1 ? "" : "s"} left`}
-        color="warning"
-        size="small"
-      />
-    );
-  }
-  return (
-    <Chip
-      label={`${opp.spotsRemaining} spots left`}
-      color="success"
-      size="small"
-    />
-  );
-}
 
 export default function OpportunityDetailModal({
   opportunityId,
