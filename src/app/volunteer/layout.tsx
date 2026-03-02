@@ -36,10 +36,7 @@ export default async function VolunteerLayout({
   const volunteerId = session.user.volunteerId;
   if (volunteerId) {
     const headersList = await headers();
-    const pathname =
-      headersList.get("x-invoke-path") ??
-      headersList.get("x-nextjs-page") ??
-      "";
+    const pathname = headersList.get("x-pathname") ?? "";
     const isOnboardingPage = pathname.startsWith("/volunteer/onboarding");
 
     if (!isOnboardingPage) {

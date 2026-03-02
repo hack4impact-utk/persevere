@@ -20,6 +20,7 @@ import Typography from "@mui/material/Typography";
 import { type ChangeEvent, type ReactElement, useCallback } from "react";
 
 import { useStaffOnboarding } from "@/hooks/use-staff-onboarding";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 
 export default function OnboardingList(): ReactElement {
   const {
@@ -50,9 +51,6 @@ export default function OnboardingList(): ReactElement {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Onboarding
-      </Typography>
       <Typography color="text.secondary" mb={3}>
         Track volunteer onboarding progress and completion status.
       </Typography>
@@ -173,8 +171,8 @@ export default function OnboardingList(): ReactElement {
             count={total}
             page={page - 1}
             onPageChange={handlePageChange}
-            rowsPerPage={10}
-            rowsPerPageOptions={[10]}
+            rowsPerPage={DEFAULT_PAGE_SIZE}
+            rowsPerPageOptions={[DEFAULT_PAGE_SIZE]}
           />
         </>
       )}

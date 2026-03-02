@@ -1,7 +1,7 @@
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
 import type { OnboardingStatus } from "@/services/onboarding.service";
 
 export type UseOnboardingResult = {
@@ -12,10 +12,10 @@ export type UseOnboardingResult = {
 };
 
 export function useOnboarding(): UseOnboardingResult {
-  const router = useRouter();
   const [status, setStatus] = useState<OnboardingStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
 
   const refetch = useCallback(async (): Promise<void> => {
     setIsLoading(true);
@@ -26,19 +26,11 @@ export function useOnboarding(): UseOnboardingResult {
       );
       setStatus(result.data);
     } catch (error_) {
-      if (error_ instanceof AuthenticationError) {
-        router.push("/auth/login");
-        return;
-      }
-      setError(
-        error_ instanceof Error
-          ? error_.message
-          : "Failed to load onboarding status",
-      );
+      if (handleApiError(error_, "Failed to load onboarding status")) return;
     } finally {
       setIsLoading(false);
     }
-  }, [router]);
+  }, [handleApiError]);
 
   useEffect(() => {
     void refetch();

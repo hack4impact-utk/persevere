@@ -1,7 +1,8 @@
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import type { VolunteerOnboardingSummary } from "@/services/onboarding.service";
 
 export type UseStaffOnboardingResult = {
@@ -21,10 +22,7 @@ type OnboardingListResponse = {
   total: number;
 };
 
-const PAGE_SIZE = 10;
-
 export function useStaffOnboarding(): UseStaffOnboardingResult {
-  const router = useRouter();
   const [volunteers, setVolunteers] = useState<VolunteerOnboardingSummary[]>(
     [],
   );
@@ -33,6 +31,7 @@ export function useStaffOnboarding(): UseStaffOnboardingResult {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const handleApiError = useApiErrorHandler(setError);
 
   const refetch = useCallback(async (): Promise<void> => {
     setIsLoading(true);
@@ -40,7 +39,7 @@ export function useStaffOnboarding(): UseStaffOnboardingResult {
     try {
       const params = new URLSearchParams({
         page: String(page),
-        limit: String(PAGE_SIZE),
+        limit: String(DEFAULT_PAGE_SIZE),
       });
       if (search.trim()) {
         params.set("search", search.trim());
@@ -51,19 +50,11 @@ export function useStaffOnboarding(): UseStaffOnboardingResult {
       setVolunteers(result.data);
       setTotal(result.total);
     } catch (error_) {
-      if (error_ instanceof AuthenticationError) {
-        router.push("/auth/login");
-        return;
-      }
-      setError(
-        error_ instanceof Error
-          ? error_.message
-          : "Failed to load onboarding data",
-      );
+      if (handleApiError(error_, "Failed to load onboarding data")) return;
     } finally {
       setIsLoading(false);
     }
-  }, [router, page, search]);
+  }, [handleApiError, page, search]);
 
   useEffect(() => {
     void refetch();
