@@ -194,7 +194,8 @@ export default function VolunteerList(): ReactElement {
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        p: 3,
+        px: { xs: 2, md: 4 },
+        py: { xs: 2, md: 4 },
         overflow: "hidden",
       }}
     >
