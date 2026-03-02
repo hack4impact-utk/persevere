@@ -17,7 +17,7 @@ import {
 import { type ReactElement, useCallback } from "react";
 
 import { TablePaginationFooter } from "@/components/shared";
-import { EmptyState } from "@/components/ui";
+import { EmptyState, StatusBadge } from "@/components/ui";
 
 import { type Volunteer } from "./types";
 
@@ -165,8 +165,23 @@ export default function VolunteerTable({
                       >
                         {!volunteer.profilePicture && <PersonIcon />}
                       </Avatar>
-                      <Box>
-                        {volunteer.firstName} {volunteer.lastName}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 0.5,
+                        }}
+                      >
+                        <Box>
+                          {volunteer.firstName} {volunteer.lastName}
+                        </Box>
+                        {volunteer.isAlumni && (
+                          <StatusBadge
+                            label="Alumni"
+                            color="secondary"
+                            size="small"
+                          />
+                        )}
                       </Box>
                     </Box>
                   </TableCell>
