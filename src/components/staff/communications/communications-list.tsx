@@ -6,9 +6,9 @@ import {
   Alert,
   Avatar,
   Box,
-  Button,
   CircularProgress,
   Divider,
+  Fab,
   List,
   ListItem,
   ListItemButton,
@@ -91,24 +91,6 @@ export default function CommunicationsList({
         minHeight: 0,
       }}
     >
-      {/* Header with Compose button */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "flex-end",
-          mb: 2,
-          flexShrink: 0,
-        }}
-      >
-        <Button
-          variant="contained"
-          startIcon={<CreateIcon />}
-          onClick={() => setComposeModalOpen(true)}
-        >
-          Compose
-        </Button>
-      </Box>
-
       {/* Main content area */}
       <Box
         sx={{
@@ -308,6 +290,16 @@ export default function CommunicationsList({
           )}
         </Paper>
       </Box>
+
+      {/* Compose FAB */}
+      <Fab
+        color="primary"
+        aria-label="compose"
+        onClick={() => setComposeModalOpen(true)}
+        sx={{ position: "fixed", bottom: 32, right: 32 }}
+      >
+        <CreateIcon />
+      </Fab>
 
       {/* Compose Modal */}
       <ComposeModal

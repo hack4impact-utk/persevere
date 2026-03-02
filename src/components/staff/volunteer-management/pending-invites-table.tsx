@@ -370,7 +370,6 @@ export default function PendingInvitesTable({
         sx={{
           flex: 1,
           overflow: "auto",
-          maxHeight: "calc(100vh - 300px)",
           position: "relative",
         }}
       >
@@ -598,14 +597,35 @@ export default function PendingInvitesTable({
                             }
                             onClick={(e) => e.stopPropagation()}
                             disabled={updatingStatus.has(volunteer.id)}
-                            sx={{ fontSize: "0.875rem" }}
+                            sx={{
+                              fontSize: "0.875rem",
+                              "& .MuiSelect-select": { textAlign: "center" },
+                            }}
                           >
-                            <MenuItem value="not_required">
+                            <MenuItem
+                              value="not_required"
+                              sx={{ justifyContent: "center" }}
+                            >
                               Not Required
                             </MenuItem>
-                            <MenuItem value="pending">Pending</MenuItem>
-                            <MenuItem value="approved">Approved</MenuItem>
-                            <MenuItem value="rejected">Rejected</MenuItem>
+                            <MenuItem
+                              value="pending"
+                              sx={{ justifyContent: "center" }}
+                            >
+                              Pending
+                            </MenuItem>
+                            <MenuItem
+                              value="approved"
+                              sx={{ justifyContent: "center" }}
+                            >
+                              Approved
+                            </MenuItem>
+                            <MenuItem
+                              value="rejected"
+                              sx={{ justifyContent: "center" }}
+                            >
+                              Rejected
+                            </MenuItem>
                           </Select>
                         </FormControl>
                         {updatingStatus.has(volunteer.id) && (

@@ -196,7 +196,9 @@ export default function OpportunitiesPage(): JSX.Element {
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        p: 3,
+        pt: 1,
+        px: 3,
+        pb: 3,
         overflow: "hidden",
       }}
     >
@@ -204,22 +206,13 @@ export default function OpportunitiesPage(): JSX.Element {
       <Box
         sx={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "flex-end",
           alignItems: "flex-start",
           mb: 1,
           flexWrap: "wrap",
           gap: 2,
         }}
       >
-        <Box>
-          <Typography variant="h4" component="h1" fontWeight={700}>
-            Opportunities
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Browse and sign up for volunteer opportunities
-          </Typography>
-        </Box>
-
         <ToggleButtonGroup
           value={view}
           exclusive
@@ -305,7 +298,7 @@ export default function OpportunitiesPage(): JSX.Element {
               />
             )}
 
-            {opportunities.length > 0 && (
+            {!loading && opportunities.length > 0 && (
               <Box
                 sx={{
                   display: "grid",

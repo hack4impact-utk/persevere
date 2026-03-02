@@ -259,9 +259,6 @@ export default function SkillsSettingsClient(): JSX.Element {
 
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
-      <Typography variant="h4" fontWeight={700} sx={{ mb: 4 }}>
-        Skills & Interests Settings
-      </Typography>
       <Stack spacing={4}>
         {/* Skills Section */}
         <Box>

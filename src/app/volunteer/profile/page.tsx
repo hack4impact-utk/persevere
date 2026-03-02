@@ -195,7 +195,7 @@ export default function VolunteerProfilePage(): JSX.Element {
 
   return (
     <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-      <Box sx={{ maxWidth: 860, mx: "auto", px: 3, py: 4 }}>
+      <Box sx={{ maxWidth: 860, mx: "auto", px: 3, pt: 1, pb: 4 }}>
         {/* ── Hero header ─────────────────────────────────────── */}
         <Card
           elevation={0}

@@ -198,24 +198,12 @@ export default function PeopleList(): ReactElement {
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        p: 3,
+        pt: { xs: 1, md: 1.5 },
+        px: 3,
+        pb: 3,
         overflow: "hidden",
       }}
     >
-      <Typography
-        variant="h4"
-        component="h1"
-        sx={{
-          mb: 3,
-          flexShrink: 0,
-          fontWeight: 700,
-          letterSpacing: "-0.02em",
-          fontSize: "2rem",
-        }}
-      >
-        People
-      </Typography>
-
       {staffError && currentTab === 1 && (
         <Box sx={{ mb: 3, flexShrink: 0 }}>
           <Alert severity="error">{staffError}</Alert>

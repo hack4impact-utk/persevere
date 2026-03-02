@@ -69,7 +69,6 @@ export default function VolunteerTable({
         sx={{
           flex: 1,
           overflow: "auto",
-          maxHeight: "calc(100vh - 300px)",
           position: "relative",
         }}
       >

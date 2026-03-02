@@ -77,7 +77,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({ session, status }) => {
           justifyContent: "flex-end",
         }}
       >
-        {/* Right side: user actions */}
+        {/* User actions */}
         <Box
           sx={{
             display: "flex",

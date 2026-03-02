@@ -195,24 +195,11 @@ export default function VolunteerList(): ReactElement {
         display: "flex",
         flexDirection: "column",
         px: { xs: 2, md: 4 },
-        py: { xs: 2, md: 4 },
+        pt: { xs: 1, md: 1.5 },
+        pb: { xs: 2, md: 4 },
         overflow: "hidden",
       }}
     >
-      <Typography
-        variant="h4"
-        component="h1"
-        sx={{
-          mb: 3,
-          flexShrink: 0,
-          fontWeight: 700,
-          letterSpacing: "-0.02em",
-          fontSize: "2rem",
-        }}
-      >
-        Volunteers
-      </Typography>
-
       {error && (
         <Box sx={{ mb: 3, flexShrink: 0 }}>
           <Alert severity="error">{error}</Alert>
