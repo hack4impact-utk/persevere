@@ -4,7 +4,12 @@ import { z } from "zod";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { createVolunteer, listVolunteers } from "@/services/volunteer.service";
 import handleError from "@/utils/handle-error";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import {
+  AuthError,
+  authErrorResponse,
+  requireStaffAuth,
+} from "@/utils/server/auth";
+import { parseBodyOrError } from "@/utils/server/route-helpers";
 
 const volunteerCreateSchema = z.object({
   // User fields
@@ -35,10 +40,7 @@ const volunteerCreateSchema = z.object({
 
 export async function GET(request: Request): Promise<NextResponse> {
   try {
-    const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireStaffAuth();
 
     const { searchParams } = new URL(request.url);
     const page = Number.parseInt(searchParams.get("page") || "1");
@@ -63,31 +65,18 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ data, total });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
-    const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireStaffAuth();
 
-    const json = await request.json();
-    const result = volunteerCreateSchema.safeParse(json);
-    if (!result.success) {
-      const firstError = result.error.issues[0];
-      return NextResponse.json({ error: firstError.message }, { status: 400 });
-    }
-
-    const data = result.data;
+    const parsed = await parseBodyOrError(request, volunteerCreateSchema);
+    if ("response" in parsed) return parsed.response;
+    const data = parsed.data;
 
     const { volunteer, emailSent, emailError, backgroundCheckStatus } =
       await createVolunteer(data);
@@ -103,12 +92,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

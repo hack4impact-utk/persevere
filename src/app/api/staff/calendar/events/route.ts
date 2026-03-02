@@ -7,7 +7,13 @@ import {
 } from "@/services/calendar-events.service";
 import { ConflictError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import {
+  AuthError,
+  authErrorResponse,
+  requireAuth,
+  requireStaffAuth,
+} from "@/utils/server/auth";
+import { parseBodyOrError } from "@/utils/server/route-helpers";
 
 const recurrencePatternSchema = z.object({
   frequency: z.enum(["daily", "weekly", "monthly"]),
@@ -70,12 +76,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ data: calendarEvents });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
@@ -86,19 +87,12 @@ export async function GET(request: Request): Promise<NextResponse> {
  */
 export async function POST(request: Request): Promise<NextResponse> {
   try {
-    const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const session = await requireStaffAuth();
 
-    const json = await request.json();
-    const result = eventCreateSchema.safeParse(json);
-    if (!result.success) {
-      const firstError = result.error.issues[0];
-      return NextResponse.json({ error: firstError.message }, { status: 400 });
-    }
+    const parsed = await parseBodyOrError(request, eventCreateSchema);
+    if ("response" in parsed) return parsed.response;
 
-    const data = result.data;
+    const data = parsed.data;
     const startDate = new Date(data.startDate);
     const endDate = new Date(data.endDate);
 
@@ -127,12 +121,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof ConflictError) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }

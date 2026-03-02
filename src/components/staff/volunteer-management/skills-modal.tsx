@@ -59,8 +59,8 @@ export default function SkillsModal({
   const {
     skills: catalogSkills,
     interests: catalogInterests,
-    isLoadingSkills,
-    isLoadingInterests,
+    loadingSkills,
+    loadingInterests,
     fetchSkills,
     fetchInterests,
     addSkill,
@@ -80,7 +80,7 @@ export default function SkillsModal({
     Record<number, boolean>
   >({});
 
-  const loading = mode === "skills" ? isLoadingSkills : isLoadingInterests;
+  const loading = mode === "skills" ? loadingSkills : loadingInterests;
 
   useEffect(() => {
     if (!open) return;

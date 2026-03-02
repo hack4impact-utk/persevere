@@ -28,6 +28,7 @@ import {
 } from "@mui/material";
 import { type ReactElement, useCallback, useState } from "react";
 
+import { ModalTitleBar } from "@/components/shared";
 import VolunteerList from "@/components/staff/volunteer-management/volunteer-list";
 import { useStaff } from "@/hooks/use-staff";
 import { useStaffProfile } from "@/hooks/use-staff-profile";
@@ -197,24 +198,12 @@ export default function PeopleList(): ReactElement {
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        p: 3,
+        pt: { xs: 1, md: 1.5 },
+        px: 3,
+        pb: 3,
         overflow: "hidden",
       }}
     >
-      <Typography
-        variant="h4"
-        component="h1"
-        sx={{
-          mb: 3,
-          flexShrink: 0,
-          fontWeight: 700,
-          letterSpacing: "-0.02em",
-          fontSize: "2rem",
-        }}
-      >
-        People
-      </Typography>
-
       {staffError && currentTab === 1 && (
         <Box sx={{ mb: 3, flexShrink: 0 }}>
           <Alert severity="error">{staffError}</Alert>
@@ -478,24 +467,7 @@ export default function PeopleList(): ReactElement {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="h6">Staff Profile</Typography>
-            <IconButton
-              aria-label="close"
-              onClick={handleCloseModal}
-              sx={{ color: (theme) => theme.palette.grey[500] }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
+        <ModalTitleBar title="Staff Profile" onClose={handleCloseModal} />
         <DialogContent>
           {profileLoading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>

@@ -1,12 +1,5 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 
-// User role hierarchy - admin extends staff, staff extends volunteer
-export const volunteerRoleEnum = pgEnum("volunteer_role", [
-  "volunteer",
-  "staff",
-  "admin",
-]);
-
 // Opportunity/event status tracking
 export const opportunityStatusEnum = pgEnum("opportunity_status", [
   "open",

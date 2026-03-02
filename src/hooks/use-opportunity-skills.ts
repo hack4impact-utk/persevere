@@ -1,7 +1,11 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import {
+  apiClient,
+  AuthenticationError,
+  AuthorizationError,
+} from "@/lib/api-client";
 
 export type EventSkill = {
   skillId: number;
@@ -16,7 +20,7 @@ export type EventInterest = {
 export type UseOpportunitySkillsResult = {
   requiredSkills: EventSkill[];
   requiredInterests: EventInterest[];
-  isLoading: boolean;
+  loading: boolean;
   addSkill: (skillId: number) => Promise<void>;
   removeSkill: (skillId: number) => Promise<void>;
   addInterest: (interestId: number) => Promise<void>;
@@ -40,7 +44,7 @@ export function useOpportunitySkills(
   const [requiredInterests, setRequiredInterests] = useState<EventInterest[]>(
     [],
   );
-  const [isLoading, setIsLoading] = useState(eventId !== null);
+  const [loading, setLoading] = useState(eventId !== null);
 
   const handleAuthError = useCallback(
     (err: unknown): void => {
@@ -60,7 +64,7 @@ export function useOpportunitySkills(
     if (eventId === null) {
       return { requiredSkills: [], requiredInterests: [] };
     }
-    setIsLoading(true);
+    setLoading(true);
     try {
       const [skillsResult, interestsResult] = await Promise.all([
         apiClient.get<{ data: EventSkill[] }>(
@@ -80,7 +84,7 @@ export function useOpportunitySkills(
       handleAuthError(error);
       return { requiredSkills: [], requiredInterests: [] };
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }, [eventId, handleAuthError]);
 
@@ -88,7 +92,7 @@ export function useOpportunitySkills(
     if (eventId === null) {
       setRequiredSkills([]);
       setRequiredInterests([]);
-      setIsLoading(false);
+      setLoading(false);
       return;
     }
     fetchAll().catch((error: unknown) => {
@@ -184,7 +188,10 @@ export function useOpportunitySkills(
       for (const result of results) {
         if (result.status === "rejected") {
           const error = result.reason;
-          if (error instanceof AuthenticationError) {
+          if (
+            error instanceof AuthenticationError ||
+            error instanceof AuthorizationError
+          ) {
             handleAuthError(error);
           } else if (firstNonAuthError === null) {
             firstNonAuthError = error;
@@ -202,7 +209,7 @@ export function useOpportunitySkills(
   return {
     requiredSkills,
     requiredInterests,
-    isLoading,
+    loading,
     addSkill,
     removeSkill,
     addInterest,

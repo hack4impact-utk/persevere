@@ -15,7 +15,6 @@ import {
   Card,
   CardContent,
   Chip,
-  CircularProgress,
   Grid,
   Typography,
 } from "@mui/material";
@@ -23,6 +22,7 @@ import { useSession } from "next-auth/react";
 import { useSnackbar } from "notistack";
 import { JSX, useEffect, useState } from "react";
 
+import { LoadingSkeleton } from "@/components/ui";
 import type { AvailabilityData } from "@/components/volunteer/availability-editor";
 import ProfileEditForm from "@/components/volunteer/profile-edit-form";
 import { useSignOut } from "@/hooks/use-auth";
@@ -112,7 +112,7 @@ export default function VolunteerProfilePage(): JSX.Element {
   const { enqueueSnackbar } = useSnackbar();
   const {
     profile: profileData,
-    isLoading: loading,
+    loading,
     fetchProfile,
     updateProfile,
   } = useVolunteerProfile();
@@ -147,18 +147,10 @@ export default function VolunteerProfilePage(): JSX.Element {
     }
   };
 
-  if (!session) {
+  if (!session || loading) {
     return (
-      <Box sx={{ p: 4, textAlign: "center" }}>
-        <CircularProgress size={32} />
-      </Box>
-    );
-  }
-
-  if (loading) {
-    return (
-      <Box sx={{ p: 4, textAlign: "center" }}>
-        <CircularProgress size={32} />
+      <Box sx={{ p: 4, maxWidth: 860, mx: "auto" }}>
+        <LoadingSkeleton variant="lines" count={8} />
       </Box>
     );
   }
@@ -203,7 +195,7 @@ export default function VolunteerProfilePage(): JSX.Element {
 
   return (
     <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-      <Box sx={{ maxWidth: 860, mx: "auto", px: 3, py: 4 }}>
+      <Box sx={{ maxWidth: 860, mx: "auto", px: 3, pt: 1, pb: 4 }}>
         {/* ── Hero header ─────────────────────────────────────── */}
         <Card
           elevation={0}

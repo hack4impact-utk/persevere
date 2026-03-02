@@ -41,6 +41,13 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
+import { DetailField } from "@/components/shared";
+import {
+  getBackgroundCheckColor,
+  getBackgroundCheckLabel,
+  getRsvpStatusColor,
+  StatusBadge,
+} from "@/components/ui";
 import { apiClient } from "@/lib/api-client";
 import type { FetchVolunteerByIdResult } from "@/services/volunteer-client.service";
 
@@ -72,25 +79,6 @@ function formatStaffTime(hhmm: string): string {
     ? `${hour} ${period}`
     : `${hour}:${m.toString().padStart(2, "0")} ${period}`;
 }
-
-const getStatusColor = (
-  status: string,
-): "success" | "warning" | "error" | "default" => {
-  if (status === "approved") return "success";
-  if (status === "pending") return "warning";
-  if (status === "rejected") return "error";
-  return "default";
-};
-
-const getStatusLabel = (status: string): string => {
-  const labels: Record<string, string> = {
-    approved: "Approved",
-    pending: "Pending",
-    rejected: "Rejected",
-    not_required: "Not Required",
-  };
-  return labels[status] || status;
-};
 
 export default function VolunteerProfile({
   volunteer,
@@ -328,10 +316,9 @@ export default function VolunteerProfile({
                     >
                       Status
                     </Typography>
-                    <Chip
+                    <StatusBadge
                       label={vol.isAlumni ? "Alumni" : "Active Volunteer"}
                       color={vol.isAlumni ? "secondary" : "success"}
-                      size="small"
                       icon={
                         vol.isAlumni ? undefined : (
                           <CheckCircleIcon fontSize="small" />
@@ -348,10 +335,9 @@ export default function VolunteerProfile({
                     >
                       Background Check
                     </Typography>
-                    <Chip
-                      label={getStatusLabel(vol.backgroundCheckStatus)}
-                      color={getStatusColor(vol.backgroundCheckStatus)}
-                      size="small"
+                    <StatusBadge
+                      label={getBackgroundCheckLabel(vol.backgroundCheckStatus)}
+                      color={getBackgroundCheckColor(vol.backgroundCheckStatus)}
                       icon={<SecurityIcon fontSize="small" />}
                       sx={{ fontWeight: 500 }}
                     />
@@ -364,10 +350,9 @@ export default function VolunteerProfile({
                     >
                       Media Release
                     </Typography>
-                    <Chip
+                    <StatusBadge
                       label={vol.mediaRelease ? "Approved" : "Not Approved"}
                       color={vol.mediaRelease ? "success" : "warning"}
-                      size="small"
                       icon={<DescriptionIcon fontSize="small" />}
                       sx={{ fontWeight: 500 }}
                     />
@@ -530,54 +515,27 @@ export default function VolunteerProfile({
                     gap: 2,
                   }}
                 >
-                  <Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: "block", mb: 0.5 }}
-                    >
-                      Joined Date
-                    </Typography>
-                    <Typography variant="body2" fontWeight={500}>
-                      {new Date(vol.createdAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: "block", mb: 0.5 }}
-                    >
-                      Last Updated
-                    </Typography>
-                    <Typography variant="body2" fontWeight={500}>
-                      {new Date(vol.updatedAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: "block", mb: 0.5 }}
-                    >
-                      Notification Preference
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      fontWeight={500}
-                      textTransform="capitalize"
-                    >
-                      {vol.notificationPreference}
-                    </Typography>
-                  </Box>
+                  <DetailField
+                    label="Joined Date"
+                    value={new Date(vol.createdAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  />
+                  <DetailField
+                    label="Last Updated"
+                    value={new Date(vol.updatedAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  />
+                  <DetailField
+                    label="Notification Preference"
+                    value={vol.notificationPreference}
+                    valueSx={{ textTransform: "capitalize" }}
+                  />
                   {user.emailVerifiedAt !== undefined && (
                     <Box>
                       <Typography
@@ -807,22 +765,10 @@ export default function VolunteerProfile({
                           <Typography variant="body2" fontWeight={500}>
                             {opp.opportunityTitle || "Unknown Opportunity"}
                           </Typography>
-                          <Chip
+                          <StatusBadge
                             label={opp.rsvpStatus}
-                            size="small"
-                            color={
-                              opp.rsvpStatus === "attended"
-                                ? "success"
-                                : opp.rsvpStatus === "confirmed"
-                                  ? "primary"
-                                  : opp.rsvpStatus === "declined"
-                                    ? "error"
-                                    : "default"
-                            }
-                            sx={{
-                              textTransform: "capitalize",
-                              fontSize: "0.7rem",
-                            }}
+                            color={getRsvpStatusColor(opp.rsvpStatus)}
+                            sx={{ fontSize: "0.7rem" }}
                           />
                         </Box>
                         {opp.opportunityLocation && (

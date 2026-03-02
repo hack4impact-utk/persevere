@@ -1,7 +1,7 @@
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
 
 export type UseAttendeesResult = {
   attendees: { firstName: string }[];
@@ -10,10 +10,10 @@ export type UseAttendeesResult = {
 };
 
 export function useAttendees(id: number | null): UseAttendeesResult {
-  const router = useRouter();
   const [attendees, setAttendees] = useState<{ firstName: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
 
   useEffect(() => {
     if (id === null) {
@@ -36,10 +36,7 @@ export function useAttendees(id: number | null): UseAttendeesResult {
         }
       } catch (error_) {
         if (cancelled) return;
-        if (error_ instanceof AuthenticationError) {
-          router.push("/auth/login");
-          return;
-        }
+        if (handleApiError(error_)) return;
         setError(
           error_ instanceof Error ? error_.message : "Failed to load attendees",
         );
@@ -53,7 +50,7 @@ export function useAttendees(id: number | null): UseAttendeesResult {
     return (): void => {
       cancelled = true;
     };
-  }, [id, router]);
+  }, [id, handleApiError]);
 
   return { attendees, loading, error };
 }

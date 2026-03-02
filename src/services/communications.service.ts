@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 
 import db from "@/db";
 import {
@@ -32,7 +32,6 @@ export type CreateCommunicationInput = {
   body: string;
   recipientType: "volunteers" | "staff" | "both";
   senderEmail: string;
-  senderRole: string;
 };
 
 export type CommunicationListFilters = {
@@ -90,9 +89,7 @@ export async function listCommunications(
   const filteredQuery =
     whereClauses.length > 0 ? baseQuery.where(and(...whereClauses)) : baseQuery;
 
-  const countQuery = db
-    .select({ count: bulkCommunicationLogs.id })
-    .from(bulkCommunicationLogs);
+  const countQuery = db.select({ total: count() }).from(bulkCommunicationLogs);
   const filteredCountQuery =
     whereClauses.length > 0
       ? countQuery.where(and(...whereClauses))
@@ -103,7 +100,7 @@ export async function listCommunications(
     filteredCountQuery,
   ]);
 
-  return { communications, total: totalResult.length, page, limit };
+  return { communications, total: totalResult[0]?.total ?? 0, page, limit };
 }
 
 /**
