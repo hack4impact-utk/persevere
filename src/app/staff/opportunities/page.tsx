@@ -3,13 +3,7 @@
 import AddIcon from "@mui/icons-material/Add";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import ListIcon from "@mui/icons-material/List";
-import {
-  Box,
-  Button,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from "@mui/material";
+import { Box, Button, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
@@ -72,26 +66,20 @@ export default function StaffOpportunitiesPage(): JSX.Element {
         height: "100%",
         gap: 3,
         px: { xs: 2, md: 4 },
-        py: { xs: 2, md: 4 },
+        pt: { xs: 1, md: 1.5 },
+        pb: { xs: 2, md: 4 },
       }}
     >
       {/* Header */}
       <Box
         sx={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "flex-end",
           alignItems: "center",
           flexWrap: "wrap",
           gap: 2,
         }}
       >
-        <Typography
-          variant="h4"
-          sx={{ fontWeight: 700, letterSpacing: "-0.02em" }}
-        >
-          Opportunities
-        </Typography>
-
         <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
           <ToggleButtonGroup
             value={view}

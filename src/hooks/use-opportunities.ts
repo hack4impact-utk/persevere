@@ -1,14 +1,21 @@
 import { useSnackbar } from "notistack";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { Opportunity, RsvpItem } from "@/components/volunteer/types";
+import type {
+  Opportunity,
+  RsvpItem,
+  RsvpStatus,
+} from "@/components/volunteer/types";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
 import { apiClient } from "@/lib/api-client";
 
-const LIMIT = 12;
+/** Page size for infinite-scroll opportunity listing (larger than default table page size) */
+const OPPORTUNITIES_PAGE_SIZE = 12;
 
 export type UseOpportunitiesResult = {
   opportunities: Opportunity[];
   rsvpedIds: Set<number>;
+  rsvpStatusMap: Map<number, RsvpStatus>;
   loading: boolean;
   error: string | null;
   rsvpWarning: boolean;
@@ -24,8 +31,12 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
 
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [rsvpedIds, setRsvpedIds] = useState<Set<number>>(new Set());
+  const [rsvpStatusMap, setRsvpStatusMap] = useState<Map<number, RsvpStatus>>(
+    new Map(),
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
   const [rsvpWarning, setRsvpWarning] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -42,13 +53,13 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
     setPage(0);
     try {
       const params = new URLSearchParams({
-        limit: String(LIMIT),
+        limit: String(OPPORTUNITIES_PAGE_SIZE),
         offset: "0",
         ...(search && { search }),
       });
 
       const [oppsResult, rsvpsResult] = await Promise.allSettled([
-        apiClient.get<{ data: Opportunity[] }>(
+        apiClient.get<{ data: Opportunity[]; total: number }>(
           `/api/volunteer/opportunities?${params}`,
         ),
         apiClient.get<{ data: { all: RsvpItem[] } }>("/api/volunteer/rsvps"),
@@ -59,12 +70,17 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
       }
 
       setOpportunities(oppsResult.value.data);
-      setHasMore(oppsResult.value.data.length === LIMIT);
+      setHasMore(oppsResult.value.data.length === OPPORTUNITIES_PAGE_SIZE);
 
       if (rsvpsResult.status === "fulfilled") {
         setRsvpedIds(
           new Set(rsvpsResult.value.data.all.map((r) => r.opportunityId)),
         );
+        const statusMap = new Map<number, RsvpStatus>();
+        for (const r of rsvpsResult.value.data.all) {
+          statusMap.set(r.opportunityId, r.rsvpStatus);
+        }
+        setRsvpStatusMap(statusMap);
       } else {
         console.error(
           "[useOpportunities] RSVP status fetch failed:",
@@ -73,13 +89,18 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
         setRsvpWarning(true);
       }
     } catch (error_) {
-      console.error("[useOpportunities] Failed to load opportunities:", error_);
-      setError("Failed to load opportunities. Please try again.");
+      if (
+        handleApiError(
+          error_,
+          "Failed to load opportunities. Please try again.",
+        )
+      )
+        return;
       setOpportunities([]);
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [handleApiError, search]);
 
   loadOpportunitiesRef.current = loadOpportunities;
 
@@ -107,6 +128,15 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
         }
         return next;
       });
+      setRsvpStatusMap((prev) => {
+        const m = new Map(prev);
+        if (newIsRsvped) {
+          m.set(opportunityId, "pending");
+        } else {
+          m.delete(opportunityId);
+        }
+        return m;
+      });
       setOpportunities((prev) =>
         prev.map((opp) => {
           if (opp.id !== opportunityId) return opp;
@@ -131,30 +161,31 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
     setLoadingMore(true);
     const nextPage = page + 1;
     const params = new URLSearchParams({
-      limit: String(LIMIT),
-      offset: String(nextPage * LIMIT),
+      limit: String(OPPORTUNITIES_PAGE_SIZE),
+      offset: String(nextPage * OPPORTUNITIES_PAGE_SIZE),
       ...(search && { search }),
     });
     try {
-      const json = await apiClient.get<{ data: Opportunity[] }>(
+      const json = await apiClient.get<{ data: Opportunity[]; total: number }>(
         `/api/volunteer/opportunities?${params}`,
       );
       setOpportunities((prev) => [...prev, ...json.data]);
       setPage(nextPage);
-      setHasMore(json.data.length === LIMIT);
+      setHasMore(json.data.length === OPPORTUNITIES_PAGE_SIZE);
     } catch (error_) {
-      console.error("[useOpportunities] loadMore failed:", error_);
+      if (handleApiError(error_)) return;
       enqueueSnackbar("Failed to load more opportunities", {
         variant: "error",
       });
     } finally {
       setLoadingMore(false);
     }
-  }, [hasMore, loadingMore, page, search, enqueueSnackbar]);
+  }, [handleApiError, hasMore, loadingMore, page, search, enqueueSnackbar]);
 
   return {
     opportunities,
     rsvpedIds,
+    rsvpStatusMap,
     loading,
     error,
     rsvpWarning,

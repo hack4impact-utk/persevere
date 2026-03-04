@@ -1,14 +1,13 @@
+import type {
+  BulkCommunicationLog,
+  CommunicationFilters,
+  CommunicationResponse,
+  CreateCommunicationRequest,
+  RecipientType,
+} from "@/components/staff/communications/types";
 import { apiClient } from "@/lib/api-client";
 
-import {
-  type BulkCommunicationLog,
-  type CommunicationFilters,
-  type CommunicationResponse,
-  type CreateCommunicationRequest,
-  type RecipientType,
-} from "./types";
-
-export { AuthenticationError } from "@/lib/api-client";
+export { AuthenticationError, AuthorizationError } from "@/lib/api-client";
 
 /**
  * Fetches a paginated list of bulk communications with optional search and filtering.

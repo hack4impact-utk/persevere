@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  Autocomplete,
   Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -22,6 +24,9 @@ import { enqueueSnackbar } from "notistack";
 import { JSX, useState } from "react";
 
 import { useCalendarEvents } from "@/hooks/use-calendar-events";
+import { useOpportunitySkills } from "@/hooks/use-opportunity-skills";
+import type { CatalogInterest, CatalogSkill } from "@/hooks/use-skills";
+import { useSkills } from "@/hooks/use-skills";
 
 type EventFormData = {
   title: string;
@@ -82,6 +87,8 @@ export default function EventFormModal({
   initialDates,
 }: EventFormModalProps): JSX.Element {
   const { createEvent } = useCalendarEvents();
+  const { skills: catalogSkills, interests: catalogInterests } = useSkills();
+  const { applyToEvents } = useOpportunitySkills(null);
 
   const [formData, setFormData] = useState<EventFormData>(() => ({
     ...defaultFormData,
@@ -91,6 +98,10 @@ export default function EventFormModal({
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrence, setRecurrence] =
     useState<RecurrenceData>(defaultRecurrence);
+  const [selectedSkills, setSelectedSkills] = useState<CatalogSkill[]>([]);
+  const [selectedInterests, setSelectedInterests] = useState<CatalogInterest[]>(
+    [],
+  );
 
   // Sync initialDates when modal opens
   const handleOpen = (): void => {
@@ -100,6 +111,8 @@ export default function EventFormModal({
     });
     setIsRecurring(false);
     setRecurrence(defaultRecurrence);
+    setSelectedSkills([]);
+    setSelectedInterests([]);
   };
 
   const handleClose = (): void => {
@@ -136,7 +149,7 @@ export default function EventFormModal({
     }
 
     try {
-      await createEvent({
+      const createdEvents = await createEvent({
         title: formData.title,
         description: formData.description || undefined,
         location: formData.location || undefined,
@@ -160,7 +173,29 @@ export default function EventFormModal({
           : undefined,
       });
 
-      enqueueSnackbar("Event created successfully", { variant: "success" });
+      let tagError = false;
+      if (
+        createdEvents.length > 0 &&
+        (selectedSkills.length > 0 || selectedInterests.length > 0)
+      ) {
+        try {
+          const eventIds = createdEvents.map((e) => Number.parseInt(e.id, 10));
+          await applyToEvents(
+            eventIds,
+            selectedSkills.map((s) => s.id),
+            selectedInterests.map((i) => i.id),
+          );
+        } catch {
+          tagError = true;
+        }
+      }
+
+      enqueueSnackbar(
+        tagError
+          ? "Event created but failed to tag some skills/interests"
+          : "Event created successfully",
+        { variant: tagError ? "warning" : "success" },
+      );
       onCreated();
       onClose();
     } catch (error) {
@@ -277,6 +312,62 @@ export default function EventFormModal({
               setFormData({ ...formData, maxVolunteers: e.target.value });
             }}
             sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+          />
+
+          <Autocomplete
+            multiple
+            options={catalogSkills}
+            getOptionLabel={(o) => o.name}
+            value={selectedSkills}
+            onChange={(_, value) => {
+              setSelectedSkills(value);
+            }}
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => (
+                <Chip
+                  label={option.name}
+                  size="small"
+                  {...getTagProps({ index })}
+                  key={option.id}
+                />
+              ))
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Required Skills"
+                placeholder="Add skills..."
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              />
+            )}
+          />
+
+          <Autocomplete
+            multiple
+            options={catalogInterests}
+            getOptionLabel={(o) => o.name}
+            value={selectedInterests}
+            onChange={(_, value) => {
+              setSelectedInterests(value);
+            }}
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => (
+                <Chip
+                  label={option.name}
+                  size="small"
+                  {...getTagProps({ index })}
+                  key={option.id}
+                />
+              ))
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Related Interests"
+                placeholder="Add interests..."
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              />
+            )}
           />
 
           {/* Recurring toggle */}

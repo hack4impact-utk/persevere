@@ -7,7 +7,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -28,6 +27,7 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
+import { LoadingSkeleton } from "@/components/ui";
 import { useSkills } from "@/hooks/use-skills";
 
 type Skill = {
@@ -59,8 +59,8 @@ export default function SkillsSettingsClient(): JSX.Element {
   const {
     skills,
     interests,
-    isLoadingSkills: skillsLoading,
-    isLoadingInterests: interestsLoading,
+    loadingSkills: skillsLoading,
+    loadingInterests: interestsLoading,
     fetchSkills,
     fetchInterests,
     createSkill: hookCreateSkill,
@@ -259,9 +259,6 @@ export default function SkillsSettingsClient(): JSX.Element {
 
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
-      <Typography variant="h4" fontWeight={700} sx={{ mb: 4 }}>
-        Skills & Interests Settings
-      </Typography>
       <Stack spacing={4}>
         {/* Skills Section */}
         <Box>
@@ -295,9 +292,7 @@ export default function SkillsSettingsClient(): JSX.Element {
           </Box>
 
           {skillsLoading ? (
-            <Box display="flex" justifyContent="center" py={6}>
-              <CircularProgress size={32} />
-            </Box>
+            <LoadingSkeleton variant="lines" count={5} />
           ) : (
             <TableContainer component={Paper} variant="outlined">
               <Table size="small">
@@ -441,9 +436,7 @@ export default function SkillsSettingsClient(): JSX.Element {
           </Box>
 
           {interestsLoading ? (
-            <Box display="flex" justifyContent="center" py={6}>
-              <CircularProgress size={32} />
-            </Box>
+            <LoadingSkeleton variant="lines" count={5} />
           ) : (
             <TableContainer component={Paper} variant="outlined">
               <Table size="small">

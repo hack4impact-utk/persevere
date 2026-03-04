@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 import { getEventRsvps } from "@/services/event-rsvps.service";
 import { NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import {
+  AuthError,
+  authErrorResponse,
+  requireStaffAuth,
+} from "@/utils/server/auth";
 import { validateAndParseId } from "@/utils/validate-id";
 
 /**
@@ -15,7 +19,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    await requireAuth("staff");
+    await requireStaffAuth();
 
     const { id } = await params;
     const eventId = validateAndParseId(id);
@@ -26,12 +30,7 @@ export async function GET(
     const rsvps = await getEventRsvps(eventId);
     return NextResponse.json({ data: rsvps });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof NotFoundError) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }

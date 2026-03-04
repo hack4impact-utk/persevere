@@ -1,20 +1,10 @@
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 
 import db from "@/db";
-import {
-  interests,
-  skills,
-  users,
-  volunteerInterests,
-  volunteers,
-  volunteerSkills,
-} from "@/db/schema";
-import {
-  opportunities,
-  volunteerHours,
-  volunteerRsvps,
-} from "@/db/schema/opportunities";
-import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { users, volunteers } from "@/db/schema";
+import { volunteerHours } from "@/db/schema/opportunities";
+import { toNumber } from "@/services/shared/db-helpers";
+import { fetchVolunteerDetailData } from "@/services/shared/volunteer-data";
 import { NotFoundError } from "@/utils/errors";
 import { sendWelcomeEmail } from "@/utils/server/email";
 import { generateSecurePassword, hashPassword } from "@/utils/server/password";
@@ -161,11 +151,18 @@ export async function listVolunteers(
     whereClauses.push(eq(users.isActive, isActive === "true"));
   }
 
-  // Build volunteer list query with hours calculation
+  // Build volunteer list query with hours aggregated via LEFT JOIN (eliminates N+1)
   const baseQuery = db
-    .select()
+    .select({
+      volunteers: volunteers,
+      users: users,
+      totalHours: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)`,
+    })
     .from(volunteers)
-    .leftJoin(users, eq(volunteers.userId, users.id));
+    .leftJoin(users, eq(volunteers.userId, users.id))
+    .leftJoin(volunteerHours, eq(volunteerHours.volunteerId, volunteers.id))
+    .groupBy(volunteers.id, users.id)
+    .$dynamic();
 
   const volunteerListRaw = await (whereClauses.length > 0
     ? baseQuery
@@ -178,26 +175,11 @@ export async function listVolunteers(
         .offset(offset)
         .orderBy(desc(volunteers.createdAt)));
 
-  // Calculate total hours for each volunteer
-  const data = await Promise.all(
-    volunteerListRaw.map(async (volunteer) => {
-      const hoursResult = await db
-        .select({
-          total: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)`,
-        })
-        .from(volunteerHours)
-        .where(eq(volunteerHours.volunteerId, volunteer.volunteers.id));
-
-      const totalHours =
-        typeof hoursResult[0]?.total === "number" ? hoursResult[0].total : 0;
-
-      return {
-        volunteers: volunteer.volunteers,
-        users: volunteer.users,
-        totalHours,
-      };
-    }),
-  );
+  const data = volunteerListRaw.map((row) => ({
+    volunteers: row.volunteers,
+    users: row.users,
+    totalHours: toNumber(row.totalHours),
+  }));
 
   // Build count query conditionally
   const countBaseQuery = db
@@ -209,10 +191,7 @@ export async function listVolunteers(
     ? countBaseQuery.where(and(...whereClauses))
     : countBaseQuery);
 
-  const total =
-    typeof totalResult[0]?.count === "bigint"
-      ? Number(totalResult[0].count)
-      : (totalResult[0]?.count ?? 0);
+  const total = toNumber(totalResult[0]?.count);
 
   return { data, total };
 }
@@ -307,83 +286,11 @@ export async function getVolunteerProfile(
     return null;
   }
 
-  // Calculate total hours
-  const hoursResult = await db
-    .select({
-      total: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)`,
-    })
-    .from(volunteerHours)
-    .where(eq(volunteerHours.volunteerId, volunteerId));
-
-  const totalHours =
-    typeof hoursResult[0]?.total === "number" ? hoursResult[0].total : 0;
-
-  // Fetch skills with proficiency levels
-  const volunteerSkillsData = await db
-    .select({
-      skillId: volunteerSkills.skillId,
-      skillName: skills.name,
-      skillDescription: skills.description,
-      skillCategory: skills.category,
-      proficiencyLevel: volunteerSkills.level,
-    })
-    .from(volunteerSkills)
-    .leftJoin(skills, eq(volunteerSkills.skillId, skills.id))
-    .where(eq(volunteerSkills.volunteerId, volunteerId));
-
-  // Fetch interests
-  const volunteerInterestsData = await db
-    .select({
-      interestId: volunteerInterests.interestId,
-      interestName: interests.name,
-      interestDescription: interests.description,
-    })
-    .from(volunteerInterests)
-    .leftJoin(interests, eq(volunteerInterests.interestId, interests.id))
-    .where(eq(volunteerInterests.volunteerId, volunteerId));
-
-  // Fetch recent opportunities (last 5)
-  const recentOpportunities = await db
-    .select({
-      opportunityId: volunteerRsvps.opportunityId,
-      opportunityTitle: opportunities.title,
-      opportunityLocation: opportunities.location,
-      opportunityStartDate: opportunities.startDate,
-      opportunityEndDate: opportunities.endDate,
-      rsvpStatus: volunteerRsvps.status,
-      rsvpAt: volunteerRsvps.rsvpAt,
-      rsvpNotes: volunteerRsvps.notes,
-    })
-    .from(volunteerRsvps)
-    .leftJoin(opportunities, eq(volunteerRsvps.opportunityId, opportunities.id))
-    .where(eq(volunteerRsvps.volunteerId, volunteerId))
-    .orderBy(desc(volunteerRsvps.rsvpAt))
-    .limit(5);
-
-  // Fetch hours breakdown (last 10 entries)
-  const hoursBreakdown = await db
-    .select({
-      id: volunteerHours.id,
-      opportunityId: volunteerHours.opportunityId,
-      opportunityTitle: opportunities.title,
-      date: volunteerHours.date,
-      hours: volunteerHours.hours,
-      notes: volunteerHours.notes,
-      verifiedAt: volunteerHours.verifiedAt,
-    })
-    .from(volunteerHours)
-    .leftJoin(opportunities, eq(volunteerHours.opportunityId, opportunities.id))
-    .where(eq(volunteerHours.volunteerId, volunteerId))
-    .orderBy(desc(volunteerHours.date))
-    .limit(DEFAULT_PAGE_SIZE);
+  const detailData = await fetchVolunteerDetailData(volunteerId);
 
   return {
     volunteer: volunteer[0],
-    totalHours,
-    skills: volunteerSkillsData,
-    interests: volunteerInterestsData,
-    recentOpportunities,
-    hoursBreakdown,
+    ...detailData,
   };
 }
 
@@ -427,20 +334,6 @@ export async function updateVolunteerProfile(
     volunteerData.notificationPreference = notificationPreference;
 
   // Update both tables sequentially (neon-http doesn't support transactions)
-  if (Object.keys(userData).length > 0) {
-    try {
-      await db
-        .update(users)
-        .set(userData)
-        .where(eq(users.id, volunteer[0].userId));
-    } catch (error) {
-      console.error(
-        `[volunteer.service] Failed updating users table for volunteerId=${volunteerId}:`,
-        error,
-      );
-      throw error;
-    }
-  }
   if (Object.keys(volunteerData).length > 0) {
     try {
       await db
@@ -449,7 +342,21 @@ export async function updateVolunteerProfile(
         .where(eq(volunteers.id, volunteerId));
     } catch (error) {
       console.error(
-        `[volunteer.service] PARTIAL WRITE: users table may have been updated but volunteers table failed for volunteerId=${volunteerId}:`,
+        `[volunteer.service] Failed updating volunteers table for volunteerId=${volunteerId}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+  if (Object.keys(userData).length > 0) {
+    try {
+      await db
+        .update(users)
+        .set(userData)
+        .where(eq(users.id, volunteer[0].userId));
+    } catch (error) {
+      console.error(
+        `[volunteer.service] PARTIAL WRITE: volunteers table may have been updated but users table failed for volunteerId=${volunteerId}:`,
         error,
       );
       throw error;

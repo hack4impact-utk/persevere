@@ -7,7 +7,13 @@ import {
 } from "@/services/interests-server.service";
 import { ConflictError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import {
+  AuthError,
+  authErrorResponse,
+  requireAuth,
+  requireStaffAuth,
+} from "@/utils/server/auth";
+import { parseBodyOrError } from "@/utils/server/route-helpers";
 
 const interestCreateSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -16,21 +22,13 @@ const interestCreateSchema = z.object({
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireStaffAuth();
 
     const allInterests = await listInterests();
 
     return NextResponse.json({ data: allInterests });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
@@ -42,30 +40,17 @@ export async function POST(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const json = await request.json();
-    const result = interestCreateSchema.safeParse(json);
+    const parsed = await parseBodyOrError(request, interestCreateSchema);
+    if ("response" in parsed) return parsed.response;
 
-    if (!result.success) {
-      const firstError = result.error.issues[0];
-      return NextResponse.json(
-        { message: firstError.message },
-        { status: 400 },
-      );
-    }
-
-    const newInterest = await createInterest(result.data);
+    const newInterest = await createInterest(parsed.data);
 
     return NextResponse.json(
       { message: "Interest created successfully", data: newInterest },
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof ConflictError) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }

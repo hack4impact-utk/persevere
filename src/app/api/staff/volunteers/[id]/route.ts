@@ -7,7 +7,12 @@ import {
   updateVolunteerDetail,
 } from "@/services/volunteer-detail.service";
 import handleError from "@/utils/handle-error";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import {
+  AuthError,
+  authErrorResponse,
+  requireStaffAuth,
+} from "@/utils/server/auth";
+import { parseBodyOrError } from "@/utils/server/route-helpers";
 import { validateAndParseId } from "@/utils/validate-id";
 
 const volunteerUpdateSchema = z.object({
@@ -38,16 +43,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireStaffAuth();
 
     const { id } = await params;
-    const volunteerId = Number.parseInt(id, 10);
-    if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
-        { message: "Invalid volunteer ID" },
+        { error: "Invalid volunteer ID" },
         { status: 400 },
       );
     }
@@ -55,19 +57,14 @@ export async function GET(
     const data = await getVolunteerDetail(volunteerId);
     if (!data) {
       return NextResponse.json(
-        { message: "Volunteer not found" },
+        { error: "Volunteer not found" },
         { status: 404 },
       );
     }
 
     return NextResponse.json({ data });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
@@ -77,34 +74,24 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireStaffAuth();
 
     const { id } = await params;
     const volunteerId = validateAndParseId(id);
     if (volunteerId === null) {
       return NextResponse.json(
-        { message: "Invalid volunteer ID" },
+        { error: "Invalid volunteer ID" },
         { status: 400 },
       );
     }
 
-    const json = await request.json();
-    const result = volunteerUpdateSchema.safeParse(json);
-    if (!result.success) {
-      const firstError = result.error.issues[0];
-      return NextResponse.json(
-        { message: firstError.message },
-        { status: 400 },
-      );
-    }
+    const parsed = await parseBodyOrError(request, volunteerUpdateSchema);
+    if ("response" in parsed) return parsed.response;
 
-    const updated = await updateVolunteerDetail(volunteerId, result.data);
+    const updated = await updateVolunteerDetail(volunteerId, parsed.data);
     if (!updated) {
       return NextResponse.json(
-        { message: "Volunteer not found" },
+        { error: "Volunteer not found" },
         { status: 404 },
       );
     }
@@ -114,12 +101,7 @@ export async function PUT(
       data: updated,
     });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
@@ -129,16 +111,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireStaffAuth();
 
     const { id } = await params;
-    const volunteerId = Number(id);
-    if (!Number.isFinite(volunteerId)) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
-        { message: "Invalid volunteer id" },
+        { error: "Invalid volunteer id" },
         { status: 400 },
       );
     }
@@ -146,7 +125,7 @@ export async function DELETE(
     const deleted = await deleteVolunteer(volunteerId);
     if (!deleted) {
       return NextResponse.json(
-        { message: "Volunteer not found" },
+        { error: "Volunteer not found" },
         { status: 404 },
       );
     }
@@ -156,12 +135,7 @@ export async function DELETE(
       data: deleted,
     });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

@@ -1,6 +1,8 @@
+"use client";
 import { Button, Typography } from "@mui/material";
+import { useRouter } from "next/navigation";
 import { Session } from "next-auth";
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 
 import { getDashboardRoute } from "@/utils/routes";
 
@@ -15,26 +17,25 @@ type HomeCardContentProps = {
   status: "loading" | "authenticated" | "unauthenticated";
 };
 
-const handleSignIn = (): void => {
-  globalThis.location.href = "/auth/login";
-};
-
 export default function HomeCardContent({
   session,
   status,
 }: HomeCardContentProps): ReactNode {
-  if (status === "loading") {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (session) {
+      const dashboardRoute = getDashboardRoute(session.user?.role);
+      router.push(dashboardRoute);
+    }
+  }, [session, router]);
+
+  if (status === "loading" || session) {
     return (
       <Typography variant="h6" color="text.secondary">
         Loading...
       </Typography>
     );
-  }
-
-  if (session) {
-    const dashboardRoute = getDashboardRoute(session.user?.role);
-    globalThis.location.href = dashboardRoute;
-    return null;
   }
 
   return (
@@ -43,7 +44,11 @@ export default function HomeCardContent({
       <Typography color="text.secondary" mb={2}>
         Sign in to access your account information
       </Typography>
-      <Button variant="contained" size="large" onClick={handleSignIn}>
+      <Button
+        variant="contained"
+        size="large"
+        onClick={() => router.push("/auth/login")}
+      >
         Sign In
       </Button>
     </>

@@ -1,7 +1,7 @@
 import { apiClient } from "@/lib/api-client";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 
-export { AuthenticationError } from "@/lib/api-client";
+export { AuthenticationError, AuthorizationError } from "@/lib/api-client";
 
 export type Volunteer = {
   id: number;

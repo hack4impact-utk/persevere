@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 
-import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import { getDashboardRoute } from "@/utils/routes";
+import { getServerSession } from "@/utils/server/auth";
 
 /**
  * Home Page
@@ -11,7 +10,12 @@ import { getDashboardRoute } from "@/utils/routes";
  * Protected by middleware - unauthenticated users are redirected to login.
  */
 export default async function HomePage(): Promise<never> {
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession();
+  } catch {
+    redirect("/auth/login");
+  }
 
   if (!session) {
     redirect("/auth/login");
