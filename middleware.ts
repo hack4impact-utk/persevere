@@ -31,6 +31,11 @@ export default withAuth(function middleware(req) {
   }
 
   // Email verification handled on first sign-in (auth-options.ts)
+
+  // Inject pathname so server components can detect the current route.
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", req.nextUrl.pathname);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 });
 
 export const config = {

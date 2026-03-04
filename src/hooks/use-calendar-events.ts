@@ -1,7 +1,7 @@
-import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
 
 export type CalendarEvent = {
   id: string;
@@ -12,6 +12,7 @@ export type CalendarEvent = {
   end: string;
   extendedProps?: {
     maxVolunteers?: number | null;
+    rsvpCount?: number;
     status?: string;
     createdById?: number;
     isRecurring?: boolean;
@@ -41,7 +42,9 @@ type UpdateEventData = Partial<CreateEventData>;
 
 export type UseCalendarEventsResult = {
   events: CalendarEvent[];
-  isLoading: boolean;
+  loading: boolean;
+  isMutating: boolean;
+  error: string | null;
   fetchEvents: (startDate?: Date, endDate?: Date) => Promise<void>;
   createEvent: (data: CreateEventData) => Promise<CalendarEvent[]>;
   updateEvent: (id: string, data: UpdateEventData) => Promise<void>;
@@ -49,13 +52,16 @@ export type UseCalendarEventsResult = {
 };
 
 export function useCalendarEvents(): UseCalendarEventsResult {
-  const router = useRouter();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isMutating, setIsMutating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
 
   const fetchEvents = useCallback(
     async (startDate?: Date, endDate?: Date): Promise<void> => {
-      setIsLoading(true);
+      setLoading(true);
+      setError(null);
       try {
         const params = new URLSearchParams();
         if (startDate) params.append("start", startDate.toISOString());
@@ -65,71 +71,69 @@ export function useCalendarEvents(): UseCalendarEventsResult {
           `/api/staff/calendar/events?${params.toString()}`,
         );
         setEvents(result.data ?? []);
-      } catch (error) {
-        if (error instanceof AuthenticationError) {
-          router.push("/auth/login");
-          return;
-        }
-        throw error;
+      } catch (error_) {
+        handleApiError(error_, "Failed to load calendar events.");
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     },
-    [router],
+    [handleApiError],
   );
 
   const createEvent = useCallback(
     async (data: CreateEventData): Promise<CalendarEvent[]> => {
+      setIsMutating(true);
       try {
         const result = await apiClient.post<{ data: CalendarEvent[] }>(
           "/api/staff/calendar/events",
           data,
         );
         return result.data;
-      } catch (error) {
-        if (error instanceof AuthenticationError) {
-          router.push("/auth/login");
-          return [];
-        }
-        throw error;
+      } catch (error_) {
+        if (handleApiError(error_)) return [];
+        throw error_;
+      } finally {
+        setIsMutating(false);
       }
     },
-    [router],
+    [handleApiError],
   );
 
   const updateEvent = useCallback(
     async (id: string, data: UpdateEventData): Promise<void> => {
+      setIsMutating(true);
       try {
         await apiClient.put(`/api/staff/calendar/events/${id}`, data);
-      } catch (error) {
-        if (error instanceof AuthenticationError) {
-          router.push("/auth/login");
-          return;
-        }
-        throw error;
+      } catch (error_) {
+        if (handleApiError(error_)) return;
+        throw error_;
+      } finally {
+        setIsMutating(false);
       }
     },
-    [router],
+    [handleApiError],
   );
 
   const deleteEvent = useCallback(
     async (id: string): Promise<void> => {
+      setIsMutating(true);
       try {
         await apiClient.delete(`/api/staff/calendar/events/${id}`);
-      } catch (error) {
-        if (error instanceof AuthenticationError) {
-          router.push("/auth/login");
-          return;
-        }
-        throw error;
+      } catch (error_) {
+        if (handleApiError(error_)) return;
+        throw error_;
+      } finally {
+        setIsMutating(false);
       }
     },
-    [router],
+    [handleApiError],
   );
 
   return {
     events,
-    isLoading,
+    loading,
+    isMutating,
+    error,
     fetchEvents,
     createEvent,
     updateEvent,

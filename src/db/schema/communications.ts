@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { recipientTypeEnum } from "./enums";
+import { timestamps } from "./helpers";
 import { users } from "./users";
 
 // Communication logs - tracks all messages sent between users
@@ -51,8 +52,7 @@ export const communicationTemplates = pgTable("communication_templates", {
   type: text("type").notNull(),
   category: text("category"),
   isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  ...timestamps,
 });
 
 // Table relationships

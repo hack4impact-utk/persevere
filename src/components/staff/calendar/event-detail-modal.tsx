@@ -18,6 +18,7 @@ import {
 import { enqueueSnackbar } from "notistack";
 import { JSX, useEffect, useState } from "react";
 
+import { EmptyState, getRsvpStatusColor, StatusBadge } from "@/components/ui";
 import type { CalendarEvent } from "@/hooks/use-calendar-events";
 import { useCalendarEvents } from "@/hooks/use-calendar-events";
 import { useEventRsvps } from "@/hooks/use-event-rsvps";
@@ -67,19 +68,19 @@ export default function EventDetailModal({
   onDeleted,
 }: EventDetailModalProps): JSX.Element {
   const { updateEvent, deleteEvent } = useCalendarEvents();
-  const { rsvps, isLoading: rsvpsLoading, fetchRsvps } = useEventRsvps();
+  const { rsvps, loading: rsvpsLoading, fetchRsvps } = useEventRsvps();
   const {
     skills: catalogSkills,
     interests: catalogInterests,
-    isLoadingSkills,
-    isLoadingInterests,
+    loadingSkills,
+    loadingInterests,
   } = useSkills();
 
   const numericEventId = eventId ? Number.parseInt(eventId, 10) : null;
   const {
     requiredSkills,
     requiredInterests,
-    isLoading: skillsLoading,
+    loading: skillsLoading,
     addSkill,
     removeSkill,
     addInterest,
@@ -123,7 +124,7 @@ export default function EventDetailModal({
 
   const handleEditClick = (): void => {
     if (!event) return;
-    if (skillsLoading || isLoadingSkills || isLoadingInterests) {
+    if (skillsLoading || loadingSkills || loadingInterests) {
       enqueueSnackbar(
         "Skills and interests are still loading. Try again shortly.",
         {
@@ -409,9 +410,7 @@ export default function EventDetailModal({
                   {rsvpsLoading ? (
                     <CircularProgress size={20} />
                   ) : rsvps.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary">
-                      No volunteers signed up yet
-                    </Typography>
+                    <EmptyState message="No volunteers signed up yet" />
                   ) : (
                     <Box
                       sx={{
@@ -428,7 +427,10 @@ export default function EventDetailModal({
                           <Typography variant="body2">
                             {r.firstName} {r.lastName}
                           </Typography>
-                          <Chip label={r.rsvpStatus} size="small" />
+                          <StatusBadge
+                            label={r.rsvpStatus}
+                            color={getRsvpStatusColor(r.rsvpStatus)}
+                          />
                         </Box>
                       ))}
                     </Box>
@@ -518,7 +520,7 @@ export default function EventDetailModal({
             <Button
               onClick={handleEditClick}
               variant="contained"
-              disabled={skillsLoading || isLoadingSkills || isLoadingInterests}
+              disabled={skillsLoading || loadingSkills || loadingInterests}
               sx={{
                 borderRadius: 2,
                 textTransform: "none",

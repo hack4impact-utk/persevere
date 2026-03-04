@@ -1,16 +1,7 @@
-import { Typography } from "@mui/material";
+import Box from "@mui/material/Box";
 import { JSX } from "react";
 
 /** Analytics dashboard for insights and metrics. */
 export default function StaffAnalyticsPage(): JSX.Element {
-  return (
-    <>
-      <Typography variant="h4" gutterBottom>
-        Analytics
-      </Typography>
-      <Typography color="text.secondary">
-        View insights, metrics, and analytics for your organization.
-      </Typography>
-    </>
-  );
+  return <Box sx={{ px: { xs: 2, md: 4 }, pt: { xs: 1, md: 1.5 } }} />;
 }

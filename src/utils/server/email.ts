@@ -4,6 +4,21 @@ import { env } from "@/utils/env";
 
 const resend = new Resend(env.resendApiKey);
 
+function wrapEmailHtml(bodyContent: string): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin: 20px 0;">
+    ${bodyContent}
+  </div>
+</body>
+</html>`;
+}
+
 /**
  * Sends a welcome email to a new volunteer with their login credentials
  * @param email - Volunteer's email address
@@ -18,16 +33,7 @@ export async function sendWelcomeEmail(
 ): Promise<unknown> {
   const signInUrl = `${env.nextAuthUrl}/auth/login`;
 
-  const welcomeEmailHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to Persevere</title>
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin: 20px 0;">
+  const welcomeEmailHtml = wrapEmailHtml(`
     <h1 style="color: #1976d2; margin-top: 0;">Welcome to Persevere, ${firstName}!</h1>
 
     <p>We're excited to have you join our volunteer community. Your account has been created and you can now sign in to get started.</p>
@@ -55,10 +61,7 @@ export async function sendWelcomeEmail(
     <p style="color: #999; font-size: 12px; margin: 0;">
       This is an automated message. Please do not reply to this email.
     </p>
-  </div>
-</body>
-</html>
-  `;
+  `);
 
   const emailText = `
 Welcome to Persevere, ${firstName}!
@@ -113,16 +116,7 @@ export async function sendPasswordResetEmail(
 ): Promise<unknown> {
   const resetUrl = `${env.nextAuthUrl}/auth/reset-password?token=${encodeURIComponent(token)}`;
 
-  const forgotPasswordEmailHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reset Your Password</title>
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin: 20px 0;">
+  const forgotPasswordEmailHtml = wrapEmailHtml(`
     <h1 style="color: #1976d2; margin-top: 0;">Reset Your Password</h1>
 
     <p>We received a request to reset the password for your Persevere account. Click the button below to set a new password.</p>
@@ -144,10 +138,7 @@ export async function sendPasswordResetEmail(
     <p style="color: #999; font-size: 12px; margin: 0;">
       This is an automated message. Please do not reply to this email.
     </p>
-  </div>
-</body>
-</html>
-  `;
+  `);
 
   const emailText = `
 Reset Your Password
@@ -210,20 +201,7 @@ export async function sendBulkEmail(
     .trim();
 
   // Wrap body in HTML structure for better email rendering
-  const emailHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin: 20px 0;">
-    ${body}
-  </div>
-</body>
-</html>
-  `;
+  const emailHtml = wrapEmailHtml(body);
 
   const emailText = plainTextBody;
 

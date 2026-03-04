@@ -1,4 +1,3 @@
-import { useRouter } from "next/navigation";
 import { useSnackbar } from "notistack";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -7,9 +6,11 @@ import type {
   RsvpItem,
   RsvpStatus,
 } from "@/components/volunteer/types";
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
 
-const LIMIT = 12;
+/** Page size for infinite-scroll opportunity listing (larger than default table page size) */
+const OPPORTUNITIES_PAGE_SIZE = 12;
 
 export type UseOpportunitiesResult = {
   opportunities: Opportunity[];
@@ -26,7 +27,6 @@ export type UseOpportunitiesResult = {
 };
 
 export function useOpportunities(search: string): UseOpportunitiesResult {
-  const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
 
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -36,6 +36,7 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
   const [rsvpWarning, setRsvpWarning] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -52,7 +53,7 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
     setPage(0);
     try {
       const params = new URLSearchParams({
-        limit: String(LIMIT),
+        limit: String(OPPORTUNITIES_PAGE_SIZE),
         offset: "0",
         ...(search && { search }),
       });
@@ -69,7 +70,7 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
       }
 
       setOpportunities(oppsResult.value.data);
-      setHasMore(oppsResult.value.data.length === LIMIT);
+      setHasMore(oppsResult.value.data.length === OPPORTUNITIES_PAGE_SIZE);
 
       if (rsvpsResult.status === "fulfilled") {
         setRsvpedIds(
@@ -88,16 +89,18 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
         setRsvpWarning(true);
       }
     } catch (error_) {
-      if (error_ instanceof AuthenticationError) {
-        router.push("/auth/login");
+      if (
+        handleApiError(
+          error_,
+          "Failed to load opportunities. Please try again.",
+        )
+      )
         return;
-      }
-      setError("Failed to load opportunities. Please try again.");
       setOpportunities([]);
     } finally {
       setLoading(false);
     }
-  }, [router, search]);
+  }, [handleApiError, search]);
 
   loadOpportunitiesRef.current = loadOpportunities;
 
@@ -158,8 +161,8 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
     setLoadingMore(true);
     const nextPage = page + 1;
     const params = new URLSearchParams({
-      limit: String(LIMIT),
-      offset: String(nextPage * LIMIT),
+      limit: String(OPPORTUNITIES_PAGE_SIZE),
+      offset: String(nextPage * OPPORTUNITIES_PAGE_SIZE),
       ...(search && { search }),
     });
     try {
@@ -168,19 +171,16 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
       );
       setOpportunities((prev) => [...prev, ...json.data]);
       setPage(nextPage);
-      setHasMore(json.data.length === LIMIT);
+      setHasMore(json.data.length === OPPORTUNITIES_PAGE_SIZE);
     } catch (error_) {
-      if (error_ instanceof AuthenticationError) {
-        router.push("/auth/login");
-        return;
-      }
+      if (handleApiError(error_)) return;
       enqueueSnackbar("Failed to load more opportunities", {
         variant: "error",
       });
     } finally {
       setLoadingMore(false);
     }
-  }, [router, hasMore, loadingMore, page, search, enqueueSnackbar]);
+  }, [handleApiError, hasMore, loadingMore, page, search, enqueueSnackbar]);
 
   return {
     opportunities,

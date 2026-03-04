@@ -9,7 +9,8 @@ const SUCCESS_MESSAGE =
   "If an account with that email exists, a password reset link has been sent.";
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
   if (!checkRateLimit(ip)) {
     return NextResponse.json({ message: SUCCESS_MESSAGE });
   }

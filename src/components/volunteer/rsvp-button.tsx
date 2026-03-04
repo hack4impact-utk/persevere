@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { useSnackbar } from "notistack";
 import { JSX, useState } from "react";
 
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import {
+  apiClient,
+  AuthenticationError,
+  AuthorizationError,
+} from "@/lib/api-client";
 
 type RsvpButtonProps = {
   opportunityId: number;
@@ -39,6 +43,10 @@ export default function RsvpButton({
     } catch (error) {
       if (error instanceof AuthenticationError) {
         router.push("/auth/login");
+        return;
+      }
+      if (error instanceof AuthorizationError) {
+        enqueueSnackbar("Access denied", { variant: "error" });
         return;
       }
       enqueueSnackbar(

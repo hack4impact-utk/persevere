@@ -16,7 +16,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
-import { JSX, useCallback, useEffect, useRef, useState } from "react";
+import { JSX, useCallback, useEffect, useState } from "react";
 
 import {
   type CalendarEvent,
@@ -49,14 +49,10 @@ export default function Calendar({
 }: CalendarProps): JSX.Element {
   const theme = useTheme();
   const { events, fetchEvents, updateEvent } = useCalendarEvents();
-  const [view, setView] = useState<
-    "dayGridMonth" | "timeGridWeek" | "timeGridDay"
-  >("timeGridWeek");
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null,
   );
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const calendarRef = useRef<FullCalendar | null>(null);
 
   // Wraps hook fetchEvents with error handling for snackbar
   const loadEvents = useCallback(
@@ -167,58 +163,8 @@ export default function Calendar({
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        gap: 3,
       }}
     >
-      {/* View Switcher */}
-      <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
-        <Button
-          variant={view === "dayGridMonth" ? "contained" : "outlined"}
-          onClick={() => {
-            setView("dayGridMonth");
-            calendarRef.current?.getApi().changeView("dayGridMonth");
-          }}
-          sx={{
-            borderRadius: 2,
-            textTransform: "none",
-            fontWeight: 600,
-            px: 3,
-          }}
-        >
-          Month
-        </Button>
-        <Button
-          variant={view === "timeGridWeek" ? "contained" : "outlined"}
-          onClick={() => {
-            setView("timeGridWeek");
-            calendarRef.current?.getApi().changeView("timeGridWeek");
-          }}
-          sx={{
-            borderRadius: 2,
-            textTransform: "none",
-            fontWeight: 600,
-            px: 3,
-          }}
-        >
-          Week
-        </Button>
-        <Button
-          variant={view === "timeGridDay" ? "contained" : "outlined"}
-          onClick={() => {
-            setView("timeGridDay");
-            calendarRef.current?.getApi().changeView("timeGridDay");
-          }}
-          sx={{
-            borderRadius: 2,
-            textTransform: "none",
-            fontWeight: 600,
-            px: 3,
-          }}
-        >
-          Day
-        </Button>
-      </Box>
-
       {/* FullCalendar */}
       <Box
         sx={{
@@ -323,13 +269,18 @@ export default function Calendar({
         }}
       >
         <FullCalendar
-          ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          initialView={view}
+          initialView="timeGridWeek"
           headerToolbar={{
             left: "prev,next today",
             center: "title",
-            right: "",
+            right: "dayGridMonth,timeGridWeek,timeGridDay",
+          }}
+          buttonText={{
+            month: "Month",
+            week: "Week",
+            day: "Day",
+            today: "Today",
           }}
           editable={!readOnly}
           selectable={!readOnly}
@@ -343,16 +294,6 @@ export default function Calendar({
           height="100%"
           nowIndicator
           scrollTime={currentTimeStr}
-          datesSet={(arg) => {
-            const currentView = arg.view.type;
-            if (
-              currentView === "dayGridMonth" ||
-              currentView === "timeGridWeek" ||
-              currentView === "timeGridDay"
-            ) {
-              setView(currentView);
-            }
-          }}
         />
       </Box>
 

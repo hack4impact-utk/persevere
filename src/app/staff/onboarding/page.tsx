@@ -1,16 +1,7 @@
-import { Typography } from "@mui/material";
+import Box from "@mui/material/Box";
 import { JSX } from "react";
 
 /** Volunteer onboarding management. */
 export default function StaffOnboardingPage(): JSX.Element {
-  return (
-    <>
-      <Typography variant="h4" gutterBottom>
-        Onboarding
-      </Typography>
-      <Typography color="text.secondary">
-        Manage volunteer onboarding processes and workflows.
-      </Typography>
-    </>
-  );
+  return <Box sx={{ px: { xs: 2, md: 4 }, pt: { xs: 1, md: 1.5 } }} />;
 }

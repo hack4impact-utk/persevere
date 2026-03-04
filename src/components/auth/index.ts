@@ -6,5 +6,4 @@
  */
 
 export { default as LoginForm } from "./login-form";
-export { default as ProtectedComponent } from "./protected-component";
 export { default as SignOutButton } from "./sign-out-button";

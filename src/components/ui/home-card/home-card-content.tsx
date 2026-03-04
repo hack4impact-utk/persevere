@@ -23,7 +23,6 @@ export default function HomeCardContent({
 }: HomeCardContentProps): ReactNode {
   const router = useRouter();
 
-  // All hooks must be called before any early returns
   useEffect(() => {
     if (session) {
       const dashboardRoute = getDashboardRoute(session.user?.role);
@@ -31,7 +30,7 @@ export default function HomeCardContent({
     }
   }, [session, router]);
 
-  if (status === "loading") {
+  if (status === "loading" || session) {
     return (
       <Typography variant="h6" color="text.secondary">
         Loading...

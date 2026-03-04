@@ -82,36 +82,51 @@ export async function listOpenOpportunities(
       rsvpCountSubquery,
       eq(opportunities.id, rsvpCountSubquery.opportunityId),
     )
-    .where(baseConditions)
+
     .$dynamic();
 
-  // Apply search filter if provided
-  if (search) {
-    query = query.where(
-      and(
-        baseConditions,
-        sql`(${opportunities.title} ILIKE ${`%${search}%`} OR ${opportunities.description} ILIKE ${`%${search}%`} OR ${opportunities.location} ILIKE ${`%${search}%`})`,
-      ),
-    );
-  }
+  // Filter out full opportunities at the SQL level
+  // An opportunity is "available" if it has no max or rsvpCount < maxVolunteers
+  const availabilityFilter = sql`(${opportunities.maxVolunteers} IS NULL OR COALESCE(${rsvpCountSubquery.rsvpCount}, 0) < ${opportunities.maxVolunteers})`;
 
-  // Count open+future opportunities (approximate total, before in-memory spot filter)
-  const [countResult] = await db
-    .select({ total: count(opportunities.id) })
+  query = query.where(
+    search
+      ? and(
+          baseConditions,
+          availabilityFilter,
+          sql`(${opportunities.title} ILIKE ${`%${search}%`} OR ${opportunities.description} ILIKE ${`%${search}%`} OR ${opportunities.location} ILIKE ${`%${search}%`})`,
+        )
+      : and(baseConditions, availabilityFilter),
+  );
+
+  // Count available opportunities (matches the filter)
+  const countSubquery = db
+    .select({
+      id: opportunities.id,
+    })
     .from(opportunities)
-    .where(baseConditions);
+    .leftJoin(
+      rsvpCountSubquery,
+      eq(opportunities.id, rsvpCountSubquery.opportunityId),
+    )
+    .where(
+      search
+        ? and(
+            baseConditions,
+            availabilityFilter,
+            sql`(${opportunities.title} ILIKE ${`%${search}%`} OR ${opportunities.description} ILIKE ${`%${search}%`} OR ${opportunities.location} ILIKE ${`%${search}%`})`,
+          )
+        : and(baseConditions, availabilityFilter),
+    )
+    .as("available_opps");
+
+  const [countResult] = await db.select({ total: count() }).from(countSubquery);
 
   // Execute query with pagination
-  const allOpportunities = await query
+  const availableOpportunities = await query
     .orderBy(opportunities.startDate)
     .limit(limit)
     .offset(offset);
-
-  // Filter out full opportunities (where rsvpCount >= maxVolunteers)
-  const availableOpportunities = allOpportunities.filter((opp) => {
-    if (opp.maxVolunteers === null) return true; // No limit
-    return Number(opp.rsvpCount) < opp.maxVolunteers;
-  });
 
   // Batch-fetch required skills and interests for the returned opportunities
   const opportunityIds = availableOpportunities.map((o) => o.id);
