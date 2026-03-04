@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { listOpenOpportunities } from "@/services/opportunities.service";
 import handleError from "@/utils/handle-error";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
 
 /**
  * GET /api/volunteer/opportunities
@@ -20,7 +21,13 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const { searchParams } = new URL(request.url);
     const limit = Math.min(
-      Math.max(Number.parseInt(searchParams.get("limit") || "20", 10), 1),
+      Math.max(
+        Number.parseInt(
+          searchParams.get("limit") || String(DEFAULT_PAGE_SIZE),
+          10,
+        ),
+        1,
+      ),
       100,
     );
     const offset = Math.max(
@@ -29,18 +36,15 @@ export async function GET(request: Request): Promise<NextResponse> {
     );
     const search = searchParams.get("search")?.trim() || "";
 
-    const opportunitiesWithSpots = await listOpenOpportunities({
+    const { data, total } = await listOpenOpportunities({
       limit,
       offset,
       search,
     });
 
-    return NextResponse.json({ data: opportunitiesWithSpots });
+    return NextResponse.json({ data, total });
   } catch (error) {
-    if (error instanceof AuthError) {
-      const status = error.code === "Unauthorized" ? 401 : 403;
-      return NextResponse.json({ error: error.code }, { status });
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

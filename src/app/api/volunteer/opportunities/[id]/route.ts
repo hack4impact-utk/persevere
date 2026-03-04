@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getOpenOpportunityById } from "@/services/opportunities.service";
 import { NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
 import { validateAndParseId } from "@/utils/validate-id";
 
 /**
@@ -15,6 +15,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
+    const session = await requireAuth();
+    if (session.user.role !== "volunteer") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { id } = await params;
     const parsedId = validateAndParseId(id);
     if (parsedId === null) {
@@ -24,20 +29,10 @@ export async function GET(
       );
     }
 
-    const session = await requireAuth();
-    if (session.user.role !== "volunteer") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     const opportunity = await getOpenOpportunityById(parsedId);
     return NextResponse.json({ data: opportunity });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof NotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }

@@ -31,11 +31,9 @@ import {
 } from "@mui/material";
 import { type ReactElement, useCallback, useState } from "react";
 
+import { ModalTitleBar } from "@/components/shared";
+import { useVolunteerDetail } from "@/hooks/use-volunteer-detail";
 import { useVolunteers } from "@/hooks/use-volunteers";
-import {
-  fetchVolunteerById,
-  type FetchVolunteerByIdResult,
-} from "@/services/volunteer-client.service";
 
 import PendingInvitesTable from "./pending-invites-table";
 import AddVolunteerModal from "./volunteer-add-modal";
@@ -85,10 +83,13 @@ export default function VolunteerList(): ReactElement {
   const [selectedVolunteerId, setSelectedVolunteerId] = useState<number | null>(
     null,
   );
-  const [volunteerProfile, setVolunteerProfile] =
-    useState<FetchVolunteerByIdResult | null>(null);
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
+  const {
+    profile: volunteerProfile,
+    loading: profileLoading,
+    error: profileError,
+    loadProfile: loadVolunteerProfile,
+    clearProfile,
+  } = useVolunteerDetail();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
@@ -176,27 +177,15 @@ export default function VolunteerList(): ReactElement {
   const handleVolunteerClick = useCallback(
     async (volunteerId: number): Promise<void> => {
       setSelectedVolunteerId(volunteerId);
-      setProfileLoading(true);
-      setProfileError(null);
-      try {
-        const data = await fetchVolunteerById(volunteerId);
-        setVolunteerProfile(data);
-      } catch (error) {
-        console.error("Failed to fetch volunteer profile:", error);
-        setProfileError("Failed to load volunteer profile. Please try again.");
-        setVolunteerProfile(null);
-      } finally {
-        setProfileLoading(false);
-      }
+      await loadVolunteerProfile(volunteerId);
     },
-    [],
+    [loadVolunteerProfile],
   );
 
   const handleCloseModal = useCallback((): void => {
     setSelectedVolunteerId(null);
-    setVolunteerProfile(null);
-    setProfileError(null);
-  }, []);
+    clearProfile();
+  }, [clearProfile]);
 
   return (
     <Box
@@ -205,24 +194,12 @@ export default function VolunteerList(): ReactElement {
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        p: 3,
+        px: { xs: 2, md: 4 },
+        pt: { xs: 1, md: 1.5 },
+        pb: { xs: 2, md: 4 },
         overflow: "hidden",
       }}
     >
-      <Typography
-        variant="h4"
-        component="h1"
-        sx={{
-          mb: 3,
-          flexShrink: 0,
-          fontWeight: 700,
-          letterSpacing: "-0.02em",
-          fontSize: "2rem",
-        }}
-      >
-        Volunteers
-      </Typography>
-
       {error && (
         <Box sx={{ mb: 3, flexShrink: 0 }}>
           <Alert severity="error">{error}</Alert>
@@ -419,24 +396,7 @@ export default function VolunteerList(): ReactElement {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="h6">Volunteer Profile</Typography>
-            <IconButton
-              aria-label="close"
-              onClick={handleCloseModal}
-              sx={{ color: (theme) => theme.palette.grey[500] }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
+        <ModalTitleBar title="Volunteer Profile" onClose={handleCloseModal} />
         <DialogContent>
           {profileLoading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
@@ -449,8 +409,7 @@ export default function VolunteerList(): ReactElement {
               volunteer={volunteerProfile}
               onDelete={() => {
                 setSelectedVolunteerId(null);
-                setVolunteerProfile(null);
-                setProfileError(null);
+                clearProfile();
                 void loadVolunteers();
               }}
               onVolunteerUpdated={() => {

@@ -8,7 +8,13 @@ import {
 } from "@/services/skills-server.service";
 import { ConflictError, NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import {
+  AuthError,
+  authErrorResponse,
+  requireAuth,
+  requireStaffAuth,
+} from "@/utils/server/auth";
+import { parseBodyOrError } from "@/utils/server/route-helpers";
 import { validateAndParseId } from "@/utils/validate-id";
 
 const skillUpdateSchema = z.object({
@@ -22,30 +28,19 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const session = await requireAuth();
-    if (!["staff", "admin"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireStaffAuth();
 
     const { id } = await params;
     const skillId = validateAndParseId(id);
     if (skillId === null) {
-      return NextResponse.json(
-        { message: "Invalid skill ID" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid skill ID" }, { status: 400 });
     }
 
     const skill = await getSkillById(skillId);
 
     return NextResponse.json({ data: skill });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof NotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
@@ -66,36 +61,20 @@ export async function PUT(
     const { id } = await params;
     const skillId = validateAndParseId(id);
     if (skillId === null) {
-      return NextResponse.json(
-        { message: "Invalid skill ID" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid skill ID" }, { status: 400 });
     }
 
-    const json = await request.json();
-    const result = skillUpdateSchema.safeParse(json);
+    const parsed = await parseBodyOrError(request, skillUpdateSchema);
+    if ("response" in parsed) return parsed.response;
 
-    if (!result.success) {
-      const firstError = result.error.issues[0];
-      return NextResponse.json(
-        { message: firstError.message },
-        { status: 400 },
-      );
-    }
-
-    const updatedSkill = await updateSkill(skillId, result.data);
+    const updatedSkill = await updateSkill(skillId, parsed.data);
 
     return NextResponse.json({
       message: "Skill updated successfully",
       data: updatedSkill,
     });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof NotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
@@ -119,22 +98,14 @@ export async function DELETE(
     const { id } = await params;
     const skillId = validateAndParseId(id);
     if (skillId === null) {
-      return NextResponse.json(
-        { message: "Invalid skill ID" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid skill ID" }, { status: 400 });
     }
 
     await deleteSkill(skillId);
 
     return NextResponse.json({ message: "Skill deleted successfully" });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof NotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }

@@ -1,7 +1,7 @@
-import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
 
 export type CatalogSkill = {
   id: number;
@@ -19,8 +19,9 @@ export type CatalogInterest = {
 export type UseSkillsResult = {
   skills: CatalogSkill[];
   interests: CatalogInterest[];
-  isLoadingSkills: boolean;
-  isLoadingInterests: boolean;
+  loadingSkills: boolean;
+  loadingInterests: boolean;
+  error: string | null;
   fetchSkills: () => Promise<void>;
   fetchInterests: () => Promise<void>;
   // Volunteer-specific actions
@@ -55,50 +56,40 @@ export type UseSkillsResult = {
 };
 
 export function useSkills(): UseSkillsResult {
-  const router = useRouter();
   const [skills, setSkills] = useState<CatalogSkill[]>([]);
   const [interests, setInterests] = useState<CatalogInterest[]>([]);
-  const [isLoadingSkills, setIsLoadingSkills] = useState(false);
-  const [isLoadingInterests, setIsLoadingInterests] = useState(false);
-
-  const handleAuthError = useCallback(
-    (err: unknown): void => {
-      if (err instanceof AuthenticationError) {
-        router.push("/auth/login");
-      } else {
-        throw err;
-      }
-    },
-    [router],
-  );
+  const [loadingSkills, setLoadingSkills] = useState(false);
+  const [loadingInterests, setLoadingInterests] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
 
   const fetchSkills = useCallback(async (): Promise<void> => {
-    setIsLoadingSkills(true);
+    setLoadingSkills(true);
     try {
       const json = await apiClient.get<{ data: CatalogSkill[] }>(
         "/api/staff/skills",
       );
       setSkills(json.data);
     } catch (error) {
-      handleAuthError(error);
+      handleApiError(error, "An unexpected error occurred.");
     } finally {
-      setIsLoadingSkills(false);
+      setLoadingSkills(false);
     }
-  }, [handleAuthError]);
+  }, [handleApiError]);
 
   const fetchInterests = useCallback(async (): Promise<void> => {
-    setIsLoadingInterests(true);
+    setLoadingInterests(true);
     try {
       const json = await apiClient.get<{ data: CatalogInterest[] }>(
         "/api/staff/interests",
       );
       setInterests(json.data);
     } catch (error) {
-      handleAuthError(error);
+      handleApiError(error, "An unexpected error occurred.");
     } finally {
-      setIsLoadingInterests(false);
+      setLoadingInterests(false);
     }
-  }, [handleAuthError]);
+  }, [handleApiError]);
 
   const addSkill = useCallback(
     async (
@@ -112,10 +103,10 @@ export function useSkills(): UseSkillsResult {
           level: proficiency ?? "beginner",
         });
       } catch (error) {
-        handleAuthError(error);
+        handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
 
   const removeSkill = useCallback(
@@ -125,10 +116,10 @@ export function useSkills(): UseSkillsResult {
           `/api/staff/volunteers/${volunteerId}/skills/${skillId}`,
         );
       } catch (error) {
-        handleAuthError(error);
+        handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
 
   const addInterest = useCallback(
@@ -138,10 +129,10 @@ export function useSkills(): UseSkillsResult {
           interestId,
         });
       } catch (error) {
-        handleAuthError(error);
+        handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
 
   const removeInterest = useCallback(
@@ -151,10 +142,10 @@ export function useSkills(): UseSkillsResult {
           `/api/staff/volunteers/${volunteerId}/interests/${interestId}`,
         );
       } catch (error) {
-        handleAuthError(error);
+        handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
 
   const createSkill = useCallback(
@@ -170,10 +161,10 @@ export function useSkills(): UseSkillsResult {
           category,
         });
       } catch (error) {
-        handleAuthError(error);
+        handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
 
   const updateSkill = useCallback(
@@ -190,10 +181,10 @@ export function useSkills(): UseSkillsResult {
           category,
         });
       } catch (error) {
-        handleAuthError(error);
+        handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
 
   const deleteSkill = useCallback(
@@ -201,10 +192,10 @@ export function useSkills(): UseSkillsResult {
       try {
         await apiClient.delete(`/api/staff/skills/${id}`);
       } catch (error) {
-        handleAuthError(error);
+        handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
 
   const createInterest = useCallback(
@@ -212,10 +203,10 @@ export function useSkills(): UseSkillsResult {
       try {
         await apiClient.post("/api/staff/interests", { name, description });
       } catch (error) {
-        handleAuthError(error);
+        handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
 
   const updateInterest = useCallback(
@@ -226,10 +217,10 @@ export function useSkills(): UseSkillsResult {
           description,
         });
       } catch (error) {
-        handleAuthError(error);
+        handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
 
   const deleteInterest = useCallback(
@@ -237,17 +228,23 @@ export function useSkills(): UseSkillsResult {
       try {
         await apiClient.delete(`/api/staff/interests/${id}`);
       } catch (error) {
-        handleAuthError(error);
+        handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
+
+  useEffect(() => {
+    void fetchSkills();
+    void fetchInterests();
+  }, [fetchSkills, fetchInterests]);
 
   return {
     skills,
     interests,
-    isLoadingSkills,
-    isLoadingInterests,
+    loadingSkills,
+    loadingInterests,
+    error,
     fetchSkills,
     fetchInterests,
     addSkill,

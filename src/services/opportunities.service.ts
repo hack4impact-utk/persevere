@@ -29,10 +29,11 @@ export type OpportunityWithSpots = {
   endDate: Date | null;
   status: string | null;
   maxVolunteers: number | null;
+  isRecurring: boolean;
   rsvpCount: number;
   spotsRemaining: number | null;
   requiredSkills: { skillId: number; skillName: string | null }[];
-  interests: { interestId: number; interestName: string | null }[];
+  requiredInterests: { interestId: number; interestName: string | null }[];
 };
 
 // ---------------------------------------------------------------------------
@@ -41,7 +42,7 @@ export type OpportunityWithSpots = {
 
 export async function listOpenOpportunities(
   params: ListOpportunitiesParams,
-): Promise<OpportunityWithSpots[]> {
+): Promise<{ data: OpportunityWithSpots[]; total: number }> {
   const { limit, offset, search } = params;
 
   const now = new Date();
@@ -73,6 +74,7 @@ export async function listOpenOpportunities(
       endDate: opportunities.endDate,
       status: opportunities.status,
       maxVolunteers: opportunities.maxVolunteers,
+      isRecurring: opportunities.isRecurring,
       rsvpCount: sql<number>`COALESCE(${rsvpCountSubquery.rsvpCount}, 0)`,
     })
     .from(opportunities)
@@ -80,30 +82,51 @@ export async function listOpenOpportunities(
       rsvpCountSubquery,
       eq(opportunities.id, rsvpCountSubquery.opportunityId),
     )
-    .where(baseConditions)
+
     .$dynamic();
 
-  // Apply search filter if provided
-  if (search) {
-    query = query.where(
-      and(
-        baseConditions,
-        sql`(${opportunities.title} ILIKE ${`%${search}%`} OR ${opportunities.description} ILIKE ${`%${search}%`} OR ${opportunities.location} ILIKE ${`%${search}%`})`,
-      ),
-    );
-  }
+  // Filter out full opportunities at the SQL level
+  // An opportunity is "available" if it has no max or rsvpCount < maxVolunteers
+  const availabilityFilter = sql`(${opportunities.maxVolunteers} IS NULL OR COALESCE(${rsvpCountSubquery.rsvpCount}, 0) < ${opportunities.maxVolunteers})`;
+
+  query = query.where(
+    search
+      ? and(
+          baseConditions,
+          availabilityFilter,
+          sql`(${opportunities.title} ILIKE ${`%${search}%`} OR ${opportunities.description} ILIKE ${`%${search}%`} OR ${opportunities.location} ILIKE ${`%${search}%`})`,
+        )
+      : and(baseConditions, availabilityFilter),
+  );
+
+  // Count available opportunities (matches the filter)
+  const countSubquery = db
+    .select({
+      id: opportunities.id,
+    })
+    .from(opportunities)
+    .leftJoin(
+      rsvpCountSubquery,
+      eq(opportunities.id, rsvpCountSubquery.opportunityId),
+    )
+    .where(
+      search
+        ? and(
+            baseConditions,
+            availabilityFilter,
+            sql`(${opportunities.title} ILIKE ${`%${search}%`} OR ${opportunities.description} ILIKE ${`%${search}%`} OR ${opportunities.location} ILIKE ${`%${search}%`})`,
+          )
+        : and(baseConditions, availabilityFilter),
+    )
+    .as("available_opps");
+
+  const [countResult] = await db.select({ total: count() }).from(countSubquery);
 
   // Execute query with pagination
-  const allOpportunities = await query
+  const availableOpportunities = await query
     .orderBy(opportunities.startDate)
     .limit(limit)
     .offset(offset);
-
-  // Filter out full opportunities (where rsvpCount >= maxVolunteers)
-  const availableOpportunities = allOpportunities.filter((opp) => {
-    if (opp.maxVolunteers === null) return true; // No limit
-    return Number(opp.rsvpCount) < opp.maxVolunteers;
-  });
 
   // Batch-fetch required skills and interests for the returned opportunities
   const opportunityIds = availableOpportunities.map((o) => o.id);
@@ -111,7 +134,7 @@ export async function listOpenOpportunities(
     number,
     { skillId: number; skillName: string | null }[]
   > = {};
-  const interestsMap: Record<
+  const requiredInterestsMap: Record<
     number,
     { interestId: number; interestName: string | null }[]
   > = {};
@@ -145,7 +168,7 @@ export async function listOpenOpportunities(
       .where(inArray(opportunityInterests.opportunityId, opportunityIds));
 
     for (const row of interestRows) {
-      (interestsMap[row.opportunityId] ??= []).push({
+      (requiredInterestsMap[row.opportunityId] ??= []).push({
         interestId: row.interestId,
         interestName: row.interestName,
       });
@@ -154,7 +177,7 @@ export async function listOpenOpportunities(
 
   // Calculate spots remaining; coerce rsvpCount to number here since
   // SQL COALESCE expressions arrive as strings on the wire despite the sql<number> annotation.
-  return availableOpportunities.map((opp) => {
+  const data = availableOpportunities.map((opp) => {
     const rsvpCount = Number(opp.rsvpCount);
     return {
       ...opp,
@@ -162,9 +185,11 @@ export async function listOpenOpportunities(
       spotsRemaining:
         opp.maxVolunteers === null ? null : opp.maxVolunteers - rsvpCount,
       requiredSkills: requiredSkillsMap[opp.id] ?? [],
-      interests: interestsMap[opp.id] ?? [],
+      requiredInterests: requiredInterestsMap[opp.id] ?? [],
     };
   });
+
+  return { data, total: countResult?.total ?? 0 };
 }
 
 // ---------------------------------------------------------------------------
@@ -195,6 +220,7 @@ export async function getOpenOpportunityById(
       endDate: opportunities.endDate,
       status: opportunities.status,
       maxVolunteers: opportunities.maxVolunteers,
+      isRecurring: opportunities.isRecurring,
       rsvpCount: sql<number>`COALESCE(${rsvpCountSubquery.rsvpCount}, 0)`,
     })
     .from(opportunities)
@@ -241,6 +267,6 @@ export async function getOpenOpportunityById(
     spotsRemaining:
       opp.maxVolunteers === null ? null : opp.maxVolunteers - rsvpCount,
     requiredSkills: skillRows,
-    interests: interestRows,
+    requiredInterests: interestRows,
   };
 }

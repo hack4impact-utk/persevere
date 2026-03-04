@@ -10,8 +10,8 @@ export function validateAndParseId(id: string): number | null {
 
   const parsed = Number.parseInt(id, 10);
 
-  // Ensure it's a valid positive integer
-  if (!Number.isInteger(parsed) || parsed <= 0) {
+  // Ensure it's a valid positive integer within PostgreSQL INT range
+  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 2_147_483_647) {
     return null;
   }
 

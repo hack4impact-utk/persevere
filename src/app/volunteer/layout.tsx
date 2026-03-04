@@ -1,21 +1,27 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { ReactNode } from "react";
 
-import authOptions from "@/app/api/auth/[...nextauth]/auth-options";
 import RoleLayout from "@/components/layout/role-layout";
 import VolunteerSidebar from "@/components/layout/volunteer-sidebar";
+import { getOnboardingStatus } from "@/services/onboarding.service";
 import { getDashboardRoute } from "@/utils/routes";
+import { getServerSession } from "@/utils/server/auth";
 
 type VolunteerLayoutProps = {
   children: ReactNode;
 };
 
-/** Volunteer layout with auth + role check. */
+/** Volunteer layout with auth + role check + onboarding redirect. */
 export default async function VolunteerLayout({
   children,
 }: VolunteerLayoutProps): Promise<ReactNode> {
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession();
+  } catch {
+    redirect("/auth/login");
+  }
 
   if (!session) {
     redirect("/auth/login");
@@ -24,6 +30,25 @@ export default async function VolunteerLayout({
   // Role check: only volunteers can access
   if (session.user.role !== "volunteer") {
     redirect(getDashboardRoute(session.user.role));
+  }
+
+  // Onboarding redirect: send incomplete volunteers to onboarding page
+  const volunteerId = session.user.volunteerId;
+  if (volunteerId) {
+    const headersList = await headers();
+    const pathname = headersList.get("x-pathname") ?? "";
+    const isOnboardingPage = pathname.startsWith("/volunteer/onboarding");
+
+    if (!isOnboardingPage) {
+      try {
+        const status = await getOnboardingStatus(volunteerId);
+        if (status && !status.onboardingComplete) {
+          redirect("/volunteer/onboarding");
+        }
+      } catch {
+        // If onboarding check fails, don't block access
+      }
+    }
   }
 
   return <RoleLayout sidebar={<VolunteerSidebar />}>{children}</RoleLayout>;

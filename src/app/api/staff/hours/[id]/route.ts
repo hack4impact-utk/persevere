@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 
 import { deleteHours, updateHours } from "@/services/volunteer-hours.service";
 import { ConflictError, NotFoundError } from "@/utils/errors";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import handleError from "@/utils/handle-error";
+import {
+  AuthError,
+  authErrorResponse,
+  requireStaffAuth,
+} from "@/utils/server/auth";
 import { validateAndParseId } from "@/utils/validate-id";
 
 // PUT: Update or Verify hours
@@ -11,7 +16,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    const session = await requireAuth("staff");
+    const session = await requireStaffAuth();
 
     const { id } = await params;
     const hourId = validateAndParseId(id);
@@ -29,20 +34,15 @@ export async function PUT(
 
     return NextResponse.json(updated);
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof NotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
     if (error instanceof ConflictError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     console.error("Update error:", error);
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
@@ -52,7 +52,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    await requireAuth("staff");
+    await requireStaffAuth();
 
     const { id } = await params;
     const hourId = validateAndParseId(id);
@@ -64,19 +64,14 @@ export async function DELETE(
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof NotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
     if (error instanceof ConflictError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     console.error("Delete Error:", error);
-    return NextResponse.json({ error: "Delete failed" }, { status: 500 });
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

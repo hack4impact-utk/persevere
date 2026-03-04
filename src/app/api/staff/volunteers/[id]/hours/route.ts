@@ -1,22 +1,37 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 import {
   listVolunteerHours,
   logHours,
 } from "@/services/volunteer-hours.service";
 import { NotFoundError } from "@/utils/errors";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import handleError from "@/utils/handle-error";
+import {
+  AuthError,
+  authErrorResponse,
+  requireStaffAuth,
+} from "@/utils/server/auth";
+import { parseBodyOrError } from "@/utils/server/route-helpers";
+import { validateAndParseId } from "@/utils/validate-id";
+
+const logHoursSchema = z.object({
+  opportunityId: z.number().int().positive(),
+  date: z.string().min(1, "Date is required"),
+  hours: z.number().positive("Hours must be positive"),
+  notes: z.string().optional(),
+});
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    await requireAuth("staff");
+    await requireStaffAuth();
 
     const { id } = await params;
-    const volunteerId = Number.parseInt(id, 10);
-    if (Number.isNaN(volunteerId)) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
         { error: "Invalid volunteer ID" },
         { status: 400 },
@@ -33,17 +48,9 @@ export async function GET(
 
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     console.error("GET Hours Error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch hours" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
@@ -52,49 +59,35 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   try {
-    await requireAuth("staff");
+    await requireStaffAuth();
 
     const { id } = await params;
-    const volunteerId = Number.parseInt(id, 10);
-    if (Number.isNaN(volunteerId)) {
+    const volunteerId = validateAndParseId(id);
+    if (volunteerId === null) {
       return NextResponse.json(
         { error: "Invalid volunteer ID" },
         { status: 400 },
       );
     }
 
-    const body = await req.json();
-    const { opportunityId, date, hours, notes } = body;
-
-    if (!opportunityId || !date || typeof hours !== "number" || hours <= 0) {
-      return NextResponse.json(
-        {
-          error: "Valid opportunityId, date, and positive hours are required.",
-        },
-        { status: 400 },
-      );
-    }
+    const parsed = await parseBodyOrError(req, logHoursSchema);
+    if ("response" in parsed) return parsed.response;
 
     const entry = await logHours({
       volunteerId,
-      opportunityId,
-      date,
-      hours,
-      notes,
+      opportunityId: parsed.data.opportunityId,
+      date: parsed.data.date,
+      hours: parsed.data.hours,
+      notes: parsed.data.notes,
     });
 
     return NextResponse.json(entry, { status: 201 });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
+    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof NotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
     console.error("POST Hours Error:", error);
-    return NextResponse.json({ error: "Failed to log hours" }, { status: 500 });
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

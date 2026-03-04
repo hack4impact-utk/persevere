@@ -28,12 +28,10 @@ import {
 } from "@mui/material";
 import { type ReactElement, useCallback, useState } from "react";
 
+import { ModalTitleBar } from "@/components/shared";
 import VolunteerList from "@/components/staff/volunteer-management/volunteer-list";
 import { useStaff } from "@/hooks/use-staff";
-import {
-  fetchStaffById,
-  type FetchStaffByIdResult,
-} from "@/services/staff.service";
+import { useStaffProfile } from "@/hooks/use-staff-profile";
 
 import AddStaffModal from "./staff-add-modal";
 import StaffTable from "./staff-table";
@@ -75,11 +73,13 @@ export default function PeopleList(): ReactElement {
 
   // Staff profile state
   const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
-  const [staffProfile, setStaffProfile] = useState<FetchStaffByIdResult | null>(
-    null,
-  );
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
+  const {
+    profile: staffProfile,
+    loading: profileLoading,
+    error: profileError,
+    loadProfile: loadStaffProfile,
+    clearProfile,
+  } = useStaffProfile();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
@@ -181,27 +181,15 @@ export default function PeopleList(): ReactElement {
   const handleStaffClick = useCallback(
     async (staffId: number): Promise<void> => {
       setSelectedStaffId(staffId);
-      setProfileLoading(true);
-      setProfileError(null);
-      try {
-        const data = await fetchStaffById(staffId);
-        setStaffProfile(data);
-      } catch (error) {
-        console.error("Failed to fetch staff profile:", error);
-        setProfileError("Failed to load staff profile. Please try again.");
-        setStaffProfile(null);
-      } finally {
-        setProfileLoading(false);
-      }
+      await loadStaffProfile(staffId);
     },
-    [],
+    [loadStaffProfile],
   );
 
   const handleCloseModal = useCallback((): void => {
     setSelectedStaffId(null);
-    setStaffProfile(null);
-    setProfileError(null);
-  }, []);
+    clearProfile();
+  }, [clearProfile]);
 
   return (
     <Box
@@ -210,24 +198,12 @@ export default function PeopleList(): ReactElement {
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        p: 3,
+        pt: { xs: 1, md: 1.5 },
+        px: 3,
+        pb: 3,
         overflow: "hidden",
       }}
     >
-      <Typography
-        variant="h4"
-        component="h1"
-        sx={{
-          mb: 3,
-          flexShrink: 0,
-          fontWeight: 700,
-          letterSpacing: "-0.02em",
-          fontSize: "2rem",
-        }}
-      >
-        People
-      </Typography>
-
       {staffError && currentTab === 1 && (
         <Box sx={{ mb: 3, flexShrink: 0 }}>
           <Alert severity="error">{staffError}</Alert>
@@ -491,24 +467,7 @@ export default function PeopleList(): ReactElement {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="h6">Staff Profile</Typography>
-            <IconButton
-              aria-label="close"
-              onClick={handleCloseModal}
-              sx={{ color: (theme) => theme.palette.grey[500] }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
+        <ModalTitleBar title="Staff Profile" onClose={handleCloseModal} />
         <DialogContent>
           {profileLoading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
