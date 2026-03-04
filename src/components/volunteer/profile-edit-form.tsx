@@ -140,9 +140,9 @@ export default function ProfileEditForm({
     if (catalogInterests.length > 0) {
       const selections: typeof interestSelections = {};
       for (const interest of catalogInterests) {
-        selections[interest.id] = initialData.interests?.some(
-          (i) => i.interestId === interest.id,
-        );
+        selections[interest.id] =
+          initialData.interests?.some((i) => i.interestId === interest.id) ||
+          false;
       }
       setInterestSelections(selections);
     }
