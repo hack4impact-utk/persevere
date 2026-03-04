@@ -21,6 +21,18 @@ type VolunteerProfileData = {
     profilePicture?: string | null;
   };
   totalHours: number;
+  skills: {
+    skillId: number;
+    skillName: string | null;
+    skillDescription: string | null;
+    skillCategory: string | null;
+    proficiencyLevel: "beginner" | "intermediate" | "advanced" | null;
+  }[];
+  interests: {
+    interestId: number;
+    interestName: string | null;
+    interestDescription: string | null;
+  }[];
 };
 
 type UpdateProfileData = {

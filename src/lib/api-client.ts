@@ -101,7 +101,7 @@ export const apiClient = {
   async delete<T>(path: string, body?: unknown): Promise<T> {
     const response = await fetch(path, {
       method: "DELETE",
-      ...(body === undefined ? {} : { headers: defaultHeaders }),
+      headers: body === undefined ? undefined : defaultHeaders,
       cache: "no-store",
       body: body === undefined ? undefined : JSON.stringify(body),
     });

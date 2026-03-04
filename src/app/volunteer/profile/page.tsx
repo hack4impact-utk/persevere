@@ -314,6 +314,8 @@ export default function VolunteerProfilePage(): JSX.Element {
                   bio: user.bio,
                   availability: vol.availability,
                   notificationPreference: vol.notificationPreference,
+                  skills: profileData.skills,
+                  interests: profileData.interests,
                 }}
                 onSave={handleSave}
                 onCancel={() => setEditMode(false)}
