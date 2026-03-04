@@ -22,7 +22,7 @@ export type LogHoursPayload = {
 };
 
 export type VerifyHoursPayload = {
-  verified: boolean;
+  verify: boolean;
 };
 
 export function useHours(): {

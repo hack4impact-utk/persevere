@@ -54,6 +54,7 @@ import {
   getRsvpStatusColor,
   StatusBadge,
 } from "@/components/ui";
+import { useHours } from "@/hooks/use-hours";
 import { apiClient } from "@/lib/api-client";
 import type { FetchVolunteerByIdResult } from "@/services/volunteer-client.service";
 
@@ -114,27 +115,23 @@ export default function VolunteerProfile({
   );
 
   const { enqueueSnackbar } = useSnackbar();
+  const { verifyHours, deleteHours } = useHours();
 
   const canVerify = viewerRole === "staff";
 
   const handleVerifyHours = useCallback(
     async (hoursId: number): Promise<void> => {
       setHoursActionLoading(hoursId);
-      try {
-        await apiClient.put(`/api/staff/hours/${hoursId}`, { verify: true });
+      const result = await verifyHours(hoursId, { verify: true });
+      if (result) {
         enqueueSnackbar("Hours verified successfully", { variant: "success" });
         if (onVolunteerUpdated) onVolunteerUpdated();
-      } catch (error) {
-        console.error("Failed to verify hours:", error);
-        enqueueSnackbar(
-          error instanceof Error ? error.message : "Failed to verify hours",
-          { variant: "error" },
-        );
-      } finally {
-        setHoursActionLoading(null);
+      } else {
+        enqueueSnackbar("Failed to verify hours", { variant: "error" });
       }
+      setHoursActionLoading(null);
     },
-    [enqueueSnackbar, onVolunteerUpdated],
+    [verifyHours, enqueueSnackbar, onVolunteerUpdated],
   );
 
   const handleDeleteHoursConfirm = useCallback(async (): Promise<void> => {
@@ -142,20 +139,15 @@ export default function VolunteerProfile({
     const id = hoursDeleteTargetId;
     setHoursDeleteTargetId(null);
     setHoursActionLoading(id);
-    try {
-      await apiClient.delete(`/api/staff/hours/${id}`);
+    const success = await deleteHours(id);
+    if (success) {
       enqueueSnackbar("Hours entry deleted", { variant: "success" });
       if (onVolunteerUpdated) onVolunteerUpdated();
-    } catch (error) {
-      console.error("Failed to delete hours:", error);
-      enqueueSnackbar(
-        error instanceof Error ? error.message : "Failed to delete hours entry",
-        { variant: "error" },
-      );
-    } finally {
-      setHoursActionLoading(null);
+    } else {
+      enqueueSnackbar("Failed to delete hours entry", { variant: "error" });
     }
-  }, [hoursDeleteTargetId, enqueueSnackbar, onVolunteerUpdated]);
+    setHoursActionLoading(null);
+  }, [hoursDeleteTargetId, deleteHours, enqueueSnackbar, onVolunteerUpdated]);
 
   // ── Volunteer Edit / Delete ────────────────────────────────────────────────
 

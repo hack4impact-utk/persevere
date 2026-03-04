@@ -125,10 +125,16 @@ export default function LogHoursModal({
       notes: values.notes,
     };
 
-    const result = await logHours(volunteerId, payload);
-    if (result) {
-      reset();
-      onSuccess();
+    try {
+      const result = await logHours(volunteerId, payload);
+      if (result) {
+        reset();
+        onSuccess();
+      }
+    } catch (error_) {
+      if (error_ instanceof AuthenticationError) {
+        router.push("/auth/login");
+      }
     }
   };
 
