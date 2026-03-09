@@ -13,15 +13,13 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
-import { useRouter } from "next/navigation";
 import { useSnackbar } from "notistack";
-import { JSX, useEffect, useState } from "react";
+import { JSX } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import type { Opportunity } from "@/components/volunteer/types";
 import { type LogHoursPayload, useHours } from "@/hooks/use-hours";
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import { useOpportunityOptions } from "@/hooks/use-opportunity-options";
 
 const logHoursSchema = z.object({
   opportunityId: z.number({ message: "Please select an opportunity" }),
@@ -38,7 +36,6 @@ type LogHoursFormValues = z.infer<typeof logHoursSchema>;
 type LogHoursModalProps = {
   open: boolean;
   volunteerId: number;
-  viewerRole?: "volunteer" | "staff";
   onClose: () => void;
   onSuccess: () => void;
 };
@@ -46,15 +43,11 @@ type LogHoursModalProps = {
 export default function LogHoursModal({
   open,
   volunteerId,
-  viewerRole,
   onClose,
   onSuccess,
 }: LogHoursModalProps): JSX.Element {
-  const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
-  const [loadingOpps, setLoadingOpps] = useState(false);
-
+  const { opportunities, loading: loadingOpps } = useOpportunityOptions(open);
   const { logHours, loading, error } = useHours();
 
   const {
@@ -72,46 +65,6 @@ export default function LogHoursModal({
     },
   });
 
-  useEffect(() => {
-    if (!open) return;
-
-    let cancelled = false;
-
-    const fetchOpportunities = async (): Promise<void> => {
-      setLoadingOpps(true);
-      try {
-        const endpoint =
-          viewerRole === "staff"
-            ? "/api/staff/calendar/events"
-            : "/api/volunteer/opportunities?limit=100&offset=0";
-
-        const result = await apiClient.get<{
-          data: Opportunity[];
-          total: number;
-        }>(endpoint);
-        if (!cancelled) {
-          setOpportunities(result.data);
-        }
-      } catch (error_) {
-        if (cancelled) return;
-        if (error_ instanceof AuthenticationError) {
-          router.push("/auth/login");
-          return;
-        }
-        enqueueSnackbar("Failed to load opportunities", { variant: "error" });
-        setOpportunities([]);
-      } finally {
-        if (!cancelled) setLoadingOpps(false);
-      }
-    };
-
-    void fetchOpportunities();
-
-    return (): void => {
-      cancelled = true;
-    };
-  }, [open, router, enqueueSnackbar, viewerRole]);
-
   const handleClose = (): void => {
     reset();
     onClose();
@@ -125,16 +78,12 @@ export default function LogHoursModal({
       notes: values.notes,
     };
 
-    try {
-      const result = await logHours(volunteerId, payload);
-      if (result) {
-        reset();
-        onSuccess();
-      }
-    } catch (error_) {
-      if (error_ instanceof AuthenticationError) {
-        router.push("/auth/login");
-      }
+    const result = await logHours(volunteerId, payload);
+    if (result) {
+      reset();
+      onSuccess();
+    } else if (error) {
+      enqueueSnackbar(error, { variant: "error" });
     }
   };
 

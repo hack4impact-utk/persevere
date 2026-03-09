@@ -117,7 +117,7 @@ export default function VolunteerProfile({
   const { enqueueSnackbar } = useSnackbar();
   const { verifyHours, deleteHours } = useHours();
 
-  const canVerify = viewerRole === "staff";
+  const canVerify = viewerRole !== "volunteer";
 
   const handleVerifyHours = useCallback(
     async (hoursId: number): Promise<void> => {
@@ -1095,7 +1095,6 @@ export default function VolunteerProfile({
       <LogHoursModal
         open={logHoursOpen}
         volunteerId={vol.id}
-        viewerRole={viewerRole}
         onClose={() => setLogHoursOpen(false)}
         onSuccess={() => {
           setLogHoursOpen(false);
