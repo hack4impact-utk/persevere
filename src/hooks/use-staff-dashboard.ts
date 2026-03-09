@@ -1,33 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
 import { apiClient } from "@/lib/api-client";
+import type {
+  StaffDashboardStats,
+  StaffUpcomingOpportunity,
+} from "@/services/dashboard.service";
 
-export type StaffUpcomingOpportunity = {
-  id: string;
-  title: string;
-  date: string; // ISO string
-  location: string;
-};
-
-type StaffDashboardApiResponse =
-  | {
-      // Flat shape
-      activeVolunteers: number;
-      totalVolunteerHours: number;
-      upcomingOpportunities: number; // count
-      pendingRsvps: number; // count
-      upcomingOpportunitiesList?: StaffUpcomingOpportunity[];
-    }
-  | {
-      // Nested shape
-      stats: {
-        activeVolunteers: number;
-        totalVolunteerHours: number;
-        upcomingOpportunities: number;
-        pendingRsvps: number;
-      };
-      upcomingOpportunities: StaffUpcomingOpportunity[];
-    };
+export type { StaffUpcomingOpportunity } from "@/services/dashboard.service";
 
 export type StaffDashboardData = {
   activeVolunteers: number;
@@ -44,9 +24,10 @@ type State = {
 };
 
 export function useStaffDashboard(): State {
-  const [raw, setRaw] = useState<StaffDashboardApiResponse | null>(null);
+  const [data, setData] = useState<StaffDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,23 +36,25 @@ export function useStaffDashboard(): State {
       try {
         setIsLoading(true);
 
-        const res = await apiClient.get<StaffDashboardApiResponse>(
+        const res = await apiClient.get<{ data: StaffDashboardStats }>(
           "/api/staff/dashboard/stats",
         );
 
         if (cancelled) return;
 
-        setRaw(res);
+        setData({
+          activeVolunteers: res.data.activeVolunteers ?? 0,
+          totalVolunteerHours: res.data.totalVolunteerHours ?? 0,
+          upcomingOpportunities: res.data.upcomingOpportunities ?? 0,
+          pendingRsvps: res.data.pendingRsvps ?? 0,
+          upcomingList: res.data.upcomingList ?? [],
+        });
         setError(null);
       } catch (error_) {
         if (cancelled) return;
 
-        setRaw(null);
-        setError(
-          error_ instanceof Error
-            ? error_.message
-            : "Failed to load staff dashboard.",
-        );
+        setData(null);
+        handleApiError(error_, "Failed to load staff dashboard.");
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -82,29 +65,7 @@ export function useStaffDashboard(): State {
     return (): void => {
       cancelled = true;
     };
-  }, []);
-
-  const data = useMemo<StaffDashboardData | null>(() => {
-    if (!raw) return null;
-
-    if ("stats" in raw) {
-      return {
-        activeVolunteers: raw.stats.activeVolunteers ?? 0,
-        totalVolunteerHours: raw.stats.totalVolunteerHours ?? 0,
-        upcomingOpportunities: raw.stats.upcomingOpportunities ?? 0,
-        pendingRsvps: raw.stats.pendingRsvps ?? 0,
-        upcomingList: raw.upcomingOpportunities ?? [],
-      };
-    }
-
-    return {
-      activeVolunteers: raw.activeVolunteers ?? 0,
-      totalVolunteerHours: raw.totalVolunteerHours ?? 0,
-      upcomingOpportunities: raw.upcomingOpportunities ?? 0,
-      pendingRsvps: raw.pendingRsvps ?? 0,
-      upcomingList: raw.upcomingOpportunitiesList ?? [],
-    };
-  }, [raw]);
+  }, [handleApiError]);
 
   return { data, isLoading, error };
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import {
+  Alert,
+  Box,
   Card,
   CardContent,
-  Container,
   Divider,
   Grid,
   List,
@@ -11,7 +12,6 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
-import Box from "@mui/material/Box";
 import { JSX } from "react";
 import * as React from "react";
 
@@ -38,109 +38,86 @@ export default function StaffDashboardPage(): JSX.Element {
   const totalVolunteerHours = data?.totalVolunteerHours ?? 0;
   const upcomingOpportunities = data?.upcomingOpportunities ?? 0;
   const pendingRsvps = data?.pendingRsvps ?? 0;
-
   const upcomingList = data?.upcomingList ?? [];
 
+  const statCards = [
+    { label: "Active Volunteers", value: activeVolunteers },
+    { label: "Total Volunteer Hours", value: totalVolunteerHours },
+    { label: "Upcoming Opportunities", value: upcomingOpportunities },
+    { label: "Pending RSVPs", value: pendingRsvps },
+  ];
+
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ px: { xs: 2, md: 4 }, pt: { xs: 1, md: 1.5 }, pb: 4 }}>
-        <Typography variant="h4" fontWeight={800} sx={{ mb: 3 }}>
-          Staff Dashboard
-        </Typography>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        gap: 3,
+        px: { xs: 2, md: 4 },
+        pt: { xs: 1, md: 1.5 },
+        pb: 4,
+      }}
+    >
+      {error && <Alert severity="error">{error}</Alert>}
 
-        {error && (
-          <Typography color="error" sx={{ mb: 2 }}>
-            {error}
+      <Grid container spacing={2}>
+        {statCards.map(({ label, value }) => (
+          <Grid key={label} size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card sx={{ borderRadius: 2, boxShadow: 1, height: "100%" }}>
+              <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2.5 } }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 0.5 }}
+                >
+                  {label}
+                </Typography>
+                <Typography variant="h4" fontWeight={700}>
+                  {isLoading ? "—" : value}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      <Card sx={{ borderRadius: 2, boxShadow: 1 }}>
+        <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2.5 } }}>
+          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1.5 }}>
+            Upcoming Opportunities
           </Typography>
-        )}
 
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h4" fontWeight={900}>
-                  {isLoading ? "—" : activeVolunteers}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Active Volunteers
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h4" fontWeight={900}>
-                  {isLoading ? "—" : totalVolunteerHours}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Total Volunteer Hours
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h4" fontWeight={900}>
-                  {isLoading ? "—" : upcomingOpportunities}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Upcoming Opportunities
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h4" fontWeight={900}>
-                  {isLoading ? "—" : pendingRsvps}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Pending RSVPs
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        <Card>
-          <CardContent>
-            <Typography variant="h6" fontWeight={800} sx={{ mb: 1 }}>
-              Upcoming Opportunities
+          {isLoading ? (
+            <Typography variant="body2" color="text.secondary">
+              Loading…
             </Typography>
-
-            {isLoading ? (
-              <Typography variant="body2" color="text.secondary">
-                Loading…
-              </Typography>
-            ) : upcomingList.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                No upcoming opportunities found.
-              </Typography>
-            ) : (
-              <List disablePadding>
-                {upcomingList.map((opp, idx) => (
-                  <React.Fragment key={opp.id}>
-                    <ListItem disableGutters>
-                      <ListItemText
-                        primary={opp.title}
-                        secondary={`${formatDate(opp.date)} • ${opp.location}`}
-                        primaryTypographyProps={{ fontWeight: 700 }}
-                      />
-                    </ListItem>
-                    {idx < upcomingList.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </List>
-            )}
-          </CardContent>
-        </Card>
-      </Box>
-    </Container>
+          ) : upcomingList.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No upcoming opportunities.
+            </Typography>
+          ) : (
+            <List disablePadding>
+              {upcomingList.map((opp, idx) => (
+                <React.Fragment key={opp.id}>
+                  <ListItem disableGutters>
+                    <ListItemText
+                      primary={opp.title}
+                      secondary={`${formatDate(opp.startDate)} • ${opp.location}`}
+                      primaryTypographyProps={{
+                        variant: "subtitle2",
+                        fontWeight: 600,
+                      }}
+                      secondaryTypographyProps={{ variant: "caption" }}
+                    />
+                  </ListItem>
+                  {idx < upcomingList.length - 1 && <Divider />}
+                </React.Fragment>
+              ))}
+            </List>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
   );
 }
