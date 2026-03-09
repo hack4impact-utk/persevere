@@ -8,14 +8,22 @@ import {
   volunteerRsvps,
   volunteers,
 } from "@/db/schema";
-import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { DEFAULT_PAGE_SIZE, RECENT_OPPORTUNITIES_LIMIT } from "@/lib/constants";
 import { toNumber } from "@/services/shared/db-helpers";
+
+export type StaffUpcomingOpportunity = {
+  id: number;
+  title: string;
+  startDate: string; // ISO string
+  location: string;
+};
 
 export type StaffDashboardStats = {
   activeVolunteers: number;
   totalVolunteerHours: number;
   upcomingOpportunities: number;
   pendingRsvps: number;
+  upcomingList: StaffUpcomingOpportunity[];
 };
 
 export type VolunteerDashboard = {
@@ -41,6 +49,7 @@ export async function getStaffDashboardStats(): Promise<StaffDashboardStats> {
     volunteerHoursAggregate,
     opportunitiesCount,
     volunteerRsvpsCount,
+    upcomingRows,
   ] = await Promise.all([
     db
       .select({ count: sql<string>`count(*)` })
@@ -63,6 +72,18 @@ export async function getStaffDashboardStats(): Promise<StaffDashboardStats> {
       .select({ count: sql<string>`count(*)` })
       .from(volunteerRsvps)
       .where(eq(volunteerRsvps.status, "pending")),
+
+    db
+      .select({
+        id: opportunities.id,
+        title: opportunities.title,
+        startDate: opportunities.startDate,
+        location: opportunities.location,
+      })
+      .from(opportunities)
+      .where(gte(opportunities.startDate, now))
+      .orderBy(opportunities.startDate)
+      .limit(RECENT_OPPORTUNITIES_LIMIT),
   ]);
 
   return {
@@ -70,6 +91,12 @@ export async function getStaffDashboardStats(): Promise<StaffDashboardStats> {
     totalVolunteerHours: toNumber(volunteerHoursAggregate[0]?.total),
     upcomingOpportunities: toNumber(opportunitiesCount[0]?.count),
     pendingRsvps: toNumber(volunteerRsvpsCount[0]?.count),
+    upcomingList: upcomingRows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      startDate: new Date(row.startDate).toISOString(),
+      location: row.location,
+    })),
   };
 }
 
