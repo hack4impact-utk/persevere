@@ -4,7 +4,7 @@
  * Extracts the parallel data queries (skills, interests, hours, RSVPs) shared by
  * volunteer.service.ts (self-service profile) and volunteer-detail.service.ts (staff view).
  */
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 
 import db from "@/db";
 import {
@@ -53,6 +53,8 @@ export type VolunteerDetailData = {
     date: Date;
     hours: number;
     notes: string | null;
+    status: "pending" | "approved" | "rejected";
+    rejectionReason: string | null;
     verifiedAt: Date | null;
   }[];
 };
@@ -74,7 +76,12 @@ export async function fetchVolunteerDetailData(
     db
       .select({ total: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)` })
       .from(volunteerHours)
-      .where(eq(volunteerHours.volunteerId, volunteerId)),
+      .where(
+        and(
+          eq(volunteerHours.volunteerId, volunteerId),
+          eq(volunteerHours.status, "approved"),
+        ),
+      ),
 
     db
       .select({
@@ -126,6 +133,8 @@ export async function fetchVolunteerDetailData(
         date: volunteerHours.date,
         hours: volunteerHours.hours,
         notes: volunteerHours.notes,
+        status: volunteerHours.status,
+        rejectionReason: volunteerHours.rejectionReason,
         verifiedAt: volunteerHours.verifiedAt,
       })
       .from(volunteerHours)
