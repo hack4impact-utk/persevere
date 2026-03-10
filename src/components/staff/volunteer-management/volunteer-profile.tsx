@@ -1,9 +1,9 @@
 "use client";
 
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import AddIcon from "@mui/icons-material/Add";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DescriptionIcon from "@mui/icons-material/Description";
@@ -15,7 +15,6 @@ import HistoryIcon from "@mui/icons-material/History";
 import PhoneIcon from "@mui/icons-material/Phone";
 import SecurityIcon from "@mui/icons-material/Security";
 import StarIcon from "@mui/icons-material/Star";
-import VerifiedIcon from "@mui/icons-material/Verified";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import WorkIcon from "@mui/icons-material/Work";
 import {
@@ -55,10 +54,9 @@ import {
   StatusBadge,
 } from "@/components/ui";
 import { useHours } from "@/hooks/use-hours";
-import { apiClient } from "@/lib/api-client";
+import { useVolunteerDetail } from "@/hooks/use-volunteer-detail";
 import type { FetchVolunteerByIdResult } from "@/services/volunteer-client.service";
 
-import LogHoursModal from "./log-hours-modal";
 import SkillsModal from "./skills-modal";
 
 /**
@@ -106,33 +104,57 @@ export default function VolunteerProfile({
     "skills" | "interests"
   >("skills");
 
-  const [logHoursOpen, setLogHoursOpen] = useState(false);
   const [hoursDeleteTargetId, setHoursDeleteTargetId] = useState<number | null>(
     null,
   );
   const [hoursActionLoading, setHoursActionLoading] = useState<number | null>(
     null,
   );
+  const [rejectTarget, setRejectTarget] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const { enqueueSnackbar } = useSnackbar();
-  const { verifyHours, deleteHours } = useHours();
+  const { approveHours, rejectHours, deleteHours } = useHours();
+  const { updateVolunteer, deleteVolunteer } = useVolunteerDetail();
 
-  const canVerify = viewerRole !== "volunteer";
+  const canActOnHours = viewerRole !== "volunteer";
 
-  const handleVerifyHours = useCallback(
+  const handleApproveHours = useCallback(
     async (hoursId: number): Promise<void> => {
       setHoursActionLoading(hoursId);
-      const result = await verifyHours(hoursId, { verify: true });
+      const result = await approveHours(hoursId);
       if (result) {
-        enqueueSnackbar("Hours verified successfully", { variant: "success" });
+        enqueueSnackbar("Hours approved", { variant: "success" });
         if (onVolunteerUpdated) onVolunteerUpdated();
       } else {
-        enqueueSnackbar("Failed to verify hours", { variant: "error" });
+        enqueueSnackbar("Failed to approve hours", { variant: "error" });
       }
       setHoursActionLoading(null);
     },
-    [verifyHours, enqueueSnackbar, onVolunteerUpdated],
+    [approveHours, enqueueSnackbar, onVolunteerUpdated],
   );
+
+  const handleRejectConfirm = useCallback(async (): Promise<void> => {
+    if (rejectTarget === null) return;
+    const id = rejectTarget;
+    setHoursActionLoading(id);
+    const result = await rejectHours(id, rejectReason || undefined);
+    if (result) {
+      enqueueSnackbar("Hours rejected", { variant: "success" });
+      setRejectTarget(null);
+      setRejectReason("");
+      if (onVolunteerUpdated) onVolunteerUpdated();
+    } else {
+      enqueueSnackbar("Failed to reject hours", { variant: "error" });
+    }
+    setHoursActionLoading(null);
+  }, [
+    rejectTarget,
+    rejectReason,
+    rejectHours,
+    enqueueSnackbar,
+    onVolunteerUpdated,
+  ]);
 
   const handleDeleteHoursConfirm = useCallback(async (): Promise<void> => {
     if (hoursDeleteTargetId == null) return;
@@ -171,55 +193,35 @@ export default function VolunteerProfile({
       notificationPreference?: "email" | "sms" | "both" | "none";
     }): Promise<void> => {
       if (!vol.id) return;
-
       setSaving(true);
-      try {
-        await apiClient.put(`/api/staff/volunteers/${vol.id}`, data);
+      const success = await updateVolunteer(vol.id, data);
+      setSaving(false);
+      if (success) {
         enqueueSnackbar("Volunteer updated successfully", {
           variant: "success",
         });
         setEditModalOpen(false);
-        if (onVolunteerUpdated) {
-          onVolunteerUpdated();
-        }
-      } catch (error) {
-        console.error("Failed to update volunteer:", error);
-        enqueueSnackbar(
-          error instanceof Error ? error.message : "Failed to update volunteer",
-          { variant: "error" },
-        );
-      } finally {
-        setSaving(false);
+        if (onVolunteerUpdated) onVolunteerUpdated();
+      } else {
+        enqueueSnackbar("Failed to update volunteer", { variant: "error" });
       }
     },
-    [vol.id, enqueueSnackbar, onVolunteerUpdated],
+    [vol.id, updateVolunteer, enqueueSnackbar, onVolunteerUpdated],
   );
 
   const handleDeleteUser = useCallback(async (): Promise<void> => {
     if (!vol.id) return;
-
-    const volunteerId = vol.id;
     setConfirmDelete(false);
     setDeleting(true);
-
-    try {
-      await apiClient.delete(`/api/staff/volunteers/${volunteerId}`);
-      enqueueSnackbar("Volunteer deleted successfully", {
-        variant: "success",
-      });
-      if (onDelete) {
-        onDelete();
-      }
-    } catch (error) {
-      console.error("Failed to delete volunteer:", error);
-      enqueueSnackbar(
-        error instanceof Error ? error.message : "Failed to delete volunteer",
-        { variant: "error" },
-      );
-    } finally {
-      setDeleting(false);
+    const success = await deleteVolunteer(vol.id);
+    setDeleting(false);
+    if (success) {
+      enqueueSnackbar("Volunteer deleted successfully", { variant: "success" });
+      if (onDelete) onDelete();
+    } else {
+      enqueueSnackbar("Failed to delete volunteer", { variant: "error" });
     }
-  }, [vol.id, enqueueSnackbar, onDelete]);
+  }, [vol.id, deleteVolunteer, enqueueSnackbar, onDelete]);
 
   if (!user) {
     return (
@@ -852,26 +854,12 @@ export default function VolunteerProfile({
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
-                {/* Header row with Log Hours button */}
+                {/* Header row */}
                 <Box display="flex" alignItems="center" gap={1} mb={2}>
                   <AccessTimeIcon color="primary" />
                   <Typography variant="h6" fontWeight={600} sx={{ flex: 1 }}>
                     Hours Breakdown
                   </Typography>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={<AddIcon fontSize="small" />}
-                    onClick={() => setLogHoursOpen(true)}
-                    sx={{
-                      textTransform: "none",
-                      fontWeight: 600,
-                      borderRadius: 1.5,
-                      py: 0.5,
-                    }}
-                  >
-                    Log Hours
-                  </Button>
                 </Box>
                 <Divider sx={{ mb: 2 }} />
 
@@ -879,7 +867,7 @@ export default function VolunteerProfile({
                 volunteer.hoursBreakdown.length > 0 ? (
                   <Stack spacing={1.5}>
                     {volunteer.hoursBreakdown.map((entry) => {
-                      const isVerified = !!entry.verifiedAt;
+                      const isPending = entry.status === "pending";
                       const isBusy = hoursActionLoading === entry.id;
 
                       return (
@@ -918,8 +906,13 @@ export default function VolunteerProfile({
                                 </Typography>
                               </Box>
 
-                              {/* Date + verified chip */}
-                              <Box display="flex" alignItems="center" gap={1}>
+                              {/* Date + status chip */}
+                              <Box
+                                display="flex"
+                                alignItems="center"
+                                gap={1}
+                                flexWrap="wrap"
+                              >
                                 <Typography
                                   variant="caption"
                                   color="text.secondary"
@@ -933,15 +926,16 @@ export default function VolunteerProfile({
                                     },
                                   )}
                                 </Typography>
-                                {isVerified ? (
+                                {entry.status === "approved" && (
                                   <Chip
-                                    label="Verified"
+                                    label="Approved"
                                     size="small"
                                     color="success"
                                     icon={<CheckCircleIcon fontSize="small" />}
                                     sx={{ fontSize: "0.65rem", height: "18px" }}
                                   />
-                                ) : (
+                                )}
+                                {entry.status === "pending" && (
                                   <Chip
                                     label="Pending"
                                     size="small"
@@ -950,6 +944,20 @@ export default function VolunteerProfile({
                                     sx={{ fontSize: "0.65rem", height: "18px" }}
                                   />
                                 )}
+                                {entry.status === "rejected" && (
+                                  <Chip
+                                    label="Rejected"
+                                    size="small"
+                                    color="error"
+                                    sx={{ fontSize: "0.65rem", height: "18px" }}
+                                  />
+                                )}
+                                {entry.status === "rejected" &&
+                                  entry.rejectionReason && (
+                                    <Typography variant="caption" color="error">
+                                      {entry.rejectionReason}
+                                    </Typography>
+                                  )}
                               </Box>
                             </Box>
 
@@ -959,15 +967,15 @@ export default function VolunteerProfile({
                               spacing={0.25}
                               sx={{ flexShrink: 0 }}
                             >
-                              {/* Verify — staff/admin only, unverified rows only */}
-                              {canVerify && !isVerified && (
-                                <Tooltip title="Mark as verified">
+                              {/* Approve — staff/admin only, pending rows only */}
+                              {canActOnHours && isPending && (
+                                <Tooltip title="Approve hours">
                                   <span>
                                     <IconButton
                                       size="small"
                                       color="success"
                                       onClick={() =>
-                                        handleVerifyHours(entry.id)
+                                        void handleApproveHours(entry.id)
                                       }
                                       disabled={isBusy}
                                       sx={{ p: 0.5 }}
@@ -975,7 +983,7 @@ export default function VolunteerProfile({
                                       {isBusy ? (
                                         <CircularProgress size={14} />
                                       ) : (
-                                        <VerifiedIcon
+                                        <CheckCircleIcon
                                           sx={{ fontSize: "1rem" }}
                                         />
                                       )}
@@ -984,13 +992,34 @@ export default function VolunteerProfile({
                                 </Tooltip>
                               )}
 
-                              {/* Delete — hidden for verified rows */}
-                              {!isVerified && (
-                                <Tooltip title="Delete entry">
+                              {/* Reject — staff/admin only, pending rows only */}
+                              {canActOnHours && isPending && (
+                                <Tooltip title="Reject hours">
                                   <span>
                                     <IconButton
                                       size="small"
                                       color="error"
+                                      onClick={() => setRejectTarget(entry.id)}
+                                      disabled={isBusy}
+                                      sx={{ p: 0.5 }}
+                                    >
+                                      {isBusy ? (
+                                        <CircularProgress size={14} />
+                                      ) : (
+                                        <CloseIcon sx={{ fontSize: "1rem" }} />
+                                      )}
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                              )}
+
+                              {/* Delete — hidden for approved rows */}
+                              {entry.status !== "approved" && (
+                                <Tooltip title="Delete entry">
+                                  <span>
+                                    <IconButton
+                                      size="small"
+                                      color="default"
                                       onClick={() =>
                                         setHoursDeleteTargetId(entry.id)
                                       }
@@ -1091,16 +1120,46 @@ export default function VolunteerProfile({
         }}
       />
 
-      {/* Log Hours Modal */}
-      <LogHoursModal
-        open={logHoursOpen}
-        volunteerId={vol.id}
-        onClose={() => setLogHoursOpen(false)}
-        onSuccess={() => {
-          setLogHoursOpen(false);
-          if (onVolunteerUpdated) onVolunteerUpdated();
+      {/* Reject Hours Dialog */}
+      <Dialog
+        open={rejectTarget !== null}
+        onClose={() => {
+          setRejectTarget(null);
+          setRejectReason("");
         }}
-      />
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Reject Hours</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Reason (optional)"
+            multiline
+            rows={2}
+            fullWidth
+            sx={{ mt: 1 }}
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setRejectTarget(null);
+              setRejectReason("");
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => void handleRejectConfirm()}
+          >
+            Reject
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Delete Volunteer Confirmation Dialog */}
       <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)}>

@@ -11,33 +11,17 @@ export type VolunteerHour = {
   date: string;
   hours: number;
   notes?: string | null;
+  status: "pending" | "approved" | "rejected";
+  rejectionReason?: string | null;
   verifiedBy?: number | null;
   verifiedAt?: string | null;
 };
 
-export type LogHoursPayload = {
-  opportunityId: number;
-  date: string;
-  hours: number;
-  notes?: string;
-};
-
-export type VerifyHoursPayload = {
-  verify: boolean;
-};
-
 export function useHours(): {
-  logHours: (
-    volunteerId: number,
-    payload: LogHoursPayload,
-  ) => Promise<VolunteerHour | null>;
-  verifyHours: (
+  approveHours: (hoursId: number) => Promise<VolunteerHour | null>;
+  rejectHours: (
     hoursId: number,
-    payload: VerifyHoursPayload,
-  ) => Promise<VolunteerHour | null>;
-  editHours: (
-    hoursId: number,
-    payload: Partial<LogHoursPayload>,
+    reason?: string,
   ) => Promise<VolunteerHour | null>;
   deleteHours: (hoursId: number) => Promise<boolean>;
   loading: boolean;
@@ -47,22 +31,19 @@ export function useHours(): {
   const [error, setError] = useState<string | null>(null);
   const handleApiError = useApiErrorHandler(setError);
 
-  const logHours = useCallback(
-    async (
-      volunteerId: number,
-      payload: LogHoursPayload,
-    ): Promise<VolunteerHour | null> => {
+  const approveHours = useCallback(
+    async (hoursId: number): Promise<VolunteerHour | null> => {
       setLoading(true);
       setError(null);
       try {
-        const result = await apiClient.post<VolunteerHour>(
-          `/api/staff/volunteers/${volunteerId}/hours`,
-          payload,
+        const result = await apiClient.put<{ data: VolunteerHour }>(
+          `/api/staff/hours/${hoursId}`,
+          { action: "approve" },
         );
-        return result;
+        return result.data;
       } catch (error_) {
-        if (!handleApiError(error_, "Failed to log hours")) {
-          console.error("[useHours] logHours:", error_);
+        if (!handleApiError(error_, "Failed to approve hours")) {
+          console.error("[useHours] approveHours:", error_);
         }
         return null;
       } finally {
@@ -72,47 +53,19 @@ export function useHours(): {
     [handleApiError],
   );
 
-  const verifyHours = useCallback(
-    async (
-      hoursId: number,
-      payload: VerifyHoursPayload,
-    ): Promise<VolunteerHour | null> => {
+  const rejectHours = useCallback(
+    async (hoursId: number, reason?: string): Promise<VolunteerHour | null> => {
       setLoading(true);
       setError(null);
       try {
-        const result = await apiClient.put<VolunteerHour>(
+        const result = await apiClient.put<{ data: VolunteerHour }>(
           `/api/staff/hours/${hoursId}`,
-          payload,
+          { action: "reject", reason },
         );
-        return result;
+        return result.data;
       } catch (error_) {
-        if (!handleApiError(error_, "Failed to verify hours")) {
-          console.error("[useHours] verifyHours:", error_);
-        }
-        return null;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [handleApiError],
-  );
-
-  const editHours = useCallback(
-    async (
-      hoursId: number,
-      payload: Partial<LogHoursPayload>,
-    ): Promise<VolunteerHour | null> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const result = await apiClient.put<VolunteerHour>(
-          `/api/staff/hours/${hoursId}`,
-          payload,
-        );
-        return result;
-      } catch (error_) {
-        if (!handleApiError(error_, "Failed to edit hours")) {
-          console.error("[useHours] editHours:", error_);
+        if (!handleApiError(error_, "Failed to reject hours")) {
+          console.error("[useHours] rejectHours:", error_);
         }
         return null;
       } finally {
@@ -143,5 +96,5 @@ export function useHours(): {
     [handleApiError],
   );
 
-  return { logHours, verifyHours, editHours, deleteHours, loading, error };
+  return { approveHours, rejectHours, deleteHours, loading, error };
 }

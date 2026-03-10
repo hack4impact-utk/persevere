@@ -98,6 +98,8 @@ export type GetVolunteerProfileResult = {
     date: Date;
     hours: number;
     notes: string | null;
+    status: "pending" | "approved" | "rejected";
+    rejectionReason: string | null;
     verifiedAt: Date | null;
   }[];
 };
@@ -160,7 +162,13 @@ export async function listVolunteers(
     })
     .from(volunteers)
     .leftJoin(users, eq(volunteers.userId, users.id))
-    .leftJoin(volunteerHours, eq(volunteerHours.volunteerId, volunteers.id))
+    .leftJoin(
+      volunteerHours,
+      and(
+        eq(volunteerHours.volunteerId, volunteers.id),
+        eq(volunteerHours.status, "approved"),
+      ),
+    )
     .groupBy(volunteers.id, users.id)
     .$dynamic();
 
