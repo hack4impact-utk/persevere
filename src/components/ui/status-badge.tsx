@@ -58,6 +58,17 @@ export function getRsvpStatusColor(
   }
 }
 
+type HoursStatus = "pending" | "approved" | "rejected" | string;
+
+export function getHoursStatusColor(
+  status: HoursStatus,
+): "success" | "warning" | "error" | "default" {
+  if (status === "approved") return "success";
+  if (status === "pending") return "warning";
+  if (status === "rejected") return "error";
+  return "default";
+}
+
 type BackgroundCheckStatus = "approved" | "pending" | "rejected" | string;
 
 export function getBackgroundCheckColor(

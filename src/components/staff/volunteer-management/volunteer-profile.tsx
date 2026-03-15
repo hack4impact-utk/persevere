@@ -3,7 +3,9 @@
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DescriptionIcon from "@mui/icons-material/Description";
 import EditIcon from "@mui/icons-material/Edit";
 import EmailIcon from "@mui/icons-material/Email";
@@ -22,9 +24,11 @@ import {
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
+  DialogContentText,
   DialogTitle,
   Divider,
   FormControl,
@@ -36,6 +40,7 @@ import {
   Stack,
   Switch,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
@@ -48,7 +53,8 @@ import {
   getRsvpStatusColor,
   StatusBadge,
 } from "@/components/ui";
-import { apiClient } from "@/lib/api-client";
+import { useHours } from "@/hooks/use-hours";
+import { useVolunteerDetail } from "@/hooks/use-volunteer-detail";
 import type { FetchVolunteerByIdResult } from "@/services/volunteer-client.service";
 
 import SkillsModal from "./skills-modal";
@@ -63,6 +69,8 @@ type VolunteerProfileProps = {
   volunteer: FetchVolunteerByIdResult;
   onDelete?: () => void;
   onVolunteerUpdated?: () => void;
+  /** Defaults to staff. */
+  viewerRole?: "volunteer" | "staff";
 };
 
 function formatStaffTime(hhmm: string): string {
@@ -84,6 +92,7 @@ export default function VolunteerProfile({
   volunteer,
   onDelete,
   onVolunteerUpdated,
+  viewerRole = "staff",
 }: VolunteerProfileProps): JSX.Element {
   const { volunteers: vol, users: user } = volunteer;
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -94,7 +103,75 @@ export default function VolunteerProfile({
   const [skillsModalMode, setSkillsModalMode] = useState<
     "skills" | "interests"
   >("skills");
+
+  const [hoursDeleteTargetId, setHoursDeleteTargetId] = useState<number | null>(
+    null,
+  );
+  const [hoursActionLoading, setHoursActionLoading] = useState<number | null>(
+    null,
+  );
+  const [rejectTarget, setRejectTarget] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+
   const { enqueueSnackbar } = useSnackbar();
+  const { approveHours, rejectHours, deleteHours } = useHours();
+  const { updateVolunteer, deleteVolunteer } = useVolunteerDetail();
+
+  const canActOnHours = viewerRole !== "volunteer";
+
+  const handleApproveHours = useCallback(
+    async (hoursId: number): Promise<void> => {
+      setHoursActionLoading(hoursId);
+      const result = await approveHours(hoursId);
+      if (result) {
+        enqueueSnackbar("Hours approved", { variant: "success" });
+        if (onVolunteerUpdated) onVolunteerUpdated();
+      } else {
+        enqueueSnackbar("Failed to approve hours", { variant: "error" });
+      }
+      setHoursActionLoading(null);
+    },
+    [approveHours, enqueueSnackbar, onVolunteerUpdated],
+  );
+
+  const handleRejectConfirm = useCallback(async (): Promise<void> => {
+    if (rejectTarget === null) return;
+    const id = rejectTarget;
+    setHoursActionLoading(id);
+    const result = await rejectHours(id, rejectReason || undefined);
+    if (result) {
+      enqueueSnackbar("Hours rejected", { variant: "success" });
+      setRejectTarget(null);
+      setRejectReason("");
+      if (onVolunteerUpdated) onVolunteerUpdated();
+    } else {
+      enqueueSnackbar("Failed to reject hours", { variant: "error" });
+    }
+    setHoursActionLoading(null);
+  }, [
+    rejectTarget,
+    rejectReason,
+    rejectHours,
+    enqueueSnackbar,
+    onVolunteerUpdated,
+  ]);
+
+  const handleDeleteHoursConfirm = useCallback(async (): Promise<void> => {
+    if (hoursDeleteTargetId == null) return;
+    const id = hoursDeleteTargetId;
+    setHoursDeleteTargetId(null);
+    setHoursActionLoading(id);
+    const success = await deleteHours(id);
+    if (success) {
+      enqueueSnackbar("Hours entry deleted", { variant: "success" });
+      if (onVolunteerUpdated) onVolunteerUpdated();
+    } else {
+      enqueueSnackbar("Failed to delete hours entry", { variant: "error" });
+    }
+    setHoursActionLoading(null);
+  }, [hoursDeleteTargetId, deleteHours, enqueueSnackbar, onVolunteerUpdated]);
+
+  // ── Volunteer Edit / Delete ────────────────────────────────────────────────
 
   const handleEditVolunteer = useCallback(
     async (data: {
@@ -116,55 +193,35 @@ export default function VolunteerProfile({
       notificationPreference?: "email" | "sms" | "both" | "none";
     }): Promise<void> => {
       if (!vol.id) return;
-
       setSaving(true);
-      try {
-        await apiClient.put(`/api/staff/volunteers/${vol.id}`, data);
+      const success = await updateVolunteer(vol.id, data);
+      setSaving(false);
+      if (success) {
         enqueueSnackbar("Volunteer updated successfully", {
           variant: "success",
         });
         setEditModalOpen(false);
-        if (onVolunteerUpdated) {
-          onVolunteerUpdated();
-        }
-      } catch (error) {
-        console.error("Failed to update volunteer:", error);
-        enqueueSnackbar(
-          error instanceof Error ? error.message : "Failed to update volunteer",
-          { variant: "error" },
-        );
-      } finally {
-        setSaving(false);
+        if (onVolunteerUpdated) onVolunteerUpdated();
+      } else {
+        enqueueSnackbar("Failed to update volunteer", { variant: "error" });
       }
     },
-    [vol.id, enqueueSnackbar, onVolunteerUpdated],
+    [vol.id, updateVolunteer, enqueueSnackbar, onVolunteerUpdated],
   );
 
   const handleDeleteUser = useCallback(async (): Promise<void> => {
     if (!vol.id) return;
-
-    const volunteerId = vol.id;
     setConfirmDelete(false);
     setDeleting(true);
-
-    try {
-      await apiClient.delete(`/api/staff/volunteers/${volunteerId}`);
-      enqueueSnackbar("Volunteer deleted successfully", {
-        variant: "success",
-      });
-      if (onDelete) {
-        onDelete();
-      }
-    } catch (error) {
-      console.error("Failed to delete volunteer:", error);
-      enqueueSnackbar(
-        error instanceof Error ? error.message : "Failed to delete volunteer",
-        { variant: "error" },
-      );
-    } finally {
-      setDeleting(false);
+    const success = await deleteVolunteer(vol.id);
+    setDeleting(false);
+    if (success) {
+      enqueueSnackbar("Volunteer deleted successfully", { variant: "success" });
+      if (onDelete) onDelete();
+    } else {
+      enqueueSnackbar("Failed to delete volunteer", { variant: "error" });
     }
-  }, [vol.id, enqueueSnackbar, onDelete]);
+  }, [vol.id, deleteVolunteer, enqueueSnackbar, onDelete]);
 
   if (!user) {
     return (
@@ -278,10 +335,7 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
@@ -375,10 +429,7 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
@@ -419,10 +470,7 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
@@ -494,10 +542,7 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
@@ -602,10 +647,7 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
@@ -682,10 +724,7 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
@@ -737,10 +776,7 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
@@ -814,62 +850,198 @@ export default function VolunteerProfile({
                 borderRadius: 2,
                 boxShadow: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: 4,
-                },
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
+                {/* Header row */}
                 <Box display="flex" alignItems="center" gap={1} mb={2}>
                   <AccessTimeIcon color="primary" />
-                  <Typography variant="h6" fontWeight={600}>
+                  <Typography variant="h6" fontWeight={600} sx={{ flex: 1 }}>
                     Hours Breakdown
                   </Typography>
                 </Box>
                 <Divider sx={{ mb: 2 }} />
+
                 {volunteer.hoursBreakdown &&
                 volunteer.hoursBreakdown.length > 0 ? (
                   <Stack spacing={1.5}>
-                    {volunteer.hoursBreakdown.map((entry) => (
-                      <Box key={entry.id}>
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="space-between"
-                          mb={0.5}
-                        >
-                          <Typography variant="body2" fontWeight={500}>
-                            {entry.opportunityTitle || "Unknown Opportunity"}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            fontWeight={600}
-                            color="primary"
+                    {volunteer.hoursBreakdown.map((entry) => {
+                      const isPending = entry.status === "pending";
+                      const isBusy = hoursActionLoading === entry.id;
+
+                      return (
+                        <Box key={entry.id}>
+                          <Box
+                            display="flex"
+                            alignItems="flex-start"
+                            justifyContent="space-between"
+                            mb={0.5}
+                            gap={1}
                           >
-                            {entry.hours.toFixed(1)} hrs
-                          </Typography>
+                            {/* Left: title + hours */}
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Box
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="space-between"
+                                mb={0.25}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={500}
+                                  noWrap
+                                  sx={{ flex: 1, mr: 1 }}
+                                >
+                                  {entry.opportunityTitle ||
+                                    "Unknown Opportunity"}
+                                </Typography>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  color="primary"
+                                  sx={{ flexShrink: 0 }}
+                                >
+                                  {entry.hours.toFixed(1)} hrs
+                                </Typography>
+                              </Box>
+
+                              {/* Date + status chip */}
+                              <Box
+                                display="flex"
+                                alignItems="center"
+                                gap={1}
+                                flexWrap="wrap"
+                              >
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  {new Date(entry.date).toLocaleDateString(
+                                    "en-US",
+                                    {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                    },
+                                  )}
+                                </Typography>
+                                {entry.status === "approved" && (
+                                  <Chip
+                                    label="Approved"
+                                    size="small"
+                                    color="success"
+                                    icon={<CheckCircleIcon fontSize="small" />}
+                                    sx={{ fontSize: "0.65rem", height: "18px" }}
+                                  />
+                                )}
+                                {entry.status === "pending" && (
+                                  <Chip
+                                    label="Pending"
+                                    size="small"
+                                    color="warning"
+                                    variant="outlined"
+                                    sx={{ fontSize: "0.65rem", height: "18px" }}
+                                  />
+                                )}
+                                {entry.status === "rejected" && (
+                                  <Chip
+                                    label="Rejected"
+                                    size="small"
+                                    color="error"
+                                    sx={{ fontSize: "0.65rem", height: "18px" }}
+                                  />
+                                )}
+                                {entry.status === "rejected" &&
+                                  entry.rejectionReason && (
+                                    <Typography variant="caption" color="error">
+                                      {entry.rejectionReason}
+                                    </Typography>
+                                  )}
+                              </Box>
+                            </Box>
+
+                            {/* Right: action buttons */}
+                            <Stack
+                              direction="row"
+                              spacing={0.25}
+                              sx={{ flexShrink: 0 }}
+                            >
+                              {/* Approve — staff/admin only, pending rows only */}
+                              {canActOnHours && isPending && (
+                                <Tooltip title="Approve hours">
+                                  <span>
+                                    <IconButton
+                                      size="small"
+                                      color="success"
+                                      onClick={() =>
+                                        void handleApproveHours(entry.id)
+                                      }
+                                      disabled={isBusy}
+                                      sx={{ p: 0.5 }}
+                                    >
+                                      {isBusy ? (
+                                        <CircularProgress size={14} />
+                                      ) : (
+                                        <CheckCircleIcon
+                                          sx={{ fontSize: "1rem" }}
+                                        />
+                                      )}
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                              )}
+
+                              {/* Reject — staff/admin only, pending rows only */}
+                              {canActOnHours && isPending && (
+                                <Tooltip title="Reject hours">
+                                  <span>
+                                    <IconButton
+                                      size="small"
+                                      color="error"
+                                      onClick={() => setRejectTarget(entry.id)}
+                                      disabled={isBusy}
+                                      sx={{ p: 0.5 }}
+                                    >
+                                      {isBusy ? (
+                                        <CircularProgress size={14} />
+                                      ) : (
+                                        <CloseIcon sx={{ fontSize: "1rem" }} />
+                                      )}
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                              )}
+
+                              {/* Delete — hidden for approved rows */}
+                              {entry.status !== "approved" && (
+                                <Tooltip title="Delete entry">
+                                  <span>
+                                    <IconButton
+                                      size="small"
+                                      color="default"
+                                      onClick={() =>
+                                        setHoursDeleteTargetId(entry.id)
+                                      }
+                                      disabled={isBusy}
+                                      sx={{ p: 0.5 }}
+                                    >
+                                      {isBusy ? (
+                                        <CircularProgress size={14} />
+                                      ) : (
+                                        <DeleteOutlineIcon
+                                          sx={{ fontSize: "1rem" }}
+                                        />
+                                      )}
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                              )}
+                            </Stack>
+                          </Box>
                         </Box>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Typography variant="caption" color="text.secondary">
-                            {new Date(entry.date).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </Typography>
-                          {entry.verifiedAt && (
-                            <Chip
-                              label="Verified"
-                              size="small"
-                              color="success"
-                              icon={<CheckCircleIcon fontSize="small" />}
-                              sx={{ fontSize: "0.65rem", height: "18px" }}
-                            />
-                          )}
-                        </Box>
-                      </Box>
-                    ))}
+                      );
+                    })}
                   </Stack>
                 ) : (
                   <Typography
@@ -948,7 +1120,48 @@ export default function VolunteerProfile({
         }}
       />
 
-      {/* Delete User Confirmation Dialog */}
+      {/* Reject Hours Dialog */}
+      <Dialog
+        open={rejectTarget !== null}
+        onClose={() => {
+          setRejectTarget(null);
+          setRejectReason("");
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Reject Hours</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Reason (optional)"
+            multiline
+            rows={2}
+            fullWidth
+            sx={{ mt: 1 }}
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setRejectTarget(null);
+              setRejectReason("");
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => void handleRejectConfirm()}
+          >
+            Reject
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Volunteer Confirmation Dialog */}
       <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)}>
         <DialogTitle>Delete Volunteer</DialogTitle>
         <DialogContent>
@@ -972,6 +1185,32 @@ export default function VolunteerProfile({
             disabled={deleting}
           >
             {deleting ? "Deleting..." : "Delete Volunteer"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Hours Entry Confirmation Dialog */}
+      <Dialog
+        open={hoursDeleteTargetId !== null}
+        onClose={() => setHoursDeleteTargetId(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Delete Hours Entry</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this hours entry? This action cannot
+            be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setHoursDeleteTargetId(null)}>Cancel</Button>
+          <Button
+            onClick={handleDeleteHoursConfirm}
+            variant="contained"
+            color="error"
+          >
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

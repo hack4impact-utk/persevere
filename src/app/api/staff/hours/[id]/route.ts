@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
-import { deleteHours, updateHours } from "@/services/volunteer-hours.service";
+import {
+  approveHours,
+  deleteHours,
+  rejectHours,
+} from "@/services/volunteer-hours.service";
 import { ConflictError, NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import {
@@ -8,9 +13,14 @@ import {
   authErrorResponse,
   requireStaffAuth,
 } from "@/utils/server/auth";
+import { parseBodyOrError } from "@/utils/server/route-helpers";
 import { validateAndParseId } from "@/utils/validate-id";
 
-// PUT: Update or Verify hours
+const updateHoursSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("approve") }),
+  z.object({ action: z.literal("reject"), reason: z.string().optional() }),
+]);
+
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -24,15 +34,18 @@ export async function PUT(
       return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
     }
 
-    const body = await req.json();
-    const updated = await updateHours(hourId, {
-      verify: body.verify,
-      hours: body.hours,
-      notes: body.notes,
-      verifiedBy: Number.parseInt(session.user.id, 10),
-    });
+    const parsed = await parseBodyOrError(req, updateHoursSchema);
+    if ("response" in parsed) return parsed.response;
 
-    return NextResponse.json(updated);
+    const staffId = Number.parseInt(session.user.id, 10);
+
+    if (parsed.data.action === "approve") {
+      const result = await approveHours(hourId, staffId);
+      return NextResponse.json({ data: result });
+    } else {
+      const result = await rejectHours(hourId, staffId, parsed.data.reason);
+      return NextResponse.json({ data: result });
+    }
   } catch (error) {
     if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof NotFoundError) {
@@ -41,12 +54,10 @@ export async function PUT(
     if (error instanceof ConflictError) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
-    console.error("Update error:", error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
-// DELETE: Remove hours record (only unverified)
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -71,7 +82,6 @@ export async function DELETE(
     if (error instanceof ConflictError) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
-    console.error("Delete Error:", error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
