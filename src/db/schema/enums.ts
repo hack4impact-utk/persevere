@@ -46,3 +46,10 @@ export const recipientTypeEnum = pgEnum("recipient_type", [
   "staff",
   "both",
 ]);
+
+// Volunteer hours submission status
+export const hoursStatusEnum = pgEnum("hours_status", [
+  "pending",
+  "approved",
+  "rejected",
+]);

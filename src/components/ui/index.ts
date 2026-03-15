@@ -12,6 +12,7 @@ export { LoadingSkeleton } from "./loading-skeleton";
 export {
   getBackgroundCheckColor,
   getBackgroundCheckLabel,
+  getHoursStatusColor,
   getRsvpStatusColor,
   StatusBadge,
 } from "./status-badge";

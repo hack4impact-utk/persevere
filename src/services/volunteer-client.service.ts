@@ -197,6 +197,8 @@ export type FetchVolunteerByIdResult = {
     date: Date;
     hours: number;
     notes: string | null;
+    status: "pending" | "approved" | "rejected";
+    rejectionReason: string | null;
     verifiedAt: Date | null;
   }[];
 };

@@ -11,7 +11,11 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 
-import { opportunityStatusEnum, rsvpStatusEnum } from "./enums";
+import {
+  hoursStatusEnum,
+  opportunityStatusEnum,
+  rsvpStatusEnum,
+} from "./enums";
 import { timestamps } from "./helpers";
 import { interests, skills, users, volunteers } from "./users";
 
@@ -96,6 +100,8 @@ export const volunteerHours = pgTable("volunteer_hours", {
   date: timestamp("date").notNull(),
   hours: real("hours").notNull(),
   notes: text("notes"),
+  status: hoursStatusEnum("status").default("pending").notNull(),
+  rejectionReason: text("rejection_reason"),
   verifiedBy: integer("verified_by").references(() => users.id, {
     onDelete: "set null",
   }),
