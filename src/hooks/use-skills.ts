@@ -3,6 +3,15 @@ import { useCallback, useEffect, useState } from "react";
 import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
 import { apiClient } from "@/lib/api-client";
 
+type CacheEntry<T> = { data: T; fetchedAt: number };
+const CACHE_TTL_MS = 60_000;
+let skillsCache: CacheEntry<CatalogSkill[]> | null = null;
+let interestsCache: CacheEntry<CatalogInterest[]> | null = null;
+
+function isFresh<T>(cache: CacheEntry<T> | null): cache is CacheEntry<T> {
+  return cache !== null && Date.now() - cache.fetchedAt < CACHE_TTL_MS;
+}
+
 export type CatalogSkill = {
   id: number;
   name: string;
@@ -53,6 +62,7 @@ export type UseSkillsResult = {
     description?: string,
   ) => Promise<void>;
   deleteInterest: (id: number) => Promise<void>;
+  refreshSkills: () => Promise<void>;
 };
 
 export function useSkills(): UseSkillsResult {
@@ -64,11 +74,16 @@ export function useSkills(): UseSkillsResult {
   const handleApiError = useApiErrorHandler(setError);
 
   const fetchSkills = useCallback(async (): Promise<void> => {
+    if (isFresh(skillsCache)) {
+      setSkills(skillsCache.data);
+      return;
+    }
     setLoadingSkills(true);
     try {
       const json = await apiClient.get<{ data: CatalogSkill[] }>(
         "/api/staff/skills",
       );
+      skillsCache = { data: json.data, fetchedAt: Date.now() };
       setSkills(json.data);
     } catch (error) {
       handleApiError(error, "An unexpected error occurred.");
@@ -78,11 +93,16 @@ export function useSkills(): UseSkillsResult {
   }, [handleApiError]);
 
   const fetchInterests = useCallback(async (): Promise<void> => {
+    if (isFresh(interestsCache)) {
+      setInterests(interestsCache.data);
+      return;
+    }
     setLoadingInterests(true);
     try {
       const json = await apiClient.get<{ data: CatalogInterest[] }>(
         "/api/staff/interests",
       );
+      interestsCache = { data: json.data, fetchedAt: Date.now() };
       setInterests(json.data);
     } catch (error) {
       handleApiError(error, "An unexpected error occurred.");
@@ -160,11 +180,13 @@ export function useSkills(): UseSkillsResult {
           description,
           category,
         });
+        skillsCache = null;
+        void fetchSkills();
       } catch (error) {
         handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleApiError],
+    [fetchSkills, handleApiError],
   );
 
   const updateSkill = useCallback(
@@ -180,33 +202,39 @@ export function useSkills(): UseSkillsResult {
           description,
           category,
         });
+        skillsCache = null;
+        void fetchSkills();
       } catch (error) {
         handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleApiError],
+    [fetchSkills, handleApiError],
   );
 
   const deleteSkill = useCallback(
     async (id: number): Promise<void> => {
       try {
         await apiClient.delete(`/api/staff/skills/${id}`);
+        skillsCache = null;
+        void fetchSkills();
       } catch (error) {
         handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleApiError],
+    [fetchSkills, handleApiError],
   );
 
   const createInterest = useCallback(
     async (name: string, description?: string): Promise<void> => {
       try {
         await apiClient.post("/api/staff/interests", { name, description });
+        interestsCache = null;
+        void fetchInterests();
       } catch (error) {
         handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleApiError],
+    [fetchInterests, handleApiError],
   );
 
   const updateInterest = useCallback(
@@ -216,23 +244,33 @@ export function useSkills(): UseSkillsResult {
           name,
           description,
         });
+        interestsCache = null;
+        void fetchInterests();
       } catch (error) {
         handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleApiError],
+    [fetchInterests, handleApiError],
   );
 
   const deleteInterest = useCallback(
     async (id: number): Promise<void> => {
       try {
         await apiClient.delete(`/api/staff/interests/${id}`);
+        interestsCache = null;
+        void fetchInterests();
       } catch (error) {
         handleApiError(error, "An unexpected error occurred.");
       }
     },
-    [handleApiError],
+    [fetchInterests, handleApiError],
   );
+
+  const refreshSkills = useCallback(async (): Promise<void> => {
+    skillsCache = null;
+    interestsCache = null;
+    await Promise.all([fetchSkills(), fetchInterests()]);
+  }, [fetchSkills, fetchInterests]);
 
   useEffect(() => {
     void fetchSkills();
@@ -257,5 +295,6 @@ export function useSkills(): UseSkillsResult {
     createInterest,
     updateInterest,
     deleteInterest,
+    refreshSkills,
   };
 }
