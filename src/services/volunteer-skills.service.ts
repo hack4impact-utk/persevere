@@ -9,7 +9,7 @@ export type SkillDetail = {
   skillName: string | null;
   skillDescription: string | null;
   skillCategory: string | null;
-  proficiencyLevel: "beginner" | "intermediate" | "advanced";
+  proficiencyLevel: "no_selection" | "beginner" | "intermediate" | "advanced";
 };
 
 export async function getVolunteerSkills(
@@ -42,7 +42,7 @@ export type AssignSkillResult = { updated: true } | { created: true };
 export async function assignSkill(
   volunteerId: number,
   skillId: number,
-  level: "beginner" | "intermediate" | "advanced",
+  level: "no_selection" | "beginner" | "intermediate" | "advanced",
 ): Promise<AssignSkillResult> {
   const volunteer = await db
     .select()

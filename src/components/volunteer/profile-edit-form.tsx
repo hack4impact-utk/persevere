@@ -1,9 +1,9 @@
 "use client";
 
 import {
+  Autocomplete,
   Box,
   Button,
-  Chip,
   CircularProgress,
   FormControl,
   InputLabel,
@@ -14,7 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
-import { JSX, useCallback, useEffect, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 
 import { useVolunteerSkillsInterests } from "@/hooks/use-volunteer-skills-interests";
 
@@ -28,7 +28,12 @@ type SkillData = {
   skillName: string | null;
   skillDescription: string | null;
   skillCategory: string | null;
-  proficiencyLevel: "beginner" | "intermediate" | "advanced" | null;
+  proficiencyLevel:
+    | "no_selection"
+    | "beginner"
+    | "intermediate"
+    | "advanced"
+    | null;
 };
 
 type InterestData = {
@@ -104,7 +109,10 @@ export default function ProfileEditForm({
   const [skillSelections, setSkillSelections] = useState<
     Record<
       number,
-      { checked: boolean; level: "beginner" | "intermediate" | "advanced" }
+      {
+        checked: boolean;
+        level: "no_selection" | "beginner" | "intermediate" | "advanced";
+      }
     >
   >({});
 
@@ -129,7 +137,7 @@ export default function ProfileEditForm({
         const current = initialData.skills?.find((s) => s.skillId === skill.id);
         selections[skill.id] = {
           checked: !!current,
-          level: current?.proficiencyLevel || "beginner",
+          level: current?.proficiencyLevel || "no_selection",
         };
       }
       setSkillSelections(selections);
@@ -210,39 +218,6 @@ export default function ProfileEditForm({
     }
   };
 
-  const toggleSkill = useCallback((skillId: number): void => {
-    setSkillSelections((prev) => ({
-      ...prev,
-      [skillId]: {
-        ...prev[skillId],
-        checked: !prev[skillId]?.checked,
-      },
-    }));
-  }, []);
-
-  const updateSkillLevel = useCallback(
-    (
-      skillId: number,
-      level: "beginner" | "intermediate" | "advanced",
-    ): void => {
-      setSkillSelections((prev) => ({
-        ...prev,
-        [skillId]: {
-          ...prev[skillId],
-          level,
-        },
-      }));
-    },
-    [],
-  );
-
-  const toggleInterest = useCallback((interestId: number): void => {
-    setInterestSelections((prev) => ({
-      ...prev,
-      [interestId]: !prev[interestId],
-    }));
-  }, []);
-
   const isSaving = loading || savingSkillsInterests;
 
   return (
@@ -318,57 +293,46 @@ export default function ProfileEditForm({
               <CircularProgress size={24} />
             </Box>
           ) : (
-            <Stack spacing={1.5}>
-              {catalogSkills.map((skill) => {
-                const selection = skillSelections[skill.id];
-                const isChecked = selection?.checked || false;
-                return (
-                  <Box
-                    key={skill.id}
-                    display="flex"
-                    alignItems="center"
-                    gap={1.5}
-                  >
-                    <Chip
-                      label={skill.name}
-                      onClick={() => toggleSkill(skill.id)}
-                      color={isChecked ? "primary" : "default"}
-                      variant={isChecked ? "filled" : "outlined"}
-                      sx={{
-                        cursor: "pointer",
-                        minWidth: 120,
-                        "& .MuiChip-label": { fontWeight: 500 },
-                      }}
-                    />
-                    {isChecked && (
-                      <FormControl size="small" sx={{ minWidth: 140 }}>
-                        <Select
-                          value={selection?.level || "beginner"}
-                          onChange={(e) =>
-                            updateSkillLevel(
-                              skill.id,
-                              e.target.value as
-                                | "beginner"
-                                | "intermediate"
-                                | "advanced",
-                            )
-                          }
-                          disabled={isSaving}
-                        >
-                          <MenuItem value="beginner">Beginner</MenuItem>
-                          <MenuItem value="intermediate">Intermediate</MenuItem>
-                          <MenuItem value="advanced">Advanced</MenuItem>
-                        </Select>
-                      </FormControl>
-                    )}
-                  </Box>
-                );
-              })}
-              {catalogSkills.length === 0 && (
-                <Typography variant="body2" color="text.secondary">
-                  No skills available
-                </Typography>
-              )}
+            <Stack spacing={2}>
+              <Autocomplete
+                multiple
+                options={catalogSkills}
+                getOptionLabel={(option) => option.name}
+                value={catalogSkills.filter(
+                  (s) => skillSelections[s.id]?.checked,
+                )}
+                onChange={(_, newValue) => {
+                  setSkillSelections((prev) => {
+                    const updated = { ...prev };
+                    for (const skill of catalogSkills) {
+                      const isSelected = newValue.some(
+                        (s) => s.id === skill.id,
+                      );
+                      updated[skill.id] = {
+                        checked: isSelected,
+                        level: updated[skill.id]?.level ?? "no_selection",
+                      };
+                    }
+                    return updated;
+                  });
+                }}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                disabled={isSaving}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Search and select skills"
+                    size="small"
+                    placeholder={
+                      catalogSkills.filter(
+                        (s) => skillSelections[s.id]?.checked,
+                      ).length === 0
+                        ? "Type to search..."
+                        : ""
+                    }
+                  />
+                )}
+              />
             </Stack>
           )}
         </Box>
@@ -381,29 +345,38 @@ export default function ProfileEditForm({
               <CircularProgress size={24} />
             </Box>
           ) : (
-            <Box display="flex" flexWrap="wrap" gap={1}>
-              {catalogInterests.map((interest) => {
-                const isChecked = interestSelections[interest.id] || false;
-                return (
-                  <Chip
-                    key={interest.id}
-                    label={interest.name}
-                    onClick={() => toggleInterest(interest.id)}
-                    color={isChecked ? "primary" : "default"}
-                    variant={isChecked ? "filled" : "outlined"}
-                    sx={{
-                      cursor: "pointer",
-                      "& .MuiChip-label": { fontWeight: 500 },
-                    }}
-                  />
-                );
-              })}
-              {catalogInterests.length === 0 && (
-                <Typography variant="body2" color="text.secondary">
-                  No interests available
-                </Typography>
+            <Autocomplete
+              multiple
+              options={catalogInterests}
+              getOptionLabel={(option) => option.name}
+              value={catalogInterests.filter((i) => interestSelections[i.id])}
+              onChange={(_, newValue) => {
+                setInterestSelections(() => {
+                  const updated: Record<number, boolean> = {};
+                  for (const interest of catalogInterests) {
+                    updated[interest.id] = newValue.some(
+                      (i) => i.id === interest.id,
+                    );
+                  }
+                  return updated;
+                });
+              }}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              disabled={isSaving}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Search and select interests"
+                  size="small"
+                  placeholder={
+                    catalogInterests.filter((i) => interestSelections[i.id])
+                      .length === 0
+                      ? "Type to search..."
+                      : ""
+                  }
+                />
               )}
-            </Box>
+            />
           )}
         </Box>
 

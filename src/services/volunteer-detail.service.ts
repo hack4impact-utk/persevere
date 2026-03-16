@@ -13,7 +13,7 @@ export type VolunteerDetail = {
     skillName: string | null;
     skillDescription: string | null;
     skillCategory: string | null;
-    proficiencyLevel: "beginner" | "intermediate" | "advanced";
+    proficiencyLevel: "no_selection" | "beginner" | "intermediate" | "advanced";
   }[];
   interests: {
     interestId: number;

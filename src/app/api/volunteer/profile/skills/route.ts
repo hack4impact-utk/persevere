@@ -3,11 +3,17 @@ import { z } from "zod";
 
 import { assignSkill, removeSkill } from "@/services/volunteer-skills.service";
 import { NotFoundError } from "@/utils/errors";
+import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
 
 const assignSkillSchema = z.object({
   skillId: z.number().int().positive(),
-  proficiencyLevel: z.enum(["beginner", "intermediate", "advanced"]),
+  proficiencyLevel: z.enum([
+    "no_selection",
+    "beginner",
+    "intermediate",
+    "advanced",
+  ]),
 });
 
 const removeSkillSchema = z.object({
@@ -40,7 +46,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const result = await assignSkill(volunteerId, skillId, proficiencyLevel);
 
-    return NextResponse.json(result, { status: 200 });
+    return NextResponse.json(result, {
+      status: "created" in result ? 201 : 200,
+    });
   } catch (error) {
     if (error instanceof AuthError) {
       return NextResponse.json(
@@ -53,11 +61,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
 
-    console.error("[POST /api/volunteer/profile/skills] Error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
@@ -103,10 +107,6 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
 
-    console.error("[DELETE /api/volunteer/profile/skills] Error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

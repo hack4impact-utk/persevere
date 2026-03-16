@@ -4,10 +4,12 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import EditIcon from "@mui/icons-material/Edit";
 import EmailIcon from "@mui/icons-material/Email";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import LogoutIcon from "@mui/icons-material/Logout";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import PersonIcon from "@mui/icons-material/Person";
 import PhoneIcon from "@mui/icons-material/Phone";
+import PsychologyIcon from "@mui/icons-material/Psychology";
 import {
   Avatar,
   Box,
@@ -174,7 +176,13 @@ export default function VolunteerProfilePage(): JSX.Element {
     );
   }
 
-  const { users: user, volunteers: vol, totalHours } = profileData;
+  const {
+    users: user,
+    volunteers: vol,
+    totalHours,
+    skills,
+    interests,
+  } = profileData;
   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
   const volunteerTypeDisplay = vol.volunteerType
     ? vol.volunteerType.charAt(0).toUpperCase() + vol.volunteerType.slice(1)
@@ -449,6 +457,64 @@ export default function VolunteerProfilePage(): JSX.Element {
                           ))}
                         </Box>
                       </Box>
+                    ))}
+                  </Box>
+                )}
+              </SectionCard>
+            </Grid>
+
+            {/* Skills */}
+            <Grid size={12}>
+              <SectionCard
+                icon={<PsychologyIcon sx={{ fontSize: 18 }} />}
+                title="Skills"
+              >
+                {skills.length === 0 ? (
+                  <Typography variant="body2" color="text.disabled">
+                    No skills added — click &quot;Edit profile&quot; to add your
+                    skills.
+                  </Typography>
+                ) : (
+                  <Box display="flex" flexWrap="wrap" gap={1}>
+                    {skills.map((skill) => (
+                      <Chip
+                        key={skill.skillId}
+                        label={skill.skillName ?? "Unknown"}
+                        size="small"
+                        sx={{
+                          bgcolor: "grey.900",
+                          color: "white",
+                          fontWeight: 600,
+                          fontSize: "0.75rem",
+                        }}
+                      />
+                    ))}
+                  </Box>
+                )}
+              </SectionCard>
+            </Grid>
+
+            {/* Interests */}
+            <Grid size={12}>
+              <SectionCard
+                icon={<FavoriteBorderIcon sx={{ fontSize: 18 }} />}
+                title="Interests"
+              >
+                {interests.length === 0 ? (
+                  <Typography variant="body2" color="text.disabled">
+                    No interests added — click &quot;Edit profile&quot; to add
+                    your interests.
+                  </Typography>
+                ) : (
+                  <Box display="flex" flexWrap="wrap" gap={1}>
+                    {interests.map((interest) => (
+                      <Chip
+                        key={interest.interestId}
+                        label={interest.interestName ?? "Unknown"}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontWeight: 500, fontSize: "0.75rem" }}
+                      />
                     ))}
                   </Box>
                 )}

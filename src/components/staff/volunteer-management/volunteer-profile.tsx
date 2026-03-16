@@ -671,31 +671,9 @@ export default function VolunteerProfile({
                   <Stack spacing={1.5}>
                     {volunteer.skills.map((skill) => (
                       <Box key={skill.skillId}>
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="space-between"
-                          mb={0.5}
-                        >
-                          <Typography variant="body2" fontWeight={500}>
-                            {skill.skillName || "Unknown Skill"}
-                          </Typography>
-                          <Chip
-                            label={skill.proficiencyLevel}
-                            size="small"
-                            color={
-                              skill.proficiencyLevel === "advanced"
-                                ? "success"
-                                : skill.proficiencyLevel === "intermediate"
-                                  ? "warning"
-                                  : "default"
-                            }
-                            sx={{
-                              textTransform: "capitalize",
-                              fontSize: "0.7rem",
-                            }}
-                          />
-                        </Box>
+                        <Typography variant="body2" fontWeight={500}>
+                          {skill.skillName || "Unknown Skill"}
+                        </Typography>
                         {skill.skillCategory && (
                           <Typography variant="caption" color="text.secondary">
                             {skill.skillCategory}

@@ -6,6 +6,7 @@ import {
   removeInterest,
 } from "@/services/volunteer-interests.service";
 import { ConflictError, NotFoundError } from "@/utils/errors";
+import handleError from "@/utils/handle-error";
 import { AuthError, requireAuth } from "@/utils/server/auth";
 
 const assignInterestSchema = z.object({
@@ -62,11 +63,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
 
-    console.error("[POST /api/volunteer/profile/interests] Error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }
 
@@ -112,10 +109,6 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
 
-    console.error("[DELETE /api/volunteer/profile/interests] Error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

@@ -1,7 +1,7 @@
-import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
-import { apiClient, AuthenticationError } from "@/lib/api-client";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
 
 export type CatalogSkill = {
   id: number;
@@ -21,6 +21,7 @@ export type UseVolunteerSkillsInterestsResult = {
   interests: CatalogInterest[];
   isLoadingSkills: boolean;
   isLoadingInterests: boolean;
+  error_or: string | null;
   fetchSkills: () => Promise<void>;
   fetchInterests: () => Promise<void>;
   addSkill: (skillId: number, proficiencyLevel: string) => Promise<void>;
@@ -30,50 +31,40 @@ export type UseVolunteerSkillsInterestsResult = {
 };
 
 export function useVolunteerSkillsInterests(): UseVolunteerSkillsInterestsResult {
-  const router = useRouter();
   const [skills, setSkills] = useState<CatalogSkill[]>([]);
   const [interests, setInterests] = useState<CatalogInterest[]>([]);
   const [isLoadingSkills, setIsLoadingSkills] = useState(false);
   const [isLoadingInterests, setIsLoadingInterests] = useState(false);
-
-  const handleAuthError = useCallback(
-    (err: unknown): void => {
-      if (err instanceof AuthenticationError) {
-        router.push("/auth/login");
-      } else {
-        throw err;
-      }
-    },
-    [router],
-  );
+  const [error_or, setError] = useState<string | null>(null);
+  const handleApiError = useApiErrorHandler(setError);
 
   const fetchSkills = useCallback(async (): Promise<void> => {
     setIsLoadingSkills(true);
     try {
       const json = await apiClient.get<{ data: CatalogSkill[] }>(
-        "/api/staff/skills",
+        "/api/volunteer/catalog/skills",
       );
       setSkills(json.data);
-    } catch (error) {
-      handleAuthError(error);
+    } catch (error_) {
+      handleApiError(error_, "Failed to load skills");
     } finally {
       setIsLoadingSkills(false);
     }
-  }, [handleAuthError]);
+  }, [handleApiError]);
 
   const fetchInterests = useCallback(async (): Promise<void> => {
     setIsLoadingInterests(true);
     try {
       const json = await apiClient.get<{ data: CatalogInterest[] }>(
-        "/api/staff/interests",
+        "/api/volunteer/catalog/interests",
       );
       setInterests(json.data);
-    } catch (error) {
-      handleAuthError(error);
+    } catch (error_) {
+      handleApiError(error_, "Failed to load interests");
     } finally {
       setIsLoadingInterests(false);
     }
-  }, [handleAuthError]);
+  }, [handleApiError]);
 
   const addSkill = useCallback(
     async (skillId: number, proficiencyLevel: string): Promise<void> => {
@@ -82,11 +73,11 @@ export function useVolunteerSkillsInterests(): UseVolunteerSkillsInterestsResult
           skillId,
           proficiencyLevel,
         });
-      } catch (error) {
-        handleAuthError(error);
+      } catch (error_) {
+        handleApiError(error_, "Failed to add skill");
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
 
   const removeSkill = useCallback(
@@ -95,11 +86,11 @@ export function useVolunteerSkillsInterests(): UseVolunteerSkillsInterestsResult
         await apiClient.delete("/api/volunteer/profile/skills", {
           skillId,
         });
-      } catch (error) {
-        handleAuthError(error);
+      } catch (error_) {
+        handleApiError(error_, "Failed to remove skill");
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
 
   const addInterest = useCallback(
@@ -108,11 +99,11 @@ export function useVolunteerSkillsInterests(): UseVolunteerSkillsInterestsResult
         await apiClient.post("/api/volunteer/profile/interests", {
           interestId,
         });
-      } catch (error) {
-        handleAuthError(error);
+      } catch (error_) {
+        handleApiError(error_, "Failed to add interest");
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
 
   const removeInterest = useCallback(
@@ -121,11 +112,11 @@ export function useVolunteerSkillsInterests(): UseVolunteerSkillsInterestsResult
         await apiClient.delete("/api/volunteer/profile/interests", {
           interestId,
         });
-      } catch (error) {
-        handleAuthError(error);
+      } catch (error_) {
+        handleApiError(error_, "Failed to remove interest");
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
 
   return {
@@ -133,6 +124,7 @@ export function useVolunteerSkillsInterests(): UseVolunteerSkillsInterestsResult
     interests,
     isLoadingSkills,
     isLoadingInterests,
+    error_or,
     fetchSkills,
     fetchInterests,
     addSkill,
