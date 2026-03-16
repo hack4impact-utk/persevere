@@ -72,7 +72,13 @@ export async function GET(request: Request): Promise<NextResponse> {
       }
     }
 
-    const calendarEvents = await listCalendarEvents(startDate, endDate);
+    const statusFilter: "open" | undefined =
+      session.user.role === "volunteer" ? "open" : undefined;
+    const calendarEvents = await listCalendarEvents(
+      startDate,
+      endDate,
+      statusFilter,
+    );
 
     return NextResponse.json({ data: calendarEvents });
   } catch (error) {
