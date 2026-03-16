@@ -93,8 +93,10 @@ function computeOccurrences(
 export async function listCalendarEvents(
   startDate?: Date,
   endDate?: Date,
+  statusFilter?: "open" | "full" | "completed" | "canceled",
 ): Promise<CalendarEvent[]> {
   const whereClauses = [];
+  if (statusFilter) whereClauses.push(eq(opportunities.status, statusFilter));
   if (startDate) whereClauses.push(gte(opportunities.endDate, startDate));
   if (endDate) whereClauses.push(lte(opportunities.startDate, endDate));
 

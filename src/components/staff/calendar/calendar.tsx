@@ -16,17 +16,16 @@ import {
   useTheme,
 } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
-import { JSX, useCallback, useEffect, useState } from "react";
+import { JSX, useState } from "react";
 
-import {
-  type CalendarEvent,
-  useCalendarEvents,
-} from "@/hooks/use-calendar-events";
+import type { CalendarEvent } from "@/hooks/use-calendar-events";
 
 type CalendarProps = {
-  readOnly?: boolean;
+  events: CalendarEvent[];
   onEventClick?: (id: string) => void;
   onDateSelect?: (startDate: string, endDate: string) => void;
+  onEventDrop?: (id: string, newStart: Date, newEnd: Date) => Promise<void>;
+  readOnly?: boolean;
   eventColors?: Record<string, string>;
 };
 
@@ -42,45 +41,18 @@ type CalendarProps = {
  * In readOnly mode (volunteer calendar), shows a built-in view modal on click.
  */
 export default function Calendar({
+  events,
   readOnly = false,
   onEventClick,
   onDateSelect,
+  onEventDrop,
   eventColors,
 }: CalendarProps): JSX.Element {
   const theme = useTheme();
-  const { events, fetchEvents, updateEvent } = useCalendarEvents();
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null,
   );
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-
-  // Wraps hook fetchEvents with error handling for snackbar
-  const loadEvents = useCallback(
-    async (start?: Date, end?: Date): Promise<void> => {
-      try {
-        await fetchEvents(start, end);
-      } catch (error) {
-        enqueueSnackbar("Failed to load events", { variant: "error" });
-        console.error("Error fetching events:", error);
-      }
-    },
-    [fetchEvents],
-  );
-
-  // Helper function to get date range for fetching events
-  const getEventsFetchDateRange = (): { start: Date; end: Date } => {
-    const now = new Date();
-    return {
-      start: new Date(now.getFullYear(), now.getMonth() - 1, 1),
-      end: new Date(now.getFullYear(), now.getMonth() + 2, 0),
-    };
-  };
-
-  // Load events on mount
-  useEffect(() => {
-    const { start, end } = getEventsFetchDateRange();
-    void loadEvents(start, end);
-  }, [loadEvents]);
 
   // Handle date selection
   const handleDateSelect = (selectInfo: { start: Date; end?: Date }): void => {
@@ -130,14 +102,7 @@ export default function Calendar({
     if (!newStart || !newEnd) return;
 
     try {
-      await updateEvent(eventId, {
-        startDate: newStart.toISOString(),
-        endDate: newEnd.toISOString(),
-      });
-
-      const { start, end } = getEventsFetchDateRange();
-      await loadEvents(start, end);
-
+      await onEventDrop?.(eventId, newStart, newEnd);
       enqueueSnackbar("Event rescheduled successfully", { variant: "success" });
     } catch (error) {
       enqueueSnackbar("Failed to reschedule event", { variant: "error" });

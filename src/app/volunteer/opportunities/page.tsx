@@ -19,7 +19,7 @@ import TextField from "@mui/material/TextField";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
-import { JSX, useMemo, useState } from "react";
+import { JSX, useEffect, useMemo, useState } from "react";
 
 import { Calendar } from "@/components/staff/calendar";
 import { EmptyState, LoadingSkeleton } from "@/components/ui";
@@ -27,6 +27,7 @@ import OpportunityDetailModal from "@/components/volunteer/opportunity-detail-mo
 import { SpotsChip } from "@/components/volunteer/spots-chip";
 import type { Opportunity } from "@/components/volunteer/types";
 import { formatDate, formatTime } from "@/components/volunteer/utils";
+import { useCalendarEvents } from "@/hooks/use-calendar-events";
 import { useOpportunities } from "@/hooks/use-opportunities";
 import { RSVP_STATUS_COLORS } from "@/lib/constants";
 
@@ -162,6 +163,15 @@ export default function OpportunitiesPage(): JSX.Element {
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<
     number | null
   >(null);
+
+  const { events: calendarEvents, fetchEvents } = useCalendarEvents();
+
+  useEffect(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+    void fetchEvents(start, end);
+  }, [fetchEvents]);
 
   const {
     opportunities,
@@ -344,6 +354,7 @@ export default function OpportunitiesPage(): JSX.Element {
         ) : (
           <Calendar
             readOnly
+            events={calendarEvents}
             onEventClick={(id) => {
               setSelectedOpportunityId(Number.parseInt(id, 10));
             }}
