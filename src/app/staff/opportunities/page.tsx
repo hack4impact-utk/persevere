@@ -29,7 +29,7 @@ export default function StaffOpportunitiesPage(): JSX.Element {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [initialDates, setInitialDates] = useState<InitialDates | undefined>();
 
-  const { events, fetchEvents } = useCalendarEvents();
+  const { events, fetchEvents, updateEvent } = useCalendarEvents();
 
   const loadEvents = useCallback(async (): Promise<void> => {
     try {
@@ -45,6 +45,17 @@ export default function StaffOpportunitiesPage(): JSX.Element {
   useEffect(() => {
     void loadEvents();
   }, [loadEvents]);
+
+  const handleEventDrop = useCallback(
+    async (id: string, newStart: Date, newEnd: Date): Promise<void> => {
+      await updateEvent(id, {
+        startDate: newStart.toISOString(),
+        endDate: newEnd.toISOString(),
+      });
+      await loadEvents();
+    },
+    [updateEvent, loadEvents],
+  );
 
   const handleDateSelect = (startIso: string, endIso: string): void => {
     const start = new Date(startIso);
@@ -125,10 +136,12 @@ export default function StaffOpportunitiesPage(): JSX.Element {
           />
         ) : (
           <Calendar
+            events={events}
             onEventClick={(id) => {
               setSelectedEventId(id);
             }}
             onDateSelect={handleDateSelect}
+            onEventDrop={handleEventDrop}
           />
         )}
       </Box>
