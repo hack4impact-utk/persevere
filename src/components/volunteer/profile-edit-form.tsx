@@ -5,11 +5,9 @@ import {
   Box,
   Button,
   CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
+  FormControlLabel,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from "@mui/material";
@@ -258,31 +256,21 @@ export default function ProfileEditForm({
         {/* ── Notifications ────────────────────────────── */}
         <Box>
           <SectionLabel>Notifications</SectionLabel>
-          <FormControl fullWidth disabled={isSaving} size="small">
-            <InputLabel id="notification-preference-label">
-              How would you like to be notified?
-            </InputLabel>
-            <Select
-              labelId="notification-preference-label"
-              label="How would you like to be notified?"
-              value={formData.notificationPreference || "email"}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  notificationPreference: e.target.value as
-                    | "email"
-                    | "sms"
-                    | "both"
-                    | "none",
-                })
-              }
-            >
-              <MenuItem value="email">Email only</MenuItem>
-              <MenuItem value="sms">SMS only</MenuItem>
-              <MenuItem value="both">Email & SMS</MenuItem>
-              <MenuItem value="none">None</MenuItem>
-            </Select>
-          </FormControl>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={formData.notificationPreference !== "none"}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    notificationPreference: e.target.checked ? "email" : "none",
+                  })
+                }
+                disabled={isSaving}
+              />
+            }
+            label="Email notifications"
+          />
         </Box>
 
         {/* ── Skills ───────────────────────────────────── */}

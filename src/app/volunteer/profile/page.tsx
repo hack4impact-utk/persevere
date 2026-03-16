@@ -49,13 +49,6 @@ function initials(first?: string | null, last?: string | null): string {
   return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase() || "?";
 }
 
-const NOTIF_LABELS: Record<string, string> = {
-  email: "Email only",
-  sms: "SMS only",
-  both: "Email & SMS",
-  none: "None",
-};
-
 type SectionCardProps = {
   icon: JSX.Element;
   title: string;
@@ -369,18 +362,24 @@ export default function VolunteerProfilePage(): JSX.Element {
                 icon={<NotificationsIcon sx={{ fontSize: 18 }} />}
                 title="Notifications"
               >
-                <Chip
-                  label={
-                    NOTIF_LABELS[vol.notificationPreference ?? "email"] ??
-                    "Email only"
-                  }
-                  size="small"
-                  sx={{
-                    bgcolor: "grey.100",
-                    fontWeight: 600,
-                    fontSize: "0.78rem",
-                  }}
-                />
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor:
+                        vol.notificationPreference === "none"
+                          ? "grey.400"
+                          : "success.main",
+                    }}
+                  />
+                  <Typography variant="body2">
+                    {vol.notificationPreference === "none"
+                      ? "Notifications off"
+                      : "Email notifications on"}
+                  </Typography>
+                </Box>
               </SectionCard>
             </Grid>
 

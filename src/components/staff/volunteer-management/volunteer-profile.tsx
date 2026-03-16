@@ -578,8 +578,11 @@ export default function VolunteerProfile({
                   />
                   <DetailField
                     label="Notification Preference"
-                    value={vol.notificationPreference}
-                    valueSx={{ textTransform: "capitalize" }}
+                    value={
+                      vol.notificationPreference === "none"
+                        ? "Off"
+                        : "On (Email)"
+                    }
                   />
                   {user.emailVerifiedAt !== undefined && (
                     <Box>
