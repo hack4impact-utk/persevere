@@ -27,6 +27,7 @@ export const backgroundCheckStatusEnum = pgEnum("background_check_status", [
 
 // Skill proficiency levels for volunteer skills
 export const proficiencyLevelEnum = pgEnum("proficiency_level", [
+  "no_selection",
   "beginner",
   "intermediate",
   "advanced",

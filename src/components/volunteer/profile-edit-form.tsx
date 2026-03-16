@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  Autocomplete,
   Box,
   Button,
+  CircularProgress,
   FormControl,
   InputLabel,
   MenuItem,
@@ -11,18 +13,42 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { JSX, useState } from "react";
+import { useSnackbar } from "notistack";
+import { JSX, useEffect, useState } from "react";
+
+import { useVolunteerSkillsInterests } from "@/hooks/use-volunteer-skills-interests";
 
 import AvailabilityEditor, {
   type AvailabilityData,
   validateRanges,
 } from "./availability-editor";
 
+type SkillData = {
+  skillId: number;
+  skillName: string | null;
+  skillDescription: string | null;
+  skillCategory: string | null;
+  proficiencyLevel:
+    | "no_selection"
+    | "beginner"
+    | "intermediate"
+    | "advanced"
+    | null;
+};
+
+type InterestData = {
+  interestId: number;
+  interestName: string | null;
+  interestDescription: string | null;
+};
+
 type ProfileData = {
   phone?: string | null;
   bio?: string | null;
   availability?: AvailabilityData | null;
   notificationPreference?: "email" | "sms" | "both" | "none" | null;
+  skills?: SkillData[];
+  interests?: InterestData[];
 };
 
 type ProfileEditFormProps = {
@@ -50,7 +76,7 @@ function SectionLabel({ children }: { children: string }): JSX.Element {
  * ProfileEditForm
  *
  * Self-service form for volunteers to edit their own profile.
- * Restricted to: phone, bio, availability, notification preference.
+ * Restricted to: phone, bio, availability, notification preference, skills, interests.
  */
 export default function ProfileEditForm({
   initialData,
@@ -58,6 +84,20 @@ export default function ProfileEditForm({
   onCancel,
   loading = false,
 }: ProfileEditFormProps): JSX.Element {
+  const { enqueueSnackbar } = useSnackbar();
+  const {
+    skills: catalogSkills,
+    interests: catalogInterests,
+    isLoadingSkills,
+    isLoadingInterests,
+    fetchSkills,
+    fetchInterests,
+    addSkill,
+    removeSkill,
+    addInterest,
+    removeInterest,
+  } = useVolunteerSkillsInterests();
+
   const [formData, setFormData] = useState<ProfileData>({
     phone: initialData.phone || "",
     bio: initialData.bio || "",
@@ -65,18 +105,120 @@ export default function ProfileEditForm({
     notificationPreference: initialData.notificationPreference || "email",
   });
 
+  // Local skills state: map of skillId -> {checked, level}
+  const [skillSelections, setSkillSelections] = useState<
+    Record<
+      number,
+      {
+        checked: boolean;
+        level: "no_selection" | "beginner" | "intermediate" | "advanced";
+      }
+    >
+  >({});
+
+  // Local interests state: map of interestId -> checked
+  const [interestSelections, setInterestSelections] = useState<
+    Record<number, boolean>
+  >({});
+
+  const [savingSkillsInterests, setSavingSkillsInterests] = useState(false);
+
+  // Load catalogs on mount
+  useEffect(() => {
+    void fetchSkills();
+    void fetchInterests();
+  }, [fetchSkills, fetchInterests]);
+
+  // Initialize selections when catalog loads
+  useEffect(() => {
+    if (catalogSkills.length > 0) {
+      const selections: typeof skillSelections = {};
+      for (const skill of catalogSkills) {
+        const current = initialData.skills?.find((s) => s.skillId === skill.id);
+        selections[skill.id] = {
+          checked: !!current,
+          level: current?.proficiencyLevel || "no_selection",
+        };
+      }
+      setSkillSelections(selections);
+    }
+  }, [catalogSkills, initialData.skills]);
+
+  useEffect(() => {
+    if (catalogInterests.length > 0) {
+      const selections: typeof interestSelections = {};
+      for (const interest of catalogInterests) {
+        selections[interest.id] =
+          initialData.interests?.some((i) => i.interestId === interest.id) ||
+          false;
+      }
+      setInterestSelections(selections);
+    }
+  }, [catalogInterests, initialData.interests]);
+
   const hasAvailabilityErrors = Object.values(formData.availability ?? {}).some(
     (ranges) => ranges != null && validateRanges(ranges) !== null,
   );
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
+    setSavingSkillsInterests(true);
     try {
+      // Save skills and interests changes first
+      const currentSkillsMap = new Map(
+        initialData.skills?.map((s) => [s.skillId, s.proficiencyLevel]) || [],
+      );
+      const currentInterestsSet = new Set(
+        initialData.interests?.map((i) => i.interestId) || [],
+      );
+
+      const skillPromises: Promise<void>[] = [];
+      const interestPromises: Promise<void>[] = [];
+
+      // Process skills
+      for (const [idStr, selection] of Object.entries(skillSelections)) {
+        const skillId = Number(idStr);
+        const wasAssigned = currentSkillsMap.has(skillId);
+
+        if (selection.checked && !wasAssigned) {
+          skillPromises.push(addSkill(skillId, selection.level));
+        } else if (selection.checked && wasAssigned) {
+          if (currentSkillsMap.get(skillId) !== selection.level) {
+            skillPromises.push(addSkill(skillId, selection.level));
+          }
+        } else if (!selection.checked && wasAssigned) {
+          skillPromises.push(removeSkill(skillId));
+        }
+      }
+
+      // Process interests
+      for (const [idStr, checked] of Object.entries(interestSelections)) {
+        const interestId = Number(idStr);
+        const wasAssigned = currentInterestsSet.has(interestId);
+
+        if (checked && !wasAssigned) {
+          interestPromises.push(addInterest(interestId));
+        } else if (!checked && wasAssigned) {
+          interestPromises.push(removeInterest(interestId));
+        }
+      }
+
+      await Promise.all([...skillPromises, ...interestPromises]);
+
+      // Then save profile data
       await onSave(formData);
     } catch (error) {
       console.error("[ProfileEditForm] onSave rejected unexpectedly:", error);
+      enqueueSnackbar(
+        error instanceof Error ? error.message : "Failed to save changes",
+        { variant: "error" },
+      );
+    } finally {
+      setSavingSkillsInterests(false);
     }
   };
+
+  const isSaving = loading || savingSkillsInterests;
 
   return (
     <form onSubmit={handleSubmit}>
@@ -92,7 +234,7 @@ export default function ProfileEditForm({
             }
             fullWidth
             placeholder="(555) 123-4567"
-            disabled={loading}
+            disabled={isSaving}
             size="small"
           />
         </Box>
@@ -108,7 +250,7 @@ export default function ProfileEditForm({
             multiline
             rows={3}
             placeholder="Tell us about yourself..."
-            disabled={loading}
+            disabled={isSaving}
             size="small"
           />
         </Box>
@@ -116,7 +258,7 @@ export default function ProfileEditForm({
         {/* ── Notifications ────────────────────────────── */}
         <Box>
           <SectionLabel>Notifications</SectionLabel>
-          <FormControl fullWidth disabled={loading} size="small">
+          <FormControl fullWidth disabled={isSaving} size="small">
             <InputLabel id="notification-preference-label">
               How would you like to be notified?
             </InputLabel>
@@ -143,6 +285,101 @@ export default function ProfileEditForm({
           </FormControl>
         </Box>
 
+        {/* ── Skills ───────────────────────────────────── */}
+        <Box>
+          <SectionLabel>Skills</SectionLabel>
+          {isLoadingSkills ? (
+            <Box display="flex" justifyContent="center" py={2}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : (
+            <Stack spacing={2}>
+              <Autocomplete
+                multiple
+                options={catalogSkills}
+                getOptionLabel={(option) => option.name}
+                value={catalogSkills.filter(
+                  (s) => skillSelections[s.id]?.checked,
+                )}
+                onChange={(_, newValue) => {
+                  setSkillSelections((prev) => {
+                    const updated = { ...prev };
+                    for (const skill of catalogSkills) {
+                      const isSelected = newValue.some(
+                        (s) => s.id === skill.id,
+                      );
+                      updated[skill.id] = {
+                        checked: isSelected,
+                        level: updated[skill.id]?.level ?? "no_selection",
+                      };
+                    }
+                    return updated;
+                  });
+                }}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                disabled={isSaving}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Search and select skills"
+                    size="small"
+                    placeholder={
+                      catalogSkills.filter(
+                        (s) => skillSelections[s.id]?.checked,
+                      ).length === 0
+                        ? "Type to search..."
+                        : ""
+                    }
+                  />
+                )}
+              />
+            </Stack>
+          )}
+        </Box>
+
+        {/* ── Interests ────────────────────────────────── */}
+        <Box>
+          <SectionLabel>Interests</SectionLabel>
+          {isLoadingInterests ? (
+            <Box display="flex" justifyContent="center" py={2}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : (
+            <Autocomplete
+              multiple
+              options={catalogInterests}
+              getOptionLabel={(option) => option.name}
+              value={catalogInterests.filter((i) => interestSelections[i.id])}
+              onChange={(_, newValue) => {
+                setInterestSelections(() => {
+                  const updated: Record<number, boolean> = {};
+                  for (const interest of catalogInterests) {
+                    updated[interest.id] = newValue.some(
+                      (i) => i.id === interest.id,
+                    );
+                  }
+                  return updated;
+                });
+              }}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              disabled={isSaving}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Search and select interests"
+                  size="small"
+                  placeholder={
+                    catalogInterests.filter((i) => interestSelections[i.id])
+                      .length === 0
+                      ? "Type to search..."
+                      : ""
+                  }
+                />
+              )}
+            />
+          )}
+        </Box>
+
         {/* ── Availability ─────────────────────────────── */}
         <Box>
           <SectionLabel>Weekly Availability</SectionLabel>
@@ -166,7 +403,7 @@ export default function ProfileEditForm({
           <Button
             variant="outlined"
             onClick={onCancel}
-            disabled={loading}
+            disabled={isSaving}
             sx={{
               borderColor: "grey.300",
               color: "text.secondary",
@@ -178,14 +415,14 @@ export default function ProfileEditForm({
           <Button
             type="submit"
             variant="contained"
-            disabled={loading || hasAvailabilityErrors}
+            disabled={isSaving || hasAvailabilityErrors}
             sx={{
               bgcolor: "grey.900",
               "&:hover": { bgcolor: "grey.700" },
               fontWeight: 600,
             }}
           >
-            {loading ? "Saving…" : "Save changes"}
+            {isSaving ? "Saving…" : "Save changes"}
           </Button>
         </Box>
       </Stack>
