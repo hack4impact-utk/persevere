@@ -14,6 +14,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
 import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
 import ToggleButton from "@mui/material/ToggleButton";
@@ -29,6 +30,7 @@ import type { Opportunity } from "@/components/volunteer/types";
 import { formatDate, formatTime } from "@/components/volunteer/utils";
 import { useCalendarEvents } from "@/hooks/use-calendar-events";
 import { useOpportunities } from "@/hooks/use-opportunities";
+import { useRecommendations } from "@/hooks/use-recommendations";
 import { RSVP_STATUS_COLORS } from "@/lib/constants";
 
 type View = "list" | "calendar";
@@ -36,11 +38,13 @@ type View = "list" | "calendar";
 type OpportunityCardProps = {
   opportunity: Opportunity;
   onClick: () => void;
+  matchScore?: number;
 };
 
 function OpportunityCard({
   opportunity,
   onClick,
+  matchScore,
 }: OpportunityCardProps): JSX.Element {
   return (
     <Card
@@ -80,6 +84,13 @@ function OpportunityCard({
           <SpotsChip opp={opportunity} />
           {opportunity.isRecurring && (
             <Chip label="↻ Recurring" size="small" variant="outlined" />
+          )}
+          {matchScore !== undefined && (
+            <Chip
+              label={`${matchScore} match${matchScore === 1 ? "" : "es"}`}
+              color="success"
+              size="small"
+            />
           )}
         </Box>
 
@@ -185,6 +196,8 @@ export default function OpportunitiesPage(): JSX.Element {
     loadMore,
     handleRsvpChange,
   } = useOpportunities(search);
+
+  const { recommendations, loading: recsLoading } = useRecommendations();
 
   const rsvpColorMap = useMemo((): Record<string, string> => {
     const map: Record<string, string> = {};
@@ -295,6 +308,40 @@ export default function OpportunitiesPage(): JSX.Element {
         {view === "list" ? (
           <>
             {loading && <LoadingSkeleton variant="card-grid" />}
+
+            {!loading &&
+              !search &&
+              !recsLoading &&
+              recommendations.length > 0 && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" fontWeight={600} mb={2}>
+                    Recommended for You
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: {
+                        xs: "1fr",
+                        sm: "repeat(2, 1fr)",
+                        md: "repeat(3, 1fr)",
+                      },
+                      gap: 3,
+                    }}
+                  >
+                    {recommendations.map((opp) => (
+                      <OpportunityCard
+                        key={opp.id}
+                        opportunity={opp}
+                        matchScore={opp.matchScore}
+                        onClick={() => {
+                          setSelectedOpportunityId(opp.id);
+                        }}
+                      />
+                    ))}
+                  </Box>
+                  <Divider sx={{ mt: 3 }} />
+                </Box>
+              )}
 
             {!loading && opportunities.length === 0 && (
               <EmptyState

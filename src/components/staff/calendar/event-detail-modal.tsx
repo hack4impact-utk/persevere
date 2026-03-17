@@ -25,6 +25,7 @@ import { useEventRsvps } from "@/hooks/use-event-rsvps";
 import { useOpportunitySkills } from "@/hooks/use-opportunity-skills";
 import type { CatalogInterest, CatalogSkill } from "@/hooks/use-skills";
 import { useSkills } from "@/hooks/use-skills";
+import { useVolunteerMatches } from "@/hooks/use-volunteer-matches";
 
 type EventDetailModalProps = {
   event: CalendarEvent | null;
@@ -70,6 +71,11 @@ export default function EventDetailModal({
   const { updateEvent, deleteEvent } = useCalendarEvents();
   const { rsvps, loading: rsvpsLoading, fetchRsvps } = useEventRsvps();
   const {
+    matches,
+    loading: matchesLoading,
+    fetchMatches,
+  } = useVolunteerMatches();
+  const {
     skills: catalogSkills,
     interests: catalogInterests,
     loadingSkills,
@@ -113,14 +119,15 @@ export default function EventDetailModal({
     Set<number>
   >(new Set());
 
-  // Fetch RSVPs and reset mode when event opens
+  // Fetch RSVPs, volunteer matches, and reset mode when event opens
   useEffect(() => {
     if (open && eventId) {
       setMode("view");
       setShowDeleteConfirm(false);
       void fetchRsvps(eventId);
+      void fetchMatches(eventId);
     }
-  }, [open, eventId, fetchRsvps]);
+  }, [open, eventId, fetchRsvps, fetchMatches]);
 
   const handleEditClick = (): void => {
     if (!event) return;
@@ -431,6 +438,70 @@ export default function EventDetailModal({
                             label={r.rsvpStatus}
                             color={getRsvpStatusColor(r.rsvpStatus)}
                           />
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                </Box>
+
+                <Box>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{
+                      textTransform: "uppercase",
+                      fontSize: "0.75rem",
+                      letterSpacing: "0.05em",
+                      fontWeight: 600,
+                      mb: 1,
+                    }}
+                  >
+                    Top Volunteer Matches
+                  </Typography>
+                  {matchesLoading ? (
+                    <CircularProgress size={20} />
+                  ) : matches.length === 0 ? (
+                    <EmptyState message="No matching volunteers found" />
+                  ) : (
+                    <Box
+                      sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+                    >
+                      {matches.map((m) => (
+                        <Box
+                          key={m.volunteerId}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <Typography variant="body2" fontWeight={500}>
+                            {m.firstName} {m.lastName}
+                          </Typography>
+                          <Chip
+                            label={`${m.matchScore} match${m.matchScore === 1 ? "" : "es"}`}
+                            color="primary"
+                            variant="outlined"
+                            size="small"
+                          />
+                          {m.matchingSkills.map((s) => (
+                            <Chip
+                              key={s.skillId}
+                              label={s.skillName ?? "Unknown"}
+                              size="small"
+                              variant="outlined"
+                            />
+                          ))}
+                          {m.matchingInterests.map((i) => (
+                            <Chip
+                              key={i.interestId}
+                              label={i.interestName ?? "Unknown"}
+                              size="small"
+                              variant="outlined"
+                              color="primary"
+                            />
+                          ))}
                         </Box>
                       ))}
                     </Box>
