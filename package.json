@@ -8,8 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
-    "check": "concurrently --kill-others-on-fail 'pnpm lint' 'tsc --noEmit'",
-    "seed:analytics": "tsx --env-file=.env scripts/seed-analytics.ts"
+    "check": "concurrently --kill-others-on-fail 'pnpm lint' 'tsc --noEmit'"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
