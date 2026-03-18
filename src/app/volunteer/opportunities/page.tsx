@@ -356,26 +356,31 @@ export default function OpportunitiesPage(): JSX.Element {
             )}
 
             {!loading && opportunities.length > 0 && (
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: {
-                    xs: "1fr",
-                    sm: "repeat(2, 1fr)",
-                    md: "repeat(3, 1fr)",
-                  },
-                  gap: 3,
-                }}
-              >
-                {opportunities.map((opp) => (
-                  <OpportunityCard
-                    key={opp.id}
-                    opportunity={opp}
-                    onClick={() => {
-                      setSelectedOpportunityId(opp.id);
-                    }}
-                  />
-                ))}
+              <Box>
+                <Typography variant="h6" fontWeight={600} mb={2}>
+                  Open Opportunities
+                </Typography>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: {
+                      xs: "1fr",
+                      sm: "repeat(2, 1fr)",
+                      md: "repeat(3, 1fr)",
+                    },
+                    gap: 3,
+                  }}
+                >
+                  {opportunities.map((opp) => (
+                    <OpportunityCard
+                      key={opp.id}
+                      opportunity={opp}
+                      onClick={() => {
+                        setSelectedOpportunityId(opp.id);
+                      }}
+                    />
+                  ))}
+                </Box>
               </Box>
             )}
 

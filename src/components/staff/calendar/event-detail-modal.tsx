@@ -429,7 +429,11 @@ export default function EventDetailModal({
                       {rsvps.map((r) => (
                         <Box
                           key={r.volunteerId}
-                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                          }}
                         >
                           <Typography variant="body2">
                             {r.firstName} {r.lastName}
@@ -464,7 +468,11 @@ export default function EventDetailModal({
                     <EmptyState message="No matching volunteers found" />
                   ) : (
                     <Box
-                      sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                      }}
                     >
                       {matches.map((m) => (
                         <Box
@@ -473,7 +481,6 @@ export default function EventDetailModal({
                             display: "flex",
                             alignItems: "center",
                             gap: 1,
-                            flexWrap: "wrap",
                           }}
                         >
                           <Typography variant="body2" fontWeight={500}>
@@ -485,23 +492,6 @@ export default function EventDetailModal({
                             variant="outlined"
                             size="small"
                           />
-                          {m.matchingSkills.map((s) => (
-                            <Chip
-                              key={s.skillId}
-                              label={s.skillName ?? "Unknown"}
-                              size="small"
-                              variant="outlined"
-                            />
-                          ))}
-                          {m.matchingInterests.map((i) => (
-                            <Chip
-                              key={i.interestId}
-                              label={i.interestName ?? "Unknown"}
-                              size="small"
-                              variant="outlined"
-                              color="primary"
-                            />
-                          ))}
                         </Box>
                       ))}
                     </Box>
@@ -610,7 +600,12 @@ export default function EventDetailModal({
           </DialogTitle>
           <DialogContent>
             <Box
-              sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 2 }}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 2.5,
+                pt: 2,
+              }}
             >
               <TextField
                 label="Title"
@@ -771,8 +766,8 @@ export default function EventDetailModal({
                   }}
                 >
                   <Typography variant="body2" gutterBottom>
-                    Are you sure you want to delete &quot;{event?.title}&quot;?
-                    This cannot be undone.
+                    Are you sure you want to delete &quot;{event?.title}
+                    &quot;? This cannot be undone.
                   </Typography>
                   <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
                     <Button

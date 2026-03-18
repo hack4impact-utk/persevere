@@ -4,6 +4,7 @@ import db from "@/db";
 import {
   opportunityInterests,
   opportunityRequiredSkills,
+  volunteerRsvps,
 } from "@/db/schema/opportunities";
 import {
   interests,
@@ -178,8 +179,8 @@ export async function getVolunteerMatchesForEvent(
 
   const volunteerIds = activeVolunteers.map((v) => v.volunteerId);
 
-  // 3. Batch-fetch all skills and interests for active volunteers
-  const [allVolSkills, allVolInterests] = await Promise.all([
+  // 3. Batch-fetch all skills, interests, and existing RSVPs for active volunteers
+  const [allVolSkills, allVolInterests, eventRsvpRows] = await Promise.all([
     db
       .select({
         volunteerId: volunteerSkills.volunteerId,
@@ -194,6 +195,10 @@ export async function getVolunteerMatchesForEvent(
       })
       .from(volunteerInterests)
       .where(inArray(volunteerInterests.volunteerId, volunteerIds)),
+    db
+      .select({ volunteerId: volunteerRsvps.volunteerId })
+      .from(volunteerRsvps)
+      .where(eq(volunteerRsvps.opportunityId, eventId)),
   ]);
 
   // 4. Build per-volunteer maps
@@ -217,9 +222,12 @@ export async function getVolunteerMatchesForEvent(
     set.add(row.interestId);
   }
 
-  // 5. Score each volunteer
+  const rsvpdVolunteerIds = new Set(eventRsvpRows.map((r) => r.volunteerId));
+
+  // 5. Score each volunteer (excluding those already signed up)
   const matches: VolunteerMatch[] = [];
   for (const vol of activeVolunteers) {
+    if (rsvpdVolunteerIds.has(vol.volunteerId)) continue;
     const volSkills = volSkillMap.get(vol.volunteerId) ?? new Set<number>();
     const volInterests =
       volInterestMap.get(vol.volunteerId) ?? new Set<number>();
