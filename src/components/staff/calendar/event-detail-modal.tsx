@@ -25,6 +25,7 @@ import { useEventRsvps } from "@/hooks/use-event-rsvps";
 import { useOpportunitySkills } from "@/hooks/use-opportunity-skills";
 import type { CatalogInterest, CatalogSkill } from "@/hooks/use-skills";
 import { useSkills } from "@/hooks/use-skills";
+import { useVolunteerMatches } from "@/hooks/use-volunteer-matches";
 
 type EventDetailModalProps = {
   event: CalendarEvent | null;
@@ -70,6 +71,11 @@ export default function EventDetailModal({
   const { updateEvent, deleteEvent } = useCalendarEvents();
   const { rsvps, loading: rsvpsLoading, fetchRsvps } = useEventRsvps();
   const {
+    matches,
+    loading: matchesLoading,
+    fetchMatches,
+  } = useVolunteerMatches();
+  const {
     skills: catalogSkills,
     interests: catalogInterests,
     loadingSkills,
@@ -113,14 +119,15 @@ export default function EventDetailModal({
     Set<number>
   >(new Set());
 
-  // Fetch RSVPs and reset mode when event opens
+  // Fetch RSVPs, volunteer matches, and reset mode when event opens
   useEffect(() => {
     if (open && eventId) {
       setMode("view");
       setShowDeleteConfirm(false);
       void fetchRsvps(eventId);
+      void fetchMatches(eventId);
     }
-  }, [open, eventId, fetchRsvps]);
+  }, [open, eventId, fetchRsvps, fetchMatches]);
 
   const handleEditClick = (): void => {
     if (!event) return;
@@ -422,7 +429,11 @@ export default function EventDetailModal({
                       {rsvps.map((r) => (
                         <Box
                           key={r.volunteerId}
-                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                          }}
                         >
                           <Typography variant="body2">
                             {r.firstName} {r.lastName}
@@ -430,6 +441,56 @@ export default function EventDetailModal({
                           <StatusBadge
                             label={r.rsvpStatus}
                             color={getRsvpStatusColor(r.rsvpStatus)}
+                          />
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                </Box>
+
+                <Box>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{
+                      textTransform: "uppercase",
+                      fontSize: "0.75rem",
+                      letterSpacing: "0.05em",
+                      fontWeight: 600,
+                      mb: 1,
+                    }}
+                  >
+                    Top Volunteer Matches
+                  </Typography>
+                  {matchesLoading ? (
+                    <CircularProgress size={20} />
+                  ) : matches.length === 0 ? (
+                    <EmptyState message="No matching volunteers found" />
+                  ) : (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                      }}
+                    >
+                      {matches.map((m) => (
+                        <Box
+                          key={m.volunteerId}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                          }}
+                        >
+                          <Typography variant="body2" fontWeight={500}>
+                            {m.firstName} {m.lastName}
+                          </Typography>
+                          <Chip
+                            label={`${m.matchScore} match${m.matchScore === 1 ? "" : "es"}`}
+                            color="primary"
+                            variant="outlined"
+                            size="small"
                           />
                         </Box>
                       ))}
@@ -539,7 +600,12 @@ export default function EventDetailModal({
           </DialogTitle>
           <DialogContent>
             <Box
-              sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 2 }}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 2.5,
+                pt: 2,
+              }}
             >
               <TextField
                 label="Title"
@@ -700,8 +766,8 @@ export default function EventDetailModal({
                   }}
                 >
                   <Typography variant="body2" gutterBottom>
-                    Are you sure you want to delete &quot;{event?.title}&quot;?
-                    This cannot be undone.
+                    Are you sure you want to delete &quot;{event?.title}
+                    &quot;? This cannot be undone.
                   </Typography>
                   <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
                     <Button
