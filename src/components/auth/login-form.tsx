@@ -46,7 +46,14 @@ export default function LoginForm(): JSX.Element {
       });
 
       if (result?.error) {
-        setError(result.error);
+        const AUTH_ERROR_MESSAGES: Record<string, string> = {
+          CredentialsSignin: "Invalid email or password. Please try again.",
+          AccessDenied: "Your account is not active. Please contact support.",
+        };
+        setError(
+          AUTH_ERROR_MESSAGES[result.error] ??
+            "Login failed. Please try again.",
+        );
       } else if (result?.ok) {
         router.push("/home");
       } else {

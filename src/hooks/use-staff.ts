@@ -37,12 +37,18 @@ export type UseStaffResult = {
   error: string | null;
 
   loadStaff: () => Promise<void>;
-  createStaff: (data: Record<string, unknown>) => Promise<boolean>;
+  createStaff: (data: Record<string, unknown>) => Promise<{
+    message?: string;
+    data?: Staff;
+    emailSent?: boolean;
+    emailError?: boolean;
+  } | null>;
 };
 
 export function useStaff(
   searchQuery: string,
   filters: StaffFiltersInput,
+  { skip = false }: { skip?: boolean } = {},
 ): UseStaffResult {
   const [activeStaff, setActiveStaff] = useState<Staff[]>([]);
   const [totalActiveStaff, setTotalActiveStaff] = useState(0);
@@ -128,17 +134,31 @@ export function useStaff(
   ]);
 
   const createStaff = useCallback(
-    async (data: Record<string, unknown>): Promise<boolean> => {
+    async (
+      data: Record<string, unknown>,
+    ): Promise<{
+      message?: string;
+      data?: Staff;
+      emailSent?: boolean;
+      emailError?: boolean;
+    } | null> => {
       setIsMutating(true);
       try {
-        await apiClient.post("/api/staff/staff", data);
+        const result = await apiClient.post<{
+          message?: string;
+          data?: Staff;
+          emailSent?: boolean;
+          emailError?: boolean;
+        }>("/api/staff/staff", data);
         void loadStaff();
-        return true;
+        return result;
       } catch (error_) {
+        // Let handleApiError decide if it's an auth error to suppress, otherwise rethrow
         if (!handleApiError(error_)) {
           console.error("[useStaff] createStaff:", error_);
+          throw error_;
         }
-        return false;
+        return null; // auth error handled
       } finally {
         setIsMutating(false);
       }
@@ -149,6 +169,7 @@ export function useStaff(
   loadStaffRef.current = loadStaff;
 
   useEffect(() => {
+    if (skip) return;
     const debounceTimer = setTimeout(
       () => {
         void loadStaffRef.current?.();
@@ -159,11 +180,12 @@ export function useStaff(
     return (): void => {
       clearTimeout(debounceTimer);
     };
-  }, [searchQuery]);
+  }, [searchQuery, skip]);
 
   useEffect(() => {
+    if (skip) return;
     void loadStaffRef.current?.();
-  }, [activePage, inactivePage, pendingPage, limit, filters.role]);
+  }, [activePage, inactivePage, pendingPage, limit, filters.role, skip]);
 
   return {
     activeStaff,

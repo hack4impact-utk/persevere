@@ -88,7 +88,9 @@ export async function getStaffDashboardStats(): Promise<StaffDashboardStats> {
 
   return {
     activeVolunteers: toNumber(volunteersCount[0]?.count),
-    totalVolunteerHours: toNumber(volunteerHoursAggregate[0]?.total),
+    totalVolunteerHours: Math.round(
+      toNumber(volunteerHoursAggregate[0]?.total ?? "0"),
+    ),
     upcomingOpportunities: toNumber(opportunitiesCount[0]?.count),
     pendingRsvps: toNumber(volunteerRsvpsCount[0]?.count),
     upcomingList: upcomingRows.map((row) => ({

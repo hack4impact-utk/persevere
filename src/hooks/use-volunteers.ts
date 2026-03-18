@@ -47,11 +47,20 @@ export type UseVolunteersResult = {
     volunteerId: number,
     status: "not_required" | "pending" | "approved",
   ) => Promise<boolean>;
+  createVolunteer: (data: Record<string, unknown>) => Promise<{
+    message?: string;
+    data?: Volunteer;
+    emailSent?: boolean;
+    emailError?: boolean;
+    backgroundCheckStatus?: string;
+  } | null>;
+  deleteVolunteer: (volunteerId: number) => Promise<boolean>;
 };
 
 export function useVolunteers(
   searchQuery: string,
   filters: VolunteerFiltersInput,
+  { skip = false }: { skip?: boolean } = {},
 ): UseVolunteersResult {
   // Active volunteers state
   const [activeVolunteers, setActiveVolunteers] = useState<Volunteer[]>([]);
@@ -150,6 +159,7 @@ export function useVolunteers(
 
   // Debounce search to avoid excessive API calls
   useEffect(() => {
+    if (skip) return;
     const debounceTimer = setTimeout(
       () => {
         void loadVolunteersRef.current?.();
@@ -160,7 +170,7 @@ export function useVolunteers(
     return (): void => {
       clearTimeout(debounceTimer);
     };
-  }, [searchQuery]);
+  }, [searchQuery, skip]);
 
   const resendCredentials = useCallback(
     async (volunteerId: number): Promise<boolean> => {
@@ -205,8 +215,63 @@ export function useVolunteers(
     [handleApiError],
   );
 
+  const createVolunteer = useCallback(
+    async (
+      data: Record<string, unknown>,
+    ): Promise<{
+      message?: string;
+      data?: Volunteer;
+      emailSent?: boolean;
+      emailError?: boolean;
+      backgroundCheckStatus?: string;
+    } | null> => {
+      setIsMutating(true);
+      try {
+        const result = await apiClient.post<{
+          message?: string;
+          data?: Volunteer;
+          emailSent?: boolean;
+          emailError?: boolean;
+          backgroundCheckStatus?: string;
+        }>("/api/staff/volunteers", data);
+        void loadVolunteersRef.current?.();
+        return result;
+      } catch (error_) {
+        // Fallback error logging if handleApiError didn't catch it
+        if (!handleApiError(error_)) {
+          console.error("[useVolunteers] createVolunteer:", error_);
+          throw error_; // rethrow so component can display it
+        }
+        return null; // auth error handled
+      } finally {
+        setIsMutating(false);
+      }
+    },
+    [handleApiError],
+  );
+
+  const deleteVolunteer = useCallback(
+    async (volunteerId: number): Promise<boolean> => {
+      setIsMutating(true);
+      try {
+        await apiClient.delete(`/api/staff/volunteers/${volunteerId}`);
+        void loadVolunteersRef.current?.();
+        return true;
+      } catch (error_) {
+        if (!handleApiError(error_)) {
+          console.error("[useVolunteers] deleteVolunteer:", error_);
+        }
+        return false;
+      } finally {
+        setIsMutating(false);
+      }
+    },
+    [handleApiError],
+  );
+
   // Load immediately when pagination, limit, or filters change (no debounce)
   useEffect(() => {
+    if (skip) return;
     void loadVolunteersRef.current?.();
   }, [
     activePage,
@@ -215,6 +280,7 @@ export function useVolunteers(
     limit,
     filters.type,
     filters.alumni,
+    skip,
   ]);
 
   return {
@@ -242,5 +308,7 @@ export function useVolunteers(
     loadVolunteers,
     resendCredentials,
     updateBackgroundStatus,
+    createVolunteer,
+    deleteVolunteer,
   };
 }

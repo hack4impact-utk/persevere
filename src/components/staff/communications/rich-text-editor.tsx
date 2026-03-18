@@ -20,7 +20,6 @@ import {
 } from "@mui/material";
 import { Color } from "@tiptap/extension-color";
 import { Link } from "@tiptap/extension-link";
-import { TextStyle } from "@tiptap/extension-text-style";
 import { Underline } from "@tiptap/extension-underline";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
@@ -99,7 +98,6 @@ export default function RichTextEditor({
           style: "color: #1976d2; text-decoration: underline;",
         },
       }),
-      TextStyle,
       Color,
     ],
     content: value,

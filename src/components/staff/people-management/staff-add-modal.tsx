@@ -24,7 +24,7 @@ import {
 import { type ReactElement, useCallback, useMemo, useState } from "react";
 import validator from "validator";
 
-import { apiClient } from "@/lib/api-client";
+import { useStaff } from "@/hooks/use-staff";
 
 import type { Staff } from "./types";
 
@@ -62,6 +62,8 @@ export default function AddStaffModal({
     staffName: string;
     staffEmail: string;
   } | null>(null);
+
+  const { createStaff } = useStaff("", {}, { skip: true });
 
   // Basic validations
   const firstNameError = useMemo(
@@ -109,16 +111,13 @@ export default function AddStaffModal({
           phone: phone.trim() || undefined,
         };
 
-        const json = await apiClient.post<{
-          message?: string;
-          data?: Staff;
-          emailSent?: boolean;
-          emailError?: boolean;
-        }>("/api/staff/staff", payload);
+        const json = await createStaff(payload);
 
-        const created: Staff = json?.data ?? (json as unknown as Staff);
-        const emailSent = json?.emailSent ?? false;
-        const emailError = json?.emailError ?? false;
+        if (!json) return;
+
+        const created: Staff = json.data as Staff;
+        const emailSent = json.emailSent ?? false;
+        const emailError = json.emailError ?? false;
 
         const staffName = `${firstName.trim()} ${lastName.trim()}`;
         const staffEmail = email.trim();
@@ -153,7 +152,16 @@ export default function AddStaffModal({
         setSubmitting(false);
       }
     },
-    [firstName, lastName, email, phone, isFormValid, markTouched, onCreated],
+    [
+      firstName,
+      lastName,
+      email,
+      phone,
+      isFormValid,
+      markTouched,
+      onCreated,
+      createStaff,
+    ],
   );
 
   const handleClose = useCallback((): void => {

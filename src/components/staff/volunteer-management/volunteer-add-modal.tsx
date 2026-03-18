@@ -31,7 +31,7 @@ import {
 import { type ReactElement, useCallback, useMemo, useState } from "react";
 import validator from "validator";
 
-import { apiClient } from "@/lib/api-client";
+import { useVolunteers } from "@/hooks/use-volunteers";
 
 import type { Volunteer } from "./types";
 
@@ -61,6 +61,12 @@ export default function AddVolunteerModal({
   const [isAlumni, setIsAlumni] = useState(false);
   const [backgroundCheckStatus, setBackgroundCheckStatus] = useState("");
   const [mediaRelease, setMediaRelease] = useState(false);
+
+  const { createVolunteer } = useVolunteers(
+    "",
+    { type: "", alumni: false },
+    { skip: true },
+  );
 
   // UI state
   const [submitting, setSubmitting] = useState(false);
@@ -154,21 +160,15 @@ export default function AddVolunteerModal({
           mediaRelease,
         };
 
-        // This just adds a volunteer without verifying them first
-        // #TODO: volunteer is only added to database after they have been verified
-        const json = await apiClient.post<{
-          message?: string;
-          data?: Volunteer;
-          emailSent?: boolean;
-          emailError?: boolean;
-          backgroundCheckStatus?: string;
-        }>("/api/staff/volunteers", payload);
+        const json = await createVolunteer(payload);
+
+        if (!json) return; // hook handled error
 
         // Backend returns { message, data, emailSent, emailError, backgroundCheckStatus }
-        const created: Volunteer = json?.data ?? (json as unknown as Volunteer);
-        const emailSent = json?.emailSent ?? false;
-        const emailError = json?.emailError ?? false;
-        const responseBackgroundCheckStatus = json?.backgroundCheckStatus ?? "";
+        const created: Volunteer = json.data as Volunteer;
+        const emailSent = json.emailSent ?? false;
+        const emailError = json.emailError ?? false;
+        const responseBackgroundCheckStatus = json.backgroundCheckStatus ?? "";
 
         // Store volunteer name before clearing form
         const volunteerName = `${firstName.trim()} ${lastName.trim()}`;
@@ -219,6 +219,7 @@ export default function AddVolunteerModal({
       isFormValid,
       markTouched,
       onCreated,
+      createVolunteer,
     ],
   );
 
