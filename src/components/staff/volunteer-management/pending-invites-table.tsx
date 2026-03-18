@@ -33,7 +33,7 @@ import { enqueueSnackbar } from "notistack";
 import { type ReactElement, useCallback, useState } from "react";
 
 import { TablePaginationFooter } from "@/components/shared";
-import { apiClient } from "@/lib/api-client";
+import { useVolunteers } from "@/hooks/use-volunteers";
 
 import { type Volunteer } from "./types";
 
@@ -94,6 +94,9 @@ export default function PendingInvitesTable({
   onRefresh,
   loading = false,
 }: PendingInvitesTableProps): ReactElement {
+  const { resendCredentials, updateBackgroundStatus, deleteVolunteer } =
+    useVolunteers("", {}, { skip: true });
+
   const [resendingEmails, setResendingEmails] = useState<Set<number>>(
     new Set(),
   );
@@ -179,9 +182,7 @@ export default function PendingInvitesTable({
     });
     setResendingEmails((prev) => new Set(prev).add(volunteerId));
     try {
-      await apiClient.post(
-        `/api/staff/volunteers/${volunteerId}/resend-credentials`,
-      );
+      await resendCredentials(volunteerId);
       enqueueSnackbar("Welcome email sent successfully", {
         variant: "success",
       });
@@ -265,7 +266,7 @@ export default function PendingInvitesTable({
     setDeleting((prev) => new Set(prev).add(volunteerId));
 
     try {
-      await apiClient.delete(`/api/staff/volunteers/${volunteerId}`);
+      await deleteVolunteer(volunteerId);
       enqueueSnackbar("Volunteer deleted successfully", {
         variant: "success",
       });
@@ -311,9 +312,7 @@ export default function PendingInvitesTable({
 
     setUpdatingStatus((prev) => new Set(prev).add(volunteerId));
     try {
-      await apiClient.put(`/api/staff/volunteers/${volunteerId}`, {
-        backgroundCheckStatus: statusValue,
-      });
+      await updateBackgroundStatus(volunteerId, statusValue);
       enqueueSnackbar("Background check status updated successfully", {
         variant: "success",
       });
@@ -321,9 +320,7 @@ export default function PendingInvitesTable({
       // If status is approved or not_required, automatically send welcome email
       if (statusValue === "approved" || statusValue === "not_required") {
         try {
-          await apiClient.post(
-            `/api/staff/volunteers/${volunteerId}/resend-credentials`,
-          );
+          await resendCredentials(volunteerId);
           enqueueSnackbar("Welcome email sent successfully", {
             variant: "success",
           });

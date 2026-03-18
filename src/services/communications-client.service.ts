@@ -74,13 +74,26 @@ export async function fetchCommunicationById(
  */
 export async function createCommunication(
   payload: CreateCommunicationRequest,
-): Promise<BulkCommunicationLog> {
-  const result = await apiClient.post<{ communication: BulkCommunicationLog }>(
-    "/api/staff/communications",
-    payload,
-  );
+): Promise<{
+  communication: BulkCommunicationLog;
+  emailSent?: boolean;
+  emailError?: boolean;
+  recipientCount?: number;
+}> {
+  const result = await apiClient.post<{
+    communication: BulkCommunicationLog;
+    emailSent?: boolean;
+    emailError?: boolean;
+    recipientCount?: number;
+  }>("/api/staff/communications", payload);
+
   return {
-    ...result.communication,
-    sentAt: new Date(result.communication.sentAt),
+    communication: {
+      ...result.communication,
+      sentAt: new Date(result.communication.sentAt),
+    },
+    emailSent: result.emailSent,
+    emailError: result.emailError,
+    recipientCount: result.recipientCount,
   };
 }

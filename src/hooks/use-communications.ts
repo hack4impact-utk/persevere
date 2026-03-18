@@ -20,12 +20,17 @@ export type UseCommunicationsResult = {
   error: string | null;
   loadCommunications: () => Promise<void>;
   selectCommunication: (id: number) => Promise<void>;
-  sendCommunication: (
-    payload: CreateCommunicationRequest,
-  ) => Promise<BulkCommunicationLog | null>;
+  sendCommunication: (payload: CreateCommunicationRequest) => Promise<{
+    communication: BulkCommunicationLog;
+    emailSent?: boolean;
+    emailError?: boolean;
+    recipientCount?: number;
+  } | null>;
 };
 
-export function useCommunications(): UseCommunicationsResult {
+export function useCommunications({
+  skip = false,
+}: { skip?: boolean } = {}): UseCommunicationsResult {
   const [communications, setCommunications] = useState<BulkCommunicationLog[]>(
     [],
   );
@@ -69,8 +74,9 @@ export function useCommunications(): UseCommunicationsResult {
   }, [handleApiError]);
 
   useEffect(() => {
+    if (skip) return;
     void loadCommunications();
-  }, [loadCommunications]);
+  }, [loadCommunications, skip]);
 
   const selectCommunication = useCallback(async (id: number): Promise<void> => {
     try {
@@ -85,12 +91,17 @@ export function useCommunications(): UseCommunicationsResult {
   const sendCommunication = useCallback(
     async (
       payload: CreateCommunicationRequest,
-    ): Promise<BulkCommunicationLog | null> => {
+    ): Promise<{
+      communication: BulkCommunicationLog;
+      emailSent?: boolean;
+      emailError?: boolean;
+      recipientCount?: number;
+    } | null> => {
       setIsMutating(true);
       try {
-        const created = await createCommunicationApi(payload);
+        const result = await createCommunicationApi(payload);
         void loadCommunications();
-        return created;
+        return result;
       } catch (error_) {
         if (handleApiError(error_)) return null;
         throw error_;

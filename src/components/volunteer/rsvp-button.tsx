@@ -2,15 +2,8 @@
 
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
-import { useRouter } from "next/navigation";
-import { useSnackbar } from "notistack";
-import { JSX, useState } from "react";
 
-import {
-  apiClient,
-  AuthenticationError,
-  AuthorizationError,
-} from "@/lib/api-client";
+import { useRsvpMutation } from "@/hooks/use-rsvp-mutation";
 
 type RsvpButtonProps = {
   opportunityId: number;
@@ -24,37 +17,13 @@ export default function RsvpButton({
   isRsvped,
   isFull,
   onRsvpChange,
-}: RsvpButtonProps): JSX.Element {
-  const { enqueueSnackbar } = useSnackbar();
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
+}: RsvpButtonProps): React.JSX.Element {
+  const { toggleRsvp, isMutating } = useRsvpMutation();
 
   const handleClick = async (): Promise<void> => {
-    setLoading(true);
-    try {
-      const url = `/api/volunteer/opportunities/${opportunityId}/rsvp`;
-      await (isRsvped ? apiClient.delete(url) : apiClient.post(url));
-
-      const newIsRsvped = !isRsvped;
-      enqueueSnackbar(newIsRsvped ? "RSVP confirmed!" : "RSVP cancelled.", {
-        variant: newIsRsvped ? "success" : "info",
-      });
-      onRsvpChange?.(newIsRsvped);
-    } catch (error) {
-      if (error instanceof AuthenticationError) {
-        router.push("/auth/login");
-        return;
-      }
-      if (error instanceof AuthorizationError) {
-        enqueueSnackbar("Access denied", { variant: "error" });
-        return;
-      }
-      enqueueSnackbar(
-        error instanceof Error ? error.message : "Something went wrong",
-        { variant: "error" },
-      );
-    } finally {
-      setLoading(false);
+    const success = await toggleRsvp(opportunityId, isRsvped);
+    if (success) {
+      onRsvpChange?.(!isRsvped);
     }
   };
 
@@ -73,13 +42,13 @@ export default function RsvpButton({
       onClick={() => {
         void handleClick();
       }}
-      disabled={loading}
+      disabled={isMutating}
       fullWidth
       startIcon={
-        loading ? <CircularProgress size={16} color="inherit" /> : undefined
+        isMutating ? <CircularProgress size={16} color="inherit" /> : undefined
       }
     >
-      {loading
+      {isMutating
         ? isRsvped
           ? "Cancelling..."
           : "RSVPing..."

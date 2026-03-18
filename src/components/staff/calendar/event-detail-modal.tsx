@@ -240,7 +240,9 @@ export default function EventDetailModal({
         ...interestsToAdd.map((i) => addInterest(i.id)),
         ...interestsToRemove.map((i) => removeInterest(i.interestId)),
       ]);
-      const tagError = tagResults.some((r) => r.status === "rejected");
+      const tagError = tagResults.some(
+        (r) => r.status === "fulfilled" && r.value === false,
+      );
 
       await refetchSkills();
 

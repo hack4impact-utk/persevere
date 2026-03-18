@@ -30,7 +30,7 @@ import {
   useState,
 } from "react";
 
-import { apiClient } from "@/lib/api-client";
+import { useCommunications } from "@/hooks/use-communications";
 
 import RichTextEditor from "./rich-text-editor";
 import type { Attachment, RecipientType } from "./types";
@@ -150,6 +150,8 @@ export default function ComposeModal({
     setAttachments((prev) => prev.filter((a) => a.id !== id));
   }, []);
 
+  const { sendCommunication } = useCommunications({ skip: true });
+
   const handleSubmit = useCallback(
     async (e?: React.FormEvent): Promise<void> => {
       if (e) e.preventDefault();
@@ -164,16 +166,13 @@ export default function ComposeModal({
       setSubmitting(true);
 
       try {
-        const result = await apiClient.post<{
-          recipientCount?: number;
-          emailSent?: boolean;
-          emailError?: boolean;
-        }>("/api/staff/communications", {
+        const result = await sendCommunication({
           subject: subject.trim(),
           body: body.trim(),
           recipientType,
-          // Note: attachments would be handled separately when storage is implemented
         });
+
+        if (!result) return; // handled by hook
 
         const recipientCount = result.recipientCount ?? 0;
         const emailSent = result.emailSent;
@@ -231,6 +230,7 @@ export default function ComposeModal({
       onCreated,
       onClose,
       enqueueSnackbar,
+      sendCommunication,
     ],
   );
 

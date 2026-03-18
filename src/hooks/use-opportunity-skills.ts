@@ -1,11 +1,7 @@
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import {
-  apiClient,
-  AuthenticationError,
-  AuthorizationError,
-} from "@/lib/api-client";
+import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
 
 export type EventSkill = {
   skillId: number;
@@ -21,10 +17,11 @@ export type UseOpportunitySkillsResult = {
   requiredSkills: EventSkill[];
   requiredInterests: EventInterest[];
   loading: boolean;
-  addSkill: (skillId: number) => Promise<void>;
-  removeSkill: (skillId: number) => Promise<void>;
-  addInterest: (interestId: number) => Promise<void>;
-  removeInterest: (interestId: number) => Promise<void>;
+  isMutating: boolean;
+  addSkill: (skillId: number) => Promise<boolean>;
+  removeSkill: (skillId: number) => Promise<boolean>;
+  addInterest: (interestId: number) => Promise<boolean>;
+  removeInterest: (interestId: number) => Promise<boolean>;
   applyToEvents: (
     eventIds: number[],
     skillIds: number[],
@@ -34,28 +31,21 @@ export type UseOpportunitySkillsResult = {
     requiredSkills: EventSkill[];
     requiredInterests: EventInterest[];
   }>;
+  error: string | null;
 };
 
 export function useOpportunitySkills(
   eventId: number | null,
 ): UseOpportunitySkillsResult {
-  const router = useRouter();
   const [requiredSkills, setRequiredSkills] = useState<EventSkill[]>([]);
   const [requiredInterests, setRequiredInterests] = useState<EventInterest[]>(
     [],
   );
   const [loading, setLoading] = useState(eventId !== null);
+  const [isMutating, setIsMutating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAuthError = useCallback(
-    (err: unknown): void => {
-      if (err instanceof AuthenticationError) {
-        router.push("/auth/login");
-      } else {
-        throw err;
-      }
-    },
-    [router],
-  );
+  const handleApiError = useApiErrorHandler(setError);
 
   const fetchAll = useCallback(async (): Promise<{
     requiredSkills: EventSkill[];
@@ -80,13 +70,13 @@ export function useOpportunitySkills(
         requiredSkills: skillsResult.data,
         requiredInterests: interestsResult.data,
       };
-    } catch (error) {
-      handleAuthError(error);
+    } catch (error_) {
+      handleApiError(error_, "Failed to load opportunity requirements.");
       return { requiredSkills: [], requiredInterests: [] };
     } finally {
       setLoading(false);
     }
-  }, [eventId, handleAuthError]);
+  }, [eventId, handleApiError]);
 
   useEffect(() => {
     if (eventId === null) {
@@ -101,61 +91,95 @@ export function useOpportunitySkills(
   }, [eventId, fetchAll]);
 
   const addSkill = useCallback(
-    async (skillId: number): Promise<void> => {
-      if (eventId === null) return;
+    async (skillId: number): Promise<boolean> => {
+      if (eventId === null) return false;
+      setIsMutating(true);
       try {
         await apiClient.post(`/api/staff/calendar/events/${eventId}/skills`, {
           skillId,
         });
-      } catch (error) {
-        handleAuthError(error);
+        return true;
+      } catch (error_) {
+        if (handleApiError(error_)) return false;
+        setError(
+          error_ instanceof Error ? error_.message : "Failed to add skill.",
+        );
+        return false;
+      } finally {
+        setIsMutating(false);
       }
     },
-    [eventId, handleAuthError],
+    [eventId, handleApiError],
   );
 
   const removeSkill = useCallback(
-    async (skillId: number): Promise<void> => {
-      if (eventId === null) return;
+    async (skillId: number): Promise<boolean> => {
+      if (eventId === null) return false;
+      setIsMutating(true);
       try {
         await apiClient.delete(`/api/staff/calendar/events/${eventId}/skills`, {
           skillId,
         });
-      } catch (error) {
-        handleAuthError(error);
+        return true;
+      } catch (error_) {
+        if (handleApiError(error_)) return false;
+        setError(
+          error_ instanceof Error ? error_.message : "Failed to remove skill.",
+        );
+        return false;
+      } finally {
+        setIsMutating(false);
       }
     },
-    [eventId, handleAuthError],
+    [eventId, handleApiError],
   );
 
   const addInterest = useCallback(
-    async (interestId: number): Promise<void> => {
-      if (eventId === null) return;
+    async (interestId: number): Promise<boolean> => {
+      if (eventId === null) return false;
+      setIsMutating(true);
       try {
         await apiClient.post(
           `/api/staff/calendar/events/${eventId}/interests`,
           { interestId },
         );
-      } catch (error) {
-        handleAuthError(error);
+        return true;
+      } catch (error_) {
+        if (handleApiError(error_)) return false;
+        setError(
+          error_ instanceof Error ? error_.message : "Failed to add interest.",
+        );
+        return false;
+      } finally {
+        setIsMutating(false);
       }
     },
-    [eventId, handleAuthError],
+    [eventId, handleApiError],
   );
 
   const removeInterest = useCallback(
-    async (interestId: number): Promise<void> => {
-      if (eventId === null) return;
+    async (interestId: number): Promise<boolean> => {
+      if (eventId === null) return false;
+      setIsMutating(true);
       try {
         await apiClient.delete(
           `/api/staff/calendar/events/${eventId}/interests`,
           { interestId },
         );
-      } catch (error) {
-        handleAuthError(error);
+        return true;
+      } catch (error_) {
+        if (handleApiError(error_)) return false;
+        setError(
+          error_ instanceof Error
+            ? error_.message
+            : "Failed to remove interest.",
+        );
+        return false;
+      } finally {
+        setIsMutating(false);
       }
     },
-    [eventId, handleAuthError],
+    [eventId, handleApiError],
   );
 
   const applyToEvents = useCallback(
@@ -164,52 +188,56 @@ export function useOpportunitySkills(
       skillIds: number[],
       interestIds: number[],
     ): Promise<void> => {
-      const skillPromises = eventIds.flatMap((eid) =>
-        skillIds.map((sid) =>
-          apiClient.post(`/api/staff/calendar/events/${eid}/skills`, {
-            skillId: sid,
-          }),
-        ),
-      );
-      const interestPromises = eventIds.flatMap((eid) =>
-        interestIds.map((iid) =>
-          apiClient.post(`/api/staff/calendar/events/${eid}/interests`, {
-            interestId: iid,
-          }),
-        ),
-      );
-      const results = await Promise.allSettled([
-        ...skillPromises,
-        ...interestPromises,
-      ]);
+      setIsMutating(true);
+      try {
+        const skillPromises = eventIds.flatMap((eid) =>
+          skillIds.map((sid) =>
+            apiClient.post(`/api/staff/calendar/events/${eid}/skills`, {
+              skillId: sid,
+            }),
+          ),
+        );
+        const interestPromises = eventIds.flatMap((eid) =>
+          interestIds.map((iid) =>
+            apiClient.post(`/api/staff/calendar/events/${eid}/interests`, {
+              interestId: iid,
+            }),
+          ),
+        );
+        const results = await Promise.allSettled([
+          ...skillPromises,
+          ...interestPromises,
+        ]);
 
-      let firstNonAuthError: unknown | null = null;
+        let firstNonAuthError: unknown | null = null;
 
-      for (const result of results) {
-        if (result.status === "rejected") {
-          const error = result.reason;
-          if (
-            error instanceof AuthenticationError ||
-            error instanceof AuthorizationError
-          ) {
-            handleAuthError(error);
-          } else if (firstNonAuthError === null) {
-            firstNonAuthError = error;
+        for (const result of results) {
+          if (result.status === "rejected") {
+            const error_ = result.reason;
+            if (handleApiError(error_)) {
+              // Already handled auth error
+            } else if (firstNonAuthError === null) {
+              firstNonAuthError = error_;
+            }
           }
         }
-      }
 
-      if (firstNonAuthError !== null) {
-        throw firstNonAuthError;
+        if (firstNonAuthError !== null) {
+          throw firstNonAuthError;
+        }
+      } finally {
+        setIsMutating(false);
       }
     },
-    [handleAuthError],
+    [handleApiError],
   );
 
   return {
     requiredSkills,
     requiredInterests,
     loading,
+    isMutating,
+    error,
     addSkill,
     removeSkill,
     addInterest,
