@@ -5,6 +5,7 @@ import {
   Avatar,
   Box,
   CircularProgress,
+  LinearProgress,
   Paper,
   Table,
   TableBody,
@@ -97,6 +98,7 @@ export default function VolunteerTable({
                 sx={{
                   fontWeight: 600,
                   fontSize: "0.875rem",
+                  width: "40%",
                 }}
               >
                 Name
@@ -105,6 +107,7 @@ export default function VolunteerTable({
                 sx={{
                   fontWeight: 600,
                   fontSize: "0.875rem",
+                  width: "15%",
                 }}
               >
                 Role
@@ -113,6 +116,7 @@ export default function VolunteerTable({
                 sx={{
                   fontWeight: 600,
                   fontSize: "0.875rem",
+                  width: "10%",
                 }}
               >
                 Hours
@@ -121,9 +125,20 @@ export default function VolunteerTable({
                 sx={{
                   fontWeight: 600,
                   fontSize: "0.875rem",
+                  width: "15%",
                 }}
               >
                 Contact
+              </TableCell>
+              <TableCell
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "0.875rem",
+                  width: "20%",
+                  minWidth: 160,
+                }}
+              >
+                Onboarding
               </TableCell>
             </TableRow>
           </TableHead>
@@ -204,11 +219,28 @@ export default function VolunteerTable({
                       )}
                     </Box>
                   </TableCell>
+                  <TableCell sx={{ minWidth: 120 }}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <LinearProgress
+                        variant="determinate"
+                        value={volunteer.completionPercentage || 0}
+                        sx={{ flex: 1, height: 6, borderRadius: 3 }}
+                        color={
+                          volunteer.completionPercentage === 100
+                            ? "success"
+                            : "primary"
+                        }
+                      />
+                      <Typography variant="caption" sx={{ minWidth: 32 }}>
+                        {volunteer.completionPercentage || 0}%
+                      </Typography>
+                    </Box>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4}>
+                <TableCell colSpan={5}>
                   <EmptyState message="No volunteers found" />
                 </TableCell>
               </TableRow>

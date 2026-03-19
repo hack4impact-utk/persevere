@@ -1,6 +1,7 @@
 "use client";
 
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CloseIcon from "@mui/icons-material/Close";
@@ -13,6 +14,7 @@ import EventIcon from "@mui/icons-material/Event";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import HistoryIcon from "@mui/icons-material/History";
 import PhoneIcon from "@mui/icons-material/Phone";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import SecurityIcon from "@mui/icons-material/Security";
 import StarIcon from "@mui/icons-material/Star";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
@@ -639,10 +641,150 @@ export default function VolunteerProfile({
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "repeat(4, 1fr)" },
+            gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
             gap: 2,
           }}
         >
+          {/* Onboarding Section */}
+          <Box>
+            <Card
+              sx={{
+                borderRadius: 2,
+                boxShadow: 2,
+                transition: "transform 0.2s, box-shadow 0.2s",
+                "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <CardContent sx={{ p: 2.5, flex: 1 }}>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <AssignmentTurnedInIcon color="primary" />
+                  <Typography variant="h6" fontWeight={600} sx={{ flex: 1 }}>
+                    Onboarding
+                  </Typography>
+                </Box>
+                <Divider sx={{ mb: 2 }} />
+
+                {volunteer.onboardingStatus ? (
+                  <Stack spacing={1.5}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      {volunteer.onboardingStatus.profileFilled ? (
+                        <CheckCircleIcon color="success" fontSize="small" />
+                      ) : (
+                        <RadioButtonUncheckedIcon
+                          color="disabled"
+                          fontSize="small"
+                        />
+                      )}
+                      <Typography
+                        variant="body2"
+                        color={
+                          volunteer.onboardingStatus.profileFilled
+                            ? "text.primary"
+                            : "text.secondary"
+                        }
+                      >
+                        Profile Details
+                      </Typography>
+                    </Box>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      {volunteer.onboardingStatus.availabilitySet ? (
+                        <CheckCircleIcon color="success" fontSize="small" />
+                      ) : (
+                        <RadioButtonUncheckedIcon
+                          color="disabled"
+                          fontSize="small"
+                        />
+                      )}
+                      <Typography
+                        variant="body2"
+                        color={
+                          volunteer.onboardingStatus.availabilitySet
+                            ? "text.primary"
+                            : "text.secondary"
+                        }
+                      >
+                        Availability Requirements
+                      </Typography>
+                    </Box>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      {volunteer.onboardingStatus.skillsAdded ? (
+                        <CheckCircleIcon color="success" fontSize="small" />
+                      ) : (
+                        <RadioButtonUncheckedIcon
+                          color="disabled"
+                          fontSize="small"
+                        />
+                      )}
+                      <Typography
+                        variant="body2"
+                        color={
+                          volunteer.onboardingStatus.skillsAdded
+                            ? "text.primary"
+                            : "text.secondary"
+                        }
+                      >
+                        Skills Added
+                      </Typography>
+                    </Box>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      {volunteer.onboardingStatus.interestsAdded ? (
+                        <CheckCircleIcon color="success" fontSize="small" />
+                      ) : (
+                        <RadioButtonUncheckedIcon
+                          color="disabled"
+                          fontSize="small"
+                        />
+                      )}
+                      <Typography
+                        variant="body2"
+                        color={
+                          volunteer.onboardingStatus.interestsAdded
+                            ? "text.primary"
+                            : "text.secondary"
+                        }
+                      >
+                        Interests Added
+                      </Typography>
+                    </Box>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      {volunteer.onboardingStatus.documentsCompleted ? (
+                        <CheckCircleIcon color="success" fontSize="small" />
+                      ) : (
+                        <RadioButtonUncheckedIcon
+                          color="disabled"
+                          fontSize="small"
+                        />
+                      )}
+                      <Typography
+                        variant="body2"
+                        color={
+                          volunteer.onboardingStatus.documentsCompleted
+                            ? "text.primary"
+                            : "text.secondary"
+                        }
+                      >
+                        Documents (
+                        {volunteer.onboardingStatus.documentProgress.responded}/
+                        {volunteer.onboardingStatus.documentProgress.required})
+                      </Typography>
+                    </Box>
+                  </Stack>
+                ) : (
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontStyle: "italic" }}
+                  >
+                    No onboarding data available
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Box>
+
           {/* Skills Section */}
           <Box>
             <Card

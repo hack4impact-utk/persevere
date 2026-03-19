@@ -13,12 +13,13 @@ export type OnboardingChecklist = {
   availabilitySet: boolean;
   skillsAdded: boolean;
   interestsAdded: boolean;
-  mediaReleaseSigned: boolean;
+  documentsCompleted: boolean;
 };
 
 export type OnboardingStatus = OnboardingChecklist & {
   completionPercentage: number;
   onboardingComplete: boolean;
+  documentProgress: { responded: number; required: number };
 };
 
 export type VolunteerOnboardingSummary = {
@@ -46,15 +47,14 @@ export type ListOnboardingResult = {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const CHECKLIST_ITEMS = 5;
-
-function buildChecklist(
+export function buildChecklist(
   phone: string | null | undefined,
   bio: string | null | undefined,
   availability: unknown,
   skillsCount: number,
   interestsCount: number,
-  mediaRelease: boolean,
+  requiredDocsCount: number,
+  respondedDocsCount: number,
 ): OnboardingChecklist {
   return {
     profileFilled: Boolean(
@@ -64,13 +64,16 @@ function buildChecklist(
       availability != null && JSON.stringify(availability) !== "{}",
     skillsAdded: skillsCount > 0,
     interestsAdded: interestsCount > 0,
-    mediaReleaseSigned: mediaRelease,
+    documentsCompleted:
+      requiredDocsCount === 0 || respondedDocsCount >= requiredDocsCount,
   };
 }
 
-function completionFromChecklist(checklist: OnboardingChecklist): number {
-  const completed = Object.values(checklist).filter(Boolean).length;
-  return Math.round((completed / CHECKLIST_ITEMS) * 100);
+export function completionFromChecklist(
+  checklist: OnboardingChecklist,
+): number {
+  const values = Object.values(checklist) as boolean[];
+  return Math.round((values.filter(Boolean).length / values.length) * 100);
 }
 
 // ---------------------------------------------------------------------------
@@ -85,9 +88,10 @@ export async function getOnboardingStatus(
       phone: users.phone,
       bio: users.bio,
       availability: volunteers.availability,
-      mediaRelease: volunteers.mediaRelease,
       skillsCount: sql<number>`(SELECT COUNT(*) FROM volunteer_skills WHERE volunteer_id = ${volunteers.id})`,
       interestsCount: sql<number>`(SELECT COUNT(*) FROM volunteer_interests WHERE volunteer_id = ${volunteers.id})`,
+      requiredDocsCount: sql<number>`(SELECT COUNT(*) FROM onboarding_documents WHERE required = true AND is_active = true AND action_type != 'informational')`,
+      respondedDocsCount: sql<number>`(SELECT COUNT(*) FROM volunteer_document_signatures WHERE volunteer_id = ${volunteers.id} AND document_id IN (SELECT id FROM onboarding_documents WHERE required = true AND is_active = true AND action_type != 'informational'))`,
     })
     .from(volunteers)
     .innerJoin(users, eq(volunteers.userId, users.id))
@@ -97,13 +101,16 @@ export async function getOnboardingStatus(
   if (rows.length === 0) return null;
 
   const row = rows[0];
+  const requiredDocs = Number(row.requiredDocsCount);
+  const respondedDocs = Number(row.respondedDocsCount);
   const checklist = buildChecklist(
     row.phone,
     row.bio,
     row.availability,
     Number(row.skillsCount),
     Number(row.interestsCount),
-    row.mediaRelease,
+    requiredDocs,
+    respondedDocs,
   );
   const completionPercentage = completionFromChecklist(checklist);
 
@@ -111,6 +118,7 @@ export async function getOnboardingStatus(
     ...checklist,
     completionPercentage,
     onboardingComplete: completionPercentage === 100,
+    documentProgress: { responded: respondedDocs, required: requiredDocs },
   };
 }
 
@@ -148,7 +156,7 @@ export async function listVolunteerOnboarding(
 
   const total = countRow?.value ?? 0;
 
-  // Fetch volunteer rows with skill/interest counts via correlated sub-queries
+  // Fetch volunteer rows with skill/interest/document counts via correlated sub-queries
   const rows = await db
     .select({
       volunteerId: volunteers.id,
@@ -158,9 +166,10 @@ export async function listVolunteerOnboarding(
       phone: users.phone,
       bio: users.bio,
       availability: volunteers.availability,
-      mediaRelease: volunteers.mediaRelease,
       skillsCount: sql<number>`(SELECT COUNT(*) FROM volunteer_skills WHERE volunteer_id = ${volunteers.id})`,
       interestsCount: sql<number>`(SELECT COUNT(*) FROM volunteer_interests WHERE volunteer_id = ${volunteers.id})`,
+      requiredDocsCount: sql<number>`(SELECT COUNT(*) FROM onboarding_documents WHERE required = true AND is_active = true AND action_type != 'informational')`,
+      respondedDocsCount: sql<number>`(SELECT COUNT(*) FROM volunteer_document_signatures WHERE volunteer_id = ${volunteers.id} AND document_id IN (SELECT id FROM onboarding_documents WHERE required = true AND is_active = true AND action_type != 'informational'))`,
     })
     .from(volunteers)
     .innerJoin(users, eq(volunteers.userId, users.id))
@@ -176,7 +185,8 @@ export async function listVolunteerOnboarding(
       row.availability,
       Number(row.skillsCount),
       Number(row.interestsCount),
-      row.mediaRelease,
+      Number(row.requiredDocsCount),
+      Number(row.respondedDocsCount),
     );
     const completionPercentage = completionFromChecklist(checklist);
     return {

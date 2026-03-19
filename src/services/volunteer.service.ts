@@ -9,6 +9,13 @@ import { NotFoundError } from "@/utils/errors";
 import { sendWelcomeEmail } from "@/utils/server/email";
 import { generateSecurePassword, hashPassword } from "@/utils/server/password";
 
+import {
+  buildChecklist,
+  completionFromChecklist,
+  getOnboardingStatus,
+  type OnboardingStatus,
+} from "./onboarding.service";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -28,6 +35,7 @@ export type ListVolunteersResult = {
     volunteers: typeof volunteers.$inferSelect;
     users: typeof users.$inferSelect | null;
     totalHours: number;
+    completionPercentage: number;
   }[];
   total: number;
 };
@@ -107,6 +115,7 @@ export type GetVolunteerProfileResult = {
     rejectionReason: string | null;
     verifiedAt: Date | null;
   }[];
+  onboardingStatus: OnboardingStatus | null;
 };
 
 export type VolunteerProfileUpdateParams = {
@@ -164,6 +173,10 @@ export async function listVolunteers(
       volunteers: volunteers,
       users: users,
       totalHours: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)`,
+      skillsCount: sql<number>`(SELECT COUNT(*) FROM volunteer_skills WHERE volunteer_id = ${volunteers.id})`,
+      interestsCount: sql<number>`(SELECT COUNT(*) FROM volunteer_interests WHERE volunteer_id = ${volunteers.id})`,
+      requiredDocsCount: sql<number>`(SELECT COUNT(*) FROM onboarding_documents WHERE required = true AND is_active = true AND action_type != 'informational')`,
+      respondedDocsCount: sql<number>`(SELECT COUNT(*) FROM volunteer_document_signatures WHERE volunteer_id = ${volunteers.id} AND document_id IN (SELECT id FROM onboarding_documents WHERE required = true AND is_active = true AND action_type != 'informational'))`,
     })
     .from(volunteers)
     .leftJoin(users, eq(volunteers.userId, users.id))
@@ -188,11 +201,25 @@ export async function listVolunteers(
         .offset(offset)
         .orderBy(desc(volunteers.createdAt)));
 
-  const data = volunteerListRaw.map((row) => ({
-    volunteers: row.volunteers,
-    users: row.users,
-    totalHours: toNumber(row.totalHours),
-  }));
+  const data = volunteerListRaw.map((row) => {
+    const checklist = buildChecklist(
+      row.users?.phone,
+      row.users?.bio,
+      row.volunteers.availability,
+      Number(row.skillsCount),
+      Number(row.interestsCount),
+      Number(row.requiredDocsCount),
+      Number(row.respondedDocsCount),
+    );
+    const completionPercentage = completionFromChecklist(checklist);
+
+    return {
+      volunteers: row.volunteers,
+      users: row.users,
+      totalHours: toNumber(row.totalHours),
+      completionPercentage,
+    };
+  });
 
   // Build count query conditionally
   const countBaseQuery = db
@@ -300,10 +327,12 @@ export async function getVolunteerProfile(
   }
 
   const detailData = await fetchVolunteerDetailData(volunteerId);
+  const onboardingStatus = await getOnboardingStatus(volunteerId);
 
   return {
     volunteer: volunteer[0],
     ...detailData,
+    onboardingStatus,
   };
 }
 

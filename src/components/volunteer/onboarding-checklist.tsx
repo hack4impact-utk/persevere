@@ -14,6 +14,7 @@ import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
+import Link from "next/link";
 import { JSX } from "react";
 
 import { useOnboarding } from "@/hooks/use-onboarding";
@@ -22,6 +23,7 @@ type ChecklistItem = {
   key: string;
   label: string;
   done: boolean;
+  href: string;
 };
 
 export default function OnboardingChecklist(): JSX.Element {
@@ -48,26 +50,31 @@ export default function OnboardingChecklist(): JSX.Element {
       key: "profileFilled",
       label: "Complete your profile (phone & bio)",
       done: status.profileFilled,
+      href: "/volunteer/profile",
     },
     {
       key: "availabilitySet",
       label: "Set your availability",
       done: status.availabilitySet,
+      href: "/volunteer/profile",
     },
     {
       key: "skillsAdded",
       label: "Add at least one skill",
       done: status.skillsAdded,
+      href: "/volunteer/profile",
     },
     {
       key: "interestsAdded",
       label: "Add at least one interest",
       done: status.interestsAdded,
+      href: "/volunteer/profile",
     },
     {
-      key: "mediaReleaseSigned",
-      label: "Sign the media release consent",
-      done: status.mediaReleaseSigned,
+      key: "documentsCompleted",
+      label: "Complete onboarding documents",
+      done: status.documentsCompleted,
+      href: "/volunteer/onboarding",
     },
   ];
 
@@ -96,7 +103,18 @@ export default function OnboardingChecklist(): JSX.Element {
 
         <List dense disablePadding>
           {items.map((item) => (
-            <ListItem key={item.key} disableGutters>
+            <ListItem
+              key={item.key}
+              disableGutters
+              component={Link}
+              href={item.href}
+              sx={{
+                textDecoration: "none",
+                color: "inherit",
+                borderRadius: 1,
+                "&:hover": { bgcolor: "action.hover" },
+              }}
+            >
               <ListItemIcon sx={{ minWidth: 36 }}>
                 {item.done ? (
                   <CheckCircleIcon color="success" fontSize="small" />

@@ -94,7 +94,7 @@ export default function OnboardingList(): ReactElement {
                   <TableCell>Availability</TableCell>
                   <TableCell>Skills</TableCell>
                   <TableCell>Interests</TableCell>
-                  <TableCell>Media Release</TableCell>
+                  <TableCell>Documents</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -159,7 +159,7 @@ export default function OnboardingList(): ReactElement {
                       <StepIcon done={v.checklist.interestsAdded} />
                     </TableCell>
                     <TableCell>
-                      <StepIcon done={v.checklist.mediaReleaseSigned} />
+                      <StepIcon done={v.checklist.documentsCompleted} />
                     </TableCell>
                   </TableRow>
                 ))}
