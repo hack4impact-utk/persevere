@@ -4,7 +4,7 @@ import {
   signDocument,
   signDocumentSchema,
 } from "@/services/onboarding-documents.service";
-import { ConflictError, NotFoundError } from "@/utils/errors";
+import { ConflictError, NotFoundError, ValidationError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
 import { parseBodyOrError } from "@/utils/server/route-helpers";
@@ -24,7 +24,11 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    const signature = await signDocument(volunteerId, parsed.data.documentId);
+    const signature = await signDocument(
+      volunteerId,
+      parsed.data.documentId,
+      parsed.data.consentGiven,
+    );
 
     return NextResponse.json(
       { message: "Document signed successfully", data: signature },
@@ -37,6 +41,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
     if (error instanceof ConflictError) {
       return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }

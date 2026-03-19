@@ -94,14 +94,13 @@ export default function OnboardingList(): ReactElement {
                   <TableCell>Availability</TableCell>
                   <TableCell>Skills</TableCell>
                   <TableCell>Interests</TableCell>
-                  <TableCell>Media Release</TableCell>
                   <TableCell>Documents</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {volunteers.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={10} align="center">
+                    <TableCell colSpan={9} align="center">
                       <Typography
                         variant="body2"
                         color="text.secondary"
@@ -158,9 +157,6 @@ export default function OnboardingList(): ReactElement {
                     </TableCell>
                     <TableCell>
                       <StepIcon done={v.checklist.interestsAdded} />
-                    </TableCell>
-                    <TableCell>
-                      <StepIcon done={v.checklist.mediaReleaseSigned} />
                     </TableCell>
                     <TableCell>
                       <StepIcon done={v.checklist.documentsCompleted} />

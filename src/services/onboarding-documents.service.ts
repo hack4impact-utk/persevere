@@ -8,16 +8,24 @@ import {
   volunteerDocumentSignatures,
   volunteers,
 } from "@/db/schema";
-import { ConflictError, NotFoundError } from "@/utils/errors";
+import { ConflictError, NotFoundError, ValidationError } from "@/utils/errors";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
+export type DocumentType = "pdf" | "video" | "link";
+export type DocumentActionType =
+  | "sign"
+  | "consent"
+  | "acknowledge"
+  | "informational";
+
 export type OnboardingDocument = {
   id: number;
   title: string;
-  type: string;
+  type: DocumentType;
+  actionType: DocumentActionType;
   url: string;
   description: string | null;
   required: boolean;
@@ -30,39 +38,57 @@ export type OnboardingDocument = {
 export type DocumentSignature = {
   documentId: number;
   signedAt: Date;
+  consentGiven: boolean | null;
 };
 
 // ---------------------------------------------------------------------------
 // Validation schemas
 // ---------------------------------------------------------------------------
 
-export const createDocumentSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  type: z.enum(["pdf", "video", "link"], {
-    message: "Type must be pdf, video, or link",
-  }),
-  url: z.string().url("URL must be a valid URL"),
-  description: z.string().optional(),
-  required: z.boolean().default(false),
-  sortOrder: z.number().int().default(0),
-});
-
-export const updateDocumentSchema = z.object({
-  title: z.string().min(1, "Title is required").optional(),
-  type: z
-    .enum(["pdf", "video", "link"], {
+export const createDocumentSchema = z
+  .object({
+    title: z.string().min(1, "Title is required"),
+    type: z.enum(["pdf", "video", "link"], {
       message: "Type must be pdf, video, or link",
-    })
-    .optional(),
-  url: z.string().url("URL must be a valid URL").optional(),
-  description: z.string().optional(),
-  required: z.boolean().optional(),
-  sortOrder: z.number().int().optional(),
-  isActive: z.boolean().optional(),
-});
+    }),
+    actionType: z
+      .enum(["sign", "consent", "acknowledge", "informational"])
+      .default("sign"),
+    url: z.string().url("URL must be a valid URL"),
+    description: z.string().optional(),
+    required: z.boolean().default(false),
+    sortOrder: z.number().int().default(0),
+  })
+  .refine(
+    (data) => !(data.required === true && data.actionType === "informational"),
+    { message: "Informational documents cannot be marked as required" },
+  );
+
+export const updateDocumentSchema = z
+  .object({
+    title: z.string().min(1, "Title is required").optional(),
+    type: z
+      .enum(["pdf", "video", "link"], {
+        message: "Type must be pdf, video, or link",
+      })
+      .optional(),
+    actionType: z
+      .enum(["sign", "consent", "acknowledge", "informational"])
+      .optional(),
+    url: z.string().url("URL must be a valid URL").optional(),
+    description: z.string().optional(),
+    required: z.boolean().optional(),
+    sortOrder: z.number().int().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine(
+    (data) => !(data.required === true && data.actionType === "informational"),
+    { message: "Informational documents cannot be marked as required" },
+  );
 
 export const signDocumentSchema = z.object({
   documentId: z.number().int().positive("Document ID is required"),
+  consentGiven: z.boolean().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -78,18 +104,19 @@ function isVercelBlobUrl(url: string): boolean {
 // ---------------------------------------------------------------------------
 
 export async function listDocuments(): Promise<OnboardingDocument[]> {
-  return db
+  const rows = await db
     .select()
     .from(onboardingDocuments)
     .where(eq(onboardingDocuments.isActive, true))
     .orderBy(onboardingDocuments.sortOrder, onboardingDocuments.id);
+  return rows as unknown as OnboardingDocument[];
 }
 
 export async function createDocument(
   data: z.infer<typeof createDocumentSchema>,
 ): Promise<OnboardingDocument> {
   const [doc] = await db.insert(onboardingDocuments).values(data).returning();
-  return doc;
+  return doc as unknown as OnboardingDocument;
 }
 
 export async function updateDocument(
@@ -112,7 +139,20 @@ export async function updateDocument(
     .where(eq(onboardingDocuments.id, id))
     .returning();
 
-  return updated;
+  // Clean up old blob when the URL is replaced
+  if (
+    data.url &&
+    data.url !== existing[0].url &&
+    isVercelBlobUrl(existing[0].url)
+  ) {
+    try {
+      await del(existing[0].url);
+    } catch (error) {
+      console.error(`Failed to delete old blob for document ${id}:`, error);
+    }
+  }
+
+  return updated as unknown as OnboardingDocument;
 }
 
 export async function deleteDocument(id: number): Promise<void> {
@@ -131,13 +171,19 @@ export async function deleteDocument(id: number): Promise<void> {
   // Clean up Vercel Blob storage if the file was uploaded (not an external URL)
   const doc = existing[0];
   if (isVercelBlobUrl(doc.url)) {
-    await del(doc.url);
+    try {
+      await del(doc.url);
+    } catch (error) {
+      console.error(`Failed to delete blob for document ${id}:`, error);
+      // DB record is already deleted — log and continue
+    }
   }
 }
 
 export async function signDocument(
   volunteerId: number,
   documentId: number,
+  consentGiven?: boolean,
 ): Promise<DocumentSignature> {
   const volunteer = await db
     .select()
@@ -164,6 +210,20 @@ export async function signDocument(
     throw new NotFoundError("Document not found or inactive");
   }
 
+  const { actionType } = doc[0];
+
+  if (actionType === "informational") {
+    throw new ValidationError(
+      "Informational documents do not require a response",
+    );
+  }
+
+  if (actionType === "consent" && consentGiven === undefined) {
+    throw new ValidationError(
+      "Consent documents require a consentGiven value (true or false)",
+    );
+  }
+
   const existing = await db
     .select()
     .from(volunteerDocumentSignatures)
@@ -179,12 +239,19 @@ export async function signDocument(
     throw new ConflictError("Document already signed");
   }
 
+  const resolvedConsent =
+    actionType === "consent" ? (consentGiven ?? null) : null;
+
   const [signature] = await db
     .insert(volunteerDocumentSignatures)
-    .values({ volunteerId, documentId })
+    .values({ volunteerId, documentId, consentGiven: resolvedConsent })
     .returning();
 
-  return { documentId: signature.documentId, signedAt: signature.signedAt };
+  return {
+    documentId: signature.documentId,
+    signedAt: signature.signedAt,
+    consentGiven: signature.consentGiven ?? null,
+  };
 }
 
 export async function getVolunteerSignatures(
@@ -194,9 +261,14 @@ export async function getVolunteerSignatures(
     .select({
       documentId: volunteerDocumentSignatures.documentId,
       signedAt: volunteerDocumentSignatures.signedAt,
+      consentGiven: volunteerDocumentSignatures.consentGiven,
     })
     .from(volunteerDocumentSignatures)
     .where(eq(volunteerDocumentSignatures.volunteerId, volunteerId));
 
-  return rows.map((r) => ({ documentId: r.documentId, signedAt: r.signedAt }));
+  return rows.map((r) => ({
+    documentId: r.documentId,
+    signedAt: r.signedAt,
+    consentGiven: r.consentGiven ?? null,
+  }));
 }

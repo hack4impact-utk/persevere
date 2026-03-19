@@ -20,12 +20,13 @@ export type UseOnboardingDocumentsResult = {
   deleteDocument: (id: number) => Promise<void>;
   uploadFile: (file: File) => Promise<string>;
   // Volunteer mutation
-  signDocument: (documentId: number) => Promise<void>;
+  signDocument: (documentId: number, consentGiven?: boolean) => Promise<void>;
 };
 
 export type CreateDocumentInput = {
   title: string;
   type: "pdf" | "video" | "link";
+  actionType?: "sign" | "consent" | "acknowledge" | "informational";
   url: string;
   description?: string;
   required?: boolean;
@@ -61,6 +62,7 @@ export function useOnboardingDocuments(
   }, [handleApiError, documentsApiPath]);
 
   const fetchSignatures = useCallback(async (): Promise<void> => {
+    setError(null);
     try {
       const result = await apiClient.get<{ data: DocumentSignature[] }>(
         "/api/volunteer/onboarding/signatures",
@@ -107,25 +109,42 @@ export function useOnboardingDocuments(
     [refetch, handleApiError],
   );
 
-  const uploadFile = useCallback(async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    const result = await apiClient.postForm<{ url: string }>(
-      "/api/staff/onboarding/documents/upload",
-      formData,
-    );
-    return result.url;
-  }, []);
+  const uploadFile = useCallback(
+    async (file: File): Promise<string> => {
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const result = await apiClient.postForm<{ url: string }>(
+          "/api/staff/onboarding/documents/upload",
+          formData,
+        );
+        return result.url;
+      } catch (error_) {
+        if (handleApiError(error_, "Failed to upload file")) throw error_;
+        throw error_;
+      }
+    },
+    [handleApiError],
+  );
 
   const signDocument = useCallback(
-    async (documentId: number): Promise<void> => {
+    async (documentId: number, consentGiven?: boolean): Promise<void> => {
       try {
         await apiClient.post("/api/volunteer/onboarding/sign-document", {
           documentId,
+          ...(consentGiven !== undefined && { consentGiven }),
         });
-        void fetchSignatures();
+        try {
+          await fetchSignatures();
+        } catch (error_) {
+          console.error(
+            "Signature recorded but failed to refresh display:",
+            error_,
+          );
+        }
       } catch (error_) {
         if (handleApiError(error_, "Failed to sign document")) return;
+        throw error_;
       }
     },
     [fetchSignatures, handleApiError],

@@ -2,6 +2,10 @@ import { eq } from "drizzle-orm";
 
 import db from "@/db";
 import { users, volunteers } from "@/db/schema";
+import {
+  getOnboardingStatus,
+  type OnboardingStatus,
+} from "@/services/onboarding.service";
 import { fetchVolunteerDetailData } from "@/services/shared/volunteer-data";
 
 export type VolunteerDetail = {
@@ -41,6 +45,7 @@ export type VolunteerDetail = {
     rejectionReason: string | null;
     verifiedAt: Date | null;
   }[];
+  onboardingStatus: OnboardingStatus | null;
 };
 
 export type VolunteerDetailUpdateData = {
@@ -77,11 +82,13 @@ export async function getVolunteerDetail(
   if (volunteer.length === 0) return null;
 
   const detailData = await fetchVolunteerDetailData(volunteerId);
+  const onboardingStatus = await getOnboardingStatus(volunteerId);
 
   return {
     volunteers: volunteer[0].volunteers,
     users: volunteer[0].users,
     ...detailData,
+    onboardingStatus,
   };
 }
 

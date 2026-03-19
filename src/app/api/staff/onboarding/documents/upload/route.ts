@@ -33,6 +33,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ url: blob.url }, { status: 201 });
   } catch (error) {
     if (error instanceof AuthError) return authErrorResponse(error);
+    console.error("Upload error:", error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

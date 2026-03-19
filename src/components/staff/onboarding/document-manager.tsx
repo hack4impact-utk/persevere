@@ -1,8 +1,10 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+import LinkIcon from "@mui/icons-material/Link";
+import OndemandVideoIcon from "@mui/icons-material/OndemandVideo";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -14,17 +16,11 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import IconButton from "@mui/material/IconButton";
+import Grid from "@mui/material/Grid";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useSnackbar } from "notistack";
@@ -36,6 +32,8 @@ import {
   useState,
 } from "react";
 
+import { ModalTitleBar } from "@/components/shared";
+import OnboardingModuleCard from "@/components/shared/onboarding-module-card";
 import {
   type CreateDocumentInput,
   type OnboardingDocument,
@@ -44,10 +42,12 @@ import {
 } from "@/hooks/use-onboarding-documents";
 
 type SourceMode = "url" | "upload";
+type ActionType = "sign" | "consent" | "acknowledge" | "informational";
 
 type FormState = {
   title: string;
   type: "pdf" | "video" | "link";
+  actionType: ActionType;
   sourceMode: SourceMode;
   url: string;
   file: File | null;
@@ -59,6 +59,7 @@ type FormState = {
 const DEFAULT_FORM: FormState = {
   title: "",
   type: "link",
+  actionType: "sign",
   sourceMode: "url",
   url: "",
   file: null,
@@ -85,6 +86,9 @@ export default function DocumentManager(): JSX.Element {
   const [deleteTarget, setDeleteTarget] = useState<OnboardingDocument | null>(
     null,
   );
+  const [previewTarget, setPreviewTarget] = useState<OnboardingDocument | null>(
+    null,
+  );
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -100,6 +104,7 @@ export default function DocumentManager(): JSX.Element {
     setForm({
       title: doc.title,
       type: doc.type as "pdf" | "video" | "link",
+      actionType: (doc.actionType as ActionType) ?? "sign",
       sourceMode: "url",
       url: doc.url,
       file: null,
@@ -122,6 +127,12 @@ export default function DocumentManager(): JSX.Element {
     [],
   );
 
+  useEffect(() => {
+    if (form.actionType === "informational") {
+      setForm((prev) => ({ ...prev, required: false }));
+    }
+  }, [form.actionType]);
+
   const handleSave = useCallback(async (): Promise<void> => {
     if (!form.title.trim()) {
       enqueueSnackbar("Title is required", { variant: "error" });
@@ -138,7 +149,8 @@ export default function DocumentManager(): JSX.Element {
       setSaving(true);
       try {
         resolvedUrl = await uploadFile(form.file);
-      } catch {
+      } catch (error_) {
+        console.error("File upload failed:", error_);
         enqueueSnackbar("File upload failed", { variant: "error" });
         setSaving(false);
         return;
@@ -155,6 +167,7 @@ export default function DocumentManager(): JSX.Element {
       const payload: CreateDocumentInput = {
         title: form.title.trim(),
         type: form.type,
+        actionType: form.actionType,
         url: resolvedUrl,
         description: form.description.trim() || undefined,
         required: form.required,
@@ -171,7 +184,8 @@ export default function DocumentManager(): JSX.Element {
       }
 
       closeModal();
-    } catch {
+    } catch (error_) {
+      console.error("Document save failed:", error_);
       enqueueSnackbar(
         editTarget ? "Failed to update document" : "Failed to create document",
         { variant: "error" },
@@ -196,7 +210,8 @@ export default function DocumentManager(): JSX.Element {
       await deleteDocument(deleteTarget.id);
       enqueueSnackbar("Document deleted", { variant: "success" });
       setDeleteTarget(null);
-    } catch {
+    } catch (error_) {
+      console.error("Document delete failed:", error_);
       enqueueSnackbar("Failed to delete document", { variant: "error" });
     } finally {
       setDeleting(false);
@@ -224,12 +239,13 @@ export default function DocumentManager(): JSX.Element {
           onClick={openAdd}
           size="small"
         >
-          Add Document
+          Add Content
         </Button>
       </Box>
 
       <Typography color="text.secondary" mb={3} variant="body2">
-        Manage documents volunteers must review and sign during onboarding.
+        Manage onboarding content — documents to sign, consent forms,
+        acknowledgements, and informational resources.
       </Typography>
 
       {loading && (
@@ -241,70 +257,74 @@ export default function DocumentManager(): JSX.Element {
       {!loading && error && <Alert severity="error">{error}</Alert>}
 
       {!loading && !error && (
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Title</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Required</TableCell>
-                <TableCell>Sort Order</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {documents.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} align="center">
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ py: 2 }}
-                    >
-                      No documents yet. Add your first onboarding document.
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-              {documents.map((doc) => (
-                <TableRow key={doc.id} hover>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight={500}>
-                      {doc.title}
-                    </Typography>
-                    {doc.description && (
-                      <Typography variant="caption" color="text.secondary">
-                        {doc.description}
-                      </Typography>
+        <Grid container spacing={3} sx={{ mt: 1 }}>
+          {documents.length === 0 && (
+            <Grid size={{ xs: 12 }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ py: 4, textAlign: "center" }}
+              >
+                No documents yet. Add your first onboarding module.
+              </Typography>
+            </Grid>
+          )}
+          {documents.map((doc) => (
+            <Grid key={doc.id} size={{ xs: 12, sm: 6, md: 4 }}>
+              <OnboardingModuleCard
+                title={doc.title}
+                description={doc.description || undefined}
+                icon={
+                  doc.type === "pdf" ? (
+                    <PictureAsPdfIcon />
+                  ) : doc.type === "video" ? (
+                    <OndemandVideoIcon />
+                  ) : (
+                    <LinkIcon />
+                  )
+                }
+                onEdit={() => openEdit(doc)}
+                onClick={() => setPreviewTarget(doc)}
+                onDelete={() => setDeleteTarget(doc)}
+                statusNode={
+                  <Box display="flex" gap={1} mt={1}>
+                    {doc.required && (
+                      <Box
+                        component="span"
+                        sx={{
+                          fontSize: "0.7rem",
+                          px: 1,
+                          py: 0.25,
+                          bgcolor: "error.main",
+                          color: "error.contrastText",
+                          borderRadius: 1,
+                          fontWeight: 600,
+                        }}
+                      >
+                        REQUIRED
+                      </Box>
                     )}
-                  </TableCell>
-                  <TableCell>
-                    <Typography
-                      variant="body2"
-                      sx={{ textTransform: "uppercase", fontSize: "0.7rem" }}
+                    <Box
+                      component="span"
+                      sx={{
+                        fontSize: "0.7rem",
+                        px: 1,
+                        py: 0.25,
+                        bgcolor: "grey.200",
+                        color: "text.primary",
+                        borderRadius: 1,
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                      }}
                     >
-                      {doc.type}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{doc.required ? "Yes" : "No"}</TableCell>
-                  <TableCell>{doc.sortOrder}</TableCell>
-                  <TableCell align="right">
-                    <IconButton size="small" onClick={() => openEdit(doc)}>
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => setDeleteTarget(doc)}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                      {doc.actionType}
+                    </Box>
+                  </Box>
+                }
+              />
+            </Grid>
+          ))}
+        </Grid>
       )}
 
       {/* Add / Edit Modal */}
@@ -335,6 +355,26 @@ export default function DocumentManager(): JSX.Element {
                 <MenuItem value="pdf">PDF</MenuItem>
                 <MenuItem value="video">Video</MenuItem>
                 <MenuItem value="link">Link</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth size="small">
+              <InputLabel>Action Type</InputLabel>
+              <Select
+                value={form.actionType}
+                label="Action Type"
+                onChange={(e) =>
+                  setField("actionType", e.target.value as ActionType)
+                }
+              >
+                <MenuItem value="sign">Sign (formal agreement)</MenuItem>
+                <MenuItem value="consent">Consent (give/deny)</MenuItem>
+                <MenuItem value="acknowledge">
+                  Acknowledge (confirm reviewed)
+                </MenuItem>
+                <MenuItem value="informational">
+                  Informational (view only)
+                </MenuItem>
               </Select>
             </FormControl>
 
@@ -399,6 +439,7 @@ export default function DocumentManager(): JSX.Element {
                   <Checkbox
                     checked={form.required}
                     onChange={(e) => setField("required", e.target.checked)}
+                    disabled={form.actionType === "informational"}
                   />
                 }
                 label="Required"
@@ -451,6 +492,96 @@ export default function DocumentManager(): JSX.Element {
             {deleting ? "Deleting..." : "Delete"}
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Preview Modal */}
+      <Dialog
+        open={!!previewTarget}
+        onClose={() => setPreviewTarget(null)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <ModalTitleBar
+          title={previewTarget?.title || "Document Preview"}
+          onClose={() => setPreviewTarget(null)}
+        />
+        {previewTarget && (
+          <DialogContent
+            dividers
+            sx={
+              previewTarget.type === "link"
+                ? {}
+                : {
+                    p: 0,
+                    bgcolor:
+                      previewTarget.type === "video" ? "black" : "grey.100",
+                  }
+            }
+          >
+            {previewTarget.type === "pdf" && (
+              <Box sx={{ height: "80vh", width: "100%" }}>
+                <iframe
+                  src={previewTarget.url}
+                  title={previewTarget.title}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    border: "none",
+                    display: "block",
+                  }}
+                />
+              </Box>
+            )}
+
+            {previewTarget.type === "video" && (
+              <Box
+                sx={{
+                  height: "80vh",
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <video
+                  src={previewTarget.url}
+                  controls
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    display: "block",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                  }}
+                />
+              </Box>
+            )}
+
+            {previewTarget.type === "link" && (
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                gap={1.5}
+                py={4}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  This document opens in a new tab.
+                </Typography>
+                <Button
+                  variant="contained"
+                  size="large"
+                  endIcon={<OpenInNewIcon />}
+                  href={previewTarget.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  component="a"
+                >
+                  Open Link
+                </Button>
+              </Box>
+            )}
+          </DialogContent>
+        )}
       </Dialog>
     </Box>
   );

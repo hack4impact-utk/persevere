@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
   boolean,
+  index,
   integer,
   pgTable,
   primaryKey,
@@ -17,6 +18,7 @@ export const onboardingDocuments = pgTable("onboarding_documents", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   type: text("type").notNull(), // "pdf" | "video" | "link"
+  actionType: text("action_type").notNull().default("sign"), // "sign" | "consent" | "acknowledge" | "informational"
   url: text("url").notNull(), // Vercel Blob URL or external URL
   description: text("description"),
   required: boolean("required").notNull().default(false),
@@ -36,9 +38,11 @@ export const volunteerDocumentSignatures = pgTable(
       .notNull()
       .references(() => onboardingDocuments.id, { onDelete: "cascade" }),
     signedAt: timestamp("signed_at").defaultNow().notNull(),
+    consentGiven: boolean("consent_given"), // null for sign/acknowledge, true/false for consent
   },
   (t) => ({
     pk: primaryKey({ columns: [t.volunteerId, t.documentId] }),
+    documentIdIdx: index("vds_document_id_idx").on(t.documentId),
   }),
 );
 

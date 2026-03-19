@@ -23,6 +23,7 @@ export type Volunteer = {
   isAlumni?: boolean;
   totalHours?: number;
   profilePicture?: string | null;
+  completionPercentage: number;
 };
 
 export type VolunteersResponse = {
@@ -65,6 +66,7 @@ type APIVolunteerResponse = {
     profilePicture: string | null;
   };
   totalHours?: number;
+  completionPercentage: number;
 };
 
 /**
@@ -106,6 +108,7 @@ export async function fetchVolunteers(
       isAlumni: item.volunteers.isAlumni,
       totalHours: item.totalHours || 0,
       profilePicture: item.users.profilePicture,
+      completionPercentage: item.completionPercentage,
     })),
     total: data.total,
     page: filters.page || 1,
@@ -201,6 +204,16 @@ export type FetchVolunteerByIdResult = {
     rejectionReason: string | null;
     verifiedAt: Date | null;
   }[];
+  onboardingStatus?: {
+    profileFilled: boolean;
+    availabilitySet: boolean;
+    skillsAdded: boolean;
+    interestsAdded: boolean;
+    documentsCompleted: boolean;
+    completionPercentage: number;
+    onboardingComplete: boolean;
+    documentProgress: { responded: number; required: number };
+  } | null;
 };
 
 /**
