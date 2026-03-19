@@ -2,15 +2,94 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type {
   BulkCommunicationLog,
+  CommunicationFilters,
+  CommunicationResponse,
   CreateCommunicationRequest,
+  RecipientType,
 } from "@/components/staff/communications/types";
 import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { apiClient } from "@/lib/api-client";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
-import {
-  createCommunication as createCommunicationApi,
-  fetchCommunicationById,
-  fetchCommunications,
-} from "@/services/communications-client.service";
+
+async function fetchCommunications(
+  filters: CommunicationFilters = {},
+): Promise<CommunicationResponse> {
+  const searchParams = new URLSearchParams();
+
+  if (filters.search) searchParams.append("search", filters.search);
+  if (filters.page) searchParams.append("page", String(filters.page));
+  if (filters.limit) searchParams.append("limit", String(filters.limit));
+
+  const data = await apiClient.get<{
+    communications: {
+      id: number;
+      senderId: number;
+      subject: string;
+      body: string;
+      recipientType: string;
+      sentAt: string;
+      status: string;
+      sender: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        email: string;
+      };
+    }[];
+    total: number;
+    page: number;
+    limit: number;
+  }>(`/api/staff/communications?${searchParams.toString()}`);
+
+  return {
+    communications: data.communications.map((comm) => ({
+      ...comm,
+      recipientType: comm.recipientType as RecipientType,
+      sentAt: new Date(comm.sentAt),
+    })),
+    total: data.total,
+    page: data.page,
+    limit: data.limit,
+  };
+}
+
+async function fetchCommunicationById(
+  id: number,
+): Promise<BulkCommunicationLog> {
+  const data = await apiClient.get<{ communication: BulkCommunicationLog }>(
+    `/api/staff/communications/${id}`,
+  );
+  return {
+    ...data.communication,
+    sentAt: new Date(data.communication.sentAt),
+  };
+}
+
+async function createCommunication(
+  payload: CreateCommunicationRequest,
+): Promise<{
+  communication: BulkCommunicationLog;
+  emailSent?: boolean;
+  emailError?: boolean;
+  recipientCount?: number;
+}> {
+  const result = await apiClient.post<{
+    communication: BulkCommunicationLog;
+    emailSent?: boolean;
+    emailError?: boolean;
+    recipientCount?: number;
+  }>("/api/staff/communications", payload);
+
+  return {
+    communication: {
+      ...result.communication,
+      sentAt: new Date(result.communication.sentAt),
+    },
+    emailSent: result.emailSent,
+    emailError: result.emailError,
+    recipientCount: result.recipientCount,
+  };
+}
 
 export type UseCommunicationsResult = {
   communications: BulkCommunicationLog[];
@@ -99,7 +178,7 @@ export function useCommunications({
     } | null> => {
       setIsMutating(true);
       try {
-        const result = await createCommunicationApi(payload);
+        const result = await createCommunication(payload);
         void loadCommunications();
         return result;
       } catch (error_) {
