@@ -3,12 +3,8 @@
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import EditIcon from "@mui/icons-material/Edit";
-import EmailIcon from "@mui/icons-material/Email";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import LogoutIcon from "@mui/icons-material/Logout";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import PersonIcon from "@mui/icons-material/Person";
-import PhoneIcon from "@mui/icons-material/Phone";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import {
   Avatar,
@@ -17,36 +13,32 @@ import {
   Card,
   CardContent,
   Chip,
+  Divider,
   Grid,
+  Skeleton,
+  Stack,
   Typography,
 } from "@mui/material";
 import { useSession } from "next-auth/react";
 import { useSnackbar } from "notistack";
 import { JSX, useEffect, useState } from "react";
 
-import { LoadingSkeleton } from "@/components/ui";
-import type { AvailabilityData } from "@/components/volunteer/availability-editor";
+import { DetailField } from "@/components/shared";
+import type {
+  AvailabilityData,
+  Day,
+} from "@/components/volunteer/availability-editor";
 import ProfileEditForm from "@/components/volunteer/profile-edit-form";
 import { useSignOut } from "@/hooks/use-auth";
 import { useVolunteerProfile } from "@/hooks/use-volunteer-profile";
 
-function formatTime(hhmm: string): string {
-  const parts = hhmm.split(":");
-  const h = Number(parts[0]);
-  const m = Number(parts[1]);
-  if (Number.isNaN(h) || Number.isNaN(m)) {
-    console.error("[formatTime] Invalid time string:", hhmm);
-    return hhmm;
-  }
-  const period = h < 12 ? "AM" : "PM";
-  const hour = h % 12 || 12;
-  return m === 0
-    ? `${hour} ${period}`
-    : `${hour}:${m.toString().padStart(2, "0")} ${period}`;
-}
-
 function initials(first?: string | null, last?: string | null): string {
   return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase() || "?";
+}
+
+function parseHMM(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return (h || 0) + (m || 0) / 60;
 }
 
 type SectionCardProps = {
@@ -62,7 +54,7 @@ function SectionCard({ icon, title, children }: SectionCardProps): JSX.Element {
       sx={{
         border: "1px solid",
         borderColor: "grey.200",
-        borderRadius: 3,
+        borderRadius: 2,
         height: "100%",
       }}
     >
@@ -95,6 +87,138 @@ function SectionCard({ icon, title, children }: SectionCardProps): JSX.Element {
         {children}
       </CardContent>
     </Card>
+  );
+}
+
+function SidebarCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}): JSX.Element {
+  return (
+    <Box>
+      <Typography
+        variant="caption"
+        fontWeight={700}
+        letterSpacing={0.8}
+        color="text.secondary"
+        sx={{ textTransform: "uppercase", display: "block", mb: 1.5 }}
+      >
+        {title}
+      </Typography>
+      {children}
+    </Box>
+  );
+}
+
+function AvailabilityGrid({
+  availability,
+}: {
+  availability: AvailabilityData | null | undefined;
+}): JSX.Element {
+  const DAYS: Day[] = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+  ];
+  const SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const DISPLAY_START = 6;
+  const DISPLAY_SPAN = 18;
+
+  const hasAny = DAYS.some((d) => (availability?.[d]?.length ?? 0) > 0);
+  if (!hasAny) {
+    return (
+      <Typography variant="body2" color="text.disabled">
+        No availability set — click &quot;Edit profile&quot; to add your
+        schedule.
+      </Typography>
+    );
+  }
+
+  return (
+    <Box>
+      <Box display="grid" sx={{ gridTemplateColumns: "repeat(7, 1fr)", mb: 1 }}>
+        {SHORT.map((label) => (
+          <Typography
+            key={label}
+            variant="caption"
+            fontWeight={700}
+            color="text.secondary"
+            sx={{
+              textAlign: "center",
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+              fontSize: "0.65rem",
+            }}
+          >
+            {label}
+          </Typography>
+        ))}
+      </Box>
+      <Box
+        display="grid"
+        sx={{ gridTemplateColumns: "repeat(7, 1fr)", gap: "4px" }}
+      >
+        {DAYS.map((day) => {
+          const ranges = availability?.[day] ?? [];
+          return (
+            <Box
+              key={day}
+              sx={{
+                height: 120,
+                bgcolor: "grey.50",
+                borderRadius: 1,
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {ranges.map((r, i) => {
+                const sh = parseHMM(r.start);
+                const eh = parseHMM(r.end);
+                const top =
+                  Math.max(0, (sh - DISPLAY_START) / DISPLAY_SPAN) * 100;
+                const height = Math.min(
+                  100 - top,
+                  ((eh - sh) / DISPLAY_SPAN) * 100,
+                );
+                return (
+                  <Box
+                    key={i}
+                    sx={{
+                      position: "absolute",
+                      top: `${top}%`,
+                      height: `${height}%`,
+                      left: 0,
+                      right: 0,
+                      bgcolor: "primary.main",
+                      opacity: 0.75,
+                      borderRadius: 0.5,
+                    }}
+                  />
+                );
+              })}
+            </Box>
+          );
+        })}
+      </Box>
+      <Box display="flex" justifyContent="space-between" mt={0.5}>
+        <Typography variant="caption" color="text.disabled" fontSize="0.6rem">
+          6 AM
+        </Typography>
+        <Typography variant="caption" color="text.disabled" fontSize="0.6rem">
+          12 PM
+        </Typography>
+        <Typography variant="caption" color="text.disabled" fontSize="0.6rem">
+          12 AM
+        </Typography>
+      </Box>
+    </Box>
   );
 }
 
@@ -144,8 +268,165 @@ export default function VolunteerProfilePage(): JSX.Element {
 
   if (!session || loading) {
     return (
-      <Box sx={{ p: 4, maxWidth: 860, mx: "auto" }}>
-        <LoadingSkeleton variant="lines" count={8} />
+      <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+        <Box sx={{ px: 3, pt: 1, pb: 4 }}>
+          {/* Hero card skeleton */}
+          <Card
+            elevation={0}
+            sx={{
+              border: "1px solid",
+              borderColor: "grey.200",
+              borderRadius: 2,
+              overflow: "hidden",
+              mb: 3,
+            }}
+          >
+            <Skeleton variant="rectangular" height={120} />
+            <CardContent sx={{ pt: 0, px: { xs: 2.5, md: 3.5 }, pb: 3 }}>
+              <Box sx={{ mt: -6, mb: 1.5 }}>
+                <Skeleton
+                  variant="circular"
+                  width={96}
+                  height={96}
+                  sx={{ border: "4px solid white" }}
+                />
+              </Box>
+              <Skeleton
+                variant="text"
+                width={200}
+                height={40}
+                sx={{ mb: 1.5 }}
+              />
+              <Box display="flex" gap={1}>
+                <Skeleton variant="rounded" width={80} height={24} />
+                <Skeleton variant="rounded" width={110} height={24} />
+                <Skeleton variant="rounded" width={80} height={24} />
+                <Skeleton variant="rounded" width={100} height={24} />
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Three-zone skeleton */}
+          <Grid container spacing={3}>
+            {/* Sidebar */}
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Card
+                elevation={0}
+                sx={{
+                  border: "1px solid",
+                  borderColor: "grey.200",
+                  borderRadius: 2,
+                  height: "100%",
+                }}
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Skeleton
+                    variant="text"
+                    width="50%"
+                    height={18}
+                    sx={{ mb: 1.5 }}
+                  />
+                  <Skeleton variant="text" width="85%" height={18} />
+                  <Skeleton
+                    variant="text"
+                    width="70%"
+                    height={18}
+                    sx={{ mb: 2 }}
+                  />
+                  <Divider sx={{ my: 2 }} />
+                  <Skeleton
+                    variant="text"
+                    width="55%"
+                    height={18}
+                    sx={{ mb: 1.5 }}
+                  />
+                  <Skeleton variant="rounded" width={140} height={20} />
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Main section cards */}
+            <Grid size={{ xs: 12, md: 8 }}>
+              <Stack spacing={3}>
+                {/* Availability card */}
+                <Card
+                  elevation={0}
+                  sx={{
+                    border: "1px solid",
+                    borderColor: "grey.200",
+                    borderRadius: 2,
+                  }}
+                >
+                  <CardContent sx={{ p: 3 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2.5}>
+                      <Skeleton variant="rounded" width={32} height={32} />
+                      <Skeleton variant="text" width={160} height={18} />
+                    </Box>
+                    <Skeleton
+                      variant="rectangular"
+                      height={120}
+                      sx={{ borderRadius: 1 }}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Skills card */}
+                <Card
+                  elevation={0}
+                  sx={{
+                    border: "1px solid",
+                    borderColor: "grey.200",
+                    borderRadius: 2,
+                  }}
+                >
+                  <CardContent sx={{ p: 3 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2.5}>
+                      <Skeleton variant="rounded" width={32} height={32} />
+                      <Skeleton variant="text" width={80} height={18} />
+                    </Box>
+                    <Box display="flex" gap={1} flexWrap="wrap">
+                      {[90, 110, 75, 120, 85].map((w, i) => (
+                        <Skeleton
+                          key={i}
+                          variant="rounded"
+                          width={w}
+                          height={28}
+                        />
+                      ))}
+                    </Box>
+                  </CardContent>
+                </Card>
+
+                {/* Interests card */}
+                <Card
+                  elevation={0}
+                  sx={{
+                    border: "1px solid",
+                    borderColor: "grey.200",
+                    borderRadius: 2,
+                  }}
+                >
+                  <CardContent sx={{ p: 3 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={2.5}>
+                      <Skeleton variant="rounded" width={32} height={32} />
+                      <Skeleton variant="text" width={90} height={18} />
+                    </Box>
+                    <Box display="flex" gap={1} flexWrap="wrap">
+                      {[100, 85, 115, 95].map((w, i) => (
+                        <Skeleton
+                          key={i}
+                          variant="rounded"
+                          width={w}
+                          height={28}
+                        />
+                      ))}
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Stack>
+            </Grid>
+          </Grid>
+        </Box>
       </Box>
     );
   }
@@ -181,116 +462,95 @@ export default function VolunteerProfilePage(): JSX.Element {
     ? vol.volunteerType.charAt(0).toUpperCase() + vol.volunteerType.slice(1)
     : "Volunteer";
 
-  const DAY_ORDER = [
-    "sunday",
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-  ];
-  const availabilityEntries = Object.entries(vol.availability ?? {})
-    .filter(([, ranges]) => Array.isArray(ranges) && ranges.length > 0)
-    .sort(([a], [b]) => DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b));
-
   return (
     <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-      <Box sx={{ maxWidth: 860, mx: "auto", px: 3, pt: 1, pb: 4 }}>
-        {/* ── Hero header ─────────────────────────────────────── */}
+      <Box sx={{ px: 3, pt: 1, pb: 4 }}>
+        {/* ── Hero banner ─────────────────────────────────────── */}
         <Card
           elevation={0}
           sx={{
             border: "1px solid",
             borderColor: "grey.200",
-            borderRadius: 3,
-            mb: 3,
+            borderRadius: 2,
             overflow: "hidden",
+            mb: 3,
           }}
         >
-          {/* Accent strip */}
+          {/* Gradient band */}
           <Box
             sx={{
-              height: 6,
-              background: "linear-gradient(90deg, #111 0%, #555 100%)",
+              height: 120,
+              background: "linear-gradient(135deg, #327bf7 0%, #1a4db5 100%)",
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "flex-end",
+              p: 2,
             }}
-          />
-
-          <CardContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
-            <Box
-              display="flex"
-              alignItems={{ xs: "flex-start", sm: "center" }}
-              gap={3}
-              flexDirection={{ xs: "column", sm: "row" }}
-            >
-              {/* Avatar */}
-              <Avatar
-                src={user.profilePicture || undefined}
-                alt={fullName}
+          >
+            {!editMode && (
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<EditIcon />}
                 sx={{
-                  width: 80,
-                  height: 80,
-                  bgcolor: "grey.800",
-                  fontSize: "1.6rem",
+                  bgcolor: "rgba(255,255,255,0.15)",
+                  "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
+                  color: "white",
+                  backdropFilter: "blur(4px)",
+                }}
+                onClick={() => setEditMode(true)}
+              >
+                Edit profile
+              </Button>
+            )}
+          </Box>
+
+          <CardContent sx={{ pt: 0, px: { xs: 2.5, md: 3.5 }, pb: 3 }}>
+            <Box sx={{ mt: -6, mb: 1.5 }}>
+              <Avatar
+                sx={{
+                  width: 96,
+                  height: 96,
+                  bgcolor: "primary.dark",
+                  fontSize: "2rem",
                   fontWeight: 700,
-                  flexShrink: 0,
+                  border: "4px solid white",
                 }}
               >
                 {initials(user.firstName, user.lastName)}
               </Avatar>
-
-              {/* Name + meta */}
-              <Box flex={1} minWidth={0}>
-                <Typography
-                  variant="h5"
-                  fontWeight={700}
-                  lineHeight={1.2}
-                  noWrap
-                >
-                  {fullName || "—"}
-                </Typography>
-                <Box display="flex" gap={1} flexWrap="wrap" mt={1}>
-                  <Chip
-                    label={volunteerTypeDisplay}
-                    size="small"
-                    sx={{
-                      bgcolor: "grey.900",
-                      color: "white",
-                      fontWeight: 600,
-                      fontSize: "0.7rem",
-                      height: 22,
-                    }}
-                  />
-                  <Chip
-                    icon={
-                      <AccessTimeIcon sx={{ fontSize: "0.85rem !important" }} />
-                    }
-                    label={`${totalHours} hrs volunteered`}
-                    size="small"
-                    variant="outlined"
-                    sx={{ fontWeight: 600, fontSize: "0.7rem", height: 22 }}
-                  />
-                </Box>
-              </Box>
-
-              {/* Edit button */}
-              {!editMode && (
-                <Button
-                  variant="outlined"
-                  startIcon={<EditIcon />}
-                  onClick={() => setEditMode(true)}
-                  size="small"
-                  sx={{
-                    borderColor: "grey.300",
-                    color: "text.primary",
-                    fontWeight: 600,
-                    flexShrink: 0,
-                    "&:hover": { borderColor: "grey.600", bgcolor: "grey.50" },
-                  }}
-                >
-                  Edit profile
-                </Button>
-              )}
+            </Box>
+            <Typography variant="h5" fontWeight={700} mb={1.5}>
+              {fullName || "—"}
+            </Typography>
+            <Box display="flex" flexWrap="wrap" gap={1}>
+              <Chip
+                label={volunteerTypeDisplay}
+                size="small"
+                sx={{
+                  bgcolor: "primary.main",
+                  color: "white",
+                  fontWeight: 600,
+                }}
+              />
+              <Chip
+                icon={<AccessTimeIcon />}
+                label={`${totalHours.toFixed(2)} hrs`}
+                size="small"
+                variant="outlined"
+              />
+              <Chip
+                icon={<PsychologyIcon />}
+                label={`${skills.length} skills`}
+                size="small"
+                variant="outlined"
+              />
+              <Chip
+                icon={<FavoriteBorderIcon />}
+                label={`${interests.length} interests`}
+                size="small"
+                variant="outlined"
+              />
             </Box>
           </CardContent>
         </Card>
@@ -302,7 +562,7 @@ export default function VolunteerProfilePage(): JSX.Element {
             sx={{
               border: "1px solid",
               borderColor: "grey.200",
-              borderRadius: 3,
+              borderRadius: 2,
             }}
           >
             <CardContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
@@ -325,199 +585,136 @@ export default function VolunteerProfilePage(): JSX.Element {
             </CardContent>
           </Card>
         ) : (
-          /* ── View mode grid ──────────────────────────────────── */
-          <Grid container spacing={2.5}>
-            {/* Contact */}
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <SectionCard
-                icon={<PersonIcon sx={{ fontSize: 18 }} />}
-                title="Contact"
+          /* ── Three-zone view ─────────────────────────────────── */
+          <Grid container spacing={3}>
+            {/* Sidebar */}
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Card
+                elevation={0}
+                sx={{
+                  border: "1px solid",
+                  borderColor: "grey.200",
+                  borderRadius: 2,
+                  height: "100%",
+                }}
               >
-                <Box display="flex" flexDirection="column" gap={1.5}>
-                  <Box display="flex" alignItems="center" gap={1.5}>
-                    <EmailIcon sx={{ fontSize: 18, color: "text.disabled" }} />
-                    <Typography variant="body2" color="text.primary">
-                      {user.email}
-                    </Typography>
-                  </Box>
-                  {user.phone ? (
-                    <Box display="flex" alignItems="center" gap={1.5}>
-                      <PhoneIcon
-                        sx={{ fontSize: 18, color: "text.disabled" }}
-                      />
-                      <Typography variant="body2">{user.phone}</Typography>
-                    </Box>
-                  ) : (
-                    <Typography variant="body2" color="text.disabled">
-                      No phone number added
-                    </Typography>
-                  )}
-                </Box>
-              </SectionCard>
-            </Grid>
+                <CardContent sx={{ p: 3 }}>
+                  <Stack spacing={3} divider={<Divider />}>
+                    <SidebarCard title="Contact">
+                      <Stack spacing={2}>
+                        <DetailField label="Email" value={user.email} />
+                        <DetailField label="Phone" value={user.phone ?? "—"} />
+                      </Stack>
+                    </SidebarCard>
 
-            {/* Notifications */}
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <SectionCard
-                icon={<NotificationsIcon sx={{ fontSize: 18 }} />}
-                title="Notifications"
-              >
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Box
-                    sx={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      bgcolor:
-                        vol.notificationPreference === "none"
-                          ? "grey.400"
-                          : "success.main",
-                    }}
-                  />
-                  <Typography variant="body2">
-                    {vol.notificationPreference === "none"
-                      ? "Notifications off"
-                      : "Email notifications on"}
-                  </Typography>
-                </Box>
-              </SectionCard>
-            </Grid>
-
-            {/* Bio — full width if present */}
-            {user.bio && (
-              <Grid size={12}>
-                <SectionCard
-                  icon={<PersonIcon sx={{ fontSize: 18 }} />}
-                  title="About Me"
-                >
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ lineHeight: 1.75 }}
-                  >
-                    {user.bio}
-                  </Typography>
-                </SectionCard>
-              </Grid>
-            )}
-
-            {/* Availability */}
-            <Grid size={12}>
-              <SectionCard
-                icon={<CalendarMonthIcon sx={{ fontSize: 18 }} />}
-                title="Weekly Availability"
-              >
-                {availabilityEntries.length === 0 ? (
-                  <Typography variant="body2" color="text.disabled">
-                    No availability set — click &quot;Edit profile&quot; to add
-                    your schedule.
-                  </Typography>
-                ) : (
-                  <Box>
-                    {availabilityEntries.map(([day, ranges], index) => (
-                      <Box
-                        key={day}
-                        display="flex"
-                        alignItems="center"
-                        gap={2.5}
-                        py={1.25}
-                        sx={
-                          index < availabilityEntries.length - 1
-                            ? {
-                                borderBottom: "1px solid",
-                                borderColor: "grey.100",
-                              }
-                            : {}
-                        }
-                      >
-                        <Typography
-                          variant="caption"
-                          fontWeight={700}
-                          letterSpacing={0.8}
+                    <SidebarCard title="Notifications">
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Box
                           sx={{
-                            textTransform: "uppercase",
-                            color: "text.secondary",
-                            minWidth: 32,
-                            flexShrink: 0,
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            bgcolor:
+                              vol.notificationPreference === "none"
+                                ? "grey.400"
+                                : "success.main",
                           }}
-                        >
-                          {day.slice(0, 3)}
+                        />
+                        <Typography variant="body2">
+                          {vol.notificationPreference === "none"
+                            ? "Notifications off"
+                            : "Email notifications on"}
                         </Typography>
-                        <Box display="flex" flexWrap="wrap" gap={1.5}>
-                          {ranges.map((r, i) => (
-                            <Typography
-                              key={i}
-                              variant="body2"
-                              fontWeight={500}
-                              color="text.primary"
-                            >
-                              {formatTime(r.start)} – {formatTime(r.end)}
-                            </Typography>
-                          ))}
-                        </Box>
                       </Box>
-                    ))}
-                  </Box>
-                )}
-              </SectionCard>
+                    </SidebarCard>
+
+                    {user.bio && (
+                      <SidebarCard title="About Me">
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ lineHeight: 1.75 }}
+                        >
+                          {user.bio}
+                        </Typography>
+                      </SidebarCard>
+                    )}
+                  </Stack>
+                </CardContent>
+              </Card>
             </Grid>
 
-            {/* Skills */}
-            <Grid size={12}>
-              <SectionCard
-                icon={<PsychologyIcon sx={{ fontSize: 18 }} />}
-                title="Skills"
-              >
-                {skills.length === 0 ? (
-                  <Typography variant="body2" color="text.disabled">
-                    No skills added — click &quot;Edit profile&quot; to add your
-                    skills.
-                  </Typography>
-                ) : (
-                  <Box display="flex" flexWrap="wrap" gap={1}>
-                    {skills.map((skill) => (
-                      <Chip
-                        key={skill.skillId}
-                        label={skill.skillName ?? "Unknown"}
-                        size="small"
-                        sx={{
-                          bgcolor: "grey.900",
-                          color: "white",
-                          fontWeight: 600,
-                          fontSize: "0.75rem",
-                        }}
-                      />
-                    ))}
-                  </Box>
-                )}
-              </SectionCard>
-            </Grid>
+            {/* Main content */}
+            <Grid size={{ xs: 12, md: 8 }}>
+              <Stack spacing={3}>
+                {/* Availability */}
+                <SectionCard
+                  icon={<CalendarMonthIcon sx={{ fontSize: 18 }} />}
+                  title="Weekly Availability"
+                >
+                  <AvailabilityGrid availability={vol.availability} />
+                </SectionCard>
 
-            {/* Interests */}
-            <Grid size={12}>
-              <SectionCard
-                icon={<FavoriteBorderIcon sx={{ fontSize: 18 }} />}
-                title="Interests"
-              >
-                {interests.length === 0 ? (
-                  <Typography variant="body2" color="text.disabled">
-                    No interests added — click &quot;Edit profile&quot; to add
-                    your interests.
-                  </Typography>
-                ) : (
-                  <Box display="flex" flexWrap="wrap" gap={1}>
-                    {interests.map((interest) => (
-                      <Chip
-                        key={interest.interestId}
-                        label={interest.interestName ?? "Unknown"}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontWeight: 500, fontSize: "0.75rem" }}
-                      />
-                    ))}
-                  </Box>
-                )}
-              </SectionCard>
+                {/* Skills */}
+                <SectionCard
+                  icon={<PsychologyIcon sx={{ fontSize: 18 }} />}
+                  title="Skills"
+                >
+                  {skills.length === 0 ? (
+                    <Typography variant="body2" color="text.disabled">
+                      No skills added — click &quot;Edit profile&quot; to add
+                      your skills.
+                    </Typography>
+                  ) : (
+                    <Box display="flex" flexWrap="wrap" gap={1}>
+                      {skills.map((skill) => (
+                        <Chip
+                          key={skill.skillId}
+                          label={skill.skillName ?? "Unknown"}
+                          sx={{
+                            bgcolor: "rgba(50, 123, 247, 0.08)",
+                            color: "primary.dark",
+                            fontWeight: 500,
+                            fontSize: "0.8rem",
+                            height: 28,
+                            border: "1px solid rgba(50, 123, 247, 0.2)",
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  )}
+                </SectionCard>
+
+                {/* Interests */}
+                <SectionCard
+                  icon={<FavoriteBorderIcon sx={{ fontSize: 18 }} />}
+                  title="Interests"
+                >
+                  {interests.length === 0 ? (
+                    <Typography variant="body2" color="text.disabled">
+                      No interests added — click &quot;Edit profile&quot; to add
+                      your interests.
+                    </Typography>
+                  ) : (
+                    <Box display="flex" flexWrap="wrap" gap={1}>
+                      {interests.map((interest) => (
+                        <Chip
+                          key={interest.interestId}
+                          label={interest.interestName ?? "Unknown"}
+                          sx={{
+                            bgcolor: "rgba(50, 123, 247, 0.08)",
+                            color: "primary.dark",
+                            fontWeight: 500,
+                            fontSize: "0.8rem",
+                            height: 28,
+                            border: "1px solid rgba(50, 123, 247, 0.2)",
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  )}
+                </SectionCard>
+              </Stack>
             </Grid>
           </Grid>
         )}

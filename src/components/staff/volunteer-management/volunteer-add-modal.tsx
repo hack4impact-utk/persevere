@@ -240,17 +240,7 @@ export default function AddVolunteerModal({
   );
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      fullWidth
-      maxWidth="sm"
-      PaperProps={{
-        sx: {
-          borderRadius: 2,
-        },
-      }}
-    >
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <form onSubmit={handleSubmit} noValidate>
         <DialogTitle
           sx={{
@@ -442,7 +432,7 @@ export default function AddVolunteerModal({
 
         <Divider />
 
-        <DialogActions sx={{ px: 3, py: 2.5, gap: 1.5 }}>
+        <DialogActions sx={{ py: 2.5, gap: 1.5 }}>
           <Button
             onClick={onClose}
             disabled={submitting}
@@ -473,11 +463,6 @@ export default function AddVolunteerModal({
         }}
         maxWidth="sm"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-          },
-        }}
       >
         <DialogTitle
           sx={{
@@ -606,7 +591,7 @@ export default function AddVolunteerModal({
 
         <Divider />
 
-        <DialogActions sx={{ px: 3, py: 2.5 }}>
+        <DialogActions sx={{ py: 2.5 }}>
           <Button
             onClick={() => {
               setSuccessDialogOpen(false);

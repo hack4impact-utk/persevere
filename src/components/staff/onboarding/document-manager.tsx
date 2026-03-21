@@ -32,7 +32,7 @@ import {
   useState,
 } from "react";
 
-import { ModalTitleBar } from "@/components/shared";
+import { ConfirmDialog, ModalTitleBar } from "@/components/shared";
 import OnboardingModuleCard from "@/components/shared/onboarding-module-card";
 import {
   type CreateDocumentInput,
@@ -465,34 +465,16 @@ export default function DocumentManager(): JSX.Element {
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation */}
-      <Dialog
+      <ConfirmDialog
         open={!!deleteTarget}
+        title="Delete Document"
+        message={`Are you sure you want to delete "${deleteTarget?.title}"? This will also remove all volunteer signatures for this document.`}
+        confirmLabel="Delete"
+        confirmColor="error"
+        loading={deleting}
+        onConfirm={handleDelete}
         onClose={() => setDeleteTarget(null)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>Delete Document</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete &quot;{deleteTarget?.title}&quot;?
-            This will also remove all volunteer signatures for this document.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteTarget(null)} disabled={deleting}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleDelete}
-            disabled={deleting}
-          >
-            {deleting ? "Deleting..." : "Delete"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
 
       {/* Preview Modal */}
       <Dialog

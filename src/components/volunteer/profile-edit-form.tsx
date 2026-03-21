@@ -1,11 +1,18 @@
 "use client";
 
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import PersonIcon from "@mui/icons-material/Person";
+import PsychologyIcon from "@mui/icons-material/Psychology";
 import {
   Autocomplete,
   Box,
   Button,
+  Card,
+  CardContent,
   CircularProgress,
+  Divider,
   FormControlLabel,
+  Grid,
   Stack,
   Switch,
   TextField,
@@ -67,6 +74,59 @@ function SectionLabel({ children }: { children: string }): JSX.Element {
     >
       {children}
     </Typography>
+  );
+}
+
+type FormSectionCardProps = {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+};
+
+function FormSectionCard({
+  icon,
+  title,
+  children,
+}: FormSectionCardProps): JSX.Element {
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        border: "1px solid",
+        borderColor: "grey.200",
+        borderRadius: 2,
+        height: "100%",
+      }}
+    >
+      <CardContent sx={{ p: 3 }}>
+        <Box display="flex" alignItems="center" gap={1} mb={2.5}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 32,
+              height: 32,
+              borderRadius: 1.5,
+              bgcolor: "grey.100",
+              color: "text.secondary",
+            }}
+          >
+            {icon}
+          </Box>
+          <Typography
+            variant="caption"
+            fontWeight={700}
+            letterSpacing={0.8}
+            color="text.secondary"
+            sx={{ textTransform: "uppercase" }}
+          >
+            {title}
+          </Typography>
+        </Box>
+        {children}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -220,164 +280,184 @@ export default function ProfileEditForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      <Stack spacing={4} sx={{ maxWidth: 560, mx: "auto" }}>
-        {/* ── Contact ──────────────────────────────────── */}
-        <Box>
-          <SectionLabel>Contact</SectionLabel>
-          <TextField
-            label="Phone Number"
-            value={formData.phone || ""}
-            onChange={(e) =>
-              setFormData({ ...formData, phone: e.target.value })
-            }
-            fullWidth
-            placeholder="(555) 123-4567"
-            disabled={isSaving}
-            size="small"
-          />
-        </Box>
-
-        {/* ── About ────────────────────────────────────── */}
-        <Box>
-          <SectionLabel>About Me</SectionLabel>
-          <TextField
-            label="Bio"
-            value={formData.bio || ""}
-            onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-            fullWidth
-            multiline
-            rows={3}
-            placeholder="Tell us about yourself..."
-            disabled={isSaving}
-            size="small"
-          />
-        </Box>
-
-        {/* ── Notifications ────────────────────────────── */}
-        <Box>
-          <SectionLabel>Notifications</SectionLabel>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.notificationPreference !== "none"}
+      <Stack spacing={4}>
+        {/* ── Two-column grid ──────────────────────────── */}
+        <Grid container spacing={3} alignItems="flex-start">
+          {/* Left: Contact + Notifications + About */}
+          <Grid size={{ xs: 12, md: 5 }}>
+            <FormSectionCard
+              icon={<PersonIcon fontSize="small" />}
+              title="Profile Details"
+            >
+              <SectionLabel>Contact</SectionLabel>
+              <TextField
+                label="Phone Number"
+                value={formData.phone || ""}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    notificationPreference: e.target.checked ? "email" : "none",
-                  })
+                  setFormData({ ...formData, phone: e.target.value })
                 }
+                fullWidth
+                placeholder="(555) 123-4567"
                 disabled={isSaving}
+                size="small"
               />
-            }
-            label="Email notifications"
-          />
-        </Box>
 
-        {/* ── Skills ───────────────────────────────────── */}
-        <Box>
-          <SectionLabel>Skills</SectionLabel>
-          {isLoadingSkills ? (
-            <Box display="flex" justifyContent="center" py={2}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : (
-            <Stack spacing={2}>
-              <Autocomplete
-                multiple
-                options={catalogSkills}
-                getOptionLabel={(option) => option.name}
-                value={catalogSkills.filter(
-                  (s) => skillSelections[s.id]?.checked,
-                )}
-                onChange={(_, newValue) => {
-                  setSkillSelections((prev) => {
-                    const updated = { ...prev };
-                    for (const skill of catalogSkills) {
-                      const isSelected = newValue.some(
-                        (s) => s.id === skill.id,
-                      );
-                      updated[skill.id] = {
-                        checked: isSelected,
-                        level: updated[skill.id]?.level ?? "no_selection",
-                      };
+              <Divider sx={{ my: 2.5 }} />
+
+              <SectionLabel>Notifications</SectionLabel>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.notificationPreference !== "none"}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        notificationPreference: e.target.checked
+                          ? "email"
+                          : "none",
+                      })
                     }
-                    return updated;
-                  });
-                }}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                disabled={isSaving}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Search and select skills"
-                    size="small"
-                    placeholder={
-                      catalogSkills.filter(
-                        (s) => skillSelections[s.id]?.checked,
-                      ).length === 0
-                        ? "Type to search..."
-                        : ""
-                    }
+                    disabled={isSaving}
                   />
-                )}
+                }
+                label="Email notifications"
               />
-            </Stack>
-          )}
-        </Box>
 
-        {/* ── Interests ────────────────────────────────── */}
-        <Box>
-          <SectionLabel>Interests</SectionLabel>
-          {isLoadingInterests ? (
-            <Box display="flex" justifyContent="center" py={2}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : (
-            <Autocomplete
-              multiple
-              options={catalogInterests}
-              getOptionLabel={(option) => option.name}
-              value={catalogInterests.filter((i) => interestSelections[i.id])}
-              onChange={(_, newValue) => {
-                setInterestSelections(() => {
-                  const updated: Record<number, boolean> = {};
-                  for (const interest of catalogInterests) {
-                    updated[interest.id] = newValue.some(
-                      (i) => i.id === interest.id,
-                    );
+              <Divider sx={{ my: 2.5 }} />
+
+              <SectionLabel>About Me</SectionLabel>
+              <TextField
+                label="Bio"
+                value={formData.bio || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, bio: e.target.value })
+                }
+                fullWidth
+                multiline
+                rows={4}
+                placeholder="Tell us about yourself..."
+                disabled={isSaving}
+                size="small"
+              />
+            </FormSectionCard>
+          </Grid>
+
+          {/* Right: Skills + Interests */}
+          <Grid size={{ xs: 12, md: 7 }}>
+            <FormSectionCard
+              icon={<PsychologyIcon fontSize="small" />}
+              title="Skills & Interests"
+            >
+              <SectionLabel>Skills</SectionLabel>
+              {isLoadingSkills ? (
+                <Box display="flex" justifyContent="center" py={2}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : (
+                <Autocomplete
+                  multiple
+                  options={catalogSkills}
+                  getOptionLabel={(option) => option.name}
+                  value={catalogSkills.filter(
+                    (s) => skillSelections[s.id]?.checked,
+                  )}
+                  onChange={(_, newValue) => {
+                    setSkillSelections((prev) => {
+                      const updated = { ...prev };
+                      for (const skill of catalogSkills) {
+                        const isSelected = newValue.some(
+                          (s) => s.id === skill.id,
+                        );
+                        updated[skill.id] = {
+                          checked: isSelected,
+                          level: updated[skill.id]?.level ?? "no_selection",
+                        };
+                      }
+                      return updated;
+                    });
+                  }}
+                  isOptionEqualToValue={(option, value) =>
+                    option.id === value.id
                   }
-                  return updated;
-                });
-              }}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              disabled={isSaving}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Search and select interests"
-                  size="small"
-                  placeholder={
-                    catalogInterests.filter((i) => interestSelections[i.id])
-                      .length === 0
-                      ? "Type to search..."
-                      : ""
-                  }
+                  disabled={isSaving}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Search and select skills"
+                      size="small"
+                      placeholder={
+                        catalogSkills.filter(
+                          (s) => skillSelections[s.id]?.checked,
+                        ).length === 0
+                          ? "Type to search..."
+                          : ""
+                      }
+                    />
+                  )}
                 />
               )}
-            />
-          )}
-        </Box>
+
+              <Divider sx={{ my: 2.5 }} />
+
+              <SectionLabel>Interests</SectionLabel>
+              {isLoadingInterests ? (
+                <Box display="flex" justifyContent="center" py={2}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : (
+                <Autocomplete
+                  multiple
+                  options={catalogInterests}
+                  getOptionLabel={(option) => option.name}
+                  value={catalogInterests.filter(
+                    (i) => interestSelections[i.id],
+                  )}
+                  onChange={(_, newValue) => {
+                    setInterestSelections(() => {
+                      const updated: Record<number, boolean> = {};
+                      for (const interest of catalogInterests) {
+                        updated[interest.id] = newValue.some(
+                          (i) => i.id === interest.id,
+                        );
+                      }
+                      return updated;
+                    });
+                  }}
+                  isOptionEqualToValue={(option, value) =>
+                    option.id === value.id
+                  }
+                  disabled={isSaving}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Search and select interests"
+                      size="small"
+                      placeholder={
+                        catalogInterests.filter((i) => interestSelections[i.id])
+                          .length === 0
+                          ? "Type to search..."
+                          : ""
+                      }
+                    />
+                  )}
+                />
+              )}
+            </FormSectionCard>
+          </Grid>
+        </Grid>
 
         {/* ── Availability ─────────────────────────────── */}
-        <Box>
-          <SectionLabel>Weekly Availability</SectionLabel>
+        <FormSectionCard
+          icon={<AccessTimeIcon fontSize="small" />}
+          title="Weekly Availability"
+        >
           <AvailabilityEditor
             value={formData.availability || {}}
             onChange={(availability) =>
               setFormData({ ...formData, availability })
             }
           />
-        </Box>
+        </FormSectionCard>
 
         {/* ── Actions ──────────────────────────────────── */}
         <Box

@@ -9,7 +9,7 @@ import OnboardingChecklist from "@/components/volunteer/onboarding-checklist";
 /** Volunteer dashboard with portal overview. */
 export default function VolunteerDashboardPage(): JSX.Element {
   return (
-    <Box sx={{ px: 3, pt: { xs: 1, md: 1.5 } }}>
+    <Box sx={{ px: { xs: 2, md: 4 }, pt: { xs: 1, md: 1.5 }, pb: 4 }}>
       <Stack spacing={3} sx={{ maxWidth: 800 }}>
         <OnboardingChecklist />
         <MyRsvps />

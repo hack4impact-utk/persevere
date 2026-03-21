@@ -10,7 +10,7 @@ export default function OnboardingPage(): JSX.Element {
   return (
     <Box
       sx={{
-        px: 3,
+        px: { xs: 2, md: 4 },
         pt: { xs: 1, md: 1.5 },
         pb: 4,
         maxHeight: "100%",

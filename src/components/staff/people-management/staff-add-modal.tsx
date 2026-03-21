@@ -284,7 +284,9 @@ export default function AddStaffModal({
         <DialogTitle>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <CheckCircleIcon color="success" />
-            <Typography variant="h6">Staff Member Added</Typography>
+            <Typography variant="h6" fontWeight={700}>
+              Staff Member Added
+            </Typography>
           </Box>
         </DialogTitle>
         <DialogContent>

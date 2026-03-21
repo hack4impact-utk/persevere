@@ -310,7 +310,7 @@ function DocumentModal({
             )}
           </DialogContent>
 
-          <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+          <DialogActions>
             {doc.type !== "link" && (
               <Button
                 variant="outlined"

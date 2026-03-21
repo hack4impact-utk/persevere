@@ -30,7 +30,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
   Divider,
   FormControl,
@@ -48,7 +47,7 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { DetailField } from "@/components/shared";
+import { ConfirmDialog, DetailField } from "@/components/shared";
 import {
   getBackgroundCheckColor,
   getBackgroundCheckLabel,
@@ -449,7 +448,7 @@ export default function VolunteerProfile({
                     color="primary"
                     sx={{ mb: 0.5 }}
                   >
-                    {(volunteer.totalHours ?? 0).toFixed(1)}
+                    {(volunteer.totalHours ?? 0).toFixed(2)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Hours volunteered
@@ -1025,7 +1024,7 @@ export default function VolunteerProfile({
                                   color="primary"
                                   sx={{ flexShrink: 0 }}
                                 >
-                                  {entry.hours.toFixed(1)} hrs
+                                  {entry.hours.toFixed(2)} hrs
                                 </Typography>
                               </Box>
 
@@ -1193,13 +1192,7 @@ export default function VolunteerProfile({
             color="primary"
             startIcon={<EditIcon />}
             onClick={() => setEditModalOpen(true)}
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1.5,
-              textTransform: "none",
-              fontWeight: 600,
-            }}
+            sx={{ px: 3, py: 1.5 }}
           >
             Edit Profile
           </Button>
@@ -1208,13 +1201,7 @@ export default function VolunteerProfile({
             color="error"
             startIcon={<DeleteIcon />}
             onClick={() => setConfirmDelete(true)}
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1.5,
-              textTransform: "none",
-              fontWeight: 600,
-            }}
+            sx={{ px: 3, py: 1.5 }}
           >
             Delete Volunteer
           </Button>
@@ -1284,59 +1271,35 @@ export default function VolunteerProfile({
         </DialogActions>
       </Dialog>
 
-      {/* Delete Volunteer Confirmation Dialog */}
-      <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)}>
-        <DialogTitle>Delete Volunteer</DialogTitle>
-        <DialogContent>
-          <Typography>
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Delete Volunteer"
+        message={
+          <>
             Are you sure you want to delete{" "}
             <strong>
               {user.firstName} {user.lastName}
             </strong>
-            ? This action cannot be undone. The volunteer's account and all
+            ? This action cannot be undone. The volunteer&apos;s account and all
             associated data will be permanently removed.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDelete(false)} disabled={deleting}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleDeleteUser}
-            variant="contained"
-            color="error"
-            disabled={deleting}
-          >
-            {deleting ? "Deleting..." : "Delete Volunteer"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </>
+        }
+        confirmLabel={deleting ? "Deleting..." : "Delete Volunteer"}
+        confirmColor="error"
+        loading={deleting}
+        onConfirm={handleDeleteUser}
+        onClose={() => setConfirmDelete(false)}
+      />
 
-      {/* Delete Hours Entry Confirmation Dialog */}
-      <Dialog
+      <ConfirmDialog
         open={hoursDeleteTargetId !== null}
+        title="Delete Hours Entry"
+        message="Are you sure you want to delete this hours entry? This action cannot be undone."
+        confirmLabel="Delete"
+        confirmColor="error"
+        onConfirm={handleDeleteHoursConfirm}
         onClose={() => setHoursDeleteTargetId(null)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>Delete Hours Entry</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this hours entry? This action cannot
-            be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setHoursDeleteTargetId(null)}>Cancel</Button>
-          <Button
-            onClick={handleDeleteHoursConfirm}
-            variant="contained"
-            color="error"
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
 
       {/* Edit Volunteer Dialog */}
       <StaffEditVolunteerModal
@@ -1569,28 +1532,10 @@ function StaffEditVolunteerModal({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={onClose}
-            disabled={saving}
-            variant="outlined"
-            sx={{
-              borderColor: "grey.300",
-              color: "text.secondary",
-              "&:hover": { borderColor: "grey.500" },
-            }}
-          >
+          <Button onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={saving}
-            sx={{
-              bgcolor: "grey.900",
-              "&:hover": { bgcolor: "grey.700" },
-              fontWeight: 600,
-            }}
-          >
+          <Button type="submit" variant="contained" disabled={saving}>
             {saving ? "Saving…" : "Save changes"}
           </Button>
         </DialogActions>

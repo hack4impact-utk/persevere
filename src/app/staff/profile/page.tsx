@@ -16,7 +16,13 @@ export default function StaffProfilePage(): JSX.Element {
   // Layout handles auth redirect - this is just for loading state
   if (!session) {
     return (
-      <Box sx={{ padding: "20px", textAlign: "center" }}>
+      <Box
+        sx={{
+          px: { xs: 2, md: 4 },
+          pt: { xs: 1, md: 1.5 },
+          textAlign: "center",
+        }}
+      >
         <Typography variant="h6">Loading...</Typography>
       </Box>
     );
@@ -24,7 +30,13 @@ export default function StaffProfilePage(): JSX.Element {
 
   return (
     <Box
-      sx={{ pt: 1, px: "20px", pb: "20px", maxWidth: 600, margin: "0 auto" }}
+      sx={{
+        pt: { xs: 1, md: 1.5 },
+        px: { xs: 2, md: 4 },
+        pb: 4,
+        maxWidth: 600,
+        margin: "0 auto",
+      }}
     >
       <Box sx={{ textAlign: "center", mb: 4 }}>
         <Avatar

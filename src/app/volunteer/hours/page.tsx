@@ -13,7 +13,7 @@ export default function HoursPage(): JSX.Element {
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
-    <Box sx={{ px: 3, pt: { xs: 1, md: 1.5 } }}>
+    <Box sx={{ px: { xs: 2, md: 4 }, pt: { xs: 1, md: 1.5 }, pb: 4 }}>
       <Stack
         direction="row"
         justifyContent="space-between"
