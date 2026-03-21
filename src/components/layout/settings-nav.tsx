@@ -1,11 +1,9 @@
 "use client";
 
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { Box, Chip, IconButton, Tooltip, Typography } from "@mui/material";
+import { Box, Chip, Typography } from "@mui/material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type ReactElement, useState } from "react";
+import { type ReactElement } from "react";
 
 type SettingsSection = {
   label: string;
@@ -20,6 +18,15 @@ type SettingsGroup = {
 };
 
 const sections: SettingsGroup[] = [
+  {
+    label: "Account",
+    items: [
+      {
+        label: "Profile",
+        href: "/staff/settings/profile",
+      },
+    ],
+  },
   {
     label: "Catalog",
     items: [
@@ -73,32 +80,6 @@ const sections: SettingsGroup[] = [
 
 export default function SettingsNav(): ReactElement {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
-
-  if (collapsed) {
-    return (
-      <Box
-        component="nav"
-        aria-label="Settings navigation"
-        sx={{
-          width: 48,
-          flexShrink: 0,
-          borderLeft: "1px solid",
-          borderColor: "divider",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          py: 2,
-        }}
-      >
-        <Tooltip title="Expand settings" placement="left">
-          <IconButton size="small" onClick={() => setCollapsed(false)}>
-            <ChevronLeftIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </Box>
-    );
-  }
 
   return (
     <Box
@@ -107,22 +88,14 @@ export default function SettingsNav(): ReactElement {
       sx={{
         width: 240,
         flexShrink: 0,
-        borderLeft: "1px solid",
+        borderRight: "1px solid",
         borderColor: "divider",
         overflowY: "auto",
         py: 3,
         px: 2,
       }}
     >
-      <Box
-        sx={{
-          px: 1,
-          mb: 2,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
+      <Box sx={{ px: 1, mb: 2 }}>
         <Typography
           variant="overline"
           sx={{
@@ -133,11 +106,6 @@ export default function SettingsNav(): ReactElement {
         >
           Settings
         </Typography>
-        <Tooltip title="Collapse" placement="left">
-          <IconButton size="small" onClick={() => setCollapsed(true)}>
-            <ChevronRightIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
       </Box>
 
       {sections.map((group, groupIndex) => (

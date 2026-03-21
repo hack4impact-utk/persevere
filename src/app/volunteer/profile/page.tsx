@@ -4,7 +4,6 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import EditIcon from "@mui/icons-material/Edit";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import LogoutIcon from "@mui/icons-material/Logout";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import {
   Avatar,
@@ -29,7 +28,6 @@ import type {
   Day,
 } from "@/components/volunteer/availability-editor";
 import ProfileEditForm from "@/components/volunteer/profile-edit-form";
-import { useSignOut } from "@/hooks/use-auth";
 import { useVolunteerProfile } from "@/hooks/use-volunteer-profile";
 
 function initials(first?: string | null, last?: string | null): string {
@@ -227,7 +225,6 @@ function AvailabilityGrid({
  */
 export default function VolunteerProfilePage(): JSX.Element {
   const { data: session } = useSession();
-  const handleSignOut = useSignOut();
   const { enqueueSnackbar } = useSnackbar();
   const {
     profile: profileData,
@@ -718,23 +715,6 @@ export default function VolunteerProfilePage(): JSX.Element {
             </Grid>
           </Grid>
         )}
-
-        {/* ── Sign out ─────────────────────────────────────────── */}
-        <Box sx={{ mt: 4, textAlign: "center" }}>
-          <Button
-            size="small"
-            startIcon={<LogoutIcon sx={{ fontSize: 16 }} />}
-            onClick={handleSignOut}
-            sx={{
-              color: "text.disabled",
-              fontWeight: 500,
-              fontSize: "0.8rem",
-              "&:hover": { color: "error.main", bgcolor: "transparent" },
-            }}
-          >
-            Sign out
-          </Button>
-        </Box>
       </Box>
     </Box>
   );
