@@ -96,6 +96,27 @@ const ClockIcon = (): JSX.Element => (
   </svg>
 );
 
+const MailIcon = (): JSX.Element => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <rect
+      x="3"
+      y="5"
+      width="18"
+      height="14"
+      rx="2"
+      stroke="white"
+      strokeWidth="2"
+    />
+    <path
+      d="M3 8l9 6 9-6"
+      stroke="white"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 /**
  * Volunteer navigation items
  *
@@ -114,6 +135,11 @@ const volunteerNavItems: NavItem[] = [
     icon: <DocumentIcon />,
   },
   { label: "Hours", href: "/volunteer/hours", icon: <ClockIcon /> },
+  {
+    label: "Communications",
+    href: "/volunteer/communications",
+    icon: <MailIcon />,
+  },
 ];
 
 /**

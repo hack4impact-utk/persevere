@@ -625,17 +625,15 @@ export default function VolunteerProfilePage(): JSX.Element {
                       </Box>
                     </SidebarCard>
 
-                    {user.bio && (
-                      <SidebarCard title="About Me">
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ lineHeight: 1.75 }}
-                        >
-                          {user.bio}
-                        </Typography>
-                      </SidebarCard>
-                    )}
+                    <SidebarCard title="About Me">
+                      <Typography
+                        variant="body2"
+                        color={user.bio ? "text.secondary" : "text.disabled"}
+                        sx={{ lineHeight: 1.75 }}
+                      >
+                        {user.bio ?? "No bio yet."}
+                      </Typography>
+                    </SidebarCard>
                   </Stack>
                 </CardContent>
               </Card>

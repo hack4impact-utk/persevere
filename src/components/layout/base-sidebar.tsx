@@ -222,7 +222,7 @@ export default function BaseSidebar({
         marginThreshold={0}
         slotProps={{ paper: { sx: { width: 240, borderRadius: 2 } } }}
       >
-        {session?.user?.name && (
+        {session?.user?.email && (
           <>
             <Typography
               variant="caption"
@@ -235,7 +235,7 @@ export default function BaseSidebar({
                 fontWeight: 600,
               }}
             >
-              {session.user.name}
+              {session.user.email}
             </Typography>
             <Divider />
           </>

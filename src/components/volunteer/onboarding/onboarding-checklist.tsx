@@ -5,9 +5,7 @@ import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
 import CircularProgress from "@mui/material/CircularProgress";
-import LinearProgress from "@mui/material/LinearProgress";
 import Typography from "@mui/material/Typography";
 import Link from "next/link";
 import { type JSX } from "react";
@@ -70,6 +68,8 @@ export default function OnboardingChecklist(): JSX.Element {
     },
   ];
 
+  const ringColor = status.onboardingComplete ? "success.main" : "primary.main";
+
   return (
     <Card
       sx={{
@@ -77,25 +77,94 @@ export default function OnboardingChecklist(): JSX.Element {
         boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
         border: 1,
         borderColor: "divider",
+        height: 520,
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <CardContent sx={{ p: 3 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6" fontWeight={600}>
-            Your Onboarding Progress
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {status.completionPercentage}%
-          </Typography>
+      {/* Top half — circular progress ring */}
+      <Box
+        sx={{
+          flex: "0 0 45%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 2,
+          px: 2,
+          pt: 2,
+        }}
+      >
+        <Typography variant="h6" fontWeight={600} textAlign="center">
+          Your Onboarding Progress
+        </Typography>
+
+        <Box sx={{ position: "relative", display: "inline-flex" }}>
+          {/* Track ring */}
+          <CircularProgress
+            variant="determinate"
+            value={100}
+            size={120}
+            thickness={4}
+            sx={{
+              color: "action.disabledBackground",
+              position: "absolute",
+              top: 0,
+              left: 0,
+            }}
+          />
+          {/* Value arc */}
+          <CircularProgress
+            variant="determinate"
+            value={status.completionPercentage}
+            size={120}
+            thickness={4}
+            sx={{ color: ringColor }}
+          />
+          {/* Center label */}
+          <Box
+            sx={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Typography variant="h5" fontWeight={700} color={ringColor}>
+              {status.completionPercentage}%
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Complete
+            </Typography>
+          </Box>
         </Box>
+      </Box>
 
-        <LinearProgress
-          variant="determinate"
-          value={status.completionPercentage}
-          sx={{ height: 8, borderRadius: 4, my: 2 }}
-        />
+      {/* Bottom half — scrollable checklist */}
+      <Box
+        sx={{
+          flex: "0 0 55%",
+          display: "flex",
+          flexDirection: "column",
+          borderTop: 1,
+          borderColor: "divider",
+          px: 2,
+          pt: 1.5,
+          pb: 1,
+          minHeight: 0,
+        }}
+      >
+        <Typography
+          variant="overline"
+          color="text.secondary"
+          sx={{ mb: 0.5, display: "block", lineHeight: 1.5 }}
+        >
+          Steps
+        </Typography>
 
-        <Box display="flex" flexWrap="wrap" gap={1.5}>
+        <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
           {items.map((item) =>
             item.href ? (
               <Box
@@ -105,18 +174,13 @@ export default function OnboardingChecklist(): JSX.Element {
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 0.75,
-                  px: 1.5,
+                  gap: 1.5,
+                  px: 1,
                   py: 1,
                   borderRadius: 1,
-                  border: 1,
-                  borderColor: item.done ? "success.light" : "divider",
-                  bgcolor: item.done ? "success.50" : "background.paper",
                   textDecoration: "none",
                   color: "inherit",
-                  "&:hover": {
-                    bgcolor: item.done ? "success.100" : "action.hover",
-                  },
+                  "&:hover": { bgcolor: "action.hover" },
                   transition: "background-color 0.15s",
                 }}
               >
@@ -125,7 +189,13 @@ export default function OnboardingChecklist(): JSX.Element {
                 ) : (
                   <RadioButtonUncheckedIcon color="disabled" fontSize="small" />
                 )}
-                <Typography variant="body2">{item.label}</Typography>
+                <Typography
+                  variant="body2"
+                  color={item.done ? "success.main" : "text.primary"}
+                  sx={{ fontWeight: item.done ? 500 : 400 }}
+                >
+                  {item.label}
+                </Typography>
               </Box>
             ) : (
               <Box
@@ -133,14 +203,10 @@ export default function OnboardingChecklist(): JSX.Element {
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 0.75,
-                  px: 1.5,
+                  gap: 1.5,
+                  px: 1,
                   py: 1,
                   borderRadius: 1,
-                  border: 1,
-                  borderColor: item.done ? "success.light" : "divider",
-                  bgcolor: item.done ? "success.50" : "background.paper",
-                  color: "text.secondary",
                 }}
               >
                 {item.done ? (
@@ -148,12 +214,18 @@ export default function OnboardingChecklist(): JSX.Element {
                 ) : (
                   <RadioButtonUncheckedIcon color="disabled" fontSize="small" />
                 )}
-                <Typography variant="body2">{item.label}</Typography>
+                <Typography
+                  variant="body2"
+                  color={item.done ? "success.main" : "text.primary"}
+                  sx={{ fontWeight: item.done ? 500 : 400 }}
+                >
+                  {item.label}
+                </Typography>
               </Box>
             ),
           )}
         </Box>
-      </CardContent>
+      </Box>
     </Card>
   );
 }

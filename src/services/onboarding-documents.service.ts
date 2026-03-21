@@ -56,7 +56,7 @@ export const createDocumentSchema = z
       .default("sign"),
     url: z.string().url("URL must be a valid URL"),
     description: z.string().optional(),
-    required: z.boolean().default(false),
+    required: z.boolean().default(true),
     sortOrder: z.number().int().default(0),
   })
   .refine(
