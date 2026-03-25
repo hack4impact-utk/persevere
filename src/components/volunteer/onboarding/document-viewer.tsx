@@ -22,7 +22,13 @@ import { ModalTitleBar } from "@/components/shared";
 import OnboardingModuleCard from "@/components/shared/onboarding-module-card";
 import { useOnboardingDocuments } from "@/hooks/use-onboarding-documents";
 
-export default function DocumentViewer(): JSX.Element {
+type DocumentViewerProps = {
+  onDocumentSigned?: () => Promise<void>;
+};
+
+export default function DocumentViewer({
+  onDocumentSigned,
+}: DocumentViewerProps): JSX.Element {
   const { enqueueSnackbar } = useSnackbar();
   const {
     documents,
@@ -51,6 +57,11 @@ export default function DocumentViewer(): JSX.Element {
     async (documentId: number, consentGiven?: boolean): Promise<void> => {
       try {
         await signDocument(documentId, consentGiven);
+        try {
+          await onDocumentSigned?.();
+        } catch (error_) {
+          console.error("Failed to refresh onboarding status:", error_);
+        }
         enqueueSnackbar("Response recorded successfully", {
           variant: "success",
         });
@@ -58,7 +69,7 @@ export default function DocumentViewer(): JSX.Element {
         enqueueSnackbar("Failed to record response", { variant: "error" });
       }
     },
-    [signDocument, enqueueSnackbar],
+    [signDocument, onDocumentSigned, enqueueSnackbar],
   );
 
   if (loading) {
