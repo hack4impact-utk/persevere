@@ -175,7 +175,7 @@ export default function CommunicationsList({
               message={
                 search
                   ? "No communications match your search."
-                  : "No communications yet. Click Compose to send your first message."
+                  : "No communications yet. Send your first message."
               }
             />
           ) : (
