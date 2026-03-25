@@ -3,6 +3,7 @@ import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import db from "@/db";
 import {
   opportunities,
+  users,
   volunteerHours,
   volunteerRsvps,
   volunteers,
@@ -369,4 +370,97 @@ export async function deleteHours(hourId: number): Promise<void> {
   }
 
   await db.delete(volunteerHours).where(eq(volunteerHours.id, hourId));
+}
+
+export type HoursWithVolunteer = {
+  id: number;
+  volunteerId: number;
+  opportunityId: number;
+  opportunityTitle: string | null;
+  volunteerName: string;
+  date: Date;
+  hours: number;
+  notes: string | null;
+  status: "pending" | "approved" | "rejected";
+  rejectionReason: string | null;
+  verifiedBy: number | null;
+  verifiedAt: Date | null;
+};
+
+export type HoursReviewFilters = {
+  page: number;
+  limit: number;
+  status?: "pending" | "verified" | "all";
+  search?: string;
+};
+
+/**
+ * Lists all volunteer hours with volunteer names and opportunity titles for staff review.
+ */
+export async function listAllVolunteerHours(
+  filters: HoursReviewFilters,
+): Promise<{ data: HoursWithVolunteer[]; total: number }> {
+  const { page, limit, status, search } = filters;
+
+  const whereClauses: ReturnType<typeof eq | typeof sql>[] = [];
+
+  if (status === "pending") {
+    whereClauses.push(eq(volunteerHours.status, "pending"));
+  } else if (status === "verified") {
+    whereClauses.push(eq(volunteerHours.status, "approved"));
+  }
+
+  if (search) {
+    const searchPattern = `%${search}%`;
+    whereClauses.push(
+      sql`(CONCAT(${users.firstName}, ' ', ${users.lastName}) ILIKE ${searchPattern} OR ${opportunities.title} ILIKE ${searchPattern})`,
+    );
+  }
+
+  const offset = (page - 1) * limit;
+
+  const [hoursRecords, totalResult] = await Promise.all([
+    db
+      .select({
+        id: volunteerHours.id,
+        volunteerId: volunteerHours.volunteerId,
+        opportunityId: volunteerHours.opportunityId,
+        opportunityTitle: opportunities.title,
+        volunteerName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+        date: volunteerHours.date,
+        hours: volunteerHours.hours,
+        notes: volunteerHours.notes,
+        status: volunteerHours.status,
+        rejectionReason: volunteerHours.rejectionReason,
+        verifiedBy: volunteerHours.verifiedBy,
+        verifiedAt: volunteerHours.verifiedAt,
+      })
+      .from(volunteerHours)
+      .leftJoin(volunteers, eq(volunteerHours.volunteerId, volunteers.id))
+      .leftJoin(users, eq(volunteers.userId, users.id))
+      .leftJoin(
+        opportunities,
+        eq(volunteerHours.opportunityId, opportunities.id),
+      )
+      .where(whereClauses.length > 0 ? and(...whereClauses) : undefined)
+      .orderBy(desc(volunteerHours.date))
+      .limit(limit)
+      .offset(offset),
+
+    db
+      .select({ total: sql<number>`COUNT(*)` })
+      .from(volunteerHours)
+      .leftJoin(volunteers, eq(volunteerHours.volunteerId, volunteers.id))
+      .leftJoin(users, eq(volunteers.userId, users.id))
+      .leftJoin(
+        opportunities,
+        eq(volunteerHours.opportunityId, opportunities.id),
+      )
+      .where(whereClauses.length > 0 ? and(...whereClauses) : undefined),
+  ]);
+
+  return {
+    data: hoursRecords,
+    total: totalResult[0]?.total ?? 0,
+  };
 }

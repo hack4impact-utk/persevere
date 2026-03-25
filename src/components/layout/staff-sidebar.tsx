@@ -129,6 +129,19 @@ const ChatIcon = (): JSX.Element => (
   </svg>
 );
 
+const ClockIcon = (): JSX.Element => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2" />
+    <path
+      d="M12 6v6l4 2"
+      stroke="white"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 export default function StaffSidebar(): JSX.Element {
   const { data: session } = useSession();
   const user = session?.user as { role?: string } | undefined;
@@ -149,6 +162,11 @@ export default function StaffSidebar(): JSX.Element {
         icon: <DocumentIcon />,
       },
       { label: "Analytics", href: "/staff/analytics", icon: <BarChartIcon /> },
+      {
+        label: "Hours",
+        href: "/staff/hours",
+        icon: <ClockIcon />,
+      },
       {
         label: "Communication",
         href: "/staff/communications",
