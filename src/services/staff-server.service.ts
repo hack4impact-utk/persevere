@@ -6,6 +6,16 @@ import { ConflictError, NotFoundError } from "@/utils/errors";
 import { sendWelcomeEmail } from "@/utils/server/email";
 import { generateSecurePassword, hashPassword } from "@/utils/server/password";
 
+export type StaffProfileData = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  bio: string | null;
+  role: "staff" | "admin";
+  profilePicture: string | null;
+};
+
 export type StaffListFilters = {
   page: number;
   limit: number;
@@ -311,4 +321,76 @@ export async function deactivateStaff(staffId: number): Promise<void> {
     .update(users)
     .set({ isActive: false })
     .where(eq(users.id, staffMember.userId));
+}
+
+/**
+ * Gets the profile for the current staff user.
+ */
+export async function getStaffProfile(
+  userId: number,
+): Promise<StaffProfileData> {
+  const staffMember = await db.query.staff.findFirst({
+    where: eq(staff.userId, userId),
+    with: {
+      user: true,
+      admin: true,
+    },
+  });
+
+  if (!staffMember || !staffMember.user) {
+    throw new NotFoundError("Staff profile not found");
+  }
+
+  return {
+    firstName: staffMember.user.firstName,
+    lastName: staffMember.user.lastName,
+    email: staffMember.user.email,
+    phone: staffMember.user.phone,
+    bio: staffMember.user.bio,
+    role: staffMember.admin ? "admin" : "staff",
+    profilePicture: staffMember.user.profilePicture,
+  };
+}
+
+/**
+ * Updates the profile for the current staff user.
+ * Only allows updating firstName, lastName, phone, and bio.
+ */
+export async function updateStaffProfile(
+  userId: number,
+  data: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string | null;
+    bio?: string | null;
+  },
+): Promise<StaffProfileData> {
+  const staffMember = await db.query.staff.findFirst({
+    where: eq(staff.userId, userId),
+    with: {
+      user: true,
+    },
+  });
+
+  if (!staffMember || !staffMember.user) {
+    throw new NotFoundError("Staff profile not found");
+  }
+
+  const userUpdates: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string | null;
+    bio?: string | null;
+  } = {};
+
+  if (data.firstName !== undefined) userUpdates.firstName = data.firstName;
+  if (data.lastName !== undefined) userUpdates.lastName = data.lastName;
+  if (data.phone !== undefined) userUpdates.phone = data.phone;
+  if (data.bio !== undefined) userUpdates.bio = data.bio;
+
+  if (Object.keys(userUpdates).length > 0) {
+    await db.update(users).set(userUpdates).where(eq(users.id, userId));
+  }
+
+  return getStaffProfile(userId);
 }
