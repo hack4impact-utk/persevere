@@ -97,7 +97,9 @@ export type UseCommunicationsResult = {
   loading: boolean;
   isMutating: boolean;
   error: string | null;
-  loadCommunications: () => Promise<void>;
+  search: string;
+  setSearch: (s: string) => void;
+  loadCommunications: (filters?: CommunicationFilters) => Promise<void>;
   selectCommunication: (id: number) => Promise<void>;
   sendCommunication: (payload: CreateCommunicationRequest) => Promise<{
     communication: BulkCommunicationLog;
@@ -105,6 +107,7 @@ export type UseCommunicationsResult = {
     emailError?: boolean;
     recipientCount?: number;
   } | null>;
+  deleteCommunication: (id: number) => Promise<boolean>;
 };
 
 export function useCommunications({
@@ -118,44 +121,68 @@ export function useCommunications({
   const [loading, setLoading] = useState(false);
   const [isMutating, setIsMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const handleApiError = useApiErrorHandler(setError);
 
   const isFirstLoad = useRef(true);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadCommunications = useCallback(async (): Promise<void> => {
-    setError(null);
-    setLoading(true);
-    try {
-      const response = await fetchCommunications({
-        page: 1,
-        limit: DEFAULT_PAGE_SIZE,
-      });
-      const list = response.communications ?? [];
-      setCommunications(list);
+  const loadCommunications = useCallback(
+    async (filters: CommunicationFilters = {}): Promise<void> => {
+      setError(null);
+      setLoading(true);
+      try {
+        const response = await fetchCommunications({
+          page: 1,
+          limit: DEFAULT_PAGE_SIZE,
+          ...filters,
+        });
+        const list = response.communications ?? [];
+        setCommunications(list);
 
-      // Auto-select first communication on initial load
-      if (isFirstLoad.current && list.length > 0) {
-        setSelectedCommunication(list[0]);
-        isFirstLoad.current = false;
-      }
-    } catch (error_) {
-      if (
-        handleApiError(
-          error_,
-          "Failed to load communications. Please try again later.",
+        // Auto-select first communication on initial load
+        if (isFirstLoad.current && list.length > 0) {
+          setSelectedCommunication(list[0]);
+          isFirstLoad.current = false;
+        }
+      } catch (error_) {
+        if (
+          handleApiError(
+            error_,
+            "Failed to load communications. Please try again later.",
+          )
         )
-      )
-        return;
-      setCommunications([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [handleApiError]);
+          return;
+        setCommunications([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [handleApiError],
+  );
 
+  // Initial load
   useEffect(() => {
     if (skip) return;
     void loadCommunications();
   }, [loadCommunications, skip]);
+
+  // Debounced search — skip on initial render
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (skip) return;
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      void loadCommunications({ search: search || undefined });
+    }, 300);
+    return (): void => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, [search, loadCommunications, skip]);
 
   const selectCommunication = useCallback(async (id: number): Promise<void> => {
     try {
@@ -179,7 +206,7 @@ export function useCommunications({
       setIsMutating(true);
       try {
         const result = await createCommunication(payload);
-        void loadCommunications();
+        void loadCommunications({ search: search || undefined });
         return result;
       } catch (error_) {
         if (handleApiError(error_)) return null;
@@ -188,7 +215,27 @@ export function useCommunications({
         setIsMutating(false);
       }
     },
-    [handleApiError, loadCommunications],
+    [handleApiError, loadCommunications, search],
+  );
+
+  const deleteCommunication = useCallback(
+    async (id: number): Promise<boolean> => {
+      setIsMutating(true);
+      try {
+        await apiClient.delete(`/api/staff/communications/${id}`);
+        setSelectedCommunication(null);
+        void loadCommunications({ search: search || undefined });
+        return true;
+      } catch (error_) {
+        if (!handleApiError(error_)) {
+          console.error("[useCommunications] deleteCommunication:", error_);
+        }
+        return false;
+      } finally {
+        setIsMutating(false);
+      }
+    },
+    [handleApiError, loadCommunications, search],
   );
 
   return {
@@ -197,8 +244,11 @@ export function useCommunications({
     loading,
     isMutating,
     error,
+    search,
+    setSearch,
     loadCommunications,
     selectCommunication,
     sendCommunication,
+    deleteCommunication,
   };
 }
