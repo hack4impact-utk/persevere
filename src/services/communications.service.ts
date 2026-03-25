@@ -259,3 +259,14 @@ export async function getCommunicationById(
   if (!result[0]) throw new NotFoundError("Communication not found");
   return result[0];
 }
+
+export async function deleteCommunication(id: number): Promise<void> {
+  const [existing] = await db
+    .select({ id: bulkCommunicationLogs.id })
+    .from(bulkCommunicationLogs)
+    .where(eq(bulkCommunicationLogs.id, id));
+  if (!existing) throw new NotFoundError("Communication not found");
+  await db
+    .delete(bulkCommunicationLogs)
+    .where(eq(bulkCommunicationLogs.id, id));
+}

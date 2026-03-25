@@ -1,7 +1,9 @@
 "use client";
 
 import CreateIcon from "@mui/icons-material/Create";
+import DeleteIcon from "@mui/icons-material/Delete";
 import PersonIcon from "@mui/icons-material/Person";
+import SearchIcon from "@mui/icons-material/Search";
 import {
   Alert,
   Avatar,
@@ -9,15 +11,19 @@ import {
   CircularProgress,
   Divider,
   Fab,
+  IconButton,
+  InputAdornment,
   List,
   ListItem,
   ListItemButton,
   Paper,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import { type ReactElement, useCallback, useState } from "react";
 
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { EmptyState } from "@/components/ui";
 import { useCommunications } from "@/hooks/use-communications";
 
@@ -40,11 +46,20 @@ export default function CommunicationsList({
     communications,
     selectedCommunication,
     loading,
+    isMutating,
     error,
+    search,
+    setSearch,
     loadCommunications,
     selectCommunication,
+    deleteCommunication,
   } = useCommunications();
   const [composeModalOpen, setComposeModalOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{
+    open: boolean;
+    id: number | null;
+    subject: string;
+  }>({ open: false, id: null, subject: "" });
 
   const formatDate = useCallback((date: Date): string => {
     return new Intl.DateTimeFormat("en-US", {
@@ -81,6 +96,12 @@ export default function CommunicationsList({
     [],
   );
 
+  const handleDeleteConfirm = useCallback(async (): Promise<void> => {
+    if (!confirmDelete.id) return;
+    setConfirmDelete({ open: false, id: null, subject: "" });
+    await deleteCommunication(confirmDelete.id);
+  }, [confirmDelete.id, deleteCommunication]);
+
   return (
     <Box
       sx={{
@@ -111,6 +132,29 @@ export default function CommunicationsList({
             overflow: "hidden",
           }}
         >
+          {/* Search input */}
+          <Box sx={{ p: 1.5, borderBottom: 1, borderColor: "divider" }}>
+            <TextField
+              size="small"
+              placeholder="Search communications..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              fullWidth
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon
+                        fontSize="small"
+                        sx={{ color: "text.secondary" }}
+                      />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+          </Box>
+
           {loading && communications.length === 0 ? (
             <Box
               sx={{
@@ -127,7 +171,13 @@ export default function CommunicationsList({
               {error}
             </Alert>
           ) : communications.length === 0 ? (
-            <EmptyState message="No communications yet. Click Compose to send your first message." />
+            <EmptyState
+              message={
+                search
+                  ? "No communications match your search."
+                  : "No communications yet. Click Compose to send your first message."
+              }
+            />
           ) : (
             <List
               sx={{
@@ -142,6 +192,24 @@ export default function CommunicationsList({
                 <ListItem
                   key={comm.id}
                   disablePadding
+                  secondaryAction={
+                    <IconButton
+                      edge="end"
+                      size="small"
+                      disabled={isMutating}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmDelete({
+                          open: true,
+                          id: comm.id,
+                          subject: comm.subject,
+                        });
+                      }}
+                      sx={{ mr: 0.5 }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  }
                   sx={{
                     borderRight:
                       selectedCommunication?.id === comm.id
@@ -157,6 +225,7 @@ export default function CommunicationsList({
                       alignItems: "flex-start",
                       py: 2,
                       px: 2,
+                      pr: 6,
                     }}
                   >
                     <Typography
@@ -306,9 +375,26 @@ export default function CommunicationsList({
         open={composeModalOpen}
         onClose={() => setComposeModalOpen(false)}
         onCreated={() => {
-          void loadCommunications();
+          void loadCommunications({ search: search || undefined });
         }}
         userRole={userRole}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmDelete.open}
+        title="Delete Communication"
+        message={
+          <>
+            Are you sure you want to delete{" "}
+            <strong>&ldquo;{confirmDelete.subject}&rdquo;</strong>? This action
+            cannot be undone.
+          </>
+        }
+        confirmLabel="Delete"
+        confirmColor="error"
+        onConfirm={() => void handleDeleteConfirm()}
+        onClose={() => setConfirmDelete({ open: false, id: null, subject: "" })}
       />
     </Box>
   );
