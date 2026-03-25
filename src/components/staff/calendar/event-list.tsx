@@ -1,18 +1,18 @@
 "use client";
 
 import AutorenewIcon from "@mui/icons-material/Autorenew";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import EventIcon from "@mui/icons-material/Event";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
-import {
-  Box,
-  Chip,
-  List,
-  ListItem,
-  ListItemButton,
-  Typography,
-} from "@mui/material";
+import PeopleIcon from "@mui/icons-material/People";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
 import { JSX } from "react";
 
+import { EmptyState, StatusBadge } from "@/components/ui";
 import type { CalendarEvent } from "@/hooks/use-calendar-events";
 
 type EventListProps = {
@@ -31,6 +31,28 @@ function formatEventDateTime(isoString: string): string {
   });
 }
 
+function getStatusColor(
+  status: string | undefined,
+): "success" | "default" | "primary" | "error" {
+  switch (status) {
+    case "open": {
+      return "success";
+    }
+    case "full": {
+      return "default";
+    }
+    case "completed": {
+      return "primary";
+    }
+    case "canceled": {
+      return "error";
+    }
+    default: {
+      return "default";
+    }
+  }
+}
+
 export default function EventList({
   events,
   onEventClick,
@@ -42,84 +64,145 @@ export default function EventList({
 
   if (upcoming.length === 0) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          py: 8,
-        }}
-      >
-        <Typography variant="body1" color="text.secondary">
-          No upcoming events
-        </Typography>
-      </Box>
+      <EmptyState
+        icon={<EventIcon sx={{ fontSize: 64 }} />}
+        message="No upcoming events"
+        subMessage="Check back soon or create a new event"
+      />
     );
   }
 
   return (
-    <List disablePadding>
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: {
+          xs: "1fr",
+          sm: "repeat(2, 1fr)",
+          md: "repeat(3, 1fr)",
+        },
+        gap: 3,
+      }}
+    >
       {upcoming.map((event) => {
-        const maxVol = event.extendedProps?.maxVolunteers;
-        const isRecurring = event.extendedProps?.isRecurring;
+        const { maxVolunteers, rsvpCount, status, isRecurring } =
+          event.extendedProps ?? {};
 
         return (
-          <ListItem key={event.id} disablePadding divider>
-            <ListItemButton
-              onClick={() => {
-                onEventClick(event.id);
-              }}
-              sx={{ py: 2, gap: 2 }}
-            >
-              {/* Date/time chip */}
-              <Chip
-                label={formatEventDateTime(event.start)}
-                size="small"
-                sx={{ minWidth: 180, fontWeight: 600 }}
-              />
-
-              {/* Title + recurring badge */}
+          <Card
+            key={event.id}
+            onClick={() => {
+              onEventClick(event.id);
+            }}
+            sx={{
+              borderRadius: 2,
+              boxShadow: 2,
+              display: "flex",
+              flexDirection: "column",
+              cursor: "pointer",
+              transition: "transform 0.2s, box-shadow 0.2s",
+              "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
+            }}
+          >
+            <CardContent sx={{ p: 2.5, flex: 1 }}>
+              {/* Title row with badges */}
               <Box
-                sx={{ flex: 1, display: "flex", alignItems: "center", gap: 1 }}
+                display="flex"
+                justifyContent="space-between"
+                alignItems="flex-start"
+                gap={1}
+                mb={1}
               >
-                <Typography variant="body1" fontWeight={600}>
+                <Typography
+                  variant="h6"
+                  fontWeight={600}
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
                   {event.title}
                 </Typography>
-                {isRecurring && (
-                  <Chip
-                    icon={<AutorenewIcon fontSize="small" />}
-                    label="Recurring"
-                    size="small"
-                    variant="outlined"
-                    color="primary"
-                  />
-                )}
+                <Box display="flex" gap={0.5} flexShrink={0}>
+                  {status && (
+                    <StatusBadge
+                      label={status}
+                      color={getStatusColor(status)}
+                    />
+                  )}
+                  {isRecurring && (
+                    <Chip
+                      icon={<AutorenewIcon fontSize="small" />}
+                      label="Recurring"
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                    />
+                  )}
+                </Box>
+              </Box>
+
+              {/* Description */}
+              {event.description && (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  mb={1.5}
+                  sx={{
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
+                  {event.description}
+                </Typography>
+              )}
+
+              {/* Date/time */}
+              <Box display="flex" alignItems="center" gap={0.5} mb={0.5}>
+                <CalendarTodayIcon
+                  sx={{ fontSize: 14, color: "text.secondary" }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  {formatEventDateTime(event.start)}
+                </Typography>
               </Box>
 
               {/* Location */}
               {event.location && (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <LocationOnIcon fontSize="small" color="action" />
-                  <Typography variant="body2" color="text.secondary">
+                <Box display="flex" alignItems="center" gap={0.5} mb={0.5}>
+                  <LocationOnIcon
+                    sx={{ fontSize: 14, color: "text.secondary" }}
+                  />
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    noWrap
+                    sx={{ minWidth: 0 }}
+                  >
                     {event.location}
                   </Typography>
                 </Box>
               )}
 
-              {/* Capacity chip */}
-              {maxVol != null && (
-                <Chip
-                  label={`${event.extendedProps?.rsvpCount ?? 0} / ${maxVol}`}
-                  size="small"
-                  variant="outlined"
-                />
+              {/* Capacity */}
+              {maxVolunteers != null && (
+                <Box display="flex" alignItems="center" gap={0.5}>
+                  <PeopleIcon sx={{ fontSize: 14, color: "text.secondary" }} />
+                  <Typography variant="body2" color="text.secondary">
+                    {rsvpCount ?? 0} / {maxVolunteers} volunteers
+                  </Typography>
+                </Box>
               )}
-
-              <ChevronRightIcon color="action" />
-            </ListItemButton>
-          </ListItem>
+            </CardContent>
+          </Card>
         );
       })}
-    </List>
+    </Box>
   );
 }

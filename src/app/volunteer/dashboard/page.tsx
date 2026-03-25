@@ -1,20 +1,57 @@
+"use client";
+
 import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
+import Grid from "@mui/material/Grid";
 import { JSX } from "react";
 
+import CommunicationsCard from "@/components/volunteer/communications-card";
 import DashboardRecommendations from "@/components/volunteer/dashboard-recommendations";
 import MyRsvps from "@/components/volunteer/my-rsvps";
-import OnboardingChecklist from "@/components/volunteer/onboarding-checklist";
+import PastEvents from "@/components/volunteer/past-events";
+import RecentHours from "@/components/volunteer/recent-hours";
+import VolunteerStats from "@/components/volunteer/volunteer-stats";
 
 /** Volunteer dashboard with portal overview. */
 export default function VolunteerDashboardPage(): JSX.Element {
   return (
-    <Box sx={{ px: 3, pt: { xs: 1, md: 1.5 } }}>
-      <Stack spacing={3} sx={{ maxWidth: 800 }}>
-        <OnboardingChecklist />
-        <MyRsvps />
-        <DashboardRecommendations />
-      </Stack>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+        minHeight: 0,
+        overflow: "auto",
+        gap: 3,
+        px: { xs: 2, md: 4 },
+        pt: { xs: 1, md: 1.5 },
+        pb: 4,
+      }}
+    >
+      {/* Row 1 — Stats (full-width, 3-col grid inside component) */}
+      <VolunteerStats />
+
+      {/* Row 2 — My RSVPs (wider) + Communications (narrower) */}
+      <Grid container spacing={3} alignItems="stretch">
+        <Grid size={{ xs: 12, md: 8 }}>
+          <MyRsvps />
+        </Grid>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <CommunicationsCard />
+        </Grid>
+      </Grid>
+
+      {/* Row 3 — Past Events + Recent Hours (equal halves) */}
+      <Grid container spacing={3} alignItems="stretch">
+        <Grid size={{ xs: 12, md: 6 }}>
+          <PastEvents />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <RecentHours />
+        </Grid>
+      </Grid>
+
+      {/* Row 4 — Recommendations (full-width, manages its own internal grid) */}
+      <DashboardRecommendations />
     </Box>
   );
 }

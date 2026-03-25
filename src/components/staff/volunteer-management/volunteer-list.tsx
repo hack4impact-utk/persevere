@@ -1,7 +1,6 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
-import CloseIcon from "@mui/icons-material/Close";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import {
   Alert,
@@ -12,7 +11,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Divider,
   FormControl,
   FormControlLabel,
@@ -435,37 +433,11 @@ export default function VolunteerList(): ReactElement {
         onClose={() => setFilterModalOpen(false)}
         fullWidth
         maxWidth="sm"
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-          },
-        }}
       >
-        <DialogTitle
-          sx={{
-            pb: 2,
-            pt: 3,
-            px: 3,
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="h5" component="div" fontWeight={600}>
-              Filter Volunteers
-            </Typography>
-            <IconButton
-              onClick={() => setFilterModalOpen(false)}
-              sx={{ color: (theme) => theme.palette.grey[500] }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
+        <ModalTitleBar
+          title="Filter Volunteers"
+          onClose={() => setFilterModalOpen(false)}
+        />
         <Divider />
         <DialogContent sx={{ px: 3, py: 3 }}>
           <Stack spacing={3}>
@@ -516,7 +488,7 @@ export default function VolunteerList(): ReactElement {
           </Stack>
         </DialogContent>
         <Divider />
-        <DialogActions sx={{ px: 3, py: 2.5, gap: 1.5 }}>
+        <DialogActions>
           <Button
             onClick={handleClearFilters}
             disabled={

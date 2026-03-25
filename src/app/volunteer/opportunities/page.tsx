@@ -23,7 +23,7 @@ import Typography from "@mui/material/Typography";
 import { JSX, useEffect, useMemo, useState } from "react";
 
 import { Calendar } from "@/components/staff/calendar";
-import { EmptyState, LoadingSkeleton } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 import OpportunityDetailModal from "@/components/volunteer/opportunity-detail-modal";
 import { SpotsChip } from "@/components/volunteer/spots-chip";
 import type { Opportunity } from "@/components/volunteer/types";
@@ -219,9 +219,9 @@ export default function OpportunitiesPage(): JSX.Element {
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        pt: 1,
-        px: 3,
-        pb: 3,
+        pt: { xs: 1, md: 1.5 },
+        px: { xs: 2, md: 4 },
+        pb: { xs: 2, md: 4 },
         overflow: "hidden",
       }}
     >
@@ -307,7 +307,11 @@ export default function OpportunitiesPage(): JSX.Element {
       <Box sx={{ flex: 1, overflow: "auto", minHeight: 0 }}>
         {view === "list" ? (
           <>
-            {loading && <LoadingSkeleton variant="card-grid" />}
+            {loading && (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                <CircularProgress />
+              </Box>
+            )}
 
             {!loading &&
               !search &&

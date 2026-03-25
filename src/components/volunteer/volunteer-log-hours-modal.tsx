@@ -153,7 +153,7 @@ export default function VolunteerLogHoursModal({
           />
         </Box>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ pt: 2 }}>
         <Button onClick={handleClose} disabled={isMutating}>
           Cancel
         </Button>

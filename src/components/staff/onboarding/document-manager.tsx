@@ -8,14 +8,12 @@ import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Checkbox from "@mui/material/Checkbox";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import Grid from "@mui/material/Grid";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
@@ -32,7 +30,7 @@ import {
   useState,
 } from "react";
 
-import { ModalTitleBar } from "@/components/shared";
+import { ConfirmDialog, ModalTitleBar } from "@/components/shared";
 import OnboardingModuleCard from "@/components/shared/onboarding-module-card";
 import {
   type CreateDocumentInput,
@@ -52,8 +50,6 @@ type FormState = {
   url: string;
   file: File | null;
   description: string;
-  required: boolean;
-  sortOrder: string;
 };
 
 const DEFAULT_FORM: FormState = {
@@ -64,8 +60,6 @@ const DEFAULT_FORM: FormState = {
   url: "",
   file: null,
   description: "",
-  required: false,
-  sortOrder: "0",
 };
 
 export default function DocumentManager(): JSX.Element {
@@ -109,8 +103,6 @@ export default function DocumentManager(): JSX.Element {
       url: doc.url,
       file: null,
       description: doc.description ?? "",
-      required: doc.required,
-      sortOrder: String(doc.sortOrder),
     });
     setModalOpen(true);
   }, []);
@@ -126,12 +118,6 @@ export default function DocumentManager(): JSX.Element {
     },
     [],
   );
-
-  useEffect(() => {
-    if (form.actionType === "informational") {
-      setForm((prev) => ({ ...prev, required: false }));
-    }
-  }, [form.actionType]);
 
   const handleSave = useCallback(async (): Promise<void> => {
     if (!form.title.trim()) {
@@ -170,8 +156,7 @@ export default function DocumentManager(): JSX.Element {
         actionType: form.actionType,
         url: resolvedUrl,
         description: form.description.trim() || undefined,
-        required: form.required,
-        sortOrder: Number(form.sortOrder) || 0,
+        required: form.actionType !== "informational",
       };
 
       if (editTarget) {
@@ -432,27 +417,6 @@ export default function DocumentManager(): JSX.Element {
               multiline
               rows={2}
             />
-
-            <Box display="flex" gap={2} alignItems="center">
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={form.required}
-                    onChange={(e) => setField("required", e.target.checked)}
-                    disabled={form.actionType === "informational"}
-                  />
-                }
-                label="Required"
-              />
-              <TextField
-                label="Sort Order"
-                value={form.sortOrder}
-                onChange={(e) => setField("sortOrder", e.target.value)}
-                size="small"
-                type="number"
-                sx={{ width: 120 }}
-              />
-            </Box>
           </Stack>
         </DialogContent>
         <DialogActions>
@@ -465,34 +429,16 @@ export default function DocumentManager(): JSX.Element {
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation */}
-      <Dialog
+      <ConfirmDialog
         open={!!deleteTarget}
+        title="Delete Document"
+        message={`Are you sure you want to delete "${deleteTarget?.title}"? This will also remove all volunteer signatures for this document.`}
+        confirmLabel="Delete"
+        confirmColor="error"
+        loading={deleting}
+        onConfirm={handleDelete}
         onClose={() => setDeleteTarget(null)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>Delete Document</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete &quot;{deleteTarget?.title}&quot;?
-            This will also remove all volunteer signatures for this document.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteTarget(null)} disabled={deleting}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleDelete}
-            disabled={deleting}
-          >
-            {deleting ? "Deleting..." : "Delete"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
 
       {/* Preview Modal */}
       <Dialog

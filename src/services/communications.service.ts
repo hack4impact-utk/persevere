@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 
 import db from "@/db";
 import {
@@ -229,6 +229,21 @@ export async function createCommunication(
     recipientCount: recipientEmails.length,
     emailResult: emailResult ?? undefined,
   };
+}
+
+/**
+ * Returns the most recent messages sent to volunteers (recipientType "volunteers" or "both").
+ */
+export async function getVolunteerMessages(
+  limit: number,
+): Promise<CommunicationRecord[]> {
+  return db
+    .select(communicationSelect)
+    .from(bulkCommunicationLogs)
+    .leftJoin(users, eq(bulkCommunicationLogs.senderId, users.id))
+    .where(inArray(bulkCommunicationLogs.recipientType, ["volunteers", "both"]))
+    .orderBy(desc(bulkCommunicationLogs.sentAt))
+    .limit(limit);
 }
 
 export async function getCommunicationById(

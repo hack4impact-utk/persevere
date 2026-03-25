@@ -3,7 +3,13 @@
 import AddIcon from "@mui/icons-material/Add";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import ListIcon from "@mui/icons-material/List";
-import { Box, Button, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
@@ -29,7 +35,7 @@ export default function StaffOpportunitiesPage(): JSX.Element {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [initialDates, setInitialDates] = useState<InitialDates | undefined>();
 
-  const { events, fetchEvents, updateEvent } = useCalendarEvents();
+  const { events, loading, fetchEvents, updateEvent } = useCalendarEvents();
 
   const loadEvents = useCallback(async (): Promise<void> => {
     try {
@@ -128,12 +134,18 @@ export default function StaffOpportunitiesPage(): JSX.Element {
       {/* Body */}
       <Box sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
         {view === "list" ? (
-          <EventList
-            events={events}
-            onEventClick={(id) => {
-              setSelectedEventId(id);
-            }}
-          />
+          loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <EventList
+              events={events}
+              onEventClick={(id) => {
+                setSelectedEventId(id);
+              }}
+            />
+          )
         ) : (
           <Calendar
             events={events}

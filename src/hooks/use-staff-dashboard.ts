@@ -3,11 +3,17 @@ import { useEffect, useState } from "react";
 import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
 import { apiClient } from "@/lib/api-client";
 import type {
+  PendingHoursEntry,
+  RecentActivityItem,
   StaffDashboardStats,
   StaffUpcomingOpportunity,
 } from "@/services/dashboard.service";
 
-export type { StaffUpcomingOpportunity } from "@/services/dashboard.service";
+export type {
+  PendingHoursEntry,
+  RecentActivityItem,
+  StaffUpcomingOpportunity,
+} from "@/services/dashboard.service";
 
 export type StaffDashboardData = {
   activeVolunteers: number;
@@ -15,6 +21,10 @@ export type StaffDashboardData = {
   upcomingOpportunities: number;
   pendingRsvps: number;
   upcomingList: StaffUpcomingOpportunity[];
+  pendingHoursCount: number;
+  onboardingIncomplete: number;
+  pendingHoursList: PendingHoursEntry[];
+  recentActivity: RecentActivityItem[];
 };
 
 type State = {
@@ -48,6 +58,10 @@ export function useStaffDashboard(): State {
           upcomingOpportunities: res.data.upcomingOpportunities ?? 0,
           pendingRsvps: res.data.pendingRsvps ?? 0,
           upcomingList: res.data.upcomingList ?? [],
+          pendingHoursCount: res.data.pendingHoursCount ?? 0,
+          onboardingIncomplete: res.data.onboardingIncomplete ?? 0,
+          pendingHoursList: res.data.pendingHoursList ?? [],
+          recentActivity: res.data.recentActivity ?? [],
         });
         setError(null);
       } catch (error_) {

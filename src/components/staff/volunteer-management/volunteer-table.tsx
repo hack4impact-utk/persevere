@@ -143,7 +143,7 @@ export default function VolunteerTable({
             </TableRow>
           </TableHead>
           <TableBody>
-            {volunteers && volunteers.length > 0 ? (
+            {volunteers.length > 0 ? (
               volunteers.map((volunteer) => (
                 <TableRow
                   key={volunteer.id}
@@ -201,7 +201,7 @@ export default function VolunteerTable({
                   </TableCell>
                   <TableCell>{volunteer.volunteerType || "N/A"}</TableCell>
                   <TableCell>
-                    {volunteer.totalHours?.toFixed(1) || "0.0"}
+                    {volunteer.totalHours?.toFixed(2) || "0.00"}
                   </TableCell>
                   <TableCell>
                     <Box
@@ -238,7 +238,7 @@ export default function VolunteerTable({
                   </TableCell>
                 </TableRow>
               ))
-            ) : (
+            ) : loading ? null : (
               <TableRow>
                 <TableCell colSpan={5}>
                   <EmptyState message="No volunteers found" />
