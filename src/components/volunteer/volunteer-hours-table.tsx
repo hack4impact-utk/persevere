@@ -69,7 +69,7 @@ export default function VolunteerHoursTable({
                   day: "numeric",
                 })}
               </TableCell>
-              <TableCell align="right">{entry.hours.toFixed(1)}</TableCell>
+              <TableCell align="right">{entry.hours.toFixed(2)}</TableCell>
               <TableCell>
                 <Stack spacing={0.5} alignItems="flex-start">
                   <StatusBadge

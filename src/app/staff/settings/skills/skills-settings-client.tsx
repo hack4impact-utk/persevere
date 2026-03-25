@@ -27,6 +27,7 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
+import { ConfirmDialog } from "@/components/shared";
 import { LoadingSkeleton } from "@/components/ui";
 import { useSkills } from "@/hooks/use-skills";
 
@@ -285,7 +286,6 @@ export default function SkillsSettingsClient(): JSX.Element {
               variant="contained"
               startIcon={<AddIcon />}
               onClick={openAddSkill}
-              sx={{ textTransform: "none" }}
             >
               Add Skill
             </Button>
@@ -429,7 +429,6 @@ export default function SkillsSettingsClient(): JSX.Element {
               variant="contained"
               startIcon={<AddIcon />}
               onClick={openAddInterest}
-              sx={{ textTransform: "none" }}
             >
               Add Interest
             </Button>
@@ -635,59 +634,43 @@ export default function SkillsSettingsClient(): JSX.Element {
           </Button>
         </DialogActions>
       </Dialog>
-      {/* Delete Skill Confirmation */}
-      <Dialog
+
+      <ConfirmDialog
         open={deleteSkillConfirm !== null}
-        onClose={() => setDeleteSkillConfirm(null)}
-      >
-        <DialogTitle>Delete Skill</DialogTitle>
-        <DialogContent>
-          <Typography>
+        title="Delete Skill"
+        message={
+          <>
             Are you sure you want to delete the skill{" "}
             <strong>{deleteSkillConfirm?.name}</strong>? This will fail if the
             skill is currently assigned to any volunteers.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteSkillConfirm(null)}>Cancel</Button>
-          <Button
-            onClick={() =>
-              deleteSkillConfirm && handleDeleteSkill(deleteSkillConfirm)
-            }
-            variant="contained"
-            color="error"
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-      {/* Delete Interest Confirmation */}
-      <Dialog
+          </>
+        }
+        confirmLabel="Delete"
+        confirmColor="error"
+        onConfirm={() =>
+          deleteSkillConfirm && void handleDeleteSkill(deleteSkillConfirm)
+        }
+        onClose={() => setDeleteSkillConfirm(null)}
+      />
+
+      <ConfirmDialog
         open={deleteInterestConfirm !== null}
-        onClose={() => setDeleteInterestConfirm(null)}
-      >
-        <DialogTitle>Delete Interest</DialogTitle>
-        <DialogContent>
-          <Typography>
+        title="Delete Interest"
+        message={
+          <>
             Are you sure you want to delete the interest{" "}
             <strong>{deleteInterestConfirm?.name}</strong>? This will fail if
             the interest is currently assigned to any volunteers.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteInterestConfirm(null)}>Cancel</Button>
-          <Button
-            onClick={() =>
-              deleteInterestConfirm &&
-              handleDeleteInterest(deleteInterestConfirm)
-            }
-            variant="contained"
-            color="error"
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </>
+        }
+        confirmLabel="Delete"
+        confirmColor="error"
+        onConfirm={() =>
+          deleteInterestConfirm &&
+          void handleDeleteInterest(deleteInterestConfirm)
+        }
+        onClose={() => setDeleteInterestConfirm(null)}
+      />
     </Box>
   );
 }

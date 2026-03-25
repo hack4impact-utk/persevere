@@ -8,12 +8,7 @@ import WarningIcon from "@mui/icons-material/Warning";
 import {
   Avatar,
   Box,
-  Button,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   FormControl,
   IconButton,
   MenuItem,
@@ -32,7 +27,7 @@ import {
 import { enqueueSnackbar } from "notistack";
 import { type ReactElement, useCallback, useState } from "react";
 
-import { TablePaginationFooter } from "@/components/shared";
+import { ConfirmDialog, TablePaginationFooter } from "@/components/shared";
 import { useVolunteers } from "@/hooks/use-volunteers";
 
 import { type Volunteer } from "./types";
@@ -435,7 +430,7 @@ export default function PendingInvitesTable({
             </TableRow>
           </TableHead>
           <TableBody>
-            {volunteers && volunteers.length > 0 ? (
+            {volunteers.length > 0 ? (
               volunteers.map((volunteer) => {
                 const requirements = getRequirements(volunteer);
                 return (
@@ -658,7 +653,7 @@ export default function PendingInvitesTable({
                   </TableRow>
                 );
               })
-            ) : (
+            ) : loading ? null : (
               <TableRow>
                 <TableCell colSpan={5} align="center">
                   No pending invites
@@ -676,9 +671,18 @@ export default function PendingInvitesTable({
         onLimitChange={onLimitChange}
       />
 
-      {/* Resend Email Confirmation Dialog */}
-      <Dialog
+      <ConfirmDialog
         open={confirmResendEmail.open}
+        title="Resend Welcome Email"
+        message={
+          <>
+            Are you sure you want to resend the welcome email to{" "}
+            <strong>{confirmResendEmail.volunteerName}</strong>? A new password
+            will be generated and sent to their email address.
+          </>
+        }
+        confirmLabel="Resend Email"
+        onConfirm={handleConfirmResendEmail}
         onClose={() =>
           setConfirmResendEmail({
             open: false,
@@ -686,36 +690,34 @@ export default function PendingInvitesTable({
             volunteerName: "",
           })
         }
-      >
-        <DialogTitle>Resend Welcome Email</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to resend the welcome email to{" "}
-            <strong>{confirmResendEmail.volunteerName}</strong>? A new password
-            will be generated and sent to their email address.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() =>
-              setConfirmResendEmail({
-                open: false,
-                volunteerId: null,
-                volunteerName: "",
-              })
-            }
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleConfirmResendEmail} variant="contained">
-            Resend Email
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
 
-      {/* Status Change Confirmation Dialog */}
-      <Dialog
+      <ConfirmDialog
         open={confirmStatusChange.open}
+        title="Change Background Check Status"
+        message={
+          <>
+            <Typography sx={{ mb: 2 }}>
+              Are you sure you want to change the background check status for{" "}
+              <strong>{confirmStatusChange.volunteerName}</strong> from{" "}
+              <strong>{confirmStatusChange.currentStatus}</strong> to{" "}
+              <strong>{confirmStatusChange.newStatus}</strong>?
+            </Typography>
+            {(confirmStatusChange.newStatusValue === "approved" ||
+              confirmStatusChange.newStatusValue === "not_required") && (
+              <Typography
+                variant="body2"
+                color="primary"
+                sx={{ fontWeight: 500, fontStyle: "italic" }}
+              >
+                A welcome email will be automatically sent to the volunteer
+                after the status is updated.
+              </Typography>
+            )}
+          </>
+        }
+        confirmLabel="Change Status"
+        onConfirm={handleConfirmStatusChange}
         onClose={() => {
           setConfirmStatusChange({
             open: false,
@@ -725,7 +727,6 @@ export default function PendingInvitesTable({
             newStatus: "",
             newStatusValue: "not_required",
           });
-          // Clear pending change on cancel
           if (confirmStatusChange.volunteerId) {
             setPendingStatusChanges((prev) => {
               const next = new Map(prev);
@@ -734,59 +735,26 @@ export default function PendingInvitesTable({
             });
           }
         }}
-      >
-        <DialogTitle>Change Background Check Status</DialogTitle>
-        <DialogContent>
-          <Typography sx={{ mb: 2 }}>
-            Are you sure you want to change the background check status for{" "}
-            <strong>{confirmStatusChange.volunteerName}</strong> from{" "}
-            <strong>{confirmStatusChange.currentStatus}</strong> to{" "}
-            <strong>{confirmStatusChange.newStatus}</strong>?
-          </Typography>
-          {(confirmStatusChange.newStatusValue === "approved" ||
-            confirmStatusChange.newStatusValue === "not_required") && (
-            <Typography
-              variant="body2"
-              color="primary"
-              sx={{ fontWeight: 500, fontStyle: "italic" }}
-            >
-              A welcome email will be automatically sent to the volunteer after
-              the status is updated.
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setConfirmStatusChange({
-                open: false,
-                volunteerId: null,
-                volunteerName: "",
-                currentStatus: "",
-                newStatus: "",
-                newStatusValue: "not_required",
-              });
-              // Clear pending change on cancel
-              if (confirmStatusChange.volunteerId) {
-                setPendingStatusChanges((prev) => {
-                  const next = new Map(prev);
-                  next.delete(confirmStatusChange.volunteerId!);
-                  return next;
-                });
-              }
-            }}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleConfirmStatusChange} variant="contained">
-            Change Status
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
 
-      {/* Delete User Confirmation Dialog */}
-      <Dialog
+      <ConfirmDialog
         open={confirmDelete.open}
+        title="Delete Volunteer"
+        message={
+          <>
+            Are you sure you want to delete{" "}
+            <strong>{confirmDelete.volunteerName}</strong>? This action cannot
+            be undone. The volunteer&apos;s account and all associated data will
+            be permanently removed.
+          </>
+        }
+        confirmLabel="Delete Volunteer"
+        confirmColor="error"
+        loading={
+          confirmDelete.volunteerId !== null &&
+          deleting.has(confirmDelete.volunteerId)
+        }
+        onConfirm={handleDeleteUser}
         onClose={() =>
           setConfirmDelete({
             open: false,
@@ -794,41 +762,7 @@ export default function PendingInvitesTable({
             volunteerName: "",
           })
         }
-      >
-        <DialogTitle>Delete Volunteer</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete{" "}
-            <strong>{confirmDelete.volunteerName}</strong>? This action cannot
-            be undone. The volunteer's account and all associated data will be
-            permanently removed.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() =>
-              setConfirmDelete({
-                open: false,
-                volunteerId: null,
-                volunteerName: "",
-              })
-            }
-            disabled={deleting.has(confirmDelete.volunteerId || 0)}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleDeleteUser}
-            variant="contained"
-            color="error"
-            disabled={deleting.has(confirmDelete.volunteerId || 0)}
-          >
-            {deleting.has(confirmDelete.volunteerId || 0)
-              ? "Deleting..."
-              : "Delete Volunteer"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
     </Paper>
   );
 }

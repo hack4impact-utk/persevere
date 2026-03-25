@@ -13,7 +13,7 @@ import { toNumber } from "@/services/shared/db-helpers";
 export type AnalyticsStats = {
   totalHours: number;
   totalVolunteers: number;
-  attendanceRate: number; // confirmed RSVPs / total RSVPs (0–1)
+  attendanceRate: number; // attended RSVPs / (attended + no_show) RSVPs (0–1)
   hoursByMonth: { month: string; hours: number }[];
   topVolunteers: { name: string; hours: number }[];
   hoursByLocation: { location: string; hours: number }[];
@@ -68,11 +68,11 @@ export async function getAnalyticsStats(
       .innerJoin(users, eq(volunteers.userId, users.id))
       .where(eq(users.isActive, true)),
 
-    // Attendance rate: confirmed vs total RSVPs (filtered by opportunity date)
+    // Attendance rate: attended vs (attended + no_show) RSVPs (filtered by opportunity date)
     db
       .select({
-        total: sql<string>`count(*)`,
-        confirmed: sql<string>`count(*) filter (where ${volunteerRsvps.status} = 'confirmed')`,
+        total: sql<string>`count(*) filter (where ${volunteerRsvps.status} in ('attended', 'no_show'))`,
+        attended: sql<string>`count(*) filter (where ${volunteerRsvps.status} = 'attended')`,
       })
       .from(volunteerRsvps)
       .innerJoin(
@@ -132,13 +132,13 @@ export async function getAnalyticsStats(
       .groupBy(sql`coalesce(${volunteers.volunteerType}, 'Unspecified')`),
   ]);
 
-  const total = toNumber(rsvpAgg[0]?.total);
-  const confirmed = toNumber(rsvpAgg[0]?.confirmed);
+  const trackedRsvps = toNumber(rsvpAgg[0]?.total);
+  const attended = toNumber(rsvpAgg[0]?.attended);
 
   return {
     totalHours: toNumber(hoursAgg[0]?.total),
     totalVolunteers: toNumber(volunteersCount[0]?.count),
-    attendanceRate: total > 0 ? confirmed / total : 0,
+    attendanceRate: trackedRsvps > 0 ? attended / trackedRsvps : 0,
     hoursByMonth: hoursByMonthRows.map((r) => ({
       month: r.month,
       hours: toNumber(r.hours),

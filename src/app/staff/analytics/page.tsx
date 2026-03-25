@@ -49,7 +49,7 @@ export default function StaffAnalyticsPage(): JSX.Element {
   const statCards = [
     {
       label: "Total Hours",
-      value: isLoading ? "—" : (data?.totalHours ?? 0).toFixed(1),
+      value: isLoading ? "—" : (data?.totalHours ?? 0).toFixed(2),
     },
     {
       label: "Active Volunteers",
@@ -373,7 +373,7 @@ export default function StaffAnalyticsPage(): JSX.Element {
                     </ListItemAvatar>
                     <ListItemText
                       primary={v.name}
-                      secondary={`${v.hours.toFixed(1)} hours logged`}
+                      secondary={`${v.hours.toFixed(2)} hours logged`}
                       primaryTypographyProps={{
                         variant: "subtitle1",
                         fontWeight: 600,

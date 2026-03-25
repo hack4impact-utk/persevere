@@ -23,7 +23,9 @@ export function ModalTitleBar({
           alignItems: "center",
         }}
       >
-        <Typography variant="h6">{title}</Typography>
+        <Typography variant="h6" fontWeight={700}>
+          {title}
+        </Typography>
         <IconButton
           aria-label="close"
           onClick={onClose}

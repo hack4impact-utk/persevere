@@ -5,21 +5,15 @@ import { useSession } from "next-auth/react";
 import { JSX } from "react";
 
 /**
- * Staff profile page. Protected by layout auth check.
+ * Admin profile page — accessible at /staff/settings/profile.
+ * Protected by the settings layout (admin-only).
  */
-export default function StaffProfilePage(): JSX.Element {
+export default function AdminSettingsProfilePage(): JSX.Element {
   const { data: session } = useSession();
 
-  // Layout handles auth redirect - this is just for loading state
   if (!session) {
     return (
-      <Box
-        sx={{
-          px: { xs: 2, md: 4 },
-          pt: { xs: 1, md: 1.5 },
-          textAlign: "center",
-        }}
-      >
+      <Box sx={{ px: { xs: 2, md: 4 }, pt: { xs: 1, md: 1.5 } }}>
         <Typography variant="h6">Loading...</Typography>
       </Box>
     );
@@ -55,10 +49,7 @@ export default function StaffProfilePage(): JSX.Element {
           {session.user?.email}
         </Typography>
         <Typography variant="body1" gutterBottom>
-          Role: {session.user?.role}{" "}
-          {session.user?.role === "admin"
-            ? "(Administrator)"
-            : "(Staff Member)"}
+          Role: {session.user?.role} (Administrator)
         </Typography>
         <Typography variant="body1" gutterBottom>
           Email Verified: {session.user?.isEmailVerified ? "Yes" : "No"}

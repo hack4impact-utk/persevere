@@ -311,6 +311,7 @@ export default function EventFormModal({
             onChange={(e) => {
               setFormData({ ...formData, maxVolunteers: e.target.value });
             }}
+            inputProps={{ min: 1 }}
             sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
           />
 

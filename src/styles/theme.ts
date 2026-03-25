@@ -24,6 +24,44 @@ const theme = createTheme({
       main: "#4caf50",
     },
   },
+  components: {
+    MuiButton: {
+      defaultProps: {
+        disableElevation: true,
+      },
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          textTransform: "none",
+          fontWeight: 600,
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiDialogTitle: {
+      styleOverrides: {
+        root: {
+          fontWeight: 700,
+          fontSize: "1.5rem",
+          paddingBottom: 8,
+        },
+      },
+    },
+    MuiDialogActions: {
+      styleOverrides: {
+        root: {
+          padding: "8px 24px 24px",
+          gap: 8,
+        },
+      },
+    },
+  },
 });
 
 export default theme;

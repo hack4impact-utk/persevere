@@ -699,6 +699,7 @@ export default function EventDetailModal({
                 onChange={(e) => {
                   setEditForm({ ...editForm, maxVolunteers: e.target.value });
                 }}
+                inputProps={{ min: 1 }}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
               />
 

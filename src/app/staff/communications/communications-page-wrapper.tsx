@@ -26,9 +26,9 @@ export default function CommunicationsPageWrapper({
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
-        pt: 1,
-        px: 2,
-        pb: 2,
+        pt: { xs: 1, md: 1.5 },
+        px: { xs: 2, md: 4 },
+        pb: { xs: 2, md: 4 },
       }}
     >
       <CommunicationsList userRole={userRole} />

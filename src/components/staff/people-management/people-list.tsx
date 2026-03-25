@@ -1,7 +1,6 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
-import CloseIcon from "@mui/icons-material/Close";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import {
   Alert,
@@ -11,7 +10,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Divider,
   FormControl,
   IconButton,
@@ -199,7 +197,7 @@ export default function PeopleList(): ReactElement {
         display: "flex",
         flexDirection: "column",
         pt: { xs: 1, md: 1.5 },
-        px: 3,
+        px: { xs: 2, md: 4 },
         pb: 3,
         overflow: "hidden",
       }}
@@ -511,37 +509,11 @@ export default function PeopleList(): ReactElement {
         onClose={() => setFilterModalOpen(false)}
         fullWidth
         maxWidth="sm"
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-          },
-        }}
       >
-        <DialogTitle
-          sx={{
-            pb: 2,
-            pt: 3,
-            px: 3,
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="h5" component="div" fontWeight={600}>
-              Filter Staff
-            </Typography>
-            <IconButton
-              onClick={() => setFilterModalOpen(false)}
-              sx={{ color: (theme) => theme.palette.grey[500] }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
+        <ModalTitleBar
+          title="Filter Staff"
+          onClose={() => setFilterModalOpen(false)}
+        />
         <Divider />
         <DialogContent sx={{ px: 3, py: 3 }}>
           <Stack spacing={3}>
@@ -572,7 +544,7 @@ export default function PeopleList(): ReactElement {
           </Stack>
         </DialogContent>
         <Divider />
-        <DialogActions sx={{ px: 3, py: 2.5, gap: 1.5 }}>
+        <DialogActions>
           <Button
             onClick={handleClearFilters}
             disabled={Object.keys(staffFilters).length === 0}

@@ -1,33 +1,33 @@
 "use client";
 
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import EventIcon from "@mui/icons-material/Event";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
+import HistoryIcon from "@mui/icons-material/History";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
+import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import NextLink from "next/link";
 import { JSX } from "react";
 
 import { AsyncContent } from "@/components/shared";
 import { getRsvpStatusColor, StatusBadge } from "@/components/ui";
 import { useRsvps } from "@/hooks/use-rsvps";
 
-import RsvpButton from "./rsvp-button";
 import { formatDate } from "./utils";
 
-export default function MyRsvps(): JSX.Element {
-  const { upcoming, loading, error, loadRsvps } = useRsvps();
+export default function PastEvents(): JSX.Element {
+  const { past, loading, error } = useRsvps();
 
   return (
     <Card sx={{ borderRadius: 2, boxShadow: 2, height: "100%" }}>
       <CardContent sx={{ p: 2.5 }}>
         <Box display="flex" alignItems="center" gap={1} mb={2}>
-          <EventIcon color="primary" />
+          <HistoryIcon color="primary" />
           <Typography variant="h6" fontWeight={700}>
-            My Upcoming RSVPs
+            Past Events
           </Typography>
         </Box>
         <Divider sx={{ mb: 2 }} />
@@ -35,12 +35,12 @@ export default function MyRsvps(): JSX.Element {
         <AsyncContent
           loading={loading}
           error={error}
-          empty={upcoming.length === 0}
-          emptyMessage="No upcoming RSVPs. Browse opportunities to sign up!"
+          empty={past.length === 0}
+          emptyMessage="No past events yet."
         >
-          <Box sx={{ overflowY: "auto", maxHeight: 320 }}>
+          <Box sx={{ overflowY: "auto", maxHeight: 240 }}>
             <Stack spacing={2}>
-              {upcoming.map((rsvp) => (
+              {past.map((rsvp) => (
                 <Box
                   key={rsvp.opportunityId}
                   sx={{
@@ -72,7 +72,7 @@ export default function MyRsvps(): JSX.Element {
                   </Box>
 
                   {rsvp.opportunityStartDate && (
-                    <Box display="flex" alignItems="center" gap={0.5} mb={0.5}>
+                    <Box display="flex" alignItems="center" gap={0.5}>
                       <CalendarTodayIcon
                         sx={{ fontSize: 14, color: "text.secondary" }}
                       />
@@ -81,34 +81,22 @@ export default function MyRsvps(): JSX.Element {
                       </Typography>
                     </Box>
                   )}
-
-                  {rsvp.opportunityLocation && (
-                    <Box display="flex" alignItems="center" gap={0.5} mb={1.5}>
-                      <LocationOnIcon
-                        sx={{ fontSize: 14, color: "text.secondary" }}
-                      />
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        noWrap
-                        sx={{ minWidth: 0 }}
-                      >
-                        {rsvp.opportunityLocation}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  <RsvpButton
-                    opportunityId={rsvp.opportunityId}
-                    isRsvped={true}
-                    isFull={false}
-                    onRsvpChange={() => void loadRsvps()}
-                  />
                 </Box>
               ))}
             </Stack>
           </Box>
         </AsyncContent>
+
+        <Box mt={2}>
+          <Link
+            component={NextLink}
+            href="/volunteer/opportunities"
+            variant="body2"
+            underline="hover"
+          >
+            View all opportunities →
+          </Link>
+        </Box>
       </CardContent>
     </Card>
   );
