@@ -4,7 +4,7 @@ import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import { JSX } from "react";
 
-import CommunicationsCard from "@/components/volunteer/communications-card";
+import AnnouncementsCard from "@/components/volunteer/communications-card";
 import DashboardRecommendations from "@/components/volunteer/dashboard-recommendations";
 import MyRsvps from "@/components/volunteer/my-rsvps";
 import PastEvents from "@/components/volunteer/past-events";
@@ -30,13 +30,13 @@ export default function VolunteerDashboardPage(): JSX.Element {
       {/* Row 1 — Stats (full-width, 3-col grid inside component) */}
       <VolunteerStats />
 
-      {/* Row 2 — My RSVPs (wider) + Communications (narrower) */}
+      {/* Row 2 — My RSVPs (wider) + Announcements (narrower) */}
       <Grid container spacing={3} alignItems="stretch">
         <Grid size={{ xs: 12, md: 8 }}>
           <MyRsvps />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
-          <CommunicationsCard />
+          <AnnouncementsCard />
         </Grid>
       </Grid>
 
