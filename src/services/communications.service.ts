@@ -231,6 +231,32 @@ export async function createCommunication(
   };
 }
 
+export type AnnouncementRecord = {
+  id: number;
+  subject: string;
+  body: string;
+  sentAt: Date;
+};
+
+/**
+ * Lists all announcements sent to volunteers (recipientType "volunteers" or "both"),
+ * ordered newest-first. Excludes sender PII.
+ */
+export async function listVolunteerAnnouncements(): Promise<
+  AnnouncementRecord[]
+> {
+  return db
+    .select({
+      id: bulkCommunicationLogs.id,
+      subject: bulkCommunicationLogs.subject,
+      body: bulkCommunicationLogs.body,
+      sentAt: bulkCommunicationLogs.sentAt,
+    })
+    .from(bulkCommunicationLogs)
+    .where(inArray(bulkCommunicationLogs.recipientType, ["volunteers", "both"]))
+    .orderBy(desc(bulkCommunicationLogs.sentAt));
+}
+
 /**
  * Returns the most recent messages sent to volunteers (recipientType "volunteers" or "both").
  */

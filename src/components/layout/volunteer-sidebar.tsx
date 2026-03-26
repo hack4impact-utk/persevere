@@ -96,23 +96,19 @@ const ClockIcon = (): JSX.Element => (
   </svg>
 );
 
-const MailIcon = (): JSX.Element => (
+const MegaphoneIcon = (): JSX.Element => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <rect
-      x="3"
-      y="5"
-      width="18"
-      height="14"
-      rx="2"
+    <path
+      d="M3 9v6h4l5 5V4L7 9H3z"
       stroke="white"
       strokeWidth="2"
+      strokeLinejoin="round"
     />
     <path
-      d="M3 8l9 6 9-6"
+      d="M16 8.5a5 5 0 0 1 0 7"
       stroke="white"
       strokeWidth="2"
       strokeLinecap="round"
-      strokeLinejoin="round"
     />
   </svg>
 );
@@ -134,12 +130,12 @@ const volunteerNavItems: NavItem[] = [
     href: "/volunteer/onboarding",
     icon: <DocumentIcon />,
   },
-  { label: "Hours", href: "/volunteer/hours", icon: <ClockIcon /> },
   {
-    label: "Communications",
-    href: "/volunteer/communications",
-    icon: <MailIcon />,
+    label: "Announcements",
+    href: "/volunteer/announcements",
+    icon: <MegaphoneIcon />,
   },
+  { label: "Hours", href: "/volunteer/hours", icon: <ClockIcon /> },
 ];
 
 /**
