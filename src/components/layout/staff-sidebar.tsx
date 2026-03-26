@@ -129,6 +129,27 @@ const ChatIcon = (): JSX.Element => (
   </svg>
 );
 
+const ApprovalsIcon = (): JSX.Element => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M9 12l2 2 4-4"
+      stroke="white"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <rect
+      x="3"
+      y="3"
+      width="18"
+      height="18"
+      rx="3"
+      stroke="white"
+      strokeWidth="2"
+    />
+  </svg>
+);
+
 export default function StaffSidebar(): JSX.Element {
   const { data: session } = useSession();
   const user = session?.user as { role?: string } | undefined;
@@ -142,6 +163,11 @@ export default function StaffSidebar(): JSX.Element {
         label: "Opportunities",
         href: "/staff/opportunities",
         icon: <CalendarIcon />,
+      },
+      {
+        label: "Approvals",
+        href: "/staff/approvals",
+        icon: <ApprovalsIcon />,
       },
       {
         label: "Onboarding",

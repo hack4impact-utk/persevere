@@ -7,7 +7,51 @@ import {
   volunteerRsvps,
   volunteers,
 } from "@/db/schema";
+import { users } from "@/db/schema/users";
 import { ConflictError, NotFoundError, ValidationError } from "@/utils/errors";
+
+export type AllHoursRecord = {
+  id: number;
+  volunteerId: number;
+  volunteerName: string;
+  opportunityId: number;
+  opportunityTitle: string | null;
+  date: Date;
+  hours: number;
+  notes: string | null;
+  status: "pending" | "approved" | "rejected";
+  rejectionReason: string | null;
+};
+
+/**
+ * Lists all volunteer hour records across all volunteers, optionally filtered by status.
+ * Used by staff for the global Approvals > Hours view.
+ */
+export async function listAllHours(
+  status?: "pending" | "approved" | "rejected",
+): Promise<AllHoursRecord[]> {
+  const conditions = status ? [eq(volunteerHours.status, status)] : [];
+
+  return db
+    .select({
+      id: volunteerHours.id,
+      volunteerId: volunteerHours.volunteerId,
+      volunteerName: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
+      opportunityId: volunteerHours.opportunityId,
+      opportunityTitle: opportunities.title,
+      date: volunteerHours.date,
+      hours: volunteerHours.hours,
+      notes: volunteerHours.notes,
+      status: volunteerHours.status,
+      rejectionReason: volunteerHours.rejectionReason,
+    })
+    .from(volunteerHours)
+    .innerJoin(volunteers, eq(volunteerHours.volunteerId, volunteers.id))
+    .innerJoin(users, eq(volunteers.userId, users.id))
+    .leftJoin(opportunities, eq(volunteerHours.opportunityId, opportunities.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(volunteerHours.date));
+}
 
 export type HoursFilters = {
   volunteerId: number;
