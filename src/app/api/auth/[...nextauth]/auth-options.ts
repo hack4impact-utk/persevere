@@ -4,7 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 
 import db from "@/db";
 import { users } from "@/db/schema";
-import type { UserRole, VolunteerType } from "@/types/next-auth";
+import type { UserRole } from "@/types/next-auth";
 import { env } from "@/utils/env";
 import { verifyPassword } from "@/utils/server/password";
 
@@ -73,7 +73,7 @@ const authOptions: NextAuthOptions = {
 
           // Determine user role
           let role: UserRole | "none" = "none";
-          let volunteerType: VolunteerType | null = null;
+          let volunteerType: string | null = null;
 
           if (user.staff?.admin) {
             role = "admin";
@@ -81,8 +81,7 @@ const authOptions: NextAuthOptions = {
             role = "staff";
           } else if (user.volunteer) {
             role = "volunteer";
-            volunteerType =
-              (user.volunteer.volunteerType as VolunteerType | null) ?? null;
+            volunteerType = user.volunteer.volunteerType ?? null;
           }
 
           if (role === "none") {

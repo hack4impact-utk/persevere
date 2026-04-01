@@ -31,6 +31,7 @@ import {
 import { type ReactElement, useCallback, useMemo, useState } from "react";
 import validator from "validator";
 
+import { useVolunteerTypes } from "@/hooks/use-volunteer-types";
 import { useVolunteers } from "@/hooks/use-volunteers";
 
 import type { Volunteer } from "./types";
@@ -67,6 +68,8 @@ export default function AddVolunteerModal({
     { type: "", alumni: false },
     { skip: true },
   );
+
+  const { activeTypes } = useVolunteerTypes();
 
   // UI state
   const [submitting, setSubmitting] = useState(false);
@@ -345,9 +348,11 @@ export default function AddVolunteerModal({
                     onBlur={() => markTouched("volunteerType")}
                     displayEmpty
                   >
-                    <MenuItem value="mentor">Mentor</MenuItem>
-                    <MenuItem value="speaker">Speaker</MenuItem>
-                    <MenuItem value="flexible">Flexible</MenuItem>
+                    {activeTypes.map((t) => (
+                      <MenuItem key={t.id} value={t.name}>
+                        {t.name}
+                      </MenuItem>
+                    ))}
                   </Select>
                   {volunteerTypeError && (
                     <Typography
