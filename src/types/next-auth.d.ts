@@ -1,7 +1,7 @@
 import "next-auth";
 
 export type UserRole = "volunteer" | "staff" | "admin";
-export type VolunteerType = "mentor" | "speaker" | "flexible";
+export type VolunteerType = string;
 
 export type SessionUserPayload = {
   id: string;

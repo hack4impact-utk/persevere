@@ -76,6 +76,14 @@ export const admin = pgTable("admin", {
   ...timestamps,
 });
 
+// Volunteer types catalog - admin-configurable types (Mentor, Speaker, Flexible, etc.)
+export const volunteerTypes = pgTable("volunteer_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  isActive: boolean("is_active").notNull().default(true),
+  ...timestamps,
+});
+
 // Skills catalog - available skills volunteers can have
 export const skills = pgTable("skills", {
   id: serial("id").primaryKey(),

@@ -31,6 +31,7 @@ import { type ReactElement, useCallback, useState } from "react";
 
 import { ModalTitleBar } from "@/components/shared";
 import { useVolunteerDetail } from "@/hooks/use-volunteer-detail";
+import { useVolunteerTypes } from "@/hooks/use-volunteer-types";
 import { useVolunteers } from "@/hooks/use-volunteers";
 
 import PendingInvitesTable from "./pending-invites-table";
@@ -76,6 +77,8 @@ export default function VolunteerList(): ReactElement {
     error,
     loadVolunteers,
   } = useVolunteers(searchQuery, filters);
+
+  const { activeTypes } = useVolunteerTypes();
 
   // Profile modal state
   const [selectedVolunteerId, setSelectedVolunteerId] = useState<number | null>(
@@ -460,9 +463,11 @@ export default function VolunteerList(): ReactElement {
                   <MenuItem value="">
                     <em>All Types</em>
                   </MenuItem>
-                  <MenuItem value="mentor">Mentor</MenuItem>
-                  <MenuItem value="speaker">Speaker</MenuItem>
-                  <MenuItem value="flexible">Flexible</MenuItem>
+                  {activeTypes.map((t) => (
+                    <MenuItem key={t.id} value={t.name}>
+                      {t.name}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Box>

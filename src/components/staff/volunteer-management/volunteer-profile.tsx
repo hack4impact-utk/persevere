@@ -56,6 +56,7 @@ import {
 } from "@/components/ui";
 import { useHours } from "@/hooks/use-hours";
 import { useVolunteerDetail } from "@/hooks/use-volunteer-detail";
+import { useVolunteerTypes } from "@/hooks/use-volunteer-types";
 import type { FetchVolunteerByIdResult } from "@/services/volunteer-client.service";
 
 import SkillsModal from "./skills-modal";
@@ -1360,6 +1361,7 @@ function StaffEditVolunteerModal({
   saving,
 }: StaffEditVolunteerModalProps): JSX.Element {
   const { volunteers: vol, users: user } = volunteer;
+  const { activeTypes } = useVolunteerTypes();
   const [formData, setFormData] = useState({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
@@ -1480,9 +1482,11 @@ function StaffEditVolunteerModal({
                     handleChange("volunteerType", e.target.value)
                   }
                 >
-                  <MenuItem value="mentor">Mentor</MenuItem>
-                  <MenuItem value="speaker">Speaker</MenuItem>
-                  <MenuItem value="flexible">Flexible</MenuItem>
+                  {activeTypes.map((t) => (
+                    <MenuItem key={t.id} value={t.name}>
+                      {t.name}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Box>

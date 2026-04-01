@@ -47,7 +47,6 @@ const sections: SettingsGroup[] = [
       {
         label: "Volunteer Types",
         href: "/staff/settings/volunteer-types",
-        comingSoon: true,
       },
     ],
   },
