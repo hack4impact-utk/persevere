@@ -1,15 +1,18 @@
 "use client";
 
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import LockIcon from "@mui/icons-material/Lock";
 import PersonIcon from "@mui/icons-material/Person";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import {
+  Alert,
   Autocomplete,
   Box,
   Button,
   Card,
   CardContent,
   CircularProgress,
+  Collapse,
   Divider,
   FormControlLabel,
   Grid,
@@ -21,6 +24,7 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useEffect, useState } from "react";
 
+import { useChangePassword } from "@/hooks/use-change-password";
 import { useVolunteerSkillsInterests } from "@/hooks/use-volunteer-skills-interests";
 
 import AvailabilityEditor, {
@@ -213,6 +217,72 @@ export default function ProfileEditForm({
       setInterestSelections(selections);
     }
   }, [catalogInterests, initialData.interests]);
+
+  const {
+    isMutating: isChangingPassword,
+    error: passwordApiError,
+    changePassword,
+  } = useChangePassword("volunteer");
+
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordErrors, setPasswordErrors] = useState<{
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  }>({});
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+
+  const validatePassword = (): boolean => {
+    const errors: typeof passwordErrors = {};
+    if (!passwordData.currentPassword) {
+      errors.currentPassword = "Current password is required";
+    }
+    if (passwordData.newPassword.length < 8) {
+      errors.newPassword = "New password must be at least 8 characters";
+    }
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
+    }
+    setPasswordErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleChangePassword = async (): Promise<void> => {
+    if (!validatePassword()) return;
+    setPasswordSuccess(false);
+    const success = await changePassword({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
+    });
+    if (success) {
+      setPasswordSuccess(true);
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setPasswordErrors({});
+      enqueueSnackbar("Password changed successfully", {
+        variant: "success",
+      });
+    }
+  };
+
+  const handleCancelPassword = (): void => {
+    setShowPasswordSection(false);
+    setPasswordData({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+    setPasswordErrors({});
+    setPasswordSuccess(false);
+  };
 
   const hasAvailabilityErrors = Object.values(formData.availability ?? {}).some(
     (ranges) => ranges != null && validateRanges(ranges) !== null,
@@ -457,6 +527,124 @@ export default function ProfileEditForm({
               setFormData({ ...formData, availability })
             }
           />
+        </FormSectionCard>
+
+        {/* ── Change Password ──────────────────────────── */}
+        <FormSectionCard
+          icon={<LockIcon fontSize="small" />}
+          title="Change Password"
+        >
+          {showPasswordSection ? (
+            <Collapse in={showPasswordSection}>
+              <Stack spacing={2}>
+                {passwordApiError && (
+                  <Alert severity="error" variant="outlined">
+                    {passwordApiError}
+                  </Alert>
+                )}
+                {passwordSuccess && (
+                  <Alert severity="success" variant="outlined">
+                    Password changed successfully
+                  </Alert>
+                )}
+                <TextField
+                  label="Current Password"
+                  type="password"
+                  size="small"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => {
+                    setPasswordData({
+                      ...passwordData,
+                      currentPassword: e.target.value,
+                    });
+                    if (passwordErrors.currentPassword) {
+                      setPasswordErrors({
+                        ...passwordErrors,
+                        currentPassword: undefined,
+                      });
+                    }
+                  }}
+                  error={!!passwordErrors.currentPassword}
+                  helperText={passwordErrors.currentPassword}
+                  fullWidth
+                  disabled={isChangingPassword}
+                />
+                <TextField
+                  label="New Password"
+                  type="password"
+                  size="small"
+                  value={passwordData.newPassword}
+                  onChange={(e) => {
+                    setPasswordData({
+                      ...passwordData,
+                      newPassword: e.target.value,
+                    });
+                    if (passwordErrors.newPassword) {
+                      setPasswordErrors({
+                        ...passwordErrors,
+                        newPassword: undefined,
+                      });
+                    }
+                  }}
+                  error={!!passwordErrors.newPassword}
+                  helperText={passwordErrors.newPassword}
+                  fullWidth
+                  disabled={isChangingPassword}
+                />
+                <TextField
+                  label="Confirm New Password"
+                  type="password"
+                  size="small"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => {
+                    setPasswordData({
+                      ...passwordData,
+                      confirmPassword: e.target.value,
+                    });
+                    if (passwordErrors.confirmPassword) {
+                      setPasswordErrors({
+                        ...passwordErrors,
+                        confirmPassword: undefined,
+                      });
+                    }
+                  }}
+                  error={!!passwordErrors.confirmPassword}
+                  helperText={passwordErrors.confirmPassword}
+                  fullWidth
+                  disabled={isChangingPassword}
+                />
+                <Box display="flex" gap={1.5} justifyContent="flex-end">
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={handleCancelPassword}
+                    disabled={isChangingPassword}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => {
+                      void handleChangePassword();
+                    }}
+                    disabled={isChangingPassword}
+                  >
+                    {isChangingPassword ? "Changing..." : "Change password"}
+                  </Button>
+                </Box>
+              </Stack>
+            </Collapse>
+          ) : (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setShowPasswordSection(true)}
+              disabled={isSaving}
+            >
+              Change password
+            </Button>
+          )}
         </FormSectionCard>
 
         {/* ── Actions ──────────────────────────────────── */}
