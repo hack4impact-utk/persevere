@@ -51,14 +51,24 @@ export default async function VolunteerDetailsPage({
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">
-          Volunteer Profile: {profile.volunteer.users.firstName}{" "}
-          {profile.volunteer.users.lastName}
-        </h1>
+    <div
+      style={{
+        flex: 1,
+        overflowY: "auto",
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <div className="container mx-auto p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">
+            Volunteer Profile: {profile.volunteer.users.firstName}{" "}
+            {profile.volunteer.users.lastName}
+          </h1>
+        </div>
+        <VolunteerProfile volunteer={volunteer} />
       </div>
-      <VolunteerProfile volunteer={volunteer} />
     </div>
   );
 }
