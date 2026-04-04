@@ -1,6 +1,0 @@
-allowBuilds:
-  bcrypt: false
-  esbuild: true
-  oxc-resolver: false
-  sharp: false
-  unrs-resolver: false
