@@ -4,13 +4,13 @@ import EditIcon from "@mui/icons-material/Edit";
 import LockIcon from "@mui/icons-material/Lock";
 import PersonIcon from "@mui/icons-material/Person";
 import {
-  Alert,
   Avatar,
   Box,
   Button,
   Card,
   CardContent,
-  Collapse,
+  Divider,
+  Grid,
   Skeleton,
   Stack,
   TextField,
@@ -19,22 +19,37 @@ import {
 import { useSnackbar } from "notistack";
 import { type JSX, useState } from "react";
 
-import { DetailField } from "@/components/shared";
+import { ChangePasswordSection, DetailField } from "@/components/shared";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { useChangePassword } from "@/hooks/use-change-password";
 import { useStaffSelfProfile } from "@/hooks/use-staff-self-profile";
 
 function initials(first?: string | null, last?: string | null): string {
   return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase() || "?";
 }
 
-type SectionCardProps = {
-  icon: JSX.Element;
+function SectionLabel({ children }: { children: string }): JSX.Element {
+  return (
+    <Typography
+      variant="caption"
+      fontWeight={700}
+      letterSpacing={0.8}
+      color="text.secondary"
+      sx={{ textTransform: "uppercase", display: "block", mb: 1.5 }}
+    >
+      {children}
+    </Typography>
+  );
+}
+
+function FormSectionCard({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
   title: string;
   children: React.ReactNode;
-};
-
-function SectionCard({ icon, title, children }: SectionCardProps): JSX.Element {
+}): JSX.Element {
   return (
     <Card
       elevation={0}
@@ -74,6 +89,29 @@ function SectionCard({ icon, title, children }: SectionCardProps): JSX.Element {
         {children}
       </CardContent>
     </Card>
+  );
+}
+
+function SidebarCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}): JSX.Element {
+  return (
+    <Box>
+      <Typography
+        variant="caption"
+        fontWeight={700}
+        letterSpacing={0.8}
+        color="text.secondary"
+        sx={{ textTransform: "uppercase", display: "block", mb: 1.5 }}
+      >
+        {title}
+      </Typography>
+      {children}
+    </Box>
   );
 }
 
@@ -153,12 +191,6 @@ export function StaffProfileEdit(): JSX.Element {
     useStaffSelfProfile();
   const { enqueueSnackbar } = useSnackbar();
 
-  const {
-    isMutating: isChangingPassword,
-    error: passwordApiError,
-    changePassword,
-  } = useChangePassword("staff");
-
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
@@ -167,66 +199,6 @@ export function StaffProfileEdit(): JSX.Element {
     bio: "",
   });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const [showPasswordSection, setShowPasswordSection] = useState(false);
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-  const [passwordErrors, setPasswordErrors] = useState<{
-    currentPassword?: string;
-    newPassword?: string;
-    confirmPassword?: string;
-  }>({});
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
-
-  const validatePassword = (): boolean => {
-    const errors: typeof passwordErrors = {};
-    if (!passwordData.currentPassword) {
-      errors.currentPassword = "Current password is required";
-    }
-    if (passwordData.newPassword.length < 8) {
-      errors.newPassword = "New password must be at least 8 characters";
-    }
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      errors.confirmPassword = "Passwords do not match";
-    }
-    setPasswordErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleChangePassword = async (): Promise<void> => {
-    if (!validatePassword()) return;
-    setPasswordSuccess(false);
-    const success = await changePassword({
-      currentPassword: passwordData.currentPassword,
-      newPassword: passwordData.newPassword,
-    });
-    if (success) {
-      setPasswordSuccess(true);
-      setPasswordData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-      setPasswordErrors({});
-      enqueueSnackbar("Password changed successfully", {
-        variant: "success",
-      });
-    }
-  };
-
-  const handleCancelPassword = (): void => {
-    setShowPasswordSection(false);
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
-    setPasswordErrors({});
-    setPasswordSuccess(false);
-  };
-
   const handleEdit = (): void => {
     if (!profile) return;
     setFormData({
@@ -387,258 +359,179 @@ export function StaffProfileEdit(): JSX.Element {
               variant="filled"
             />
           </Stack>
-          <Typography
-            variant="caption"
-            color="text.disabled"
-            sx={{ mt: 1, display: "block" }}
-          >
-            Profile picture upload coming soon
-          </Typography>
         </CardContent>
       </Card>
 
       {/* ── Edit mode ───────────────────────────────────────── */}
       {editMode ? (
-        <Card
-          elevation={0}
-          sx={{
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 2,
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleSave();
           }}
         >
-          <CardContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
-            <Typography variant="subtitle1" fontWeight={700} mb={3}>
-              Edit Profile
-            </Typography>
-            <Stack spacing={2.5}>
-              <TextField
-                label="First Name"
-                size="small"
-                value={formData.firstName}
-                onChange={handleFieldChange("firstName")}
-                error={!!formErrors.firstName}
-                helperText={formErrors.firstName}
-                fullWidth
-              />
-              <TextField
-                label="Last Name"
-                size="small"
-                value={formData.lastName}
-                onChange={handleFieldChange("lastName")}
-                error={!!formErrors.lastName}
-                helperText={formErrors.lastName}
-                fullWidth
-              />
-              <TextField
-                label="Email"
-                size="small"
-                value={profile.email}
-                disabled
-                helperText="Email cannot be changed"
-                fullWidth
-              />
-              <TextField
-                label="Phone"
-                size="small"
-                value={formData.phone}
-                onChange={handleFieldChange("phone")}
-                error={!!formErrors.phone}
-                helperText={formErrors.phone}
-                placeholder="e.g. (555) 123-4567"
-                fullWidth
-              />
-              <TextField
-                label="Bio"
-                size="small"
-                value={formData.bio}
-                onChange={handleFieldChange("bio")}
-                multiline
-                rows={4}
-                placeholder="Tell us about yourself..."
-                fullWidth
-              />
-            </Stack>
+          <Stack spacing={4}>
+            <Grid container spacing={3} alignItems="flex-start">
+              <Grid size={{ xs: 12, md: 5 }}>
+                <FormSectionCard
+                  icon={<PersonIcon fontSize="small" />}
+                  title="Profile Details"
+                >
+                  <SectionLabel>Contact</SectionLabel>
+                  <Stack spacing={2.5}>
+                    <TextField
+                      label="First Name"
+                      size="small"
+                      value={formData.firstName}
+                      onChange={handleFieldChange("firstName")}
+                      error={!!formErrors.firstName}
+                      helperText={formErrors.firstName}
+                      fullWidth
+                    />
+                    <TextField
+                      label="Last Name"
+                      size="small"
+                      value={formData.lastName}
+                      onChange={handleFieldChange("lastName")}
+                      error={!!formErrors.lastName}
+                      helperText={formErrors.lastName}
+                      fullWidth
+                    />
+                    <TextField
+                      label="Email"
+                      size="small"
+                      value={profile.email}
+                      disabled
+                      helperText="Email cannot be changed"
+                      fullWidth
+                    />
+                    <TextField
+                      label="Phone"
+                      size="small"
+                      value={formData.phone}
+                      onChange={handleFieldChange("phone")}
+                      error={!!formErrors.phone}
+                      helperText={formErrors.phone}
+                      placeholder="e.g. (555) 123-4567"
+                      fullWidth
+                    />
+                  </Stack>
+                </FormSectionCard>
+              </Grid>
 
-            <Box display="flex" justifyContent="flex-end" gap={1.5} mt={3}>
+              <Grid size={{ xs: 12, md: 7 }}>
+                <FormSectionCard
+                  icon={<PersonIcon fontSize="small" />}
+                  title="About Me"
+                >
+                  <SectionLabel>Bio</SectionLabel>
+                  <TextField
+                    label="Bio"
+                    size="small"
+                    value={formData.bio}
+                    onChange={handleFieldChange("bio")}
+                    multiline
+                    rows={6}
+                    placeholder="Tell us about yourself..."
+                    fullWidth
+                  />
+                </FormSectionCard>
+              </Grid>
+            </Grid>
+
+            {/* ── Change Password ──────────────────────────── */}
+            <FormSectionCard
+              icon={<LockIcon fontSize="small" />}
+              title="Change Password"
+            >
+              <ChangePasswordSection role="staff" disabled={isMutating} />
+            </FormSectionCard>
+
+            {/* ── Actions ──────────────────────────────────── */}
+            <Box
+              display="flex"
+              gap={1.5}
+              justifyContent="flex-end"
+              pt={1}
+              borderTop="1px solid"
+              sx={{ borderColor: "grey.200" }}
+            >
               <Button
                 variant="outlined"
-                size="small"
                 onClick={handleCancel}
                 disabled={isMutating}
+                sx={{
+                  borderColor: "grey.300",
+                  color: "text.secondary",
+                  "&:hover": { borderColor: "grey.500" },
+                }}
               >
                 Cancel
               </Button>
               <Button
+                type="submit"
                 variant="contained"
-                size="small"
-                onClick={() => {
-                  void handleSave();
-                }}
                 disabled={isMutating}
+                sx={{
+                  bgcolor: "grey.900",
+                  "&:hover": { bgcolor: "grey.700" },
+                  fontWeight: 600,
+                }}
               >
-                {isMutating ? "Saving..." : "Save"}
+                {isMutating ? "Saving..." : "Save changes"}
               </Button>
             </Box>
-          </CardContent>
-        </Card>
+          </Stack>
+        </form>
       ) : (
         /* ── View mode ──────────────────────────────────────── */
-        <SectionCard
-          icon={<PersonIcon sx={{ fontSize: 18 }} />}
-          title="Profile Details"
-        >
-          <Stack spacing={2}>
-            <DetailField label="First Name" value={profile.firstName || "—"} />
-            <DetailField label="Last Name" value={profile.lastName || "—"} />
-            <DetailField label="Email" value={profile.email} />
-            <DetailField label="Phone" value={profile.phone || "—"} />
-            <Box>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: "block", mb: 0.5 }}
-              >
-                Role
-              </Typography>
-              <StatusBadge
-                label={roleLabel}
-                color="primary"
-                size="small"
-                variant="filled"
-              />
-            </Box>
-            <DetailField
-              label="Bio"
-              value={profile.bio || "No bio yet."}
-              valueSx={
-                profile.bio
-                  ? { lineHeight: 1.75 }
-                  : { lineHeight: 1.75, color: "text.disabled" }
-              }
-            />
-          </Stack>
-        </SectionCard>
-      )}
-
-      {/* ── Change Password ──────────────────────────────── */}
-      <Box sx={{ mt: 3 }}>
-        <SectionCard
-          icon={<LockIcon sx={{ fontSize: 18 }} />}
-          title="Change Password"
-        >
-          {showPasswordSection ? (
-            <Collapse in={showPasswordSection}>
-              <Stack spacing={2}>
-                {passwordApiError && (
-                  <Alert severity="error" variant="outlined">
-                    {passwordApiError}
-                  </Alert>
-                )}
-                {passwordSuccess && (
-                  <Alert severity="success" variant="outlined">
-                    Password changed successfully
-                  </Alert>
-                )}
-                <TextField
-                  label="Current Password"
-                  type="password"
-                  size="small"
-                  value={passwordData.currentPassword}
-                  onChange={(e) => {
-                    setPasswordData({
-                      ...passwordData,
-                      currentPassword: e.target.value,
-                    });
-                    if (passwordErrors.currentPassword) {
-                      setPasswordErrors({
-                        ...passwordErrors,
-                        currentPassword: undefined,
-                      });
-                    }
-                  }}
-                  error={!!passwordErrors.currentPassword}
-                  helperText={passwordErrors.currentPassword}
-                  fullWidth
-                  disabled={isChangingPassword}
-                />
-                <TextField
-                  label="New Password"
-                  type="password"
-                  size="small"
-                  value={passwordData.newPassword}
-                  onChange={(e) => {
-                    setPasswordData({
-                      ...passwordData,
-                      newPassword: e.target.value,
-                    });
-                    if (passwordErrors.newPassword) {
-                      setPasswordErrors({
-                        ...passwordErrors,
-                        newPassword: undefined,
-                      });
-                    }
-                  }}
-                  error={!!passwordErrors.newPassword}
-                  helperText={passwordErrors.newPassword}
-                  fullWidth
-                  disabled={isChangingPassword}
-                />
-                <TextField
-                  label="Confirm New Password"
-                  type="password"
-                  size="small"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => {
-                    setPasswordData({
-                      ...passwordData,
-                      confirmPassword: e.target.value,
-                    });
-                    if (passwordErrors.confirmPassword) {
-                      setPasswordErrors({
-                        ...passwordErrors,
-                        confirmPassword: undefined,
-                      });
-                    }
-                  }}
-                  error={!!passwordErrors.confirmPassword}
-                  helperText={passwordErrors.confirmPassword}
-                  fullWidth
-                  disabled={isChangingPassword}
-                />
-                <Box display="flex" gap={1.5} justifyContent="flex-end">
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={handleCancelPassword}
-                    disabled={isChangingPassword}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => {
-                      void handleChangePassword();
-                    }}
-                    disabled={isChangingPassword}
-                  >
-                    {isChangingPassword ? "Changing..." : "Change password"}
-                  </Button>
-                </Box>
-              </Stack>
-            </Collapse>
-          ) : (
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setShowPasswordSection(true)}
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid",
+                borderColor: "grey.200",
+                borderRadius: 2,
+                height: "100%",
+              }}
             >
-              Change password
-            </Button>
-          )}
-        </SectionCard>
-      </Box>
+              <CardContent sx={{ p: 3 }}>
+                <Stack spacing={3} divider={<Divider />}>
+                  <SidebarCard title="Contact">
+                    <Stack spacing={2}>
+                      <DetailField label="Email" value={profile.email} />
+                      <DetailField label="Phone" value={profile.phone || "—"} />
+                    </Stack>
+                  </SidebarCard>
+                  <SidebarCard title="Role">
+                    <StatusBadge
+                      label={roleLabel}
+                      color="primary"
+                      size="small"
+                      variant="filled"
+                    />
+                  </SidebarCard>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid size={{ xs: 12, md: 8 }}>
+            <FormSectionCard
+              icon={<PersonIcon fontSize="small" />}
+              title="About Me"
+            >
+              <Typography
+                variant="body2"
+                color={profile.bio ? "text.secondary" : "text.disabled"}
+                sx={{ lineHeight: 1.75 }}
+              >
+                {profile.bio ?? "No bio yet."}
+              </Typography>
+            </FormSectionCard>
+          </Grid>
+        </Grid>
+      )}
     </>
   );
 }
