@@ -19,9 +19,19 @@ export default async function SettingsLayout({
   }
 
   return (
-    <div style={{ display: "flex", height: "100%", minHeight: 0 }}>
+    <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
       <SettingsNav />
-      <div style={{ flex: 1, overflowY: "auto" }}>{children}</div>
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0,
+          overflowY: "auto",
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 }

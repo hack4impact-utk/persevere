@@ -1,6 +1,7 @@
 "use client";
 
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import LockIcon from "@mui/icons-material/Lock";
 import PersonIcon from "@mui/icons-material/Person";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import {
@@ -21,6 +22,7 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useEffect, useState } from "react";
 
+import { ChangePasswordSection } from "@/components/shared";
 import { useVolunteerSkillsInterests } from "@/hooks/use-volunteer-skills-interests";
 
 import AvailabilityEditor, {
@@ -457,6 +459,14 @@ export default function ProfileEditForm({
               setFormData({ ...formData, availability })
             }
           />
+        </FormSectionCard>
+
+        {/* ── Change Password ──────────────────────────── */}
+        <FormSectionCard
+          icon={<LockIcon fontSize="small" />}
+          title="Change Password"
+        >
+          <ChangePasswordSection role="volunteer" disabled={isSaving} />
         </FormSectionCard>
 
         {/* ── Actions ──────────────────────────────────── */}
