@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, ne, or } from "drizzle-orm";
 
 import db from "@/db";
 import {
@@ -154,7 +154,12 @@ export async function createCommunication(
         .select({ email: users.email })
         .from(volunteers)
         .innerJoin(users, eq(volunteers.userId, users.id))
-        .where(eq(users.isActive, true));
+        .where(
+          and(
+            eq(users.isActive, true),
+            ne(volunteers.notificationPreference, "none"),
+          ),
+        );
       recipientEmails = volunteerUsers.map((v) => v.email);
       break;
     }
@@ -174,7 +179,12 @@ export async function createCommunication(
           .select({ email: users.email })
           .from(volunteers)
           .innerJoin(users, eq(volunteers.userId, users.id))
-          .where(eq(users.isActive, true)),
+          .where(
+            and(
+              eq(users.isActive, true),
+              ne(volunteers.notificationPreference, "none"),
+            ),
+          ),
         db
           .select({ email: users.email })
           .from(staff)

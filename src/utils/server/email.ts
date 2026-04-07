@@ -192,11 +192,13 @@ export async function sendEventReminderEmail(
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: env.appTimezone,
     timeZoneName: "short",
   });
   const endStr = event.endDate.toLocaleString("en-US", {
     hour: "numeric",
     minute: "2-digit",
+    timeZone: env.appTimezone,
     timeZoneName: "short",
   });
 
