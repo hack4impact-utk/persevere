@@ -38,7 +38,7 @@ export async function PUT(
     const { id } = await params;
     const templateId = Number.parseInt(id, 10);
 
-    if (isNaN(templateId)) {
+    if (Number.isNaN(templateId)) {
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
 
@@ -76,7 +76,7 @@ export async function DELETE(
     const { id } = await params;
     const templateId = Number.parseInt(id, 10);
 
-    if (isNaN(templateId)) {
+    if (Number.isNaN(templateId)) {
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
 
