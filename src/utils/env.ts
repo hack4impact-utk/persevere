@@ -27,5 +27,7 @@ export const env = {
   resendApiKey: getEnvVar("RESEND_API_KEY"),
   resendFromEmail: getEnvVar("RESEND_FROM_EMAIL"),
   blobReadWriteToken: getEnvVar("BLOB_READ_WRITE_TOKEN"),
+  cronSecret: getEnvVar("CRON_SECRET"),
+  appTimezone: process.env.APP_TIMEZONE ?? "America/Chicago",
   isProduction: process.env.NODE_ENV === "production",
 } as const;

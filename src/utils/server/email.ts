@@ -173,6 +173,89 @@ This is an automated message. Please do not reply to this email.
 }
 
 /**
+ * Sends a reminder email for an upcoming event to a volunteer.
+ */
+export async function sendEventReminderEmail(
+  email: string,
+  firstName: string,
+  event: {
+    title: string;
+    startDate: Date;
+    endDate: Date;
+    location: string;
+  },
+): Promise<unknown> {
+  const startStr = event.startDate.toLocaleString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: env.appTimezone,
+    timeZoneName: "short",
+  });
+  const endStr = event.endDate.toLocaleString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: env.appTimezone,
+    timeZoneName: "short",
+  });
+
+  const reminderHtml = wrapEmailHtml(`
+    <h1 style="color: #1976d2; margin-top: 0;">Upcoming Event Reminder</h1>
+
+    <p>Hi ${firstName}, this is a friendly reminder that you have an event coming up tomorrow!</p>
+
+    <div style="background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 20px; margin: 20px 0;">
+      <h2 style="margin-top: 0; color: #333; font-size: 18px;">${event.title}</h2>
+      <p style="margin: 10px 0;"><strong>When:</strong> ${startStr} – ${endStr}</p>
+      <p style="margin: 10px 0;"><strong>Where:</strong> ${event.location || "TBD"}</p>
+    </div>
+
+    <p style="color: #666; font-size: 14px;">
+      If you can no longer attend, please update your RSVP as soon as possible so we can notify others.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+
+    <p style="color: #999; font-size: 12px; margin: 0;">
+      This is an automated reminder from Persevere. Please do not reply to this email.
+    </p>
+  `);
+
+  const reminderText = `
+Upcoming Event Reminder
+
+Hi ${firstName}, this is a friendly reminder that you have an event coming up tomorrow!
+
+Event: ${event.title}
+When: ${startStr} – ${endStr}
+Where: ${event.location || "TBD"}
+
+If you can no longer attend, please update your RSVP as soon as possible so we can notify others.
+
+This is an automated reminder from Persevere. Please do not reply to this email.
+  `.trim();
+
+  const result = await resend.emails.send({
+    from: env.resendFromEmail,
+    to: email,
+    subject: `Reminder: ${event.title} is tomorrow`,
+    html: reminderHtml,
+    text: reminderText,
+  });
+
+  if (result.error) {
+    const errorMessage = result.error.message || JSON.stringify(result.error);
+    console.error("Resend API error:", result.error);
+    throw new Error(`Failed to send reminder email: ${errorMessage}`);
+  }
+
+  return result;
+}
+
+/**
  * Sends bulk emails to multiple recipients
  * @param recipients - Array of email addresses to send to
  * @param subject - Email subject line
