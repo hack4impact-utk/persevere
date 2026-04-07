@@ -31,6 +31,7 @@ import {
 } from "react";
 
 import { useCommunications } from "@/hooks/use-communications";
+import { useEmailTemplates } from "@/hooks/use-email-templates";
 
 import RichTextEditor from "./rich-text-editor";
 import type { Attachment, RecipientType } from "./types";
@@ -76,6 +77,7 @@ export default function ComposeModal({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | "">("");
 
   // UI state
   const [submitting, setSubmitting] = useState(false);
@@ -151,6 +153,30 @@ export default function ComposeModal({
   }, []);
 
   const { sendCommunication } = useCommunications({ skip: true });
+  const { templates } = useEmailTemplates();
+
+  // Filter to only active templates
+  const activeTemplates = useMemo(
+    () => templates.filter((t) => t.isActive),
+    [templates],
+  );
+
+  // Handle template selection
+  const handleTemplateSelect = useCallback(
+    (templateId: number | "") => {
+      setSelectedTemplateId(templateId);
+      if (templateId === "") {
+        // Clear selection - don't change form values
+        return;
+      }
+      const template = activeTemplates.find((t) => t.id === templateId);
+      if (template) {
+        setSubject(template.subject);
+        setBody(template.body);
+      }
+    },
+    [activeTemplates],
+  );
 
   const handleSubmit = useCallback(
     async (e?: React.FormEvent): Promise<void> => {
@@ -205,6 +231,7 @@ export default function ComposeModal({
         setBody("");
         setRecipientType("volunteers");
         setAttachments([]);
+        setSelectedTemplateId("");
         setTouched({});
         setSubmitError(null);
 
@@ -241,6 +268,7 @@ export default function ComposeModal({
     setRecipientType("volunteers");
     setAttachments([]);
     setTouched({});
+    setSelectedTemplateId("");
     setSubmitError(null);
     onClose();
   }, [submitting, onClose]);
@@ -379,6 +407,54 @@ export default function ComposeModal({
           </Box>
 
           <Divider />
+
+          {/* Template Selection */}
+          {activeTemplates.length > 0 && (
+            <>
+              <Box sx={{ display: "flex", alignItems: "center", py: 1 }}>
+                <Typography
+                  sx={{
+                    color: "text.secondary",
+                    minWidth: 70,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  Template
+                </Typography>
+                <Select
+                  value={selectedTemplateId}
+                  onChange={(e) =>
+                    handleTemplateSelect(e.target.value as number | "")
+                  }
+                  variant="standard"
+                  disabled={submitting}
+                  displayEmpty
+                  sx={{
+                    flex: 1,
+                    fontSize: "0.875rem",
+                    "& .MuiSelect-select": {
+                      py: 0.5,
+                    },
+                    "&:before, &:after": {
+                      display: "none",
+                    },
+                  }}
+                >
+                  <MenuItem value="">
+                    <em>None - Start from scratch</em>
+                  </MenuItem>
+                  {activeTemplates.map((template) => (
+                    <MenuItem key={template.id} value={template.id}>
+                      {template.name} - {template.subject}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
+              <Divider />
+            </>
+          )}
+
+          {/* ider />
 
           {/* Subject Field */}
           <InputBase
