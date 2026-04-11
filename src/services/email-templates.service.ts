@@ -165,8 +165,7 @@ export async function updateTemplate(
 }
 
 /**
- * Soft-delete a template by setting isActive to false.
- * This preserves historical data while removing from active use.
+ * Permanently delete a template from the database.
  */
 export async function deleteTemplate(id: number): Promise<void> {
   const [existing] = await db
@@ -180,10 +179,6 @@ export async function deleteTemplate(id: number): Promise<void> {
   }
 
   await db
-    .update(communicationTemplates)
-    .set({
-      isActive: false,
-      updatedAt: new Date(),
-    })
+    .delete(communicationTemplates)
     .where(eq(communicationTemplates.id, id));
 }

@@ -9,6 +9,7 @@ import { ConflictError, NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
 import { parseBodyOrError } from "@/utils/server/route-helpers";
+import { validateAndParseId } from "@/utils/validate-id";
 
 const templateUpdateSchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
@@ -36,10 +37,13 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const templateId = Number.parseInt(id, 10);
+    const templateId = validateAndParseId(id);
 
-    if (Number.isNaN(templateId)) {
-      return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+    if (templateId === null) {
+      return NextResponse.json(
+        { error: "Invalid template ID" },
+        { status: 400 },
+      );
     }
 
     const parsed = await parseBodyOrError(request, templateUpdateSchema);
@@ -74,10 +78,13 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const templateId = Number.parseInt(id, 10);
+    const templateId = validateAndParseId(id);
 
-    if (Number.isNaN(templateId)) {
-      return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+    if (templateId === null) {
+      return NextResponse.json(
+        { error: "Invalid template ID" },
+        { status: 400 },
+      );
     }
 
     await deleteTemplate(templateId);

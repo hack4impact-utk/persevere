@@ -5,7 +5,8 @@ import { apiClient } from "@/lib/api-client";
 
 type CacheEntry<T> = { data: T; fetchedAt: number };
 const CACHE_TTL_MS = 60_000;
-let templatesCache: CacheEntry<EmailTemplate[]> | null = null;
+let activeTemplatesCache: CacheEntry<EmailTemplate[]> | null = null;
+let allTemplatesCache: CacheEntry<EmailTemplate[]> | null = null;
 
 function isFresh<T>(cache: CacheEntry<T> | null): cache is CacheEntry<T> {
   return cache !== null && Date.now() - cache.fetchedAt < CACHE_TTL_MS;
@@ -41,24 +42,46 @@ export type UpdateTemplateInput = {
 };
 
 export type UseEmailTemplatesResult = {
-  templates: EmailTemplate[];
+  activeTemplates: EmailTemplate[];
+  allTemplates: EmailTemplate[];
   loading: boolean;
   error: string | null;
-  fetchTemplates: () => Promise<void>;
+  fetchActiveTemplates: () => Promise<void>;
+  fetchAllTemplates: () => Promise<void>;
   createTemplate: (input: CreateTemplateInput) => Promise<void>;
   updateTemplate: (id: number, input: UpdateTemplateInput) => Promise<void>;
   deleteTemplate: (id: number) => Promise<void>;
 };
 
 export function useEmailTemplates(): UseEmailTemplatesResult {
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [activeTemplates, setActiveTemplates] = useState<EmailTemplate[]>([]);
+  const [allTemplates, setAllTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const handleApiError = useApiErrorHandler(setError);
 
-  const fetchTemplates = useCallback(async (): Promise<void> => {
-    if (isFresh(templatesCache)) {
-      setTemplates(templatesCache.data);
+  const fetchActiveTemplates = useCallback(async (): Promise<void> => {
+    if (isFresh(activeTemplatesCache)) {
+      setActiveTemplates(activeTemplatesCache.data);
+      return;
+    }
+    setLoading(true);
+    try {
+      const json = await apiClient.get<{ data: EmailTemplate[] }>(
+        "/api/staff/email-templates",
+      );
+      activeTemplatesCache = { data: json.data, fetchedAt: Date.now() };
+      setActiveTemplates(json.data);
+    } catch (error_) {
+      handleApiError(error_, "Failed to fetch email templates.");
+    } finally {
+      setLoading(false);
+    }
+  }, [handleApiError]);
+
+  const fetchAllTemplates = useCallback(async (): Promise<void> => {
+    if (isFresh(allTemplatesCache)) {
+      setAllTemplates(allTemplatesCache.data);
       return;
     }
     setLoading(true);
@@ -66,8 +89,8 @@ export function useEmailTemplates(): UseEmailTemplatesResult {
       const json = await apiClient.get<{ data: EmailTemplate[] }>(
         "/api/staff/settings/email-templates",
       );
-      templatesCache = { data: json.data, fetchedAt: Date.now() };
-      setTemplates(json.data);
+      allTemplatesCache = { data: json.data, fetchedAt: Date.now() };
+      setAllTemplates(json.data);
     } catch (error_) {
       handleApiError(error_, "Failed to fetch email templates.");
     } finally {
@@ -79,50 +102,55 @@ export function useEmailTemplates(): UseEmailTemplatesResult {
     async (input: CreateTemplateInput): Promise<void> => {
       try {
         await apiClient.post("/api/staff/settings/email-templates", input);
-        templatesCache = null;
-        void fetchTemplates();
+        activeTemplatesCache = null;
+        allTemplatesCache = null;
+        void fetchAllTemplates();
       } catch (error_) {
-        handleApiError(error_, "Failed to create template.");
+        if (!handleApiError(error_)) throw error_;
       }
     },
-    [fetchTemplates, handleApiError],
+    [fetchAllTemplates, handleApiError],
   );
 
   const updateTemplate = useCallback(
     async (id: number, input: UpdateTemplateInput): Promise<void> => {
       try {
         await apiClient.put(`/api/staff/settings/email-templates/${id}`, input);
-        templatesCache = null;
-        void fetchTemplates();
+        activeTemplatesCache = null;
+        allTemplatesCache = null;
+        void fetchAllTemplates();
       } catch (error_) {
-        handleApiError(error_, "Failed to update template.");
+        if (!handleApiError(error_)) throw error_;
       }
     },
-    [fetchTemplates, handleApiError],
+    [fetchAllTemplates, handleApiError],
   );
 
   const deleteTemplate = useCallback(
     async (id: number): Promise<void> => {
       try {
         await apiClient.delete(`/api/staff/settings/email-templates/${id}`);
-        templatesCache = null;
-        void fetchTemplates();
+        activeTemplatesCache = null;
+        allTemplatesCache = null;
+        void fetchAllTemplates();
       } catch (error_) {
-        handleApiError(error_, "Failed to delete template.");
+        if (!handleApiError(error_)) throw error_;
       }
     },
-    [fetchTemplates, handleApiError],
+    [fetchAllTemplates, handleApiError],
   );
 
   useEffect(() => {
-    void fetchTemplates();
-  }, [fetchTemplates]);
+    void fetchActiveTemplates();
+  }, [fetchActiveTemplates]);
 
   return {
-    templates,
+    activeTemplates,
+    allTemplates,
     loading,
     error,
-    fetchTemplates,
+    fetchActiveTemplates,
+    fetchAllTemplates,
     createTemplate,
     updateTemplate,
     deleteTemplate,

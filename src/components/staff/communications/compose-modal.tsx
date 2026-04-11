@@ -153,13 +153,7 @@ export default function ComposeModal({
   }, []);
 
   const { sendCommunication } = useCommunications({ skip: true });
-  const { templates } = useEmailTemplates();
-
-  // Filter to only active templates
-  const activeTemplates = useMemo(
-    () => templates.filter((t) => t.isActive),
-    [templates],
-  );
+  const { activeTemplates } = useEmailTemplates();
 
   // Handle template selection
   const handleTemplateSelect = useCallback(
@@ -453,8 +447,6 @@ export default function ComposeModal({
               <Divider />
             </>
           )}
-
-          {/* ider />
 
           {/* Subject Field */}
           <InputBase
