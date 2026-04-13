@@ -2,6 +2,7 @@
 
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import CloseIcon from "@mui/icons-material/Close";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import {
@@ -14,7 +15,11 @@ import {
   Divider,
   IconButton,
   InputBase,
+  List,
+  ListItemButton,
+  ListItemText,
   MenuItem,
+  Popover,
   Select,
   Stack,
   Tooltip,
@@ -78,6 +83,10 @@ export default function ComposeModal({
   const [body, setBody] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | "">("");
+  const [templateAnchorEl, setTemplateAnchorEl] = useState<HTMLElement | null>(
+    null,
+  );
+  const templatePopoverOpen = Boolean(templateAnchorEl);
 
   // UI state
   const [submitting, setSubmitting] = useState(false);
@@ -155,10 +164,23 @@ export default function ComposeModal({
   const { sendCommunication } = useCommunications({ skip: true });
   const { activeTemplates } = useEmailTemplates();
 
+  // Handle template popover open/close
+  const handleTemplateButtonClick = useCallback(
+    (e: React.MouseEvent<HTMLElement>): void => {
+      setTemplateAnchorEl(e.currentTarget);
+    },
+    [],
+  );
+
+  const handleTemplatePopoverClose = useCallback((): void => {
+    setTemplateAnchorEl(null);
+  }, []);
+
   // Handle template selection
   const handleTemplateSelect = useCallback(
     (templateId: number | "") => {
       setSelectedTemplateId(templateId);
+      setTemplateAnchorEl(null);
       if (templateId === "") {
         // Clear selection - don't change form values
         return;
@@ -226,6 +248,7 @@ export default function ComposeModal({
         setRecipientType("volunteers");
         setAttachments([]);
         setSelectedTemplateId("");
+        setTemplateAnchorEl(null);
         setTouched({});
         setSubmitError(null);
 
@@ -263,6 +286,7 @@ export default function ComposeModal({
     setAttachments([]);
     setTouched({});
     setSelectedTemplateId("");
+    setTemplateAnchorEl(null);
     setSubmitError(null);
     onClose();
   }, [submitting, onClose]);
@@ -402,52 +426,6 @@ export default function ComposeModal({
 
           <Divider />
 
-          {/* Template Selection */}
-          {activeTemplates.length > 0 && (
-            <>
-              <Box sx={{ display: "flex", alignItems: "center", py: 1 }}>
-                <Typography
-                  sx={{
-                    color: "text.secondary",
-                    minWidth: 70,
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  Template
-                </Typography>
-                <Select
-                  value={selectedTemplateId}
-                  onChange={(e) =>
-                    handleTemplateSelect(e.target.value as number | "")
-                  }
-                  variant="standard"
-                  disabled={submitting}
-                  displayEmpty
-                  sx={{
-                    flex: 1,
-                    fontSize: "0.875rem",
-                    "& .MuiSelect-select": {
-                      py: 0.5,
-                    },
-                    "&:before, &:after": {
-                      display: "none",
-                    },
-                  }}
-                >
-                  <MenuItem value="">
-                    <em>None - Start from scratch</em>
-                  </MenuItem>
-                  {activeTemplates.map((template) => (
-                    <MenuItem key={template.id} value={template.id}>
-                      {template.name} - {template.subject}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
-              <Divider />
-            </>
-          )}
-
           {/* Subject Field */}
           <InputBase
             placeholder="Subject"
@@ -570,6 +548,64 @@ export default function ComposeModal({
             onChange={handleFileChange}
             style={{ display: "none" }}
           />
+
+          {/* Template Button */}
+          <Tooltip
+            title={
+              activeTemplates.length === 0
+                ? userRole === "admin"
+                  ? "No templates — create one in Settings"
+                  : "No templates available"
+                : "Use a template"
+            }
+          >
+            <span>
+              <IconButton
+                onClick={handleTemplateButtonClick}
+                disabled={submitting || activeTemplates.length === 0}
+                size="small"
+                color={selectedTemplateId === "" ? "default" : "primary"}
+                aria-label="select template"
+              >
+                <DescriptionOutlinedIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          {/* Template Popover */}
+          <Popover
+            open={templatePopoverOpen}
+            anchorEl={templateAnchorEl}
+            onClose={handleTemplatePopoverClose}
+            anchorOrigin={{ vertical: "top", horizontal: "left" }}
+            transformOrigin={{ vertical: "bottom", horizontal: "left" }}
+            PaperProps={{
+              sx: { width: 320, maxHeight: 300, overflow: "auto" },
+            }}
+          >
+            <List dense disablePadding>
+              {activeTemplates.map((template) => (
+                <ListItemButton
+                  key={template.id}
+                  selected={template.id === selectedTemplateId}
+                  onClick={() => handleTemplateSelect(template.id)}
+                >
+                  <ListItemText
+                    primary={template.name}
+                    secondary={template.subject}
+                    primaryTypographyProps={{
+                      fontWeight: 500,
+                      fontSize: "0.875rem",
+                    }}
+                    secondaryTypographyProps={{
+                      noWrap: true,
+                      fontSize: "0.75rem",
+                    }}
+                  />
+                </ListItemButton>
+              ))}
+            </List>
+          </Popover>
         </Stack>
 
         {/* Right side - Cancel and Send buttons */}

@@ -3,20 +3,16 @@
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import PauseCircleIcon from "@mui/icons-material/PauseCircle";
 import PlayCircleIcon from "@mui/icons-material/PlayCircle";
 import {
-  Alert,
   Box,
   Button,
   Chip,
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   IconButton,
-  MenuItem,
   Paper,
   Stack,
   Table,
@@ -32,7 +28,7 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { ConfirmDialog } from "@/components/shared";
+import { ConfirmDialog, ModalTitleBar } from "@/components/shared";
 import RichTextEditor from "@/components/staff/communications/rich-text-editor";
 import { LoadingSkeleton } from "@/components/ui";
 import {
@@ -46,30 +42,7 @@ type TemplateForm = {
   name: string;
   subject: string;
   body: string;
-  type: string;
-  category: string;
 };
-
-const TEMPLATE_TYPES = [
-  { value: "email", label: "Email" },
-  { value: "notification", label: "Notification" },
-  { value: "announcement", label: "Announcement" },
-];
-
-const TEMPLATE_CATEGORIES = [
-  { value: "onboarding", label: "Onboarding" },
-  { value: "event", label: "Event" },
-  { value: "reminder", label: "Reminder" },
-  { value: "general", label: "General" },
-];
-
-const VARIABLE_PLACEHOLDERS = [
-  { var: "{{firstName}}", desc: "Recipient's first name" },
-  { var: "{{lastName}}", desc: "Recipient's last name" },
-  { var: "{{email}}", desc: "Recipient's email address" },
-  { var: "{{organizationName}}", desc: "Organization name" },
-  { var: "{{currentDate}}", desc: "Current date" },
-];
 
 export default function EmailTemplatesSettingsClient(): JSX.Element {
   const { enqueueSnackbar } = useSnackbar();
@@ -90,8 +63,6 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
     name: "",
     subject: "",
     body: "",
-    type: "email",
-    category: "general",
   });
   const [saving, setSaving] = useState(false);
   const [deactivateConfirm, setDeactivateConfirm] =
@@ -106,13 +77,7 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
 
   const openAdd = useCallback(() => {
     setEditingTemplate(null);
-    setForm({
-      name: "",
-      subject: "",
-      body: "",
-      type: "email",
-      category: "general",
-    });
+    setForm({ name: "", subject: "", body: "" });
     setDialogOpen(true);
   }, []);
 
@@ -122,11 +87,13 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
       name: template.name,
       subject: template.subject,
       body: template.body,
-      type: template.type,
-      category: template.category || "general",
     });
     setDialogOpen(true);
   }, []);
+
+  const closeDialog = useCallback(() => {
+    if (!saving) setDialogOpen(false);
+  }, [saving]);
 
   const handleSave = useCallback(async () => {
     if (!form.name.trim()) {
@@ -149,8 +116,6 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
           name: form.name.trim(),
           subject: form.subject.trim(),
           body: form.body.trim(),
-          type: form.type,
-          category: form.category,
         };
         await hookUpdateTemplate(editingTemplate.id, input);
         enqueueSnackbar("Template updated successfully", {
@@ -161,8 +126,7 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
           name: form.name.trim(),
           subject: form.subject.trim(),
           body: form.body.trim(),
-          type: form.type,
-          category: form.category,
+          type: "email",
         };
         await hookCreateTemplate(input);
         enqueueSnackbar("Template created successfully", {
@@ -245,7 +209,7 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
   );
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
+    <Box sx={{ p: 3 }}>
       <Box
         display="flex"
         justifyContent="space-between"
@@ -270,27 +234,6 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
         </Button>
       </Box>
 
-      <Alert severity="info" icon={<InfoOutlinedIcon />} sx={{ mb: 3 }}>
-        <Typography variant="body2" fontWeight={500}>
-          Variable placeholders:
-        </Typography>
-        <Box component="ul" sx={{ mt: 0.5, mb: 0, pl: 2 }}>
-          {VARIABLE_PLACEHOLDERS.map((placeholder) => (
-            <li key={placeholder.var}>
-              <Typography
-                variant="body2"
-                component="span"
-                sx={{ fontFamily: "monospace", fontWeight: 600 }}
-              >
-                {placeholder.var}
-              </Typography>
-              {" - "}
-              {placeholder.desc}
-            </li>
-          ))}
-        </Box>
-      </Alert>
-
       {loading ? (
         <LoadingSkeleton variant="lines" count={5} />
       ) : (
@@ -300,10 +243,6 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
               <TableRow sx={{ backgroundColor: "action.hover" }}>
                 <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Name</TableCell>
                 <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Subject</TableCell>
-                <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Type</TableCell>
-                <TableCell sx={{ fontWeight: 700, py: 1.5 }}>
-                  Category
-                </TableCell>
                 <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 700, py: 1.5 }} align="right">
                   Actions
@@ -313,7 +252,7 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
             <TableBody>
               {templates.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 5 }}>
+                  <TableCell colSpan={4} align="center" sx={{ py: 5 }}>
                     <Typography variant="body2" color="text.secondary">
                       No email templates yet.{" "}
                       <Box
@@ -347,28 +286,9 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
                       {template.name}
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: 250 }}>
+                      <Typography variant="body2" noWrap sx={{ maxWidth: 350 }}>
                         {template.subject}
                       </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={template.type}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: "0.75rem" }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {template.category && (
-                        <Chip
-                          label={template.category}
-                          size="small"
-                          variant="outlined"
-                          color="primary"
-                          sx={{ fontSize: "0.75rem" }}
-                        />
-                      )}
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -434,15 +354,11 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
       )}
 
       {/* Add/Edit Dialog */}
-      <Dialog
-        open={dialogOpen}
-        onClose={() => !saving && setDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          {editingTemplate ? "Edit Template" : "Add Template"}
-        </DialogTitle>
+      <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="md" fullWidth>
+        <ModalTitleBar
+          title={editingTemplate ? "Edit Template" : "Add Template"}
+          onClose={closeDialog}
+        />
         <DialogContent dividers>
           <Stack spacing={2.5}>
             <TextField
@@ -452,7 +368,6 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
               fullWidth
               required
               disabled={saving}
-              helperText="A descriptive name for this template"
             />
             <TextField
               label="Subject"
@@ -461,45 +376,18 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
               fullWidth
               required
               disabled={saving}
-              helperText="Email subject line (supports variable placeholders)"
             />
-            <TextField
-              select
-              label="Type"
-              value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
-              fullWidth
-              required
-              disabled={saving}
-            >
-              {TEMPLATE_TYPES.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              select
-              label="Category"
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-              fullWidth
-              disabled={saving}
-            >
-              {TEMPLATE_CATEGORIES.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
             <Box>
               <Typography variant="subtitle2" gutterBottom>
-                Body *
+                Body{" "}
+                <Box component="span" sx={{ color: "error.main" }}>
+                  *
+                </Box>
               </Typography>
               <RichTextEditor
                 value={form.body}
                 onChange={(html) => setForm({ ...form, body: html })}
-                placeholder="Enter the email body (supports variable placeholders and rich text formatting)..."
+                placeholder="Enter the email body..."
                 disabled={saving}
                 minHeight={300}
               />
@@ -507,11 +395,11 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} disabled={saving}>
+          <Button onClick={closeDialog} disabled={saving}>
             Cancel
           </Button>
           <Button onClick={handleSave} variant="contained" disabled={saving}>
-            {saving ? "Saving..." : "Save"}
+            {saving ? "Saving..." : "Save Template"}
           </Button>
         </DialogActions>
       </Dialog>
