@@ -9,11 +9,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
   FormControlLabel,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
   Typography,
 } from "@mui/material";
@@ -24,7 +20,6 @@ import { useSkills } from "@/hooks/use-skills";
 
 type CurrentSkill = {
   skillId: number;
-  proficiencyLevel: string;
 };
 
 type CurrentInterest = {
@@ -33,7 +28,6 @@ type CurrentInterest = {
 
 type SkillSelection = {
   checked: boolean;
-  level: "beginner" | "intermediate" | "advanced";
 };
 
 type SkillsModalProps = {
@@ -106,12 +100,7 @@ export default function SkillsModal({
       const selections: Record<number, SkillSelection> = {};
       for (const skill of catalogSkills) {
         const current = currentSkills.find((s) => s.skillId === skill.id);
-        selections[skill.id] = {
-          checked: !!current,
-          level:
-            (current?.proficiencyLevel as SkillSelection["level"]) ||
-            "beginner",
-        };
+        selections[skill.id] = { checked: !!current };
       }
       setSkillSelections(selections);
     } else if (mode === "interests" && catalogInterests.length > 0) {
@@ -136,26 +125,17 @@ export default function SkillsModal({
     setSaving(true);
     try {
       if (mode === "skills") {
-        const currentMap = new Map(
-          currentSkills.map((s) => [s.skillId, s.proficiencyLevel]),
-        );
+        const currentIds = new Set(currentSkills.map((s) => s.skillId));
 
         const promises: Promise<void>[] = [];
 
         for (const [idStr, selection] of Object.entries(skillSelections)) {
           const skillId = Number(idStr);
-          const wasAssigned = currentMap.has(skillId);
+          const wasAssigned = currentIds.has(skillId);
 
           if (selection.checked && !wasAssigned) {
-            // New assignment
-            promises.push(addSkill(volunteerId, skillId, selection.level));
-          } else if (selection.checked && wasAssigned) {
-            // Check if level changed
-            if (currentMap.get(skillId) !== selection.level) {
-              promises.push(addSkill(volunteerId, skillId, selection.level));
-            }
+            promises.push(addSkill(volunteerId, skillId));
           } else if (!selection.checked && wasAssigned) {
-            // Removal
             promises.push(removeSkill(volunteerId, skillId));
           }
         }
@@ -257,28 +237,6 @@ export default function SkillsModal({
                       </Box>
                     }
                   />
-                  {skillSelections[skill.id]?.checked && (
-                    <FormControl size="small" sx={{ ml: 4, minWidth: 150 }}>
-                      <InputLabel>Level</InputLabel>
-                      <Select
-                        value={skillSelections[skill.id]?.level || "beginner"}
-                        label="Level"
-                        onChange={(e) =>
-                          setSkillSelections((prev) => ({
-                            ...prev,
-                            [skill.id]: {
-                              ...prev[skill.id],
-                              level: e.target.value as SkillSelection["level"],
-                            },
-                          }))
-                        }
-                      >
-                        <MenuItem value="beginner">Beginner</MenuItem>
-                        <MenuItem value="intermediate">Intermediate</MenuItem>
-                        <MenuItem value="advanced">Advanced</MenuItem>
-                      </Select>
-                    </FormControl>
-                  )}
                 </Box>
               ))}
             </Stack>

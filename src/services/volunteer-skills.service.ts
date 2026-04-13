@@ -42,7 +42,11 @@ export type AssignSkillResult = { updated: true } | { created: true };
 export async function assignSkill(
   volunteerId: number,
   skillId: number,
-  level: "no_selection" | "beginner" | "intermediate" | "advanced",
+  level:
+    | "no_selection"
+    | "beginner"
+    | "intermediate"
+    | "advanced" = "no_selection",
 ): Promise<AssignSkillResult> {
   const volunteer = await db
     .select()

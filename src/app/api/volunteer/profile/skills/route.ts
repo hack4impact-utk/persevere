@@ -8,12 +8,10 @@ import { AuthError, requireAuth } from "@/utils/server/auth";
 
 const assignSkillSchema = z.object({
   skillId: z.number().int().positive(),
-  proficiencyLevel: z.enum([
-    "no_selection",
-    "beginner",
-    "intermediate",
-    "advanced",
-  ]),
+  proficiencyLevel: z
+    .enum(["no_selection", "beginner", "intermediate", "advanced"])
+    .optional()
+    .default("no_selection"),
 });
 
 const removeSkillSchema = z.object({

@@ -254,6 +254,60 @@ export async function signDocument(
   };
 }
 
+// ---------------------------------------------------------------------------
+// Combined document + signature view (active docs only)
+// ---------------------------------------------------------------------------
+
+export type DocumentWithSignature = {
+  id: number;
+  title: string;
+  type: DocumentType;
+  actionType: DocumentActionType;
+  required: boolean;
+  signedAt: Date | null;
+  consentGiven: boolean | null;
+};
+
+/**
+ * Returns all active onboarding documents joined with the volunteer's
+ * signature record (if any). Inactive/deleted documents are excluded even
+ * if the volunteer previously signed them.
+ */
+export async function listDocumentsWithSignatures(
+  volunteerId: number,
+): Promise<DocumentWithSignature[]> {
+  const rows = await db
+    .select({
+      id: onboardingDocuments.id,
+      title: onboardingDocuments.title,
+      type: onboardingDocuments.type,
+      actionType: onboardingDocuments.actionType,
+      required: onboardingDocuments.required,
+      signedAt: volunteerDocumentSignatures.signedAt,
+      consentGiven: volunteerDocumentSignatures.consentGiven,
+    })
+    .from(onboardingDocuments)
+    .leftJoin(
+      volunteerDocumentSignatures,
+      and(
+        eq(volunteerDocumentSignatures.documentId, onboardingDocuments.id),
+        eq(volunteerDocumentSignatures.volunteerId, volunteerId),
+      ),
+    )
+    .where(eq(onboardingDocuments.isActive, true))
+    .orderBy(onboardingDocuments.sortOrder, onboardingDocuments.id);
+
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    type: r.type as DocumentType,
+    actionType: r.actionType as DocumentActionType,
+    required: r.required,
+    signedAt: r.signedAt ?? null,
+    consentGiven: r.consentGiven ?? null,
+  }));
+}
+
 export async function getVolunteerSignatures(
   volunteerId: number,
 ): Promise<DocumentSignature[]> {

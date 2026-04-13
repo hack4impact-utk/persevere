@@ -1,5 +1,8 @@
 import { apiClient } from "@/lib/api-client";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import type { DocumentWithSignature } from "@/services/onboarding-documents.service";
+
+export type { DocumentWithSignature } from "@/services/onboarding-documents.service";
 
 export type Volunteer = {
   id: number;
@@ -212,6 +215,7 @@ export type FetchVolunteerByIdResult = {
     onboardingComplete: boolean;
     documentProgress: { responded: number; required: number };
   } | null;
+  documentSignatures?: DocumentWithSignature[];
 };
 
 /**

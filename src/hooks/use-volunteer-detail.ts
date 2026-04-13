@@ -18,6 +18,11 @@ export function useVolunteerDetail(): {
     data: Record<string, unknown>,
   ) => Promise<boolean>;
   deleteVolunteer: (volunteerId: number) => Promise<boolean>;
+  signDocumentForVolunteer: (
+    volunteerId: number,
+    documentId: number,
+    consentGiven?: boolean,
+  ) => Promise<boolean>;
 } {
   const [profile, setProfile] = useState<FetchVolunteerByIdResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -93,6 +98,32 @@ export function useVolunteerDetail(): {
     [handleApiError],
   );
 
+  const signDocumentForVolunteer = useCallback(
+    async (
+      volunteerId: number,
+      documentId: number,
+      consentGiven?: boolean,
+    ): Promise<boolean> => {
+      try {
+        await apiClient.post(
+          `/api/staff/volunteers/${volunteerId}/sign-document`,
+          { documentId, ...(consentGiven !== undefined && { consentGiven }) },
+        );
+        return true;
+      } catch (error_) {
+        if (handleApiError(error_)) return false;
+        console.error("[useVolunteerDetail]", error_);
+        setError(
+          error_ instanceof Error
+            ? error_.message
+            : "An unexpected error occurred.",
+        );
+        return false;
+      }
+    },
+    [handleApiError],
+  );
+
   return {
     profile,
     loading,
@@ -101,5 +132,6 @@ export function useVolunteerDetail(): {
     clearProfile,
     updateVolunteer,
     deleteVolunteer,
+    signDocumentForVolunteer,
   };
 }
