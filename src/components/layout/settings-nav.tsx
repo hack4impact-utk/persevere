@@ -60,8 +60,7 @@ const sections: SettingsGroup[] = [
       },
       {
         label: "Email Templates",
-        href: "/staff/settings/email",
-        comingSoon: true,
+        href: "/staff/settings/email-templates",
       },
     ],
   },

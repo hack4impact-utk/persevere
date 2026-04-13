@@ -150,7 +150,7 @@ export default function VolunteerTypesSettingsClient(): JSX.Element {
   );
 
   return (
-    <Box sx={{ p: 3, maxWidth: 800, mx: "auto" }}>
+    <Box sx={{ p: 3 }}>
       <Box
         display="flex"
         justifyContent="space-between"

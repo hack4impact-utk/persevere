@@ -2,6 +2,7 @@
 
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import CloseIcon from "@mui/icons-material/Close";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import {
@@ -14,7 +15,11 @@ import {
   Divider,
   IconButton,
   InputBase,
+  List,
+  ListItemButton,
+  ListItemText,
   MenuItem,
+  Popover,
   Select,
   Stack,
   Tooltip,
@@ -31,6 +36,7 @@ import {
 } from "react";
 
 import { useCommunications } from "@/hooks/use-communications";
+import { useEmailTemplates } from "@/hooks/use-email-templates";
 
 import RichTextEditor from "./rich-text-editor";
 import type { Attachment, RecipientType } from "./types";
@@ -76,6 +82,11 @@ export default function ComposeModal({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | "">("");
+  const [templateAnchorEl, setTemplateAnchorEl] = useState<HTMLElement | null>(
+    null,
+  );
+  const templatePopoverOpen = Boolean(templateAnchorEl);
 
   // UI state
   const [submitting, setSubmitting] = useState(false);
@@ -151,6 +162,37 @@ export default function ComposeModal({
   }, []);
 
   const { sendCommunication } = useCommunications({ skip: true });
+  const { activeTemplates } = useEmailTemplates();
+
+  // Handle template popover open/close
+  const handleTemplateButtonClick = useCallback(
+    (e: React.MouseEvent<HTMLElement>): void => {
+      setTemplateAnchorEl(e.currentTarget);
+    },
+    [],
+  );
+
+  const handleTemplatePopoverClose = useCallback((): void => {
+    setTemplateAnchorEl(null);
+  }, []);
+
+  // Handle template selection
+  const handleTemplateSelect = useCallback(
+    (templateId: number | "") => {
+      setSelectedTemplateId(templateId);
+      setTemplateAnchorEl(null);
+      if (templateId === "") {
+        // Clear selection - don't change form values
+        return;
+      }
+      const template = activeTemplates.find((t) => t.id === templateId);
+      if (template) {
+        setSubject(template.subject);
+        setBody(template.body);
+      }
+    },
+    [activeTemplates],
+  );
 
   const handleSubmit = useCallback(
     async (e?: React.FormEvent): Promise<void> => {
@@ -205,6 +247,8 @@ export default function ComposeModal({
         setBody("");
         setRecipientType("volunteers");
         setAttachments([]);
+        setSelectedTemplateId("");
+        setTemplateAnchorEl(null);
         setTouched({});
         setSubmitError(null);
 
@@ -241,6 +285,8 @@ export default function ComposeModal({
     setRecipientType("volunteers");
     setAttachments([]);
     setTouched({});
+    setSelectedTemplateId("");
+    setTemplateAnchorEl(null);
     setSubmitError(null);
     onClose();
   }, [submitting, onClose]);
@@ -502,6 +548,64 @@ export default function ComposeModal({
             onChange={handleFileChange}
             style={{ display: "none" }}
           />
+
+          {/* Template Button */}
+          <Tooltip
+            title={
+              activeTemplates.length === 0
+                ? userRole === "admin"
+                  ? "No templates — create one in Settings"
+                  : "No templates available"
+                : "Use a template"
+            }
+          >
+            <span>
+              <IconButton
+                onClick={handleTemplateButtonClick}
+                disabled={submitting || activeTemplates.length === 0}
+                size="small"
+                color={selectedTemplateId === "" ? "default" : "primary"}
+                aria-label="select template"
+              >
+                <DescriptionOutlinedIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          {/* Template Popover */}
+          <Popover
+            open={templatePopoverOpen}
+            anchorEl={templateAnchorEl}
+            onClose={handleTemplatePopoverClose}
+            anchorOrigin={{ vertical: "top", horizontal: "left" }}
+            transformOrigin={{ vertical: "bottom", horizontal: "left" }}
+            PaperProps={{
+              sx: { width: 320, maxHeight: 300, overflow: "auto" },
+            }}
+          >
+            <List dense disablePadding>
+              {activeTemplates.map((template) => (
+                <ListItemButton
+                  key={template.id}
+                  selected={template.id === selectedTemplateId}
+                  onClick={() => handleTemplateSelect(template.id)}
+                >
+                  <ListItemText
+                    primary={template.name}
+                    secondary={template.subject}
+                    primaryTypographyProps={{
+                      fontWeight: 500,
+                      fontSize: "0.875rem",
+                    }}
+                    secondaryTypographyProps={{
+                      noWrap: true,
+                      fontSize: "0.75rem",
+                    }}
+                  />
+                </ListItemButton>
+              ))}
+            </List>
+          </Popover>
         </Stack>
 
         {/* Right side - Cancel and Send buttons */}

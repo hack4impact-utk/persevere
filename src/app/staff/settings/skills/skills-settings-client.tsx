@@ -259,7 +259,7 @@ export default function SkillsSettingsClient(): JSX.Element {
   );
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
+    <Box sx={{ p: 3 }}>
       <Stack spacing={4}>
         {/* Skills Section */}
         <Box>
