@@ -24,7 +24,7 @@ export type UseVolunteerSkillsInterestsResult = {
   error_or: string | null;
   fetchSkills: () => Promise<void>;
   fetchInterests: () => Promise<void>;
-  addSkill: (skillId: number, proficiencyLevel: string) => Promise<void>;
+  addSkill: (skillId: number) => Promise<void>;
   removeSkill: (skillId: number) => Promise<void>;
   addInterest: (interestId: number) => Promise<void>;
   removeInterest: (interestId: number) => Promise<void>;
@@ -67,12 +67,9 @@ export function useVolunteerSkillsInterests(): UseVolunteerSkillsInterestsResult
   }, [handleApiError]);
 
   const addSkill = useCallback(
-    async (skillId: number, proficiencyLevel: string): Promise<void> => {
+    async (skillId: number): Promise<void> => {
       try {
-        await apiClient.post("/api/volunteer/profile/skills", {
-          skillId,
-          proficiencyLevel,
-        });
+        await apiClient.post("/api/volunteer/profile/skills", { skillId });
       } catch (error_) {
         handleApiError(error_, "Failed to add skill");
       }

@@ -6,7 +6,10 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DescriptionIcon from "@mui/icons-material/Description";
+import DrawIcon from "@mui/icons-material/Draw";
 import EditIcon from "@mui/icons-material/Edit";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
@@ -19,6 +22,7 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
@@ -34,12 +38,13 @@ import {
   Stack,
   Switch,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { ConfirmDialog, DetailField } from "@/components/shared";
+import { ConfirmDialog, DetailField, ModalTitleBar } from "@/components/shared";
 import {
   getBackgroundCheckColor,
   getBackgroundCheckLabel,
@@ -47,7 +52,10 @@ import {
 } from "@/components/ui";
 import { useVolunteerDetail } from "@/hooks/use-volunteer-detail";
 import { useVolunteerTypes } from "@/hooks/use-volunteer-types";
-import type { FetchVolunteerByIdResult } from "@/services/volunteer-client.service";
+import type {
+  DocumentWithSignature,
+  FetchVolunteerByIdResult,
+} from "@/services/volunteer-client.service";
 
 import SkillsModal from "./skills-modal";
 
@@ -472,6 +480,76 @@ function StaffEditVolunteerModal({
   );
 }
 
+// ── StaffSignDocumentDialog ───────────────────────────────────────────────────
+
+function actionLabel(actionType: string): string {
+  if (actionType === "acknowledge") return "Mark as acknowledged";
+  if (actionType === "consent") return "Mark as consented";
+  return "Mark as signed";
+}
+
+function StaffSignDocumentDialog({
+  doc,
+  open,
+  onClose,
+  onSign,
+  signing,
+}: {
+  doc: DocumentWithSignature | null;
+  open: boolean;
+  onClose: () => void;
+  onSign: (documentId: number, consentGiven?: boolean) => Promise<void>;
+  signing: boolean;
+}): JSX.Element {
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      {doc && (
+        <>
+          <ModalTitleBar title={doc.title} onClose={onClose} />
+          <DialogContent dividers>
+            <Typography variant="body2" color="text.secondary">
+              {doc.actionType === "consent"
+                ? "Record whether this volunteer consented to or declined this document."
+                : `Manually record that this volunteer has ${doc.actionType === "acknowledge" ? "acknowledged" : "signed"} this document (e.g. paper copy signed in person).`}
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={onClose} disabled={signing}>
+              Cancel
+            </Button>
+            {doc.actionType === "consent" ? (
+              <>
+                <Button
+                  variant="outlined"
+                  disabled={signing}
+                  onClick={() => void onSign(doc.id, false)}
+                >
+                  Mark as declined
+                </Button>
+                <Button
+                  variant="contained"
+                  disabled={signing}
+                  onClick={() => void onSign(doc.id, true)}
+                >
+                  Mark as consented
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="contained"
+                disabled={signing}
+                onClick={() => void onSign(doc.id)}
+              >
+                {signing ? "Saving…" : actionLabel(doc.actionType)}
+              </Button>
+            )}
+          </DialogActions>
+        </>
+      )}
+    </Dialog>
+  );
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 type VolunteerOverviewTabProps = {
@@ -495,9 +573,14 @@ export function VolunteerOverviewTab({
   >("skills");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [docsExpanded, setDocsExpanded] = useState(false);
+  const [signDialogDoc, setSignDialogDoc] =
+    useState<DocumentWithSignature | null>(null);
+  const [signing, setSigning] = useState(false);
 
   const { enqueueSnackbar } = useSnackbar();
-  const { updateVolunteer, deleteVolunteer } = useVolunteerDetail();
+  const { updateVolunteer, deleteVolunteer, signDocumentForVolunteer } =
+    useVolunteerDetail();
 
   const handleEditVolunteer = useCallback(
     async (data: EditData): Promise<void> => {
@@ -531,6 +614,29 @@ export function VolunteerOverviewTab({
       enqueueSnackbar("Failed to delete volunteer", { variant: "error" });
     }
   }, [vol.id, deleteVolunteer, enqueueSnackbar, onDelete]);
+
+  const handleSignDocument = useCallback(
+    async (documentId: number, consentGiven?: boolean): Promise<void> => {
+      if (!vol.id) return;
+      setSigning(true);
+      const success = await signDocumentForVolunteer(
+        vol.id,
+        documentId,
+        consentGiven,
+      );
+      setSigning(false);
+      if (success) {
+        enqueueSnackbar("Document recorded successfully", {
+          variant: "success",
+        });
+        setSignDialogDoc(null);
+        onVolunteerUpdated?.();
+      } else {
+        enqueueSnackbar("Failed to record document", { variant: "error" });
+      }
+    },
+    [vol.id, signDocumentForVolunteer, enqueueSnackbar, onVolunteerUpdated],
+  );
 
   if (!user) {
     return (
@@ -808,11 +914,6 @@ export function VolunteerOverviewTab({
                         label: "Interests Added",
                         done: volunteer.onboardingStatus.interestsAdded,
                       },
-                      {
-                        key: "documentsCompleted",
-                        label: `Documents (${volunteer.onboardingStatus.documentProgress.responded}/${volunteer.onboardingStatus.documentProgress.required})`,
-                        done: volunteer.onboardingStatus.documentsCompleted,
-                      },
                     ].map(({ key, label, done }) => (
                       <Box key={key} display="flex" alignItems="center" gap={1}>
                         {done ? (
@@ -831,6 +932,176 @@ export function VolunteerOverviewTab({
                         </Typography>
                       </Box>
                     ))}
+
+                    {/* Expandable Documents row */}
+                    <Box>
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        gap={1}
+                        sx={{ cursor: "pointer", userSelect: "none" }}
+                        onClick={() => setDocsExpanded((v) => !v)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ")
+                            setDocsExpanded((v) => !v);
+                        }}
+                        aria-expanded={docsExpanded}
+                      >
+                        {volunteer.onboardingStatus.documentsCompleted ? (
+                          <CheckCircleIcon color="success" fontSize="small" />
+                        ) : (
+                          <RadioButtonUncheckedIcon
+                            color="disabled"
+                            fontSize="small"
+                          />
+                        )}
+                        <Typography
+                          variant="body2"
+                          color={
+                            volunteer.onboardingStatus.documentsCompleted
+                              ? "text.primary"
+                              : "text.secondary"
+                          }
+                          sx={{ flex: 1 }}
+                        >
+                          {`Documents (${volunteer.onboardingStatus.documentProgress.responded}/${volunteer.onboardingStatus.documentProgress.required})`}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          tabIndex={-1}
+                          sx={{ p: 0 }}
+                          aria-label={
+                            docsExpanded
+                              ? "Collapse documents"
+                              : "Expand documents"
+                          }
+                        >
+                          {docsExpanded ? (
+                            <ExpandLessIcon fontSize="small" />
+                          ) : (
+                            <ExpandMoreIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                      </Box>
+
+                      <Collapse in={docsExpanded}>
+                        <Box
+                          sx={{
+                            mt: 1.5,
+                            ml: 3.5,
+                            overflowY: "auto",
+                            maxHeight: 260,
+                          }}
+                        >
+                          {(volunteer.documentSignatures ?? []).length === 0 ? (
+                            <Typography
+                              variant="body2"
+                              color="text.disabled"
+                              sx={{ py: 1 }}
+                            >
+                              No documents configured.
+                            </Typography>
+                          ) : (
+                            <Stack spacing={1}>
+                              {(volunteer.documentSignatures ?? []).map(
+                                (doc) => (
+                                  <Box
+                                    key={doc.id}
+                                    display="flex"
+                                    alignItems="center"
+                                    gap={1}
+                                    sx={{
+                                      py: 0.75,
+                                      borderBottom: "1px solid",
+                                      borderColor: "grey.100",
+                                      "&:last-child": { borderBottom: "none" },
+                                    }}
+                                  >
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                      <Box
+                                        display="flex"
+                                        alignItems="center"
+                                        gap={0.75}
+                                        flexWrap="wrap"
+                                      >
+                                        <Typography
+                                          variant="body2"
+                                          fontWeight={500}
+                                          noWrap
+                                        >
+                                          {doc.title}
+                                        </Typography>
+                                        {doc.required && (
+                                          <Chip
+                                            label="Required"
+                                            size="small"
+                                            color="error"
+                                            variant="outlined"
+                                            sx={{
+                                              height: 18,
+                                              fontSize: "0.65rem",
+                                            }}
+                                          />
+                                        )}
+                                      </Box>
+                                      {doc.signedAt ? (
+                                        <Box
+                                          display="flex"
+                                          alignItems="center"
+                                          gap={0.5}
+                                          mt={0.25}
+                                        >
+                                          <CheckCircleIcon
+                                            color="success"
+                                            sx={{ fontSize: 12 }}
+                                          />
+                                          <Typography
+                                            variant="caption"
+                                            color="success.main"
+                                          >
+                                            {doc.actionType === "consent"
+                                              ? doc.consentGiven
+                                                ? `Consented · ${new Date(doc.signedAt).toLocaleDateString()}`
+                                                : `Declined · ${new Date(doc.signedAt).toLocaleDateString()}`
+                                              : doc.actionType === "acknowledge"
+                                                ? `Acknowledged · ${new Date(doc.signedAt).toLocaleDateString()}`
+                                                : `Signed · ${new Date(doc.signedAt).toLocaleDateString()}`}
+                                          </Typography>
+                                        </Box>
+                                      ) : (
+                                        <Typography
+                                          variant="caption"
+                                          color="text.disabled"
+                                        >
+                                          Not yet signed
+                                        </Typography>
+                                      )}
+                                    </Box>
+                                    {!doc.signedAt &&
+                                      doc.actionType !== "informational" && (
+                                        <Tooltip title="Manually record signature">
+                                          <IconButton
+                                            size="small"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSignDialogDoc(doc);
+                                            }}
+                                            aria-label={`Record signature for ${doc.title}`}
+                                          >
+                                            <DrawIcon fontSize="small" />
+                                          </IconButton>
+                                        </Tooltip>
+                                      )}
+                                  </Box>
+                                ),
+                              )}
+                            </Stack>
+                          )}
+                        </Box>
+                      </Collapse>
+                    </Box>
                   </Stack>
                 </>
               ) : (
@@ -943,7 +1214,6 @@ export function VolunteerOverviewTab({
         mode={skillsModalMode}
         currentSkills={skills.map((s) => ({
           skillId: s.skillId,
-          proficiencyLevel: s.proficiencyLevel,
         }))}
         currentInterests={interests.map((i) => ({
           interestId: i.interestId,
@@ -974,6 +1244,14 @@ export function VolunteerOverviewTab({
         loading={deleting}
         onConfirm={handleDeleteUser}
         onClose={() => setConfirmDelete(false)}
+      />
+
+      <StaffSignDocumentDialog
+        doc={signDialogDoc}
+        open={signDialogDoc !== null}
+        onClose={() => setSignDialogDoc(null)}
+        onSign={handleSignDocument}
+        signing={signing}
       />
     </>
   );

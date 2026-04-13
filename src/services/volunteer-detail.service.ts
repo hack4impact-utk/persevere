@@ -6,6 +6,10 @@ import {
   getOnboardingStatus,
   type OnboardingStatus,
 } from "@/services/onboarding.service";
+import {
+  type DocumentWithSignature,
+  listDocumentsWithSignatures,
+} from "@/services/onboarding-documents.service";
 import { fetchVolunteerDetailData } from "@/services/shared/volunteer-data";
 
 export type VolunteerDetail = {
@@ -46,6 +50,7 @@ export type VolunteerDetail = {
     verifiedAt: Date | null;
   }[];
   onboardingStatus: OnboardingStatus | null;
+  documentSignatures: DocumentWithSignature[];
 };
 
 export type VolunteerDetailUpdateData = {
@@ -81,14 +86,18 @@ export async function getVolunteerDetail(
 
   if (volunteer.length === 0) return null;
 
-  const detailData = await fetchVolunteerDetailData(volunteerId);
-  const onboardingStatus = await getOnboardingStatus(volunteerId);
+  const [detailData, onboardingStatus, documentSignatures] = await Promise.all([
+    fetchVolunteerDetailData(volunteerId),
+    getOnboardingStatus(volunteerId),
+    listDocumentsWithSignatures(volunteerId),
+  ]);
 
   return {
     volunteers: volunteer[0].volunteers,
     users: volunteer[0].users,
     ...detailData,
     onboardingStatus,
+    documentSignatures,
   };
 }
 

@@ -2,6 +2,8 @@
 
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import DescriptionIcon from "@mui/icons-material/Description";
 import EditIcon from "@mui/icons-material/Edit";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import PsychologyIcon from "@mui/icons-material/Psychology";
@@ -28,6 +30,7 @@ import type {
   Day,
 } from "@/components/volunteer/availability-editor";
 import ProfileEditForm from "@/components/volunteer/profile-edit-form";
+import { useOnboardingDocuments } from "@/hooks/use-onboarding-documents";
 import { useVolunteerProfile } from "@/hooks/use-volunteer-profile";
 
 function initials(first?: string | null, last?: string | null): string {
@@ -232,6 +235,9 @@ export default function VolunteerProfilePage(): JSX.Element {
     fetchProfile,
     updateProfile,
   } = useVolunteerProfile();
+  const { documents, signatures, fetchSignatures } = useOnboardingDocuments(
+    "/api/volunteer/onboarding/documents",
+  );
 
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -239,6 +245,10 @@ export default function VolunteerProfilePage(): JSX.Element {
   useEffect(() => {
     void fetchProfile();
   }, [fetchProfile]);
+
+  useEffect(() => {
+    void fetchSignatures();
+  }, [fetchSignatures]);
 
   const handleSave = async (data: {
     phone?: string | null;
@@ -455,6 +465,13 @@ export default function VolunteerProfilePage(): JSX.Element {
     interests,
   } = profileData;
   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+
+  const responseMap = new Map(
+    signatures.map((s) => [
+      s.documentId,
+      { consentGiven: s.consentGiven, signedAt: s.signedAt },
+    ]),
+  );
   const volunteerTypeDisplay = vol.volunteerType
     ? vol.volunteerType.charAt(0).toUpperCase() + vol.volunteerType.slice(1)
     : "Volunteer";
@@ -706,6 +723,120 @@ export default function VolunteerProfilePage(): JSX.Element {
                           }}
                         />
                       ))}
+                    </Box>
+                  )}
+                </SectionCard>
+
+                {/* Documents */}
+                <SectionCard
+                  icon={<DescriptionIcon sx={{ fontSize: 18 }} />}
+                  title="Documents"
+                >
+                  {documents.length === 0 ? (
+                    <Typography variant="body2" color="text.disabled">
+                      No onboarding documents yet.
+                    </Typography>
+                  ) : (
+                    <Box sx={{ overflowY: "auto", maxHeight: 240 }}>
+                      <Stack spacing={0}>
+                        {documents.map((doc) => {
+                          const response = responseMap.get(doc.id);
+                          const signed = response !== undefined;
+                          return (
+                            <Box
+                              key={doc.id}
+                              display="flex"
+                              alignItems="center"
+                              gap={1}
+                              sx={{
+                                py: 1,
+                                borderBottom: "1px solid",
+                                borderColor: "grey.100",
+                                "&:last-child": { borderBottom: "none" },
+                              }}
+                            >
+                              <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Box
+                                  display="flex"
+                                  alignItems="center"
+                                  gap={0.75}
+                                  flexWrap="wrap"
+                                >
+                                  <Typography
+                                    variant="body2"
+                                    fontWeight={500}
+                                    noWrap
+                                  >
+                                    {doc.title}
+                                  </Typography>
+                                  {doc.required && (
+                                    <Chip
+                                      label="Required"
+                                      size="small"
+                                      color="error"
+                                      variant="outlined"
+                                      sx={{
+                                        height: 18,
+                                        fontSize: "0.65rem",
+                                      }}
+                                    />
+                                  )}
+                                </Box>
+                                {signed && response ? (
+                                  <Box
+                                    display="flex"
+                                    alignItems="center"
+                                    gap={0.5}
+                                    mt={0.25}
+                                  >
+                                    <CheckCircleIcon
+                                      color="success"
+                                      sx={{ fontSize: 12 }}
+                                    />
+                                    <Typography
+                                      variant="caption"
+                                      color="success.main"
+                                    >
+                                      {doc.actionType === "consent"
+                                        ? response.consentGiven
+                                          ? `Consented · ${new Date(response.signedAt).toLocaleDateString()}`
+                                          : `Declined · ${new Date(response.signedAt).toLocaleDateString()}`
+                                        : doc.actionType === "acknowledge"
+                                          ? `Acknowledged · ${new Date(response.signedAt).toLocaleDateString()}`
+                                          : `Signed · ${new Date(response.signedAt).toLocaleDateString()}`}
+                                    </Typography>
+                                  </Box>
+                                ) : (
+                                  <Typography
+                                    variant="caption"
+                                    color="text.disabled"
+                                  >
+                                    Pending
+                                  </Typography>
+                                )}
+                              </Box>
+                              {signed ? (
+                                <Chip
+                                  icon={
+                                    <CheckCircleIcon sx={{ fontSize: 14 }} />
+                                  }
+                                  label="Completed"
+                                  size="small"
+                                  color="success"
+                                  sx={{ flexShrink: 0 }}
+                                />
+                              ) : (
+                                <Chip
+                                  label="Pending"
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ flexShrink: 0 }}
+                                />
+                              )}
+                            </Box>
+                          );
+                        })}
+                      </Stack>
                     </Box>
                   )}
                 </SectionCard>

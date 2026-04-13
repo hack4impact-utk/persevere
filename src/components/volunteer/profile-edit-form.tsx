@@ -165,15 +165,9 @@ export default function ProfileEditForm({
     notificationPreference: initialData.notificationPreference || "email",
   });
 
-  // Local skills state: map of skillId -> {checked, level}
+  // Local skills state: map of skillId -> checked
   const [skillSelections, setSkillSelections] = useState<
-    Record<
-      number,
-      {
-        checked: boolean;
-        level: "no_selection" | "beginner" | "intermediate" | "advanced";
-      }
-    >
+    Record<number, { checked: boolean }>
   >({});
 
   // Local interests state: map of interestId -> checked
@@ -195,10 +189,7 @@ export default function ProfileEditForm({
       const selections: typeof skillSelections = {};
       for (const skill of catalogSkills) {
         const current = initialData.skills?.find((s) => s.skillId === skill.id);
-        selections[skill.id] = {
-          checked: !!current,
-          level: current?.proficiencyLevel || "no_selection",
-        };
+        selections[skill.id] = { checked: !!current };
       }
       setSkillSelections(selections);
     }
@@ -226,7 +217,7 @@ export default function ProfileEditForm({
     try {
       // Save skills and interests changes first
       const currentSkillsMap = new Map(
-        initialData.skills?.map((s) => [s.skillId, s.proficiencyLevel]) || [],
+        initialData.skills?.map((s) => [s.skillId, true]) || [],
       );
       const currentInterestsSet = new Set(
         initialData.interests?.map((i) => i.interestId) || [],
@@ -241,11 +232,7 @@ export default function ProfileEditForm({
         const wasAssigned = currentSkillsMap.has(skillId);
 
         if (selection.checked && !wasAssigned) {
-          skillPromises.push(addSkill(skillId, selection.level));
-        } else if (selection.checked && wasAssigned) {
-          if (currentSkillsMap.get(skillId) !== selection.level) {
-            skillPromises.push(addSkill(skillId, selection.level));
-          }
+          skillPromises.push(addSkill(skillId));
         } else if (!selection.checked && wasAssigned) {
           skillPromises.push(removeSkill(skillId));
         }
@@ -367,12 +354,8 @@ export default function ProfileEditForm({
                     setSkillSelections((prev) => {
                       const updated = { ...prev };
                       for (const skill of catalogSkills) {
-                        const isSelected = newValue.some(
-                          (s) => s.id === skill.id,
-                        );
                         updated[skill.id] = {
-                          checked: isSelected,
-                          level: updated[skill.id]?.level ?? "no_selection",
+                          checked: newValue.some((s) => s.id === skill.id),
                         };
                       }
                       return updated;

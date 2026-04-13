@@ -21,7 +21,7 @@ import {
 import { BarChart } from "@mui/x-charts";
 import { JSX, useMemo } from "react";
 
-import { getRsvpStatusColor, StatusBadge } from "@/components/ui";
+import { StatusBadge } from "@/components/ui";
 import type { FetchVolunteerByIdResult } from "@/services/volunteer-client.service";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -153,21 +153,6 @@ export function VolunteerImpactTab({
     };
   }, [hoursBreakdown]);
 
-  const hoursByOpportunity = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const h of hoursBreakdown.filter(
-      (h) => h.status === "approved" && h.opportunityTitle,
-    )) {
-      const key = h.opportunityTitle!;
-      map.set(key, (map.get(key) ?? 0) + (h.hours ?? 0));
-    }
-    const sorted = [...map.entries()].sort(([, a], [, b]) => b - a);
-    return {
-      labels: sorted.map(([k]) => k),
-      data: sorted.map(([, v]) => v),
-    };
-  }, [hoursBreakdown]);
-
   const sortedHours = useMemo(
     () =>
       [...hoursBreakdown].sort((a, b) => {
@@ -179,7 +164,6 @@ export function VolunteerImpactTab({
   );
 
   const hasHours = hoursBreakdown.length > 0;
-  const hasRsvps = recentOpportunities.length > 0;
 
   return (
     <Stack spacing={3}>
@@ -221,87 +205,29 @@ export function VolunteerImpactTab({
       </Box>
 
       {/* Charts */}
-      {(hoursByMonth.labels.length > 0 ||
-        hoursByOpportunity.labels.length > 0) && (
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            gap: 3,
-          }}
+      {hoursByMonth.labels.length > 0 && (
+        <Card
+          elevation={0}
+          sx={{ border: "1px solid", borderColor: "grey.200", borderRadius: 2 }}
         >
-          {hoursByMonth.labels.length > 0 && (
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Card
-                elevation={0}
-                sx={{
-                  border: "1px solid",
-                  borderColor: "grey.200",
-                  borderRadius: 2,
-                }}
-              >
-                <CardContent sx={{ p: 2.5 }}>
-                  <Typography variant="h6" fontWeight={600} mb={2}>
-                    Hours Over Time
-                  </Typography>
-                  <BarChart
-                    xAxis={[{ scaleType: "band", data: hoursByMonth.labels }]}
-                    series={[
-                      {
-                        data: hoursByMonth.data,
-                        label: "Approved Hours",
-                        color: "#327bf7",
-                      },
-                    ]}
-                    height={220}
-                    margin={{ top: 10, bottom: 30, left: 40, right: 10 }}
-                  />
-                </CardContent>
-              </Card>
-            </Box>
-          )}
-
-          {hoursByOpportunity.labels.length > 0 && (
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Card
-                elevation={0}
-                sx={{
-                  border: "1px solid",
-                  borderColor: "grey.200",
-                  borderRadius: 2,
-                }}
-              >
-                <CardContent sx={{ p: 2.5 }}>
-                  <Typography variant="h6" fontWeight={600} mb={2}>
-                    Hours by Opportunity
-                  </Typography>
-                  <BarChart
-                    layout="horizontal"
-                    yAxis={[
-                      {
-                        scaleType: "band",
-                        data: hoursByOpportunity.labels,
-                        tickLabelStyle: { fontSize: 11 },
-                      },
-                    ]}
-                    series={[
-                      {
-                        data: hoursByOpportunity.data,
-                        label: "Hours",
-                        color: "#2e7d32",
-                      },
-                    ]}
-                    height={Math.max(
-                      220,
-                      hoursByOpportunity.labels.length * 36 + 60,
-                    )}
-                    margin={{ top: 10, bottom: 30, left: 140, right: 10 }}
-                  />
-                </CardContent>
-              </Card>
-            </Box>
-          )}
-        </Box>
+          <CardContent sx={{ p: 2.5 }}>
+            <Typography variant="h6" fontWeight={600} mb={2}>
+              Hours Over Time
+            </Typography>
+            <BarChart
+              xAxis={[{ scaleType: "band", data: hoursByMonth.labels }]}
+              series={[
+                {
+                  data: hoursByMonth.data,
+                  label: "Approved Hours",
+                  color: "#327bf7",
+                },
+              ]}
+              height={220}
+              margin={{ top: 10, bottom: 30, left: 40, right: 10 }}
+            />
+          </CardContent>
+        </Card>
       )}
 
       {/* Service History */}
@@ -381,76 +307,6 @@ export function VolunteerImpactTab({
               sx={{ fontStyle: "italic" }}
             >
               No hours recorded
-            </Typography>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Recent RSVPs */}
-      <Card
-        elevation={0}
-        sx={{ border: "1px solid", borderColor: "grey.200", borderRadius: 2 }}
-      >
-        <CardContent sx={{ p: 2.5 }}>
-          <Typography variant="h6" fontWeight={600} mb={2}>
-            Recent RSVPs
-          </Typography>
-          {hasRsvps ? (
-            <TableContainer component={Paper} variant="outlined">
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Event</TableCell>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Location</TableCell>
-                    <TableCell>RSVP Status</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {recentOpportunities.map((opp) => (
-                    <TableRow key={opp.opportunityId} hover>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {opp.opportunityTitle ?? "—"}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" noWrap>
-                          {formatDate(opp.opportunityStartDate)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            maxWidth: 160,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {opp.opportunityLocation ?? "—"}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge
-                          label={opp.rsvpStatus}
-                          color={getRsvpStatusColor(opp.rsvpStatus)}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          ) : (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontStyle: "italic" }}
-            >
-              No recent activity
             </Typography>
           )}
         </CardContent>
