@@ -1,3 +1,4 @@
+import { Box } from "@mui/material";
 import { notFound } from "next/navigation";
 import { JSX } from "react";
 
@@ -48,27 +49,18 @@ export default async function VolunteerDetailsPage({
       } => o.rsvpStatus !== null,
     ),
     hoursBreakdown: profile.hoursBreakdown,
+    onboardingStatus: profile.onboardingStatus ?? null,
   };
 
   return (
-    <div
-      style={{
-        flex: 1,
-        overflowY: "auto",
-        minHeight: 0,
-        display: "flex",
-        flexDirection: "column",
+    <Box
+      sx={{
+        px: { xs: 2, md: 4 },
+        pt: { xs: 1, md: 1.5 },
+        pb: { xs: 4, md: 6 },
       }}
     >
-      <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">
-            Volunteer Profile: {profile.volunteer.users.firstName}{" "}
-            {profile.volunteer.users.lastName}
-          </h1>
-        </div>
-        <VolunteerProfile volunteer={volunteer} />
-      </div>
-    </div>
+      <VolunteerProfile volunteer={volunteer} />
+    </Box>
   );
 }

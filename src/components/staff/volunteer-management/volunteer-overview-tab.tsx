@@ -22,7 +22,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Divider,
   FormControl,
   FormControlLabel,
@@ -39,10 +38,11 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { ConfirmDialog, DetailField } from "@/components/shared";
+import { ConfirmDialog, DetailField, ModalTitleBar } from "@/components/shared";
 import {
   getBackgroundCheckColor,
   getBackgroundCheckLabel,
+  LoadingSkeleton,
   StatusBadge,
 } from "@/components/ui";
 import { useVolunteerDetail } from "@/hooks/use-volunteer-detail";
@@ -133,20 +133,6 @@ function SidebarCard({
       </Typography>
       {children}
     </Box>
-  );
-}
-
-function StaffSectionLabel({ children }: { children: string }): JSX.Element {
-  return (
-    <Typography
-      variant="caption"
-      fontWeight={700}
-      letterSpacing={0.8}
-      color="text.secondary"
-      sx={{ textTransform: "uppercase", display: "block", mb: 1.5 }}
-    >
-      {children}
-    </Typography>
   );
 }
 
@@ -337,11 +323,19 @@ function StaffEditVolunteerModal({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={(e) => void handleSubmit(e)}>
-        <DialogTitle>Edit Volunteer Profile</DialogTitle>
+        <ModalTitleBar title="Edit Volunteer Profile" onClose={onClose} />
         <DialogContent>
           <Stack spacing={4} sx={{ mt: 2 }}>
             <Box>
-              <StaffSectionLabel>Identity</StaffSectionLabel>
+              <Typography
+                variant="caption"
+                fontWeight={700}
+                letterSpacing={0.8}
+                color="text.secondary"
+                sx={{ textTransform: "uppercase", display: "block", mb: 1.5 }}
+              >
+                Identity
+              </Typography>
               <Stack spacing={2}>
                 <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
                   <TextField
@@ -383,7 +377,15 @@ function StaffEditVolunteerModal({
             </Box>
 
             <Box>
-              <StaffSectionLabel>About Me</StaffSectionLabel>
+              <Typography
+                variant="caption"
+                fontWeight={700}
+                letterSpacing={0.8}
+                color="text.secondary"
+                sx={{ textTransform: "uppercase", display: "block", mb: 1.5 }}
+              >
+                About Me
+              </Typography>
               <TextField
                 label="Bio"
                 value={formData.bio}
@@ -397,7 +399,15 @@ function StaffEditVolunteerModal({
             </Box>
 
             <Box>
-              <StaffSectionLabel>Role</StaffSectionLabel>
+              <Typography
+                variant="caption"
+                fontWeight={700}
+                letterSpacing={0.8}
+                color="text.secondary"
+                sx={{ textTransform: "uppercase", display: "block", mb: 1.5 }}
+              >
+                Role
+              </Typography>
               <FormControl fullWidth disabled={saving} size="small">
                 <InputLabel>Volunteer Type</InputLabel>
                 <Select
@@ -417,7 +427,15 @@ function StaffEditVolunteerModal({
             </Box>
 
             <Box>
-              <StaffSectionLabel>Account</StaffSectionLabel>
+              <Typography
+                variant="caption"
+                fontWeight={700}
+                letterSpacing={0.8}
+                color="text.secondary"
+                sx={{ textTransform: "uppercase", display: "block", mb: 1.5 }}
+              >
+                Account
+              </Typography>
               <Stack>
                 <FormControlLabel
                   control={
@@ -533,13 +551,7 @@ export function VolunteerOverviewTab({
   }, [vol.id, deleteVolunteer, enqueueSnackbar, onDelete]);
 
   if (!user) {
-    return (
-      <Card>
-        <CardContent>
-          <Typography color="error">User information not found</Typography>
-        </CardContent>
-      </Card>
-    );
+    return <LoadingSkeleton variant="lines" />;
   }
 
   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
@@ -666,6 +678,7 @@ export function VolunteerOverviewTab({
           gap: 3,
         }}
       >
+        {/* Sidebar */}
         <Box sx={{ width: { xs: "100%", md: "33.333%" }, flexShrink: 0 }}>
           <Card
             elevation={0}
@@ -761,8 +774,10 @@ export function VolunteerOverviewTab({
           </Card>
         </Box>
 
+        {/* Main content */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Stack spacing={3}>
+            {/* Onboarding Progress */}
             <SectionCard
               icon={<AssignmentTurnedInIcon sx={{ fontSize: 18 }} />}
               title="Onboarding Progress"
@@ -840,6 +855,7 @@ export function VolunteerOverviewTab({
               )}
             </SectionCard>
 
+            {/* Weekly Availability */}
             <SectionCard
               icon={<CalendarMonthIcon sx={{ fontSize: 18 }} />}
               title="Weekly Availability"
@@ -854,6 +870,7 @@ export function VolunteerOverviewTab({
               />
             </SectionCard>
 
+            {/* Skills */}
             <SectionCard
               icon={<PsychologyIcon sx={{ fontSize: 18 }} />}
               title="Skills"
@@ -893,6 +910,7 @@ export function VolunteerOverviewTab({
               )}
             </SectionCard>
 
+            {/* Interests */}
             <SectionCard
               icon={<FavoriteBorderIcon sx={{ fontSize: 18 }} />}
               title="Interests"

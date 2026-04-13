@@ -21,7 +21,7 @@ import {
 import { BarChart } from "@mui/x-charts";
 import { JSX, useMemo } from "react";
 
-import { getRsvpStatusColor, StatusBadge } from "@/components/ui";
+import { EmptyState, getRsvpStatusColor, StatusBadge } from "@/components/ui";
 import type { FetchVolunteerByIdResult } from "@/services/volunteer-client.service";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -132,8 +132,12 @@ export function VolunteerImpactTab({
 
   const eventsCount = useMemo(() => {
     const titles = new Set([
-      ...hoursBreakdown.map((h) => h.opportunityTitle).filter(Boolean),
-      ...recentOpportunities.map((r) => r.opportunityTitle).filter(Boolean),
+      ...hoursBreakdown
+        .map((h) => h.opportunityTitle)
+        .filter((t): t is string => t !== null && t !== undefined),
+      ...recentOpportunities
+        .map((r) => r.opportunityTitle)
+        .filter((t): t is string => t !== null && t !== undefined),
     ]);
     return titles.size;
   }, [hoursBreakdown, recentOpportunities]);
@@ -375,13 +379,7 @@ export function VolunteerImpactTab({
               </Table>
             </TableContainer>
           ) : (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontStyle: "italic" }}
-            >
-              No hours recorded
-            </Typography>
+            <EmptyState message="No hours logged yet." />
           )}
         </CardContent>
       </Card>
@@ -445,13 +443,7 @@ export function VolunteerImpactTab({
               </Table>
             </TableContainer>
           ) : (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontStyle: "italic" }}
-            >
-              No recent activity
-            </Typography>
+            <EmptyState message="No RSVPs on record." />
           )}
         </CardContent>
       </Card>
