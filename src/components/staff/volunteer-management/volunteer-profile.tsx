@@ -67,7 +67,10 @@ export default function VolunteerProfile({
       >
         {tab === 1 && (
           <Box sx={{ pt: 3 }}>
-            <VolunteerImpactTab volunteer={volunteer} />
+            <VolunteerImpactTab
+              volunteer={volunteer}
+              onVolunteerUpdated={onVolunteerUpdated}
+            />
           </Box>
         )}
       </Box>

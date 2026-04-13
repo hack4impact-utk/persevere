@@ -1,13 +1,23 @@
 "use client";
 
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CloseIcon from "@mui/icons-material/Close";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import {
   Box,
+  Button,
   Card,
   CardContent,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
   Paper,
   Stack,
   Table,
@@ -16,12 +26,17 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
-import { JSX, useMemo } from "react";
+import { useSnackbar } from "notistack";
+import { JSX, useCallback, useMemo, useState } from "react";
 
+import { ConfirmDialog } from "@/components/shared";
 import { EmptyState, getRsvpStatusColor, StatusBadge } from "@/components/ui";
+import { useHours } from "@/hooks/use-hours";
 import type { FetchVolunteerByIdResult } from "@/services/volunteer-client.service";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -90,13 +105,81 @@ function StatCard({
 
 type VolunteerImpactTabProps = {
   volunteer: FetchVolunteerByIdResult;
+  onVolunteerUpdated?: () => void;
 };
 
 export function VolunteerImpactTab({
   volunteer,
+  onVolunteerUpdated,
 }: VolunteerImpactTabProps): JSX.Element {
   const hoursBreakdown = volunteer.hoursBreakdown ?? [];
   const recentOpportunities = volunteer.recentOpportunities ?? [];
+
+  const [hoursActionLoading, setHoursActionLoading] = useState<number | null>(
+    null,
+  );
+  const [rejectTarget, setRejectTarget] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [hoursDeleteTargetId, setHoursDeleteTargetId] = useState<number | null>(
+    null,
+  );
+
+  const { enqueueSnackbar } = useSnackbar();
+  const { approveHours, rejectHours, deleteHours } = useHours();
+
+  const handleApproveHours = useCallback(
+    async (hoursId: number): Promise<void> => {
+      setHoursActionLoading(hoursId);
+      const result = await approveHours(hoursId);
+      if (result) {
+        enqueueSnackbar("Hours approved", { variant: "success" });
+        onVolunteerUpdated?.();
+      } else {
+        enqueueSnackbar("Failed to approve hours", { variant: "error" });
+      }
+      setHoursActionLoading(null);
+    },
+    [approveHours, enqueueSnackbar, onVolunteerUpdated],
+  );
+
+  const handleRejectConfirm = useCallback(async (): Promise<void> => {
+    if (rejectTarget === null) return;
+    const id = rejectTarget;
+    setHoursActionLoading(id);
+    const result = await rejectHours(id, rejectReason || undefined);
+    if (result) {
+      enqueueSnackbar("Hours rejected", { variant: "success" });
+      setRejectTarget(null);
+      setRejectReason("");
+      onVolunteerUpdated?.();
+    } else {
+      enqueueSnackbar("Failed to reject hours", { variant: "error" });
+    }
+    setHoursActionLoading(null);
+  }, [
+    rejectTarget,
+    rejectReason,
+    rejectHours,
+    enqueueSnackbar,
+    onVolunteerUpdated,
+  ]);
+
+  const handleDeleteHoursConfirm = useCallback(async (): Promise<void> => {
+    if (hoursDeleteTargetId == null) return;
+    const id = hoursDeleteTargetId;
+    setHoursDeleteTargetId(null);
+    setHoursActionLoading(id);
+    const success = await deleteHours(id);
+    if (success) {
+      enqueueSnackbar("Hours entry deleted", { variant: "success" });
+      onVolunteerUpdated?.();
+    } else {
+      enqueueSnackbar("Failed to delete hours entry", { variant: "error" });
+    }
+    setHoursActionLoading(null);
+  }, [hoursDeleteTargetId, deleteHours, enqueueSnackbar, onVolunteerUpdated]);
+
+  // ── Stats ──────────────────────────────────────────────────────────────────
 
   const approvedHours = useMemo(
     () =>
@@ -327,54 +410,131 @@ export function VolunteerImpactTab({
                     <TableCell align="right">Hours</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Notes</TableCell>
+                    <TableCell align="right">Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {sortedHours.map((entry) => (
-                    <TableRow key={entry.id} hover>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {entry.opportunityTitle ?? "—"}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" noWrap>
-                          {formatDate(entry.date)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2">
-                          {(entry.hours ?? 0).toFixed(2)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge
-                          label={entry.status}
-                          color={
-                            entry.status === "approved"
-                              ? "success"
-                              : entry.status === "rejected"
-                                ? "error"
-                                : "warning"
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            maxWidth: 200,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {entry.notes ?? "—"}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {sortedHours.map((entry) => {
+                    const isPending = entry.status === "pending";
+                    const isBusy = hoursActionLoading === entry.id;
+                    return (
+                      <TableRow key={entry.id} hover>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {entry.opportunityTitle ?? "—"}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" noWrap>
+                            {formatDate(entry.date)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2">
+                            {(entry.hours ?? 0).toFixed(2)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge
+                            label={entry.status}
+                            color={
+                              entry.status === "approved"
+                                ? "success"
+                                : entry.status === "rejected"
+                                  ? "error"
+                                  : "warning"
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                              maxWidth: 160,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {entry.notes ?? "—"}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Stack
+                            direction="row"
+                            spacing={0.25}
+                            justifyContent="flex-end"
+                          >
+                            {isPending && (
+                              <Tooltip title="Approve hours">
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    color="success"
+                                    onClick={() =>
+                                      void handleApproveHours(entry.id)
+                                    }
+                                    disabled={isBusy}
+                                    sx={{ p: 0.5 }}
+                                  >
+                                    {isBusy ? (
+                                      <CircularProgress size={14} />
+                                    ) : (
+                                      <CheckCircleIcon
+                                        sx={{ fontSize: "1rem" }}
+                                      />
+                                    )}
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            )}
+                            {isPending && (
+                              <Tooltip title="Reject hours">
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={() => setRejectTarget(entry.id)}
+                                    disabled={isBusy}
+                                    sx={{ p: 0.5 }}
+                                  >
+                                    {isBusy ? (
+                                      <CircularProgress size={14} />
+                                    ) : (
+                                      <CloseIcon sx={{ fontSize: "1rem" }} />
+                                    )}
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            )}
+                            {entry.status !== "approved" && (
+                              <Tooltip title="Delete entry">
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    onClick={() =>
+                                      setHoursDeleteTargetId(entry.id)
+                                    }
+                                    disabled={isBusy}
+                                    sx={{ p: 0.5 }}
+                                  >
+                                    {isBusy ? (
+                                      <CircularProgress size={14} />
+                                    ) : (
+                                      <DeleteOutlineIcon
+                                        sx={{ fontSize: "1rem" }}
+                                      />
+                                    )}
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            )}
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -447,6 +607,58 @@ export function VolunteerImpactTab({
           )}
         </CardContent>
       </Card>
+
+      {/* Reject Hours Dialog */}
+      <Dialog
+        open={rejectTarget !== null}
+        onClose={() => {
+          setRejectTarget(null);
+          setRejectReason("");
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Reject Hours</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Reason (optional)"
+            multiline
+            rows={2}
+            fullWidth
+            sx={{ mt: 1 }}
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setRejectTarget(null);
+              setRejectReason("");
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => void handleRejectConfirm()}
+          >
+            Reject
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Hours Confirm */}
+      <ConfirmDialog
+        open={hoursDeleteTargetId !== null}
+        title="Delete Hours Entry"
+        message="Are you sure you want to delete this hours entry? This action cannot be undone."
+        confirmLabel="Delete"
+        confirmColor="error"
+        onConfirm={handleDeleteHoursConfirm}
+        onClose={() => setHoursDeleteTargetId(null)}
+      />
     </Stack>
   );
 }
