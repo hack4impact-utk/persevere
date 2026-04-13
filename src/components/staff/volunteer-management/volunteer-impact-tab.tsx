@@ -90,6 +90,7 @@ function StatCard({
 
 type VolunteerImpactTabProps = {
   volunteer: FetchVolunteerByIdResult;
+  onVolunteerUpdated?: () => void;
 };
 
 export function VolunteerImpactTab({
