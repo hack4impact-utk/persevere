@@ -88,12 +88,14 @@ type FormSectionCardProps = {
   icon: React.ReactNode;
   title: string;
   children: React.ReactNode;
+  centerContent?: boolean;
 };
 
 function FormSectionCard({
   icon,
   title,
   children,
+  centerContent,
 }: FormSectionCardProps): JSX.Element {
   return (
     <Card
@@ -103,9 +105,20 @@ function FormSectionCard({
         borderColor: "grey.200",
         borderRadius: 2,
         height: "100%",
+        ...(centerContent && { display: "flex", flexDirection: "column" }),
       }}
     >
-      <CardContent sx={{ p: 3 }}>
+      <CardContent
+        sx={{
+          p: 3,
+          ...(centerContent && {
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            "&:last-child": { pb: 3 },
+          }),
+        }}
+      >
         <Box display="flex" alignItems="center" gap={1} mb={2.5}>
           <Box
             sx={{
@@ -131,7 +144,20 @@ function FormSectionCard({
             {title}
           </Typography>
         </Box>
-        {children}
+        {centerContent ? (
+          <Box
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+            }}
+          >
+            {children}
+          </Box>
+        ) : (
+          children
+        )}
       </CardContent>
     </Card>
   );
@@ -280,9 +306,27 @@ export default function ProfileEditForm({
   return (
     <form onSubmit={handleSubmit}>
       <Stack spacing={4}>
+        {/* ── About Me ─────────────────────────────────── */}
+        <FormSectionCard
+          icon={<PersonIcon fontSize="small" />}
+          title="About Me"
+        >
+          <TextField
+            label="Bio"
+            value={formData.bio || ""}
+            onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+            fullWidth
+            multiline
+            rows={4}
+            placeholder="Tell us about yourself..."
+            disabled={isSaving}
+            size="small"
+          />
+        </FormSectionCard>
+
         {/* ── Two-column grid ──────────────────────────── */}
-        <Grid container spacing={3} alignItems="flex-start">
-          {/* Left: Contact + Notifications + About */}
+        <Grid container spacing={3} alignItems="stretch">
+          {/* Left: Profile Details */}
           <Grid size={{ xs: 12, md: 5 }}>
             <FormSectionCard
               icon={<PersonIcon fontSize="small" />}
@@ -352,48 +396,10 @@ export default function ProfileEditForm({
                   size="small"
                 />
               </Stack>
-
-              <Divider sx={{ my: 2.5 }} />
-
-              <SectionLabel>Notifications</SectionLabel>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.notificationPreference !== "none"}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        notificationPreference: e.target.checked
-                          ? "email"
-                          : "none",
-                      })
-                    }
-                    disabled={isSaving}
-                  />
-                }
-                label="Email notifications"
-              />
-
-              <Divider sx={{ my: 2.5 }} />
-
-              <SectionLabel>About Me</SectionLabel>
-              <TextField
-                label="Bio"
-                value={formData.bio || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, bio: e.target.value })
-                }
-                fullWidth
-                multiline
-                rows={4}
-                placeholder="Tell us about yourself..."
-                disabled={isSaving}
-                size="small"
-              />
             </FormSectionCard>
           </Grid>
 
-          {/* Right: Skills + Interests */}
+          {/* Right: Skills + Interests + Notifications */}
           <Grid size={{ xs: 12, md: 7 }}>
             <FormSectionCard
               icon={<PsychologyIcon fontSize="small" />}
@@ -489,6 +495,27 @@ export default function ProfileEditForm({
                   )}
                 />
               )}
+
+              <Divider sx={{ my: 2.5 }} />
+
+              <SectionLabel>Notifications</SectionLabel>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.notificationPreference !== "none"}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        notificationPreference: e.target.checked
+                          ? "email"
+                          : "none",
+                      })
+                    }
+                    disabled={isSaving}
+                  />
+                }
+                label="Email notifications"
+              />
             </FormSectionCard>
           </Grid>
         </Grid>
