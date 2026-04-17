@@ -68,7 +68,7 @@ export default function EventDetailModal({
   onUpdated,
   onDeleted,
 }: EventDetailModalProps): JSX.Element {
-  const { updateEvent, deleteEvent } = useCalendarEvents();
+  const { updateEvent, deleteEvent, isMutating } = useCalendarEvents();
   const { rsvps, loading: rsvpsLoading, fetchRsvps } = useEventRsvps();
   const {
     matches,
@@ -786,6 +786,7 @@ export default function EventDetailModal({
                       size="small"
                       color="error"
                       variant="contained"
+                      disabled={isMutating}
                       onClick={() => {
                         void handleDelete();
                       }}
@@ -827,6 +828,7 @@ export default function EventDetailModal({
                 void handleSave();
               }}
               variant="contained"
+              disabled={isMutating}
               sx={{
                 borderRadius: 2,
                 textTransform: "none",

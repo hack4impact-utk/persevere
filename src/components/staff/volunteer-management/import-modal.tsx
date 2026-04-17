@@ -345,7 +345,11 @@ export default function ImportVolunteerModal({
             <Button onClick={handleImportAnother} variant="outlined">
               Choose Different File
             </Button>
-            <Button onClick={() => void handleImport()} variant="contained">
+            <Button
+              onClick={() => void handleImport()}
+              variant="contained"
+              disabled={importing}
+            >
               Import {totalRows} volunteer{totalRows === 1 ? "" : "s"}
             </Button>
           </>

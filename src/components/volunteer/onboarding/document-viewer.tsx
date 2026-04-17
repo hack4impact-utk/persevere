@@ -428,7 +428,18 @@ function ActionButtons({
   hasResponded: boolean;
   onRespond: (documentId: number, consentGiven?: boolean) => Promise<void>;
 }): JSX.Element | null {
+  const [isSigning, setIsSigning] = useState(false);
+
   if (hasResponded || doc.actionType === "informational") return null;
+
+  const handleClick = async (consentGiven?: boolean): Promise<void> => {
+    setIsSigning(true);
+    try {
+      await onRespond(doc.id, consentGiven);
+    } finally {
+      setIsSigning(false);
+    }
+  };
 
   if (doc.actionType === "consent") {
     return (
@@ -436,14 +447,16 @@ function ActionButtons({
         <Button
           variant="outlined"
           size="small"
-          onClick={() => void onRespond(doc.id, false)}
+          disabled={isSigning}
+          onClick={() => void handleClick(false)}
         >
           I do not consent
         </Button>
         <Button
           variant="contained"
           size="small"
-          onClick={() => void onRespond(doc.id, true)}
+          disabled={isSigning}
+          onClick={() => void handleClick(true)}
         >
           I have read and I consent
         </Button>
@@ -456,7 +469,8 @@ function ActionButtons({
       <Button
         variant="contained"
         size="small"
-        onClick={() => void onRespond(doc.id)}
+        disabled={isSigning}
+        onClick={() => void handleClick()}
       >
         I have read and acknowledge this
       </Button>
@@ -467,7 +481,8 @@ function ActionButtons({
     <Button
       variant="contained"
       size="small"
-      onClick={() => void onRespond(doc.id)}
+      disabled={isSigning}
+      onClick={() => void handleClick()}
     >
       I have read and agree to this document
     </Button>

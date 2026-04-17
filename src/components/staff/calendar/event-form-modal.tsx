@@ -86,7 +86,7 @@ export default function EventFormModal({
   onCreated,
   initialDates,
 }: EventFormModalProps): JSX.Element {
-  const { createEvent } = useCalendarEvents();
+  const { createEvent, isMutating } = useCalendarEvents();
   const { skills: catalogSkills, interests: catalogInterests } = useSkills();
   const { applyToEvents } = useOpportunitySkills(null);
 
@@ -516,6 +516,7 @@ export default function EventFormModal({
             void handleSubmit();
           }}
           variant="contained"
+          disabled={isMutating}
           sx={{
             borderRadius: 2,
             textTransform: "none",
