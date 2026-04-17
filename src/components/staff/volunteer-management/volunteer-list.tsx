@@ -2,6 +2,7 @@
 
 import AddIcon from "@mui/icons-material/Add";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 import {
   Alert,
   Box,
@@ -34,6 +35,7 @@ import { useVolunteerDetail } from "@/hooks/use-volunteer-detail";
 import { useVolunteerTypes } from "@/hooks/use-volunteer-types";
 import { useVolunteers } from "@/hooks/use-volunteers";
 
+import ImportVolunteerModal from "./import-modal";
 import PendingInvitesTable from "./pending-invites-table";
 import AddVolunteerModal from "./volunteer-add-modal";
 import VolunteerProfile from "./volunteer-profile";
@@ -93,6 +95,7 @@ export default function VolunteerList(): ReactElement {
   } = useVolunteerDetail();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
 
   const handleSearchChange = useCallback(
@@ -301,6 +304,21 @@ export default function VolunteerList(): ReactElement {
                 <FilterListIcon />
               </IconButton>
             </Tooltip>
+            <Tooltip title="Import CSV">
+              <IconButton
+                color="primary"
+                onClick={() => setImportModalOpen(true)}
+                sx={{
+                  backgroundColor: "primary.main",
+                  color: "primary.contrastText",
+                  "&:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                <UploadFileIcon />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Add Volunteer">
               <IconButton
                 color="primary"
@@ -426,6 +444,13 @@ export default function VolunteerList(): ReactElement {
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
         onCreated={() => {
+          void loadVolunteers();
+        }}
+      />
+      <ImportVolunteerModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImported={() => {
           void loadVolunteers();
         }}
       />
