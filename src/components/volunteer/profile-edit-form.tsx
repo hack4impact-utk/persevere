@@ -289,67 +289,69 @@ export default function ProfileEditForm({
               title="Profile Details"
             >
               <SectionLabel>Contact</SectionLabel>
-              <TextField
-                label="Phone Number"
-                value={formData.phone || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-                fullWidth
-                placeholder="(555) 123-4567"
-                disabled={isSaving}
-                size="small"
-              />
-              <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
+              <Stack spacing={2}>
                 <TextField
-                  label="City"
-                  value={formData.city || ""}
+                  label="Phone Number"
+                  value={formData.phone || ""}
                   onChange={(e) =>
-                    setFormData({ ...formData, city: e.target.value })
+                    setFormData({ ...formData, phone: e.target.value })
                   }
+                  fullWidth
+                  placeholder="(555) 123-4567"
+                  disabled={isSaving}
+                  size="small"
+                />
+                <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                  <TextField
+                    label="City"
+                    value={formData.city || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, city: e.target.value })
+                    }
+                    disabled={isSaving}
+                    size="small"
+                  />
+                  <TextField
+                    label="State"
+                    value={formData.state || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, state: e.target.value })
+                    }
+                    disabled={isSaving}
+                    size="small"
+                  />
+                </Box>
+                <TextField
+                  label="Employer"
+                  value={formData.employer || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, employer: e.target.value })
+                  }
+                  fullWidth
                   disabled={isSaving}
                   size="small"
                 />
                 <TextField
-                  label="State"
-                  value={formData.state || ""}
+                  label="Job Title"
+                  value={formData.jobTitle || ""}
                   onChange={(e) =>
-                    setFormData({ ...formData, state: e.target.value })
+                    setFormData({ ...formData, jobTitle: e.target.value })
                   }
+                  fullWidth
                   disabled={isSaving}
                   size="small"
                 />
-              </Box>
-              <TextField
-                label="Employer"
-                value={formData.employer || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, employer: e.target.value })
-                }
-                fullWidth
-                disabled={isSaving}
-                size="small"
-              />
-              <TextField
-                label="Job Title"
-                value={formData.jobTitle || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, jobTitle: e.target.value })
-                }
-                fullWidth
-                disabled={isSaving}
-                size="small"
-              />
-              <TextField
-                label="How did you hear about us?"
-                value={formData.referralSource || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, referralSource: e.target.value })
-                }
-                fullWidth
-                disabled={isSaving}
-                size="small"
-              />
+                <TextField
+                  label="How did you hear about us?"
+                  value={formData.referralSource || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, referralSource: e.target.value })
+                  }
+                  fullWidth
+                  disabled={isSaving}
+                  size="small"
+                />
+              </Stack>
 
               <Divider sx={{ my: 2.5 }} />
 

@@ -629,10 +629,6 @@ export default function VolunteerProfilePage(): JSX.Element {
                         <DetailField label="Email" value={user.email} />
                         <DetailField label="Phone" value={user.phone ?? "—"} />
                         <DetailField
-                          label="Employer"
-                          value={vol.employer ?? "—"}
-                        />
-                        <DetailField
                           label="Job Title"
                           value={vol.jobTitle ?? "—"}
                         />
