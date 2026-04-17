@@ -35,10 +35,22 @@ export default function OnboardingChecklist({
   const [minimized, setMinimized] = useState(false);
   const [visible, setVisible] = useState(true);
   const [mounted, setMounted] = useState(true);
-  const prevCompleteRef = useRef(false);
+  const prevCompleteRef = useRef<boolean | null>(null);
 
-  useEffect(() => {
-    const isComplete = status?.onboardingComplete ?? false;
+  useEffect((): (() => void) | void => {
+    if (status === null) return;
+
+    const isComplete = status.onboardingComplete;
+
+    if (prevCompleteRef.current === null) {
+      prevCompleteRef.current = isComplete;
+      if (isComplete) {
+        setVisible(false);
+        setMounted(false);
+      }
+      return;
+    }
+
     if (isComplete && !prevCompleteRef.current) {
       const fadeTimer = setTimeout(() => {
         setVisible(false);
@@ -50,7 +62,7 @@ export default function OnboardingChecklist({
       return (): void => clearTimeout(fadeTimer);
     }
     prevCompleteRef.current = isComplete;
-  }, [status?.onboardingComplete]);
+  }, [status]);
 
   if (!mounted) return null;
 
