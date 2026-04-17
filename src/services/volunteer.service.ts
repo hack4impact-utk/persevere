@@ -54,6 +54,11 @@ export type CreateVolunteerParams = {
   mediaRelease?: boolean;
   availability?: Record<string, string | string[] | boolean | number>;
   notificationPreference?: "email" | "sms" | "both" | "none";
+  employer?: string;
+  jobTitle?: string;
+  city?: string;
+  state?: string;
+  referralSource?: string;
 };
 
 export type CreateVolunteerResult = {
@@ -284,6 +289,11 @@ export async function createVolunteer(
       mediaRelease: params.mediaRelease ?? false,
       availability: params.availability,
       notificationPreference: params.notificationPreference ?? "email",
+      employer: params.employer,
+      jobTitle: params.jobTitle,
+      city: params.city,
+      state: params.state,
+      referralSource: params.referralSource,
     })
     .returning();
 
