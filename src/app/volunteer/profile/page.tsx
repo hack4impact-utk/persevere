@@ -18,6 +18,7 @@ import {
   Grid,
   Skeleton,
   Stack,
+  type SxProps,
   Typography,
 } from "@mui/material";
 import { useSession } from "next-auth/react";
@@ -94,12 +95,14 @@ function SectionCard({ icon, title, children }: SectionCardProps): JSX.Element {
 function SidebarCard({
   title,
   children,
+  sx,
 }: {
   title: string;
   children: React.ReactNode;
+  sx?: SxProps;
 }): JSX.Element {
   return (
-    <Box>
+    <Box sx={sx}>
       <Typography
         variant="caption"
         fontWeight={700}
@@ -619,11 +622,26 @@ export default function VolunteerProfilePage(): JSX.Element {
                   border: "1px solid",
                   borderColor: "grey.200",
                   borderRadius: 2,
-                  height: "100%",
+                  height: { xs: "auto", md: 0 },
+                  minHeight: { xs: "auto", md: "100%" },
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
-                <CardContent sx={{ p: 3 }}>
-                  <Stack spacing={3} divider={<Divider />}>
+                <CardContent
+                  sx={{
+                    p: 3,
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    minHeight: 0,
+                  }}
+                >
+                  <Stack
+                    spacing={3}
+                    divider={<Divider />}
+                    sx={{ flex: 1, minHeight: 0 }}
+                  >
                     <SidebarCard title="Contact">
                       <Stack spacing={2}>
                         <DetailField label="Email" value={user.email} />
@@ -664,12 +682,26 @@ export default function VolunteerProfilePage(): JSX.Element {
                       </Box>
                     </SidebarCard>
 
-                    <SidebarCard title="About Me">
-                      <Box sx={{ maxHeight: 240, overflowY: "auto" }}>
+                    <SidebarCard
+                      title="About Me"
+                      sx={{
+                        flex: 1,
+                        minHeight: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          flex: 1,
+                          overflowY: "auto",
+                          minHeight: 0,
+                        }}
+                      >
                         <Typography
                           variant="body2"
                           color={user.bio ? "text.secondary" : "text.disabled"}
-                          sx={{ lineHeight: 1.75 }}
+                          sx={{ lineHeight: 1.75, wordBreak: "break-word" }}
                         >
                           {user.bio ?? "No bio yet."}
                         </Typography>
@@ -761,7 +793,7 @@ export default function VolunteerProfilePage(): JSX.Element {
                       No onboarding documents yet.
                     </Typography>
                   ) : (
-                    <Box sx={{ overflowY: "auto", maxHeight: 240 }}>
+                    <Box sx={{ overflowY: "auto" }}>
                       <Stack spacing={0}>
                         {documents.map((doc) => {
                           const response = responseMap.get(doc.id);
