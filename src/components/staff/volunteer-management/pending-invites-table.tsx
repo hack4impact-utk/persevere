@@ -176,26 +176,19 @@ export default function PendingInvitesTable({
       volunteerName: "",
     });
     setResendingEmails((prev) => new Set(prev).add(volunteerId));
-    try {
-      await resendCredentials(volunteerId);
+    const success = await resendCredentials(volunteerId);
+    setResendingEmails((prev) => {
+      const next = new Set(prev);
+      next.delete(volunteerId);
+      return next;
+    });
+    if (success) {
       enqueueSnackbar("Welcome email sent successfully", {
         variant: "success",
       });
-      if (onRefresh) {
-        onRefresh();
-      }
-    } catch (error) {
-      console.error("Failed to resend email:", error);
-      enqueueSnackbar(
-        error instanceof Error ? error.message : "Failed to resend email",
-        { variant: "error" },
-      );
-    } finally {
-      setResendingEmails((prev) => {
-        const next = new Set(prev);
-        next.delete(volunteerId);
-        return next;
-      });
+      if (onRefresh) onRefresh();
+    } else {
+      enqueueSnackbar("Failed to send welcome email", { variant: "error" });
     }
   };
 
@@ -259,27 +252,17 @@ export default function PendingInvitesTable({
     const volunteerId = confirmDelete.volunteerId;
     setConfirmDelete({ open: false, volunteerId: null, volunteerName: "" });
     setDeleting((prev) => new Set(prev).add(volunteerId));
-
-    try {
-      await deleteVolunteer(volunteerId);
-      enqueueSnackbar("Volunteer deleted successfully", {
-        variant: "success",
-      });
-      if (onRefresh) {
-        onRefresh();
-      }
-    } catch (error) {
-      console.error("Failed to delete volunteer:", error);
-      enqueueSnackbar(
-        error instanceof Error ? error.message : "Failed to delete volunteer",
-        { variant: "error" },
-      );
-    } finally {
-      setDeleting((prev) => {
-        const next = new Set(prev);
-        next.delete(volunteerId);
-        return next;
-      });
+    const success = await deleteVolunteer(volunteerId);
+    setDeleting((prev) => {
+      const next = new Set(prev);
+      next.delete(volunteerId);
+      return next;
+    });
+    if (success) {
+      enqueueSnackbar("Volunteer deleted successfully", { variant: "success" });
+      if (onRefresh) onRefresh();
+    } else {
+      enqueueSnackbar("Failed to delete volunteer", { variant: "error" });
     }
   };
 
@@ -306,46 +289,40 @@ export default function PendingInvitesTable({
     });
 
     setUpdatingStatus((prev) => new Set(prev).add(volunteerId));
-    try {
-      await updateBackgroundStatus(volunteerId, statusValue);
-      enqueueSnackbar("Background check status updated successfully", {
-        variant: "success",
-      });
+    const updated = await updateBackgroundStatus(volunteerId, statusValue);
+    setUpdatingStatus((prev) => {
+      const next = new Set(prev);
+      next.delete(volunteerId);
+      return next;
+    });
 
-      // If status is approved or not_required, automatically send welcome email
-      if (statusValue === "approved" || statusValue === "not_required") {
-        try {
-          await resendCredentials(volunteerId);
-          enqueueSnackbar("Welcome email sent successfully", {
-            variant: "success",
-          });
-        } catch (emailError) {
-          console.error("Failed to send email:", emailError);
-          enqueueSnackbar(
-            "Status updated but failed to send email. You can resend it manually.",
-            { variant: "warning" },
-          );
-        }
-      }
-
-      if (onRefresh) {
-        onRefresh();
-      }
-    } catch (error) {
-      console.error("Failed to update background check status:", error);
-      enqueueSnackbar(
-        error instanceof Error
-          ? error.message
-          : "Failed to update background check status",
-        { variant: "error" },
-      );
-    } finally {
-      setUpdatingStatus((prev) => {
-        const next = new Set(prev);
-        next.delete(volunteerId);
-        return next;
+    if (!updated) {
+      enqueueSnackbar("Failed to update background check status", {
+        variant: "error",
       });
+      return;
     }
+
+    enqueueSnackbar("Background check status updated successfully", {
+      variant: "success",
+    });
+
+    // If status is approved or not_required, automatically send welcome email
+    if (statusValue === "approved" || statusValue === "not_required") {
+      const emailSent = await resendCredentials(volunteerId);
+      if (emailSent) {
+        enqueueSnackbar("Welcome email sent successfully", {
+          variant: "success",
+        });
+      } else {
+        enqueueSnackbar(
+          "Status updated but failed to send email. You can resend it manually.",
+          { variant: "warning" },
+        );
+      }
+    }
+
+    if (onRefresh) onRefresh();
   };
 
   return (
@@ -588,7 +565,10 @@ export default function PendingInvitesTable({
                               )
                             }
                             onClick={(e) => e.stopPropagation()}
-                            disabled={updatingStatus.has(volunteer.id)}
+                            disabled={
+                              updatingStatus.has(volunteer.id) ||
+                              deleting.has(volunteer.id)
+                            }
                             sx={{
                               fontSize: "0.875rem",
                               "& .MuiSelect-select": { textAlign: "center" },
