@@ -43,6 +43,7 @@ export default function HoursTab({
     async (id: number) => {
       const ok = await onApprove(id);
       if (ok) enqueueSnackbar("Hours approved", { variant: "success" });
+      else enqueueSnackbar("Failed to approve hours", { variant: "error" });
     },
     [onApprove, enqueueSnackbar],
   );

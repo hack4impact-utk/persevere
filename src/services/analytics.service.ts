@@ -171,7 +171,7 @@ export async function getExportData(
     .select({
       name: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
       totalHours: sql<string>`coalesce(sum(${volunteerHours.hours}), 0)`,
-      verifiedHours: sql<string>`coalesce(sum(${volunteerHours.hours}) filter (where ${volunteerHours.verifiedAt} is not null), 0)`,
+      verifiedHours: sql<string>`coalesce(sum(${volunteerHours.hours}) filter (where ${volunteerHours.status} = 'approved'), 0)`,
       eventsAttended: sql<string>`count(distinct ${volunteerHours.opportunityId})`,
       volunteerType: sql<string>`coalesce(max(${volunteers.volunteerType}), 'Unspecified')`,
     })
