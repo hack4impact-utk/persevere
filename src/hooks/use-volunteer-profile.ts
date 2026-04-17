@@ -10,6 +10,11 @@ type VolunteerProfileData = {
     volunteerType?: string | null;
     notificationPreference?: "email" | "sms" | "both" | "none" | null;
     availability?: AvailabilityData | null;
+    employer?: string | null;
+    jobTitle?: string | null;
+    city?: string | null;
+    state?: string | null;
+    referralSource?: string | null;
   };
   users: {
     id: number;
@@ -45,6 +50,11 @@ type UpdateProfileData = {
   bio?: string | null;
   availability?: AvailabilityData | null;
   notificationPreference?: "email" | "sms" | "both" | "none" | null;
+  employer?: string | null;
+  jobTitle?: string | null;
+  city?: string | null;
+  state?: string | null;
+  referralSource?: string | null;
 };
 
 export type UseVolunteerProfileResult = {

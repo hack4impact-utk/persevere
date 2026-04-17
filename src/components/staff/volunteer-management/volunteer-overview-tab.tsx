@@ -270,6 +270,11 @@ type EditData = {
   mediaRelease?: boolean;
   availability?: Record<string, unknown>;
   notificationPreference?: "email" | "sms" | "both" | "none";
+  employer?: string;
+  jobTitle?: string;
+  city?: string;
+  state?: string;
+  referralSource?: string;
 };
 
 function StaffEditVolunteerModal({
@@ -298,6 +303,11 @@ function StaffEditVolunteerModal({
     volunteerType: vol.volunteerType ?? "",
     isAlumni: vol.isAlumni ?? false,
     mediaRelease: vol.mediaRelease ?? false,
+    employer: vol.employer ?? "",
+    jobTitle: vol.jobTitle ?? "",
+    city: vol.city ?? "",
+    state: vol.state ?? "",
+    referralSource: vol.referralSource ?? "",
   });
 
   useEffect(() => {
@@ -312,6 +322,11 @@ function StaffEditVolunteerModal({
       volunteerType: vol.volunteerType ?? "",
       isAlumni: vol.isAlumni ?? false,
       mediaRelease: vol.mediaRelease ?? false,
+      employer: vol.employer ?? "",
+      jobTitle: vol.jobTitle ?? "",
+      city: vol.city ?? "",
+      state: vol.state ?? "",
+      referralSource: vol.referralSource ?? "",
     });
   }, [open, volunteer]);
 
@@ -377,6 +392,48 @@ function StaffEditVolunteerModal({
                   label="Phone"
                   value={formData.phone}
                   onChange={(e) => handleChange("phone", e.target.value)}
+                  disabled={saving}
+                  size="small"
+                  fullWidth
+                />
+                <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                  <TextField
+                    label="Employer"
+                    value={formData.employer}
+                    onChange={(e) => handleChange("employer", e.target.value)}
+                    disabled={saving}
+                    size="small"
+                  />
+                  <TextField
+                    label="Job Title"
+                    value={formData.jobTitle}
+                    onChange={(e) => handleChange("jobTitle", e.target.value)}
+                    disabled={saving}
+                    size="small"
+                  />
+                </Box>
+                <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                  <TextField
+                    label="City"
+                    value={formData.city}
+                    onChange={(e) => handleChange("city", e.target.value)}
+                    disabled={saving}
+                    size="small"
+                  />
+                  <TextField
+                    label="State"
+                    value={formData.state}
+                    onChange={(e) => handleChange("state", e.target.value)}
+                    disabled={saving}
+                    size="small"
+                  />
+                </Box>
+                <TextField
+                  label="How did they hear about us?"
+                  value={formData.referralSource}
+                  onChange={(e) =>
+                    handleChange("referralSource", e.target.value)
+                  }
                   disabled={saving}
                   size="small"
                   fullWidth
@@ -801,6 +858,22 @@ export function VolunteerOverviewTab({
                   <Stack spacing={2}>
                     <DetailField label="Email" value={user.email} />
                     <DetailField label="Phone" value={user.phone ?? "—"} />
+                    <DetailField
+                      label="Job Title"
+                      value={vol.jobTitle ?? "—"}
+                    />
+                    <DetailField
+                      label="City / State"
+                      value={
+                        vol.city && vol.state
+                          ? `${vol.city}, ${vol.state}`
+                          : (vol.city ?? vol.state ?? "—")
+                      }
+                    />
+                    <DetailField
+                      label="How did they hear about us?"
+                      value={vol.referralSource ?? "—"}
+                    />
                   </Stack>
                 </SidebarCard>
 

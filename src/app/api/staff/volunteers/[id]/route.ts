@@ -36,6 +36,11 @@ const volunteerUpdateSchema = z.object({
     )
     .optional(),
   notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
+  employer: z.string().optional(),
+  jobTitle: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  referralSource: z.string().optional(),
 });
 
 export async function GET(

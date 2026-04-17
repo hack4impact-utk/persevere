@@ -50,6 +50,11 @@ export const volunteers = pgTable("volunteers", {
   notificationPreference: notificationPreferenceEnum("notification_preference")
     .default("email")
     .notNull(),
+  employer: text("employer"),
+  jobTitle: text("job_title"),
+  city: text("city"),
+  state: text("state"),
+  referralSource: text("referral_source"),
   ...timestamps,
 });
 

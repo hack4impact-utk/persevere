@@ -18,6 +18,7 @@ import {
   Grid,
   Skeleton,
   Stack,
+  type SxProps,
   Typography,
 } from "@mui/material";
 import { useSession } from "next-auth/react";
@@ -94,12 +95,14 @@ function SectionCard({ icon, title, children }: SectionCardProps): JSX.Element {
 function SidebarCard({
   title,
   children,
+  sx,
 }: {
   title: string;
   children: React.ReactNode;
+  sx?: SxProps;
 }): JSX.Element {
   return (
-    <Box>
+    <Box sx={sx}>
       <Typography
         variant="caption"
         fontWeight={700}
@@ -255,6 +258,11 @@ export default function VolunteerProfilePage(): JSX.Element {
     bio?: string | null;
     availability?: AvailabilityData | null;
     notificationPreference?: "email" | "sms" | "both" | "none" | null;
+    employer?: string | null;
+    jobTitle?: string | null;
+    city?: string | null;
+    state?: string | null;
+    referralSource?: string | null;
   }): Promise<void> => {
     setSaving(true);
     try {
@@ -591,6 +599,11 @@ export default function VolunteerProfilePage(): JSX.Element {
                   notificationPreference: vol.notificationPreference,
                   skills: profileData.skills,
                   interests: profileData.interests,
+                  employer: vol.employer,
+                  jobTitle: vol.jobTitle,
+                  city: vol.city,
+                  state: vol.state,
+                  referralSource: vol.referralSource,
                 }}
                 onSave={handleSave}
                 onCancel={() => setEditMode(false)}
@@ -609,15 +622,42 @@ export default function VolunteerProfilePage(): JSX.Element {
                   border: "1px solid",
                   borderColor: "grey.200",
                   borderRadius: 2,
-                  height: "100%",
+                  height: { xs: "auto", md: 0 },
+                  minHeight: { xs: "auto", md: "100%" },
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
-                <CardContent sx={{ p: 3 }}>
-                  <Stack spacing={3} divider={<Divider />}>
+                <CardContent
+                  sx={{
+                    p: 3,
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    minHeight: 0,
+                  }}
+                >
+                  <Stack
+                    spacing={3}
+                    divider={<Divider />}
+                    sx={{ flex: 1, minHeight: 0 }}
+                  >
                     <SidebarCard title="Contact">
                       <Stack spacing={2}>
                         <DetailField label="Email" value={user.email} />
                         <DetailField label="Phone" value={user.phone ?? "—"} />
+                        <DetailField
+                          label="Job Title"
+                          value={vol.jobTitle ?? "—"}
+                        />
+                        <DetailField
+                          label="City / State"
+                          value={
+                            vol.city && vol.state
+                              ? `${vol.city}, ${vol.state}`
+                              : (vol.city ?? vol.state ?? "—")
+                          }
+                        />
                       </Stack>
                     </SidebarCard>
 
@@ -642,14 +682,30 @@ export default function VolunteerProfilePage(): JSX.Element {
                       </Box>
                     </SidebarCard>
 
-                    <SidebarCard title="About Me">
-                      <Typography
-                        variant="body2"
-                        color={user.bio ? "text.secondary" : "text.disabled"}
-                        sx={{ lineHeight: 1.75 }}
+                    <SidebarCard
+                      title="About Me"
+                      sx={{
+                        flex: 1,
+                        minHeight: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          flex: 1,
+                          overflowY: "auto",
+                          minHeight: 0,
+                        }}
                       >
-                        {user.bio ?? "No bio yet."}
-                      </Typography>
+                        <Typography
+                          variant="body2"
+                          color={user.bio ? "text.secondary" : "text.disabled"}
+                          sx={{ lineHeight: 1.75, wordBreak: "break-word" }}
+                        >
+                          {user.bio ?? "No bio yet."}
+                        </Typography>
+                      </Box>
                     </SidebarCard>
                   </Stack>
                 </CardContent>
@@ -737,7 +793,7 @@ export default function VolunteerProfilePage(): JSX.Element {
                       No onboarding documents yet.
                     </Typography>
                   ) : (
-                    <Box sx={{ overflowY: "auto", maxHeight: 240 }}>
+                    <Box sx={{ overflowY: "auto" }}>
                       <Stack spacing={0}>
                         {documents.map((doc) => {
                           const response = responseMap.get(doc.id);
