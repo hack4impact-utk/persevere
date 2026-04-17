@@ -69,6 +69,11 @@ export type VolunteerDetailUpdateData = {
   mediaRelease?: boolean;
   availability?: Record<string, unknown>;
   notificationPreference?: "email" | "sms" | "both" | "none";
+  employer?: string;
+  jobTitle?: string;
+  city?: string;
+  state?: string;
+  referralSource?: string;
 };
 
 /**
@@ -140,6 +145,11 @@ export async function updateVolunteerDetail(
     mediaRelease?: boolean;
     availability?: Record<string, unknown>;
     notificationPreference?: "email" | "sms" | "both" | "none";
+    employer?: string;
+    jobTitle?: string;
+    city?: string;
+    state?: string;
+    referralSource?: string;
   } = {};
 
   if (data.firstName !== undefined) userData.firstName = data.firstName;
@@ -162,6 +172,12 @@ export async function updateVolunteerDetail(
     volunteerData.availability = data.availability;
   if (data.notificationPreference !== undefined)
     volunteerData.notificationPreference = data.notificationPreference;
+  if (data.employer !== undefined) volunteerData.employer = data.employer;
+  if (data.jobTitle !== undefined) volunteerData.jobTitle = data.jobTitle;
+  if (data.city !== undefined) volunteerData.city = data.city;
+  if (data.state !== undefined) volunteerData.state = data.state;
+  if (data.referralSource !== undefined)
+    volunteerData.referralSource = data.referralSource;
 
   if (Object.keys(userData).length > 0) {
     await db

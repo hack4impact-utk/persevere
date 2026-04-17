@@ -157,6 +157,11 @@ export type FetchVolunteerByIdResult = {
     mediaRelease: boolean;
     availability: unknown;
     notificationPreference: "email" | "sms" | "both" | "none";
+    employer: string | null;
+    jobTitle: string | null;
+    city: string | null;
+    state: string | null;
+    referralSource: string | null;
     createdAt: Date;
     updatedAt: Date;
   };

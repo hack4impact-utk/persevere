@@ -39,6 +39,11 @@ const volunteerSelfUpdateSchema = z.object({
   bio: z.string().max(2000).optional(),
   availability: availabilitySchema.optional(),
   notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
+  employer: z.string().max(200).optional(),
+  jobTitle: z.string().max(200).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(100).optional(),
+  referralSource: z.string().max(500).optional(),
 });
 
 export async function GET(): Promise<NextResponse> {
@@ -141,6 +146,11 @@ export async function PUT(request: Request): Promise<NextResponse> {
       bio: data.bio,
       availability: data.availability,
       notificationPreference: data.notificationPreference,
+      employer: data.employer,
+      jobTitle: data.jobTitle,
+      city: data.city,
+      state: data.state,
+      referralSource: data.referralSource,
     });
 
     if (updatedVolunteer === null) {

@@ -56,6 +56,11 @@ type ProfileData = {
   notificationPreference?: "email" | "sms" | "both" | "none" | null;
   skills?: SkillData[];
   interests?: InterestData[];
+  employer?: string | null;
+  jobTitle?: string | null;
+  city?: string | null;
+  state?: string | null;
+  referralSource?: string | null;
 };
 
 type ProfileEditFormProps = {
@@ -163,6 +168,11 @@ export default function ProfileEditForm({
     bio: initialData.bio || "",
     availability: initialData.availability || {},
     notificationPreference: initialData.notificationPreference || "email",
+    employer: initialData.employer || "",
+    jobTitle: initialData.jobTitle || "",
+    city: initialData.city || "",
+    state: initialData.state || "",
+    referralSource: initialData.referralSource || "",
   });
 
   // Local skills state: map of skillId -> checked
@@ -287,6 +297,56 @@ export default function ProfileEditForm({
                 }
                 fullWidth
                 placeholder="(555) 123-4567"
+                disabled={isSaving}
+                size="small"
+              />
+              <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
+                <TextField
+                  label="City"
+                  value={formData.city || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, city: e.target.value })
+                  }
+                  disabled={isSaving}
+                  size="small"
+                />
+                <TextField
+                  label="State"
+                  value={formData.state || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, state: e.target.value })
+                  }
+                  disabled={isSaving}
+                  size="small"
+                />
+              </Box>
+              <TextField
+                label="Employer"
+                value={formData.employer || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, employer: e.target.value })
+                }
+                fullWidth
+                disabled={isSaving}
+                size="small"
+              />
+              <TextField
+                label="Job Title"
+                value={formData.jobTitle || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, jobTitle: e.target.value })
+                }
+                fullWidth
+                disabled={isSaving}
+                size="small"
+              />
+              <TextField
+                label="How did you hear about us?"
+                value={formData.referralSource || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, referralSource: e.target.value })
+                }
+                fullWidth
                 disabled={isSaving}
                 size="small"
               />

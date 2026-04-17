@@ -255,6 +255,11 @@ export default function VolunteerProfilePage(): JSX.Element {
     bio?: string | null;
     availability?: AvailabilityData | null;
     notificationPreference?: "email" | "sms" | "both" | "none" | null;
+    employer?: string | null;
+    jobTitle?: string | null;
+    city?: string | null;
+    state?: string | null;
+    referralSource?: string | null;
   }): Promise<void> => {
     setSaving(true);
     try {
@@ -591,6 +596,11 @@ export default function VolunteerProfilePage(): JSX.Element {
                   notificationPreference: vol.notificationPreference,
                   skills: profileData.skills,
                   interests: profileData.interests,
+                  employer: vol.employer,
+                  jobTitle: vol.jobTitle,
+                  city: vol.city,
+                  state: vol.state,
+                  referralSource: vol.referralSource,
                 }}
                 onSave={handleSave}
                 onCancel={() => setEditMode(false)}
@@ -618,6 +628,22 @@ export default function VolunteerProfilePage(): JSX.Element {
                       <Stack spacing={2}>
                         <DetailField label="Email" value={user.email} />
                         <DetailField label="Phone" value={user.phone ?? "—"} />
+                        <DetailField
+                          label="Employer"
+                          value={vol.employer ?? "—"}
+                        />
+                        <DetailField
+                          label="Job Title"
+                          value={vol.jobTitle ?? "—"}
+                        />
+                        <DetailField
+                          label="City / State"
+                          value={
+                            vol.city && vol.state
+                              ? `${vol.city}, ${vol.state}`
+                              : (vol.city ?? vol.state ?? "—")
+                          }
+                        />
                       </Stack>
                     </SidebarCard>
 

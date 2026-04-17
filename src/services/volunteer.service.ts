@@ -132,6 +132,11 @@ export type VolunteerProfileUpdateParams = {
     sunday?: TimeRange[];
   };
   notificationPreference?: "email" | "sms" | "both" | "none";
+  employer?: string;
+  jobTitle?: string;
+  city?: string;
+  state?: string;
+  referralSource?: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -346,8 +351,18 @@ export async function updateVolunteerProfile(
   volunteers: typeof volunteers.$inferSelect;
   users: typeof users.$inferSelect | null;
 } | null> {
-  const { volunteerId, phone, bio, availability, notificationPreference } =
-    params;
+  const {
+    volunteerId,
+    phone,
+    bio,
+    availability,
+    notificationPreference,
+    employer,
+    jobTitle,
+    city,
+    state,
+    referralSource,
+  } = params;
 
   const volunteer = await db
     .select()
@@ -366,6 +381,11 @@ export async function updateVolunteerProfile(
   const volunteerData: {
     availability?: VolunteerProfileUpdateParams["availability"];
     notificationPreference?: "email" | "sms" | "both" | "none";
+    employer?: string;
+    jobTitle?: string;
+    city?: string;
+    state?: string;
+    referralSource?: string;
   } = {};
 
   if (phone !== undefined) userData.phone = phone;
@@ -374,6 +394,12 @@ export async function updateVolunteerProfile(
   if (availability !== undefined) volunteerData.availability = availability;
   if (notificationPreference !== undefined)
     volunteerData.notificationPreference = notificationPreference;
+  if (employer !== undefined) volunteerData.employer = employer;
+  if (jobTitle !== undefined) volunteerData.jobTitle = jobTitle;
+  if (city !== undefined) volunteerData.city = city;
+  if (state !== undefined) volunteerData.state = state;
+  if (referralSource !== undefined)
+    volunteerData.referralSource = referralSource;
 
   // Update both tables sequentially (neon-http doesn't support transactions)
   if (Object.keys(volunteerData).length > 0) {
