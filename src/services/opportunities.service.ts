@@ -2,6 +2,7 @@ import { and, count, eq, gt, inArray, notInArray, sql } from "drizzle-orm";
 
 import db from "@/db";
 import {
+  eventCategories,
   opportunities,
   opportunityInterests,
   opportunityRequiredSkills,
@@ -30,6 +31,8 @@ export type OpportunityWithSpots = {
   status: string | null;
   maxVolunteers: number | null;
   isRecurring: boolean;
+  categoryId: number | null;
+  categoryName: string | null;
   rsvpCount: number;
   spotsRemaining: number | null;
   requiredSkills: { skillId: number; skillName: string | null }[];
@@ -76,6 +79,8 @@ export async function listOpenOpportunities(
       status: opportunities.status,
       maxVolunteers: opportunities.maxVolunteers,
       isRecurring: opportunities.isRecurring,
+      categoryId: opportunities.categoryId,
+      categoryName: eventCategories.name,
       rsvpCount: sql<number>`COALESCE(${rsvpCountSubquery.rsvpCount}, 0)`,
     })
     .from(opportunities)
@@ -83,7 +88,7 @@ export async function listOpenOpportunities(
       rsvpCountSubquery,
       eq(opportunities.id, rsvpCountSubquery.opportunityId),
     )
-
+    .leftJoin(eventCategories, eq(opportunities.categoryId, eventCategories.id))
     .$dynamic();
 
   // Filter out full opportunities at the SQL level
@@ -182,6 +187,8 @@ export async function listOpenOpportunities(
     const rsvpCount = Number(opp.rsvpCount);
     return {
       ...opp,
+      categoryId: opp.categoryId ?? null,
+      categoryName: opp.categoryName ?? null,
       rsvpCount,
       spotsRemaining:
         opp.maxVolunteers === null ? null : opp.maxVolunteers - rsvpCount,
@@ -223,6 +230,8 @@ export async function getOpenOpportunityById(
       status: opportunities.status,
       maxVolunteers: opportunities.maxVolunteers,
       isRecurring: opportunities.isRecurring,
+      categoryId: opportunities.categoryId,
+      categoryName: eventCategories.name,
       rsvpCount: sql<number>`COALESCE(${rsvpCountSubquery.rsvpCount}, 0)`,
     })
     .from(opportunities)
@@ -230,6 +239,7 @@ export async function getOpenOpportunityById(
       rsvpCountSubquery,
       eq(opportunities.id, rsvpCountSubquery.opportunityId),
     )
+    .leftJoin(eventCategories, eq(opportunities.categoryId, eventCategories.id))
     .where(
       and(
         eq(opportunities.id, id),
@@ -265,6 +275,8 @@ export async function getOpenOpportunityById(
 
   return {
     ...opp,
+    categoryId: opp.categoryId ?? null,
+    categoryName: opp.categoryName ?? null,
     rsvpCount,
     spotsRemaining:
       opp.maxVolunteers === null ? null : opp.maxVolunteers - rsvpCount,

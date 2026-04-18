@@ -34,6 +34,10 @@ const sections: SettingsGroup[] = [
         label: "Skills & Interests",
         href: "/staff/settings/skills",
       },
+      {
+        label: "Event Categories",
+        href: "/staff/settings/event-categories",
+      },
     ],
   },
   {

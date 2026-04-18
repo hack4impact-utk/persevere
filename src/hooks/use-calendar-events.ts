@@ -17,6 +17,8 @@ export type CalendarEvent = {
     createdById?: number;
     isRecurring?: boolean;
     recurrencePattern?: unknown;
+    categoryId?: number | null;
+    categoryName?: string | null;
   };
 };
 
@@ -36,9 +38,20 @@ type CreateEventData = {
   maxVolunteers?: number;
   isRecurring?: boolean;
   recurrencePattern?: RecurrencePattern;
+  categoryId?: number;
 };
 
-type UpdateEventData = Partial<CreateEventData>;
+type UpdateEventData = {
+  title?: string;
+  description?: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+  maxVolunteers?: number;
+  isRecurring?: boolean;
+  recurrencePattern?: RecurrencePattern;
+  categoryId?: number | null;
+};
 
 export type UseCalendarEventsResult = {
   events: CalendarEvent[];

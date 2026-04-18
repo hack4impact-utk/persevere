@@ -12,6 +12,7 @@ import {
   FormControl,
   FormControlLabel,
   FormLabel,
+  InputLabel,
   MenuItem,
   Radio,
   RadioGroup,
@@ -24,6 +25,7 @@ import { enqueueSnackbar } from "notistack";
 import { JSX, useState } from "react";
 
 import { useCalendarEvents } from "@/hooks/use-calendar-events";
+import { useEventCategories } from "@/hooks/use-event-categories";
 import { useOpportunitySkills } from "@/hooks/use-opportunity-skills";
 import type { CatalogInterest, CatalogSkill } from "@/hooks/use-skills";
 import { useSkills } from "@/hooks/use-skills";
@@ -89,6 +91,7 @@ export default function EventFormModal({
   const { createEvent, isMutating } = useCalendarEvents();
   const { skills: catalogSkills, interests: catalogInterests } = useSkills();
   const { applyToEvents } = useOpportunitySkills(null);
+  const { activeCategories } = useEventCategories();
 
   const [formData, setFormData] = useState<EventFormData>(() => ({
     ...defaultFormData,
@@ -102,6 +105,7 @@ export default function EventFormModal({
   const [selectedInterests, setSelectedInterests] = useState<CatalogInterest[]>(
     [],
   );
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | "">("");
 
   // Sync initialDates when modal opens
   const handleOpen = (): void => {
@@ -113,6 +117,7 @@ export default function EventFormModal({
     setRecurrence(defaultRecurrence);
     setSelectedSkills([]);
     setSelectedInterests([]);
+    setSelectedCategoryId("");
   };
 
   const handleClose = (): void => {
@@ -171,6 +176,7 @@ export default function EventFormModal({
                 : {}),
             }
           : undefined,
+        categoryId: selectedCategoryId || undefined,
       });
 
       let tagError = false;
@@ -314,6 +320,30 @@ export default function EventFormModal({
             inputProps={{ min: 1 }}
             sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
           />
+
+          <FormControl
+            fullWidth
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+          >
+            <InputLabel id="event-category-label">Category</InputLabel>
+            <Select
+              labelId="event-category-label"
+              label="Category"
+              value={selectedCategoryId}
+              onChange={(e) => {
+                setSelectedCategoryId(e.target.value as number | "");
+              }}
+            >
+              <MenuItem value="">
+                <em>None</em>
+              </MenuItem>
+              {activeCategories.map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
           <Autocomplete
             multiple

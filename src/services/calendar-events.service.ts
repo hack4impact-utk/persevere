@@ -1,7 +1,7 @@
 import { and, eq, gte, inArray, lt, lte } from "drizzle-orm";
 
 import db from "@/db";
-import { opportunities } from "@/db/schema";
+import { eventCategories, opportunities } from "@/db/schema";
 import { ConflictError, NotFoundError, ValidationError } from "@/utils/errors";
 
 export type CalendarEvent = {
@@ -17,6 +17,8 @@ export type CalendarEvent = {
     createdById: number | null;
     isRecurring: boolean;
     recurrencePattern: unknown;
+    categoryId: number | null;
+    categoryName: string | null;
   };
 };
 
@@ -29,6 +31,7 @@ export type RecurrencePattern = {
 
 function toCalendarEvent(
   row: typeof opportunities.$inferSelect,
+  categoryName: string | null = null,
 ): CalendarEvent {
   return {
     id: row.id.toString(),
@@ -43,6 +46,8 @@ function toCalendarEvent(
       createdById: row.createdById,
       isRecurring: row.isRecurring,
       recurrencePattern: row.recurrencePattern,
+      categoryId: row.categoryId ?? null,
+      categoryName,
     },
   };
 }
@@ -113,14 +118,32 @@ export async function listCalendarEvents(
   if (startDate) whereClauses.push(gte(opportunities.endDate, startDate));
   if (endDate) whereClauses.push(lte(opportunities.startDate, endDate));
 
-  const events = await (whereClauses.length > 0
+  const rows = await (whereClauses.length > 0
     ? db
-        .select()
+        .select({
+          opportunity: opportunities,
+          categoryName: eventCategories.name,
+        })
         .from(opportunities)
+        .leftJoin(
+          eventCategories,
+          eq(opportunities.categoryId, eventCategories.id),
+        )
         .where(and(...whereClauses))
-    : db.select().from(opportunities));
+    : db
+        .select({
+          opportunity: opportunities,
+          categoryName: eventCategories.name,
+        })
+        .from(opportunities)
+        .leftJoin(
+          eventCategories,
+          eq(opportunities.categoryId, eventCategories.id),
+        ));
 
-  return events.map((e) => toCalendarEvent(e));
+  return rows.map((r) =>
+    toCalendarEvent(r.opportunity, r.categoryName ?? null),
+  );
 }
 
 export async function createCalendarEvent(data: {
@@ -134,6 +157,7 @@ export async function createCalendarEvent(data: {
   createdById: number;
   isRecurring?: boolean;
   recurrencePattern?: RecurrencePattern;
+  categoryId?: number;
 }): Promise<CalendarEvent[]> {
   const occurrences =
     data.isRecurring && data.recurrencePattern
@@ -158,6 +182,16 @@ export async function createCalendarEvent(data: {
     );
   }
 
+  // Resolve category name once for the response
+  let categoryName: string | null = null;
+  if (data.categoryId) {
+    const catRows = await db
+      .select({ name: eventCategories.name })
+      .from(eventCategories)
+      .where(eq(eventCategories.id, data.categoryId));
+    categoryName = catRows[0]?.name ?? null;
+  }
+
   const values = occurrences.map((occ) => ({
     title: data.title,
     description: data.description ?? "",
@@ -169,6 +203,7 @@ export async function createCalendarEvent(data: {
     maxVolunteers: data.maxVolunteers,
     isRecurring: data.isRecurring ?? false,
     recurrencePattern: data.recurrencePattern ?? null,
+    categoryId: data.categoryId ?? null,
   }));
 
   const rows = await db.insert(opportunities).values(values).returning();
@@ -177,7 +212,7 @@ export async function createCalendarEvent(data: {
     throw new Error("Failed to create event: no data returned from database");
   }
 
-  return rows.map((r) => toCalendarEvent(r));
+  return rows.map((r) => toCalendarEvent(r, categoryName));
 }
 
 export async function updateCalendarEvent(
@@ -190,6 +225,7 @@ export async function updateCalendarEvent(
     endDate?: Date;
     maxVolunteers?: number;
     status?: "open" | "full" | "completed" | "canceled";
+    categoryId?: number | null;
   },
 ): Promise<CalendarEvent> {
   const existing = await db
@@ -215,6 +251,7 @@ export async function updateCalendarEvent(
     endDate?: Date;
     maxVolunteers?: number | null;
     status?: "open" | "full" | "completed" | "canceled";
+    categoryId?: number | null;
     updatedAt?: Date;
   } = { updatedAt: new Date() };
 
@@ -226,6 +263,7 @@ export async function updateCalendarEvent(
   if (data.maxVolunteers !== undefined)
     updateData.maxVolunteers = data.maxVolunteers;
   if (data.status !== undefined) updateData.status = data.status;
+  if ("categoryId" in data) updateData.categoryId = data.categoryId ?? null;
 
   const rows = await db
     .update(opportunities)
@@ -233,7 +271,18 @@ export async function updateCalendarEvent(
     .where(eq(opportunities.id, id))
     .returning();
 
-  return toCalendarEvent(rows[0]);
+  // Resolve category name for the response
+  let categoryName: string | null = null;
+  const effectiveCategoryId = rows[0].categoryId;
+  if (effectiveCategoryId) {
+    const catRows = await db
+      .select({ name: eventCategories.name })
+      .from(eventCategories)
+      .where(eq(eventCategories.id, effectiveCategoryId));
+    categoryName = catRows[0]?.name ?? null;
+  }
+
+  return toCalendarEvent(rows[0], categoryName);
 }
 
 export async function deleteCalendarEvent(id: number): Promise<void> {

@@ -23,6 +23,7 @@ const eventUpdateSchema = z.object({
   endDate: z.string().datetime("Invalid end date").optional(),
   maxVolunteers: z.number().int().positive().optional(),
   status: z.enum(["open", "full", "completed", "canceled"]).optional(),
+  categoryId: z.number().int().positive().nullable().optional(),
 });
 
 /**
@@ -54,6 +55,7 @@ export async function PUT(
       endDate: data.endDate ? new Date(data.endDate) : undefined,
       maxVolunteers: data.maxVolunteers,
       status: data.status,
+      categoryId: data.categoryId,
     });
 
     return NextResponse.json({

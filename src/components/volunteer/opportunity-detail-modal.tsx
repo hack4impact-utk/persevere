@@ -90,8 +90,23 @@ export default function OpportunityDetailModal({
             <Box
               sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  flexWrap: "wrap",
+                }}
+              >
                 <SpotsChip opp={opportunity} />
+                {opportunity.categoryName && (
+                  <Chip
+                    label={opportunity.categoryName}
+                    size="small"
+                    color="secondary"
+                    variant="outlined"
+                  />
+                )}
                 {opportunity.maxVolunteers !== null && (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                     <PeopleIcon
