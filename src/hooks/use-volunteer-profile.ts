@@ -15,6 +15,7 @@ type VolunteerProfileData = {
     city?: string | null;
     state?: string | null;
     referralSource?: string | null;
+    isAlumni?: boolean | null;
   };
   users: {
     id: number;
@@ -55,6 +56,7 @@ type UpdateProfileData = {
   city?: string | null;
   state?: string | null;
   referralSource?: string | null;
+  isAlumni?: boolean | null;
 };
 
 export type UseVolunteerProfileResult = {

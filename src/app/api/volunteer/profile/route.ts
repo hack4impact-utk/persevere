@@ -44,6 +44,7 @@ const volunteerSelfUpdateSchema = z.object({
   city: z.string().max(100).optional(),
   state: z.string().max(100).optional(),
   referralSource: z.string().max(500).optional(),
+  isAlumni: z.boolean().optional(),
 });
 
 export async function GET(): Promise<NextResponse> {
@@ -151,6 +152,7 @@ export async function PUT(request: Request): Promise<NextResponse> {
       city: data.city,
       state: data.state,
       referralSource: data.referralSource,
+      isAlumni: data.isAlumni,
     });
 
     if (updatedVolunteer === null) {

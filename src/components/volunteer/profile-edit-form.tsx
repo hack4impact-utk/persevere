@@ -10,6 +10,7 @@ import {
   Button,
   Card,
   CardContent,
+  Checkbox,
   CircularProgress,
   Divider,
   FormControlLabel,
@@ -61,6 +62,7 @@ type ProfileData = {
   city?: string | null;
   state?: string | null;
   referralSource?: string | null;
+  isAlumni?: boolean | null;
 };
 
 type ProfileEditFormProps = {
@@ -199,6 +201,7 @@ export default function ProfileEditForm({
     city: initialData.city || "",
     state: initialData.state || "",
     referralSource: initialData.referralSource || "",
+    isAlumni: initialData.isAlumni ?? false,
   });
 
   // Local skills state: map of skillId -> checked
@@ -311,17 +314,33 @@ export default function ProfileEditForm({
           icon={<PersonIcon fontSize="small" />}
           title="About Me"
         >
-          <TextField
-            label="Bio"
-            value={formData.bio || ""}
-            onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-            fullWidth
-            multiline
-            rows={4}
-            placeholder="Tell us about yourself..."
-            disabled={isSaving}
-            size="small"
-          />
+          <Stack spacing={2}>
+            <TextField
+              label="Bio"
+              value={formData.bio || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, bio: e.target.value })
+              }
+              fullWidth
+              multiline
+              rows={4}
+              placeholder="Tell us about yourself..."
+              disabled={isSaving}
+              size="small"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.isAlumni ?? false}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isAlumni: e.target.checked })
+                  }
+                  disabled={isSaving}
+                />
+              }
+              label="I am a Persevere alumni"
+            />
+          </Stack>
         </FormSectionCard>
 
         {/* ── Two-column grid ──────────────────────────── */}

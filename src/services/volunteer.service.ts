@@ -142,6 +142,7 @@ export type VolunteerProfileUpdateParams = {
   city?: string;
   state?: string;
   referralSource?: string;
+  isAlumni?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -372,6 +373,7 @@ export async function updateVolunteerProfile(
     city,
     state,
     referralSource,
+    isAlumni,
   } = params;
 
   const volunteer = await db
@@ -396,6 +398,7 @@ export async function updateVolunteerProfile(
     city?: string;
     state?: string;
     referralSource?: string;
+    isAlumni?: boolean;
   } = {};
 
   if (phone !== undefined) userData.phone = phone;
@@ -410,6 +413,7 @@ export async function updateVolunteerProfile(
   if (state !== undefined) volunteerData.state = state;
   if (referralSource !== undefined)
     volunteerData.referralSource = referralSource;
+  if (isAlumni !== undefined) volunteerData.isAlumni = isAlumni;
 
   // Update both tables sequentially (neon-http doesn't support transactions)
   if (Object.keys(volunteerData).length > 0) {
