@@ -313,9 +313,9 @@ export async function volunteerLogHours(
       "You can only log hours for events you RSVPed to",
     );
   }
-  if (rsvp.status === "declined" || rsvp.status === "no_show") {
+  if (["declined", "no_show", "cancelled"].includes(rsvp.status)) {
     throw new ValidationError(
-      "You cannot log hours for events you declined or did not attend",
+      "You cannot log hours for events you declined, cancelled, or did not attend",
     );
   }
   const [created] = await db

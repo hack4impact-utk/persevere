@@ -49,7 +49,8 @@ export function getRsvpStatusColor(
     case "pending": {
       return "warning";
     }
-    case "no_show": {
+    case "no_show":
+    case "cancelled": {
       return "default";
     }
     default: {

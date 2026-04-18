@@ -19,6 +19,7 @@ import { JSX, useEffect, useState } from "react";
 import { AsyncContent } from "@/components/shared";
 import RsvpButton from "@/components/volunteer/rsvp-button";
 import { SpotsChip } from "@/components/volunteer/spots-chip";
+import type { RsvpStatus } from "@/components/volunteer/types";
 import { formatDate, formatTime } from "@/components/volunteer/utils";
 import { useAttendees } from "@/hooks/use-attendees";
 import { useOpportunity } from "@/hooks/use-opportunity";
@@ -26,6 +27,7 @@ import { useOpportunity } from "@/hooks/use-opportunity";
 type Props = {
   opportunityId: number | null;
   isRsvped: boolean;
+  rsvpStatus?: RsvpStatus;
   open: boolean;
   onClose: () => void;
   onRsvpChange: (newIsRsvped: boolean) => void;
@@ -34,6 +36,7 @@ type Props = {
 export default function OpportunityDetailModal({
   opportunityId,
   isRsvped,
+  rsvpStatus,
   open,
   onClose,
   onRsvpChange,
@@ -251,6 +254,7 @@ export default function OpportunityDetailModal({
                     opportunityId={opportunityId}
                     isRsvped={isRsvped}
                     isFull={isFull}
+                    rsvpStatus={rsvpStatus}
                     onRsvpChange={onRsvpChange}
                   />
                 )}

@@ -13,7 +13,7 @@ import { parseBodyOrError } from "@/utils/server/route-helpers";
 const updateRsvpSchema = z.object({
   volunteerId: z.number().int().positive(),
   opportunityId: z.number().int().positive(),
-  status: z.enum(["confirmed", "declined", "attended", "no_show"]),
+  status: z.enum(["confirmed", "declined", "attended", "no_show", "cancelled"]),
 });
 
 /**

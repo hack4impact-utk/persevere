@@ -426,6 +426,11 @@ export default function OpportunitiesPage(): JSX.Element {
             ? false
             : rsvpedIds.has(selectedOpportunityId)
         }
+        rsvpStatus={
+          selectedOpportunityId === null
+            ? undefined
+            : rsvpStatusMap.get(selectedOpportunityId)
+        }
         open={selectedOpportunityId !== null}
         onClose={() => {
           setSelectedOpportunityId(null);

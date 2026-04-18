@@ -33,8 +33,8 @@ export default function OnboardingChecklist({
   error,
 }: OnboardingChecklistProps): JSX.Element | null {
   const [minimized, setMinimized] = useState(false);
-  const [visible, setVisible] = useState(true);
-  const [mounted, setMounted] = useState(true);
+  const [visible, setVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const prevCompleteRef = useRef<boolean | null>(null);
 
   useEffect((): (() => void) | void => {
@@ -44,9 +44,9 @@ export default function OnboardingChecklist({
 
     if (prevCompleteRef.current === null) {
       prevCompleteRef.current = isComplete;
-      if (isComplete) {
-        setVisible(false);
-        setMounted(false);
+      if (!isComplete) {
+        setVisible(true);
+        setMounted(true);
       }
       return;
     }

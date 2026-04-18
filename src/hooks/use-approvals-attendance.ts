@@ -29,7 +29,7 @@ export function useApprovalsAttendance(): {
   markAttendance: (
     volunteerId: number,
     opportunityId: number,
-    status: "attended" | "no_show",
+    status: "attended" | "no_show" | "confirmed" | "cancelled",
   ) => Promise<boolean>;
   mutating: boolean;
 } {
@@ -84,13 +84,13 @@ export function useApprovalsAttendance(): {
     async (
       volunteerId: number,
       opportunityId: number,
-      status: "attended" | "no_show",
+      status: "attended" | "no_show" | "confirmed" | "cancelled",
     ): Promise<boolean> => {
       setMutating(true);
       try {
-        // Capture previous status before updating
         const prevRsvp = eventRsvps.find((r) => r.volunteerId === volunteerId);
         const wasConfirmed = prevRsvp?.rsvpStatus === "confirmed";
+        const becomingConfirmed = status === "confirmed";
 
         await apiClient.put("/api/staff/rsvps", {
           volunteerId,
@@ -98,19 +98,25 @@ export function useApprovalsAttendance(): {
           status,
         });
 
-        // Update RSVP list in modal
         setEventRsvps((prev) =>
           prev.map((r) =>
             r.volunteerId === volunteerId ? { ...r, rsvpStatus: status } : r,
           ),
         );
 
-        // Optimistically decrement confirmedCount when a confirmed RSVP gets marked
-        if (wasConfirmed) {
+        if (wasConfirmed && !becomingConfirmed) {
           setEvents((prev) =>
             prev.map((e) =>
               e.id === opportunityId
                 ? { ...e, confirmedCount: Math.max(0, e.confirmedCount - 1) }
+                : e,
+            ),
+          );
+        } else if (!wasConfirmed && becomingConfirmed) {
+          setEvents((prev) =>
+            prev.map((e) =>
+              e.id === opportunityId
+                ? { ...e, confirmedCount: e.confirmedCount + 1 }
                 : e,
             ),
           );

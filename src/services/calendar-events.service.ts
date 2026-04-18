@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, lt, lte } from "drizzle-orm";
 
 import db from "@/db";
 import { opportunities } from "@/db/schema";
@@ -90,11 +90,24 @@ function computeOccurrences(
   return occurrences;
 }
 
+async function autoCompleteExpiredEvents(): Promise<void> {
+  await db
+    .update(opportunities)
+    .set({ status: "completed", updatedAt: new Date() })
+    .where(
+      and(
+        inArray(opportunities.status, ["open", "full"]),
+        lt(opportunities.endDate, new Date()),
+      ),
+    );
+}
+
 export async function listCalendarEvents(
   startDate?: Date,
   endDate?: Date,
   statusFilter?: "open" | "full" | "completed" | "canceled",
 ): Promise<CalendarEvent[]> {
+  await autoCompleteExpiredEvents();
   const whereClauses = [];
   if (statusFilter) whereClauses.push(eq(opportunities.status, statusFilter));
   if (startDate) whereClauses.push(gte(opportunities.endDate, startDate));

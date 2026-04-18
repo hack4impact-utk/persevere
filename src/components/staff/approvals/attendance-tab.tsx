@@ -33,7 +33,7 @@ type AttendanceTabProps = {
   onMark: (
     volunteerId: number,
     opportunityId: number,
-    status: "attended" | "no_show",
+    status: "attended" | "no_show" | "confirmed" | "cancelled",
   ) => Promise<boolean>;
 };
 

@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray, notInArray } from "drizzle-orm";
 
 import db from "@/db";
 import { users, volunteers } from "@/db/schema";
@@ -13,7 +13,8 @@ export class RsvpError extends Error {
       | "OPPORTUNITY_IN_PAST"
       | "ALREADY_RSVPD"
       | "OPPORTUNITY_FULL"
-      | "RSVP_NOT_FOUND",
+      | "RSVP_NOT_FOUND"
+      | "RSVP_NOT_CANCELLABLE",
     message: string,
   ) {
     super(message);
@@ -84,7 +85,12 @@ export async function createRsvp(
     const rsvpCount = await db
       .select({ count: count() })
       .from(volunteerRsvps)
-      .where(eq(volunteerRsvps.opportunityId, opportunityId));
+      .where(
+        and(
+          eq(volunteerRsvps.opportunityId, opportunityId),
+          notInArray(volunteerRsvps.status, ["declined", "cancelled"]),
+        ),
+      );
 
     if (rsvpCount[0].count >= opportunity[0].maxVolunteers) {
       throw new RsvpError("OPPORTUNITY_FULL", "This opportunity is full");
@@ -133,14 +139,21 @@ export async function cancelRsvp(
     throw new RsvpError("RSVP_NOT_FOUND", "RSVP not found");
   }
 
-  await db
-    .delete(volunteerRsvps)
-    .where(
-      and(
-        eq(volunteerRsvps.volunteerId, volunteerId),
-        eq(volunteerRsvps.opportunityId, opportunityId),
-      ),
+  const { status } = existingRsvp[0];
+
+  if (status !== "pending" && status !== "confirmed") {
+    throw new RsvpError(
+      "RSVP_NOT_CANCELLABLE",
+      "This RSVP cannot be cancelled",
     );
+  }
+
+  const condition = and(
+    eq(volunteerRsvps.volunteerId, volunteerId),
+    eq(volunteerRsvps.opportunityId, opportunityId),
+  );
+
+  await db.delete(volunteerRsvps).where(condition);
 
   return { volunteerId, opportunityId };
 }
@@ -153,6 +166,7 @@ export type RsvpWithOpportunity = {
     | "declined"
     | "attended"
     | "no_show"
+    | "cancelled"
     | null;
   rsvpAt: Date | null;
   notes: string | null;

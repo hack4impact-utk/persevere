@@ -51,7 +51,6 @@ export type CreateVolunteerParams = {
   volunteerType?: string;
   isAlumni?: boolean;
   backgroundCheckStatus?: "not_required" | "pending" | "approved" | "rejected";
-  mediaRelease?: boolean;
   availability?: Record<string, string | string[] | boolean | number>;
   notificationPreference?: "email" | "sms" | "both" | "none";
   employer?: string;
@@ -105,6 +104,7 @@ export type GetVolunteerProfileResult = {
       | "declined"
       | "attended"
       | "no_show"
+      | "cancelled"
       | null;
     rsvpAt: Date;
     rsvpNotes: string | null;
@@ -142,6 +142,7 @@ export type VolunteerProfileUpdateParams = {
   city?: string;
   state?: string;
   referralSource?: string;
+  isAlumni?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -286,7 +287,6 @@ export async function createVolunteer(
       volunteerType: params.volunteerType,
       isAlumni: params.isAlumni ?? false,
       backgroundCheckStatus,
-      mediaRelease: params.mediaRelease ?? false,
       availability: params.availability,
       notificationPreference: params.notificationPreference ?? "email",
       employer: params.employer,
@@ -372,6 +372,7 @@ export async function updateVolunteerProfile(
     city,
     state,
     referralSource,
+    isAlumni,
   } = params;
 
   const volunteer = await db
@@ -396,6 +397,7 @@ export async function updateVolunteerProfile(
     city?: string;
     state?: string;
     referralSource?: string;
+    isAlumni?: boolean;
   } = {};
 
   if (phone !== undefined) userData.phone = phone;
@@ -410,6 +412,7 @@ export async function updateVolunteerProfile(
   if (state !== undefined) volunteerData.state = state;
   if (referralSource !== undefined)
     volunteerData.referralSource = referralSource;
+  if (isAlumni !== undefined) volunteerData.isAlumni = isAlumni;
 
   // Update both tables sequentially (neon-http doesn't support transactions)
   if (Object.keys(volunteerData).length > 0) {

@@ -102,6 +102,7 @@ export default function MyRsvps(): JSX.Element {
                     opportunityId={rsvp.opportunityId}
                     isRsvped={true}
                     isFull={false}
+                    rsvpStatus={rsvp.rsvpStatus}
                     onRsvpChange={() => void loadRsvps()}
                   />
                 </Box>

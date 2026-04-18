@@ -1,4 +1,4 @@
-import { and, count, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, count, eq, gt, inArray, notInArray, sql } from "drizzle-orm";
 
 import db from "@/db";
 import {
@@ -53,13 +53,14 @@ export async function listOpenOpportunities(
     gt(opportunities.startDate, now),
   );
 
-  // Get opportunities with RSVP counts using a subquery
+  // Get opportunities with RSVP counts using a subquery (excludes declined/cancelled)
   const rsvpCountSubquery = db
     .select({
       opportunityId: volunteerRsvps.opportunityId,
       rsvpCount: count(volunteerRsvps.volunteerId).as("rsvp_count"),
     })
     .from(volunteerRsvps)
+    .where(notInArray(volunteerRsvps.status, ["declined", "cancelled"]))
     .groupBy(volunteerRsvps.opportunityId)
     .as("rsvp_counts");
 
@@ -207,6 +208,7 @@ export async function getOpenOpportunityById(
       rsvpCount: count(volunteerRsvps.volunteerId).as("rsvp_count"),
     })
     .from(volunteerRsvps)
+    .where(notInArray(volunteerRsvps.status, ["declined", "cancelled"]))
     .groupBy(volunteerRsvps.opportunityId)
     .as("rsvp_counts");
 

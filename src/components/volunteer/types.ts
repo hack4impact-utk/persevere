@@ -4,7 +4,8 @@ export type RsvpStatus =
   | "confirmed"
   | "declined"
   | "attended"
-  | "no_show";
+  | "no_show"
+  | "cancelled";
 
 export type Opportunity = {
   id: number;
