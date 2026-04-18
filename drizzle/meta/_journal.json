@@ -29,6 +29,13 @@
       "when": 1776511347486,
       "tag": "0003_normal_blindfold",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1776528627526,
+      "tag": "0004_tiny_mattie_franklin",
+      "breakpoints": true
     }
   ]
 }

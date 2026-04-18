@@ -19,6 +19,14 @@ import {
 import { timestamps } from "./helpers";
 import { interests, skills, users, volunteers } from "./users";
 
+// Event categories catalog - admin-configurable types (Workshop, Coaching, Mock Interview, etc.)
+export const eventCategories = pgTable("event_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  isActive: boolean("is_active").notNull().default(true),
+  ...timestamps,
+});
+
 // Volunteer opportunities/events - main events volunteers can sign up for
 export const opportunities = pgTable("opportunities", {
   id: serial("id").primaryKey(),
@@ -34,6 +42,9 @@ export const opportunities = pgTable("opportunities", {
     .references(() => users.id, { onDelete: "restrict" }),
   recurrencePattern: jsonb("recurrence_pattern"),
   isRecurring: boolean("is_recurring").default(false).notNull(),
+  categoryId: integer("category_id").references(() => eventCategories.id, {
+    onDelete: "set null",
+  }),
   ...timestamps,
 });
 
@@ -109,6 +120,13 @@ export const volunteerHours = pgTable("volunteer_hours", {
 });
 
 // Table relationships
+export const eventCategoriesRelations = relations(
+  eventCategories,
+  ({ many }) => ({
+    opportunities: many(opportunities),
+  }),
+);
+
 export const opportunitiesRelations = relations(
   opportunities,
   ({ one, many }) => ({
@@ -116,6 +134,10 @@ export const opportunitiesRelations = relations(
       fields: [opportunities.createdById],
       references: [users.id],
       relationName: "CreatedOpportunities",
+    }),
+    category: one(eventCategories, {
+      fields: [opportunities.categoryId],
+      references: [eventCategories.id],
     }),
     requiredSkills: many(opportunityRequiredSkills),
     interests: many(opportunityInterests),

@@ -109,6 +109,8 @@ export async function getRecommendedOpportunities(
       status: opp.status,
       maxVolunteers: opp.maxVolunteers,
       isRecurring: opp.isRecurring,
+      categoryId: opp.categoryId,
+      categoryName: opp.categoryName,
       rsvpCount: opp.rsvpCount,
       spotsRemaining: opp.spotsRemaining,
       requiredSkills: opp.requiredSkills,

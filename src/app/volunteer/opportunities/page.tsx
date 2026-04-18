@@ -82,6 +82,14 @@ function OpportunityCard({
             {opportunity.title}
           </Typography>
           <SpotsChip opp={opportunity} />
+          {opportunity.categoryName && (
+            <Chip
+              label={opportunity.categoryName}
+              size="small"
+              color="secondary"
+              variant="outlined"
+            />
+          )}
           {opportunity.isRecurring && (
             <Chip label="↻ Recurring" size="small" variant="outlined" />
           )}

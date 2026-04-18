@@ -32,6 +32,7 @@ const eventCreateSchema = z.object({
   status: z.enum(["open", "full", "completed", "canceled"]).optional(),
   isRecurring: z.boolean().optional(),
   recurrencePattern: recurrencePatternSchema.optional(),
+  categoryId: z.number().int().positive().optional(),
 });
 
 /**
@@ -120,6 +121,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       maxVolunteers: data.maxVolunteers,
       isRecurring: data.isRecurring,
       recurrencePattern: data.recurrencePattern,
+      categoryId: data.categoryId,
     });
 
     return NextResponse.json(

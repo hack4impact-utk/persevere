@@ -12,6 +12,10 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
   TextField,
   Typography,
 } from "@mui/material";
@@ -21,6 +25,7 @@ import { JSX, useEffect, useState } from "react";
 import { EmptyState, getRsvpStatusColor, StatusBadge } from "@/components/ui";
 import type { CalendarEvent } from "@/hooks/use-calendar-events";
 import { useCalendarEvents } from "@/hooks/use-calendar-events";
+import { useEventCategories } from "@/hooks/use-event-categories";
 import { useEventRsvps } from "@/hooks/use-event-rsvps";
 import { useOpportunitySkills } from "@/hooks/use-opportunity-skills";
 import type { CatalogInterest, CatalogSkill } from "@/hooks/use-skills";
@@ -81,6 +86,7 @@ export default function EventDetailModal({
     loadingSkills,
     loadingInterests,
   } = useSkills();
+  const { activeCategories } = useEventCategories();
 
   const numericEventId = eventId ? Number.parseInt(eventId, 10) : null;
   const {
@@ -112,6 +118,7 @@ export default function EventDetailModal({
   const [editSelectedInterests, setEditSelectedInterests] = useState<
     CatalogInterest[]
   >([]);
+  const [editCategoryId, setEditCategoryId] = useState<number | "">("");
   const [editInitialSkillIds, setEditInitialSkillIds] = useState<Set<number>>(
     new Set(),
   );
@@ -169,6 +176,8 @@ export default function EventDetailModal({
     setEditSelectedInterests(resolvedInterests);
     setEditInitialInterestIds(new Set(resolvedInterests.map((i) => i.id)));
 
+    setEditCategoryId(event.extendedProps?.categoryId ?? "");
+
     setMode("edit");
   };
 
@@ -200,6 +209,7 @@ export default function EventDetailModal({
         maxVolunteers: editForm.maxVolunteers
           ? Number.parseInt(editForm.maxVolunteers, 10)
           : undefined,
+        categoryId: editCategoryId || null,
       });
 
       const latestRequirements = await refetchSkills();
@@ -399,6 +409,30 @@ export default function EventDetailModal({
                       : `${rsvps.length} / ${maxVol} volunteers`}
                   </Typography>
                 </Box>
+
+                {event.extendedProps?.categoryName && (
+                  <Box>
+                    <Typography
+                      variant="subtitle2"
+                      color="text.secondary"
+                      sx={{
+                        textTransform: "uppercase",
+                        fontSize: "0.75rem",
+                        letterSpacing: "0.05em",
+                        fontWeight: 600,
+                        mb: 0.5,
+                      }}
+                    >
+                      Category
+                    </Typography>
+                    <Chip
+                      label={event.extendedProps.categoryName}
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                    />
+                  </Box>
+                )}
 
                 <Divider />
 
@@ -702,6 +736,30 @@ export default function EventDetailModal({
                 inputProps={{ min: 1 }}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
               />
+
+              <FormControl
+                fullWidth
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              >
+                <InputLabel id="edit-event-category-label">Category</InputLabel>
+                <Select
+                  labelId="edit-event-category-label"
+                  label="Category"
+                  value={editCategoryId}
+                  onChange={(e) => {
+                    setEditCategoryId(e.target.value as number | "");
+                  }}
+                >
+                  <MenuItem value="">
+                    <em>None</em>
+                  </MenuItem>
+                  {activeCategories.map((c) => (
+                    <MenuItem key={c.id} value={c.id}>
+                      {c.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
               <Autocomplete
                 multiple
