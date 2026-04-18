@@ -1,5 +1,6 @@
 "use client";
 
+import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import DoNotDisturbIcon from "@mui/icons-material/DoNotDisturb";
 import {
@@ -25,7 +26,6 @@ import type {
   AttendanceRsvp,
 } from "@/hooks/use-approvals-attendance";
 
-// Only declined RSVPs cannot be updated — attended/no_show can toggle between each other
 function isLocked(status: string): boolean {
   return status === "declined";
 }
@@ -40,7 +40,7 @@ type AttendanceModalProps = {
   onMark: (
     volunteerId: number,
     opportunityId: number,
-    status: "attended" | "no_show",
+    status: "attended" | "no_show" | "confirmed" | "cancelled",
   ) => Promise<boolean>;
 };
 
@@ -53,6 +53,7 @@ const RSVP_STATUS_COLORS: Record<
   attended: "success",
   no_show: "error",
   declined: "default",
+  cancelled: "default",
 };
 
 export default function AttendanceModal({
@@ -133,38 +134,88 @@ export default function AttendanceModal({
                         spacing={1}
                         justifyContent="flex-end"
                       >
-                        <Button
-                          size="small"
-                          variant={
-                            rsvp.rsvpStatus === "attended"
-                              ? "contained"
-                              : "outlined"
-                          }
-                          color="success"
-                          startIcon={<CheckCircleOutlineIcon />}
-                          disabled={locked || mutating}
-                          onClick={() =>
-                            void onMark(rsvp.volunteerId, event.id, "attended")
-                          }
-                        >
-                          Attended
-                        </Button>
-                        <Button
-                          size="small"
-                          variant={
-                            rsvp.rsvpStatus === "no_show"
-                              ? "contained"
-                              : "outlined"
-                          }
-                          color="error"
-                          startIcon={<DoNotDisturbIcon />}
-                          disabled={locked || mutating}
-                          onClick={() =>
-                            void onMark(rsvp.volunteerId, event.id, "no_show")
-                          }
-                        >
-                          No Show
-                        </Button>
+                        {rsvp.rsvpStatus === "cancelled" ? (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            startIcon={<CheckCircleOutlineIcon />}
+                            disabled={mutating}
+                            onClick={() =>
+                              void onMark(
+                                rsvp.volunteerId,
+                                event.id,
+                                "confirmed",
+                              )
+                            }
+                          >
+                            Re-confirm
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              size="small"
+                              variant={
+                                rsvp.rsvpStatus === "attended"
+                                  ? "contained"
+                                  : "outlined"
+                              }
+                              color="success"
+                              startIcon={<CheckCircleOutlineIcon />}
+                              disabled={locked || mutating}
+                              onClick={() =>
+                                void onMark(
+                                  rsvp.volunteerId,
+                                  event.id,
+                                  "attended",
+                                )
+                              }
+                            >
+                              Attended
+                            </Button>
+                            <Button
+                              size="small"
+                              variant={
+                                rsvp.rsvpStatus === "no_show"
+                                  ? "contained"
+                                  : "outlined"
+                              }
+                              color="error"
+                              startIcon={<DoNotDisturbIcon />}
+                              disabled={locked || mutating}
+                              onClick={() =>
+                                void onMark(
+                                  rsvp.volunteerId,
+                                  event.id,
+                                  "no_show",
+                                )
+                              }
+                            >
+                              No Show
+                            </Button>
+                            {(rsvp.rsvpStatus === "pending" ||
+                              rsvp.rsvpStatus === "confirmed" ||
+                              rsvp.rsvpStatus === "attended" ||
+                              rsvp.rsvpStatus === "no_show") && (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="inherit"
+                                startIcon={<BlockIcon />}
+                                disabled={mutating}
+                                onClick={() =>
+                                  void onMark(
+                                    rsvp.volunteerId,
+                                    event.id,
+                                    "cancelled",
+                                  )
+                                }
+                              >
+                                Cancelled
+                              </Button>
+                            )}
+                          </>
+                        )}
                       </Stack>
                     </TableCell>
                   </TableRow>

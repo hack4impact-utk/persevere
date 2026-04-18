@@ -62,11 +62,12 @@ export async function listRsvpsByStatus(
 }
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  pending: ["confirmed", "declined", "attended", "no_show"],
-  confirmed: ["attended", "no_show", "declined"],
+  pending: ["confirmed", "declined", "attended", "no_show", "cancelled"],
+  confirmed: ["attended", "no_show", "declined", "cancelled"],
   declined: [],
-  attended: ["no_show"],
-  no_show: ["attended"],
+  attended: ["no_show", "cancelled"],
+  no_show: ["attended", "cancelled"],
+  cancelled: ["confirmed"],
 };
 
 /**
@@ -76,7 +77,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 export async function updateRsvpStatus(
   volunteerId: number,
   opportunityId: number,
-  newStatus: "confirmed" | "declined" | "attended" | "no_show",
+  newStatus: "confirmed" | "declined" | "attended" | "no_show" | "cancelled",
 ): Promise<void> {
   const [rsvp] = await db
     .select()

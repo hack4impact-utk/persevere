@@ -34,7 +34,13 @@ export type VolunteerDetail = {
     opportunityLocation: string | null;
     opportunityStartDate: Date | null;
     opportunityEndDate: Date | null;
-    rsvpStatus: "pending" | "confirmed" | "declined" | "attended" | "no_show";
+    rsvpStatus:
+      | "pending"
+      | "confirmed"
+      | "declined"
+      | "attended"
+      | "no_show"
+      | "cancelled";
     rsvpAt: Date;
     rsvpNotes: string | null;
   }[];

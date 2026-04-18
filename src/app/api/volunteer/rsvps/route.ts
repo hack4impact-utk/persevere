@@ -23,10 +23,16 @@ export async function GET(): Promise<NextResponse> {
     // Separate into upcoming and past
     const now = new Date();
     const upcoming = rsvps.filter(
-      (r) => r.opportunityStartDate && new Date(r.opportunityStartDate) > now,
+      (r) =>
+        r.rsvpStatus !== "cancelled" &&
+        r.opportunityStartDate &&
+        new Date(r.opportunityStartDate) > now,
     );
     const past = rsvps.filter(
-      (r) => r.opportunityStartDate && new Date(r.opportunityStartDate) <= now,
+      (r) =>
+        r.rsvpStatus !== "cancelled" &&
+        r.opportunityStartDate &&
+        new Date(r.opportunityStartDate) <= now,
     );
 
     return NextResponse.json({

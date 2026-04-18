@@ -15,6 +15,7 @@ export const rsvpStatusEnum = pgEnum("rsvp_status", [
   "declined",
   "attended",
   "no_show",
+  "cancelled",
 ]);
 
 // Background check verification status

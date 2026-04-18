@@ -104,6 +104,7 @@ export type GetVolunteerProfileResult = {
       | "declined"
       | "attended"
       | "no_show"
+      | "cancelled"
       | null;
     rsvpAt: Date;
     rsvpNotes: string | null;
