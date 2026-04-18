@@ -40,7 +40,7 @@ export default function StaffAnalyticsPage(): JSX.Element {
     const query = params.size > 0 ? `?${params.toString()}` : "";
     const link = document.createElement("a");
     link.href = `/api/staff/analytics/export${query}`;
-    link.download = "volunteers.csv";
+    link.download = "monthly-report.csv";
     document.body.append(link);
     link.click();
     link.remove();

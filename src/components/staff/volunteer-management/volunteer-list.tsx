@@ -1,6 +1,7 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
+import DownloadIcon from "@mui/icons-material/Download";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import {
@@ -302,6 +303,23 @@ export default function VolunteerList(): ReactElement {
                 }}
               >
                 <FilterListIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Export CSV">
+              <IconButton
+                color="primary"
+                onClick={() => {
+                  globalThis.location.href = "/api/staff/volunteers/export";
+                }}
+                sx={{
+                  backgroundColor: "primary.main",
+                  color: "primary.contrastText",
+                  "&:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                <DownloadIcon />
               </IconButton>
             </Tooltip>
             <Tooltip title="Import CSV">
