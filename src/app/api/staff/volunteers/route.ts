@@ -28,7 +28,6 @@ const volunteerCreateSchema = z.object({
   backgroundCheckStatus: z
     .enum(["not_required", "pending", "approved", "rejected"])
     .optional(),
-  mediaRelease: z.boolean().optional(),
   availability: z
     .record(
       z.string(),

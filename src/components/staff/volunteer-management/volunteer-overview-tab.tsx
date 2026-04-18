@@ -5,7 +5,6 @@ import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DeleteIcon from "@mui/icons-material/Delete";
-import DescriptionIcon from "@mui/icons-material/Description";
 import DrawIcon from "@mui/icons-material/Draw";
 import EditIcon from "@mui/icons-material/Edit";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
@@ -267,7 +266,6 @@ type EditData = {
   volunteerType?: string;
   isAlumni?: boolean;
   backgroundCheckStatus?: "not_required" | "pending" | "approved" | "rejected";
-  mediaRelease?: boolean;
   availability?: Record<string, unknown>;
   notificationPreference?: "email" | "sms" | "both" | "none";
   employer?: string;
@@ -302,7 +300,6 @@ function StaffEditVolunteerModal({
     isActive: user?.isActive ?? true,
     volunteerType: vol.volunteerType ?? "",
     isAlumni: vol.isAlumni ?? false,
-    mediaRelease: vol.mediaRelease ?? false,
     employer: vol.employer ?? "",
     jobTitle: vol.jobTitle ?? "",
     city: vol.city ?? "",
@@ -321,7 +318,6 @@ function StaffEditVolunteerModal({
       isActive: user?.isActive ?? true,
       volunteerType: vol.volunteerType ?? "",
       isAlumni: vol.isAlumni ?? false,
-      mediaRelease: vol.mediaRelease ?? false,
       employer: vol.employer ?? "",
       jobTitle: vol.jobTitle ?? "",
       city: vol.city ?? "",
@@ -525,18 +521,6 @@ function StaffEditVolunteerModal({
                     />
                   }
                   label="Alumni Status"
-                />
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.mediaRelease}
-                      onChange={(e) =>
-                        handleChange("mediaRelease", e.target.checked)
-                      }
-                      disabled={saving}
-                    />
-                  }
-                  label="Media Release Signed"
                 />
               </Stack>
             </Box>
@@ -895,20 +879,6 @@ export function VolunteerOverviewTab({
                           vol.backgroundCheckStatus,
                         )}
                         icon={<SecurityIcon fontSize="small" />}
-                      />
-                    </Box>
-                    <Box>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ display: "block", mb: 0.5 }}
-                      >
-                        Media Release
-                      </Typography>
-                      <StatusBadge
-                        label={vol.mediaRelease ? "Signed" : "Not signed"}
-                        color={vol.mediaRelease ? "success" : "warning"}
-                        icon={<DescriptionIcon fontSize="small" />}
                       />
                     </Box>
                   </Stack>

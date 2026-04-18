@@ -66,7 +66,6 @@ export type VolunteerDetailUpdateData = {
   volunteerType?: string;
   isAlumni?: boolean;
   backgroundCheckStatus?: "not_required" | "pending" | "approved" | "rejected";
-  mediaRelease?: boolean;
   availability?: Record<string, unknown>;
   notificationPreference?: "email" | "sms" | "both" | "none";
   employer?: string;
@@ -142,7 +141,6 @@ export async function updateVolunteerDetail(
       | "pending"
       | "approved"
       | "rejected";
-    mediaRelease?: boolean;
     availability?: Record<string, unknown>;
     notificationPreference?: "email" | "sms" | "both" | "none";
     employer?: string;
@@ -166,8 +164,6 @@ export async function updateVolunteerDetail(
   if (data.isAlumni !== undefined) volunteerData.isAlumni = data.isAlumni;
   if (data.backgroundCheckStatus !== undefined)
     volunteerData.backgroundCheckStatus = data.backgroundCheckStatus;
-  if (data.mediaRelease !== undefined)
-    volunteerData.mediaRelease = data.mediaRelease;
   if (data.availability !== undefined)
     volunteerData.availability = data.availability;
   if (data.notificationPreference !== undefined)

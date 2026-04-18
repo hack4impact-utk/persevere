@@ -154,7 +154,6 @@ export type FetchVolunteerByIdResult = {
     volunteerType: string | null;
     isAlumni: boolean;
     backgroundCheckStatus: "not_required" | "pending" | "approved" | "rejected";
-    mediaRelease: boolean;
     availability: unknown;
     notificationPreference: "email" | "sms" | "both" | "none";
     employer: string | null;

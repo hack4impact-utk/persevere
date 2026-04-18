@@ -61,8 +61,6 @@ export default function AddVolunteerModal({
   const [volunteerType, setVolunteerType] = useState("");
   const [isAlumni, setIsAlumni] = useState(false);
   const [backgroundCheckStatus, setBackgroundCheckStatus] = useState("");
-  const [mediaRelease, setMediaRelease] = useState(false);
-
   const { createVolunteer } = useVolunteers(
     "",
     { type: "", alumni: false },
@@ -151,7 +149,6 @@ export default function AddVolunteerModal({
           volunteerType?: string;
           isAlumni: boolean;
           backgroundCheckStatus?: "not_required" | "pending" | "approved";
-          mediaRelease: boolean;
         } = {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
@@ -160,7 +157,6 @@ export default function AddVolunteerModal({
           volunteerType: volunteerType === "" ? undefined : volunteerType,
           isAlumni,
           backgroundCheckStatus: currentBackgroundCheckStatus,
-          mediaRelease,
         };
 
         const json = await createVolunteer(payload);
@@ -185,7 +181,6 @@ export default function AddVolunteerModal({
         setVolunteerType("");
         setIsAlumni(false);
         setBackgroundCheckStatus("");
-        setMediaRelease(false);
         setTouched({});
         setSubmitError(null);
 
@@ -218,7 +213,6 @@ export default function AddVolunteerModal({
       volunteerType,
       isAlumni,
       backgroundCheckStatus,
-      mediaRelease,
       isFormValid,
       markTouched,
       onCreated,
@@ -414,21 +408,6 @@ export default function AddVolunteerModal({
                     />
                   }
                   label={<Typography variant="body2">Alumni</Typography>}
-                />
-
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={mediaRelease}
-                      onChange={(e) => setMediaRelease(e.target.checked)}
-                      sx={{ "& .MuiSvgIcon-root": { fontSize: 20 } }}
-                    />
-                  }
-                  label={
-                    <Typography variant="body2">
-                      Media Release Signed
-                    </Typography>
-                  }
                 />
               </Stack>
             </Box>

@@ -45,7 +45,6 @@ export const volunteers = pgTable("volunteers", {
   backgroundCheckStatus: backgroundCheckStatusEnum("background_check_status")
     .default("not_required")
     .notNull(),
-  mediaRelease: boolean("media_release").default(false).notNull(),
   availability: jsonb("availability"),
   notificationPreference: notificationPreferenceEnum("notification_preference")
     .default("email")

@@ -51,7 +51,6 @@ export type CreateVolunteerParams = {
   volunteerType?: string;
   isAlumni?: boolean;
   backgroundCheckStatus?: "not_required" | "pending" | "approved" | "rejected";
-  mediaRelease?: boolean;
   availability?: Record<string, string | string[] | boolean | number>;
   notificationPreference?: "email" | "sms" | "both" | "none";
   employer?: string;
@@ -287,7 +286,6 @@ export async function createVolunteer(
       volunteerType: params.volunteerType,
       isAlumni: params.isAlumni ?? false,
       backgroundCheckStatus,
-      mediaRelease: params.mediaRelease ?? false,
       availability: params.availability,
       notificationPreference: params.notificationPreference ?? "email",
       employer: params.employer,
