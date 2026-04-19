@@ -152,9 +152,10 @@ export function OpportunityCard({
                 label={`${matchScore} match`}
                 color="success"
                 size="small"
+                sx={{ borderRadius: 1 }}
               />
             )}
-            <SpotsChip opp={opportunity} />
+            <SpotsChip opp={opportunity} sx={{ borderRadius: 1 }} />
           </Box>
         </Box>
 
