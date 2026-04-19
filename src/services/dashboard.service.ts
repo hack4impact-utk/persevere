@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 
 import db from "@/db";
 import {
@@ -292,7 +292,7 @@ export async function getVolunteerDashboard(
       .orderBy(opportunities.startDate)
       .limit(DEFAULT_PAGE_SIZE),
 
-    // VERIFIED = verifiedAt IS NOT NULL
+    // VERIFIED = status approved
     db
       .select({
         total: sql<string>`coalesce(sum(${volunteerHours.hours}), 0)`,
@@ -301,11 +301,11 @@ export async function getVolunteerDashboard(
       .where(
         and(
           eq(volunteerHours.volunteerId, volunteerId),
-          isNotNull(volunteerHours.verifiedAt),
+          eq(volunteerHours.status, "approved"),
         ),
       ),
 
-    // PENDING = verifiedAt IS NULL
+    // PENDING = status pending
     db
       .select({
         total: sql<string>`coalesce(sum(${volunteerHours.hours}), 0)`,
@@ -314,7 +314,7 @@ export async function getVolunteerDashboard(
       .where(
         and(
           eq(volunteerHours.volunteerId, volunteerId),
-          isNull(volunteerHours.verifiedAt),
+          eq(volunteerHours.status, "pending"),
         ),
       ),
   ]);

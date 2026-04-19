@@ -76,43 +76,41 @@ export default function RecentHours(): JSX.Element {
           empty={hours.length === 0}
           emptyMessage="No hours logged yet."
         >
-          <Box sx={{ overflowY: "auto", maxHeight: 240 }}>
-            <Stack spacing={0}>
-              {hours.map((entry, i) => (
-                <Box
-                  key={entry.id}
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 1,
-                    py: 1,
-                    borderTop: i === 0 ? "none" : "1px solid",
-                    borderColor: "divider",
-                  }}
+          <Stack spacing={0}>
+            {hours.slice(0, 4).map((entry, i) => (
+              <Box
+                key={entry.id}
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 1,
+                  py: 1,
+                  borderTop: i === 0 ? "none" : "1px solid",
+                  borderColor: "divider",
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  noWrap
+                  sx={{ flex: 1, minWidth: 0 }}
                 >
-                  <Typography
-                    variant="body2"
-                    noWrap
-                    sx={{ flex: 1, minWidth: 0 }}
-                  >
-                    {entry.opportunityTitle ?? "General hours"}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    fontWeight={600}
-                    color="text.primary"
-                  >
-                    {entry.hours} hr
-                  </Typography>
-                  <StatusBadge
-                    label={entry.status}
-                    color={HOURS_STATUS_COLOR[entry.status]}
-                  />
-                </Box>
-              ))}
-            </Stack>
-          </Box>
+                  {entry.opportunityTitle ?? "General hours"}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  fontWeight={600}
+                  color="text.primary"
+                >
+                  {entry.hours} hr
+                </Typography>
+                <StatusBadge
+                  label={entry.status}
+                  color={HOURS_STATUS_COLOR[entry.status]}
+                />
+              </Box>
+            ))}
+          </Stack>
         </AsyncContent>
 
         <Box mt={2}>

@@ -38,72 +38,59 @@ export default function AnnouncementsCard(): JSX.Element {
             empty={announcements.length === 0}
             emptyMessage="No announcements yet."
           >
-            <Box sx={{ overflowY: "auto", maxHeight: 320 }}>
-              <Stack spacing={0}>
-                {announcements.map((announcement, i) => (
-                  <ButtonBase
-                    key={announcement.id}
-                    onClick={() => setSelected(announcement)}
-                    sx={{
-                      display: "block",
-                      textAlign: "left",
-                      width: "100%",
-                      py: 1.5,
-                      borderTop: i === 0 ? "none" : "1px solid",
-                      borderColor: "divider",
-                      "&:hover": { bgcolor: "action.hover" },
-                    }}
+            <Stack spacing={0}>
+              {announcements.map((announcement, i) => (
+                <ButtonBase
+                  key={announcement.id}
+                  onClick={() => setSelected(announcement)}
+                  sx={{
+                    display: "block",
+                    textAlign: "left",
+                    width: "100%",
+                    py: 1.5,
+                    borderTop: i === 0 ? "none" : "1px solid",
+                    borderColor: "divider",
+                    "&:hover": { bgcolor: "action.hover" },
+                  }}
+                >
+                  <Box
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="baseline"
+                    gap={1}
                   >
-                    <Box
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="baseline"
-                      gap={1}
+                    <Typography
+                      variant="body2"
+                      fontWeight={600}
+                      color="text.primary"
                     >
-                      <Typography
-                        variant="body2"
-                        fontWeight={600}
-                        color="text.primary"
-                      >
-                        {announcement.subject}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        flexShrink={0}
-                      >
-                        {new Date(announcement.sentAt).toLocaleString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </Typography>
-                    </Box>
+                      {announcement.subject}
+                    </Typography>
                     <Typography
                       variant="caption"
                       color="text.secondary"
-                      display="block"
-                      mt={0.5}
+                      flexShrink={0}
                     >
-                      by Staff
+                      {new Date(announcement.sentAt).toLocaleString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
                     </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      lineHeight={1.45}
-                      mt={0.5}
-                      sx={{
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {announcement.body}
-                    </Typography>
-                  </ButtonBase>
-                ))}
-              </Stack>
-            </Box>
+                  </Box>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    mt={0.5}
+                  >
+                    by{" "}
+                    {[announcement.senderFirstName, announcement.senderLastName]
+                      .filter(Boolean)
+                      .join(" ") || "Staff"}
+                  </Typography>
+                </ButtonBase>
+              ))}
+            </Stack>
           </AsyncContent>
 
           <Box mt={2}>

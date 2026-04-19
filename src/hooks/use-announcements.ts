@@ -8,6 +8,8 @@ export type AnnouncementItem = {
   subject: string;
   body: string;
   sentAt: string;
+  senderFirstName: string;
+  senderLastName: string;
 };
 
 export type UseAnnouncementsResult = {
