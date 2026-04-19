@@ -6,8 +6,8 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
-import Divider from "@mui/material/Divider";
 import InputAdornment from "@mui/material/InputAdornment";
+import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import NextLink from "next/link";
@@ -18,10 +18,14 @@ import { EmptyState } from "@/components/ui";
 import { OpportunityCard } from "@/components/volunteer/opportunity-card";
 import OpportunityDetailModal from "@/components/volunteer/opportunity-detail-modal";
 import { useOpportunities } from "@/hooks/use-opportunities";
-import { useRecommendations } from "@/hooks/use-recommendations";
+import { useOpportunityCategories } from "@/hooks/use-opportunity-categories";
+import { useOpportunityLocations } from "@/hooks/use-opportunity-locations";
 
 export default function OpportunitiesPage(): JSX.Element {
   const [search, setSearch] = useState("");
+  const [categoryId, setCategoryId] = useState<number | "">("");
+  const [locationFilter, setLocationFilter] = useState("");
+  const [dateRange, setDateRange] = useState<"week" | "month" | "">("");
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<
     number | null
   >(null);
@@ -37,9 +41,10 @@ export default function OpportunitiesPage(): JSX.Element {
     loadingMore,
     loadMore,
     handleRsvpChange,
-  } = useOpportunities(search);
+  } = useOpportunities({ search, categoryId, locationFilter, dateRange });
 
-  const { recommendations, loading: recsLoading } = useRecommendations();
+  const { categories } = useOpportunityCategories();
+  const { locations } = useOpportunityLocations();
 
   return (
     <Box
@@ -98,6 +103,56 @@ export default function OpportunitiesPage(): JSX.Element {
               },
             }}
           />
+          <TextField
+            select
+            size="small"
+            value={categoryId}
+            onChange={(e) => {
+              setCategoryId(
+                e.target.value === "" ? "" : Number(e.target.value),
+              );
+            }}
+            sx={{ minWidth: 180 }}
+            slotProps={{ select: { displayEmpty: true } }}
+          >
+            <MenuItem value="">All categories</MenuItem>
+            {categories.map((c) => (
+              <MenuItem key={c.id} value={c.id}>
+                {c.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            size="small"
+            value={locationFilter}
+            onChange={(e) => {
+              setLocationFilter(e.target.value);
+            }}
+            sx={{ minWidth: 160 }}
+            slotProps={{ select: { displayEmpty: true } }}
+          >
+            <MenuItem value="">Any location</MenuItem>
+            {locations.map((loc) => (
+              <MenuItem key={loc} value={loc}>
+                {loc}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            size="small"
+            value={dateRange}
+            onChange={(e) => {
+              setDateRange(e.target.value as "week" | "month" | "");
+            }}
+            sx={{ minWidth: 150 }}
+            slotProps={{ select: { displayEmpty: true } }}
+          >
+            <MenuItem value="">Any date</MenuItem>
+            <MenuItem value="week">This week</MenuItem>
+            <MenuItem value="month">This month</MenuItem>
+          </TextField>
         </Box>
         <Typography variant="body2" color="text.secondary">
           {opportunities.length} opportunities
@@ -123,40 +178,13 @@ export default function OpportunitiesPage(): JSX.Element {
           </Box>
         )}
 
-        {!loading && !search && !recsLoading && recommendations.length > 0 && (
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" fontWeight={700} mb={2}>
-              Recommended for You
-            </Typography>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))",
-                gap: 2,
-              }}
-            >
-              {recommendations.map((opp) => (
-                <OpportunityCard
-                  key={opp.id}
-                  opportunity={opp}
-                  matchScore={opp.matchScore}
-                  onClick={() => {
-                    setSelectedOpportunityId(opp.id);
-                  }}
-                />
-              ))}
-            </Box>
-            <Divider sx={{ mt: 3 }} />
-          </Box>
-        )}
-
         {!loading && opportunities.length === 0 && (
           <EmptyState
             icon={<EventIcon sx={{ fontSize: 64 }} />}
             message="No opportunities found"
             subMessage={
-              search
-                ? "Try a different search term"
+              search || categoryId || locationFilter || dateRange
+                ? "Try adjusting your filters"
                 : "Check back soon for new opportunities"
             }
           />
@@ -164,11 +192,6 @@ export default function OpportunitiesPage(): JSX.Element {
 
         {!loading && opportunities.length > 0 && (
           <Box mb={2}>
-            {recommendations.length > 0 && (
-              <Typography variant="h6" fontWeight={700} mb={2}>
-                All Opportunities
-              </Typography>
-            )}
             <Box
               sx={{
                 display: "grid",

@@ -1,4 +1,14 @@
-import { and, count, eq, gt, inArray, notInArray, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  eq,
+  gt,
+  inArray,
+  lte,
+  notInArray,
+  sql,
+} from "drizzle-orm";
 
 import db from "@/db";
 import {
@@ -19,6 +29,9 @@ export type ListOpportunitiesParams = {
   limit: number;
   offset: number;
   search: string;
+  categoryId?: number;
+  locationFilter?: string;
+  dateRange?: "week" | "month";
 };
 
 export type OpportunityWithSpots = {
@@ -43,10 +56,40 @@ export type OpportunityWithSpots = {
 // List open opportunities available to volunteers
 // ---------------------------------------------------------------------------
 
+export async function listEventCategories(): Promise<
+  { id: number; name: string }[]
+> {
+  return db
+    .select({ id: eventCategories.id, name: eventCategories.name })
+    .from(eventCategories)
+    .orderBy(asc(eventCategories.name));
+}
+
+export async function listOpportunityLocations(): Promise<string[]> {
+  const now = new Date();
+  const rows = await db
+    .selectDistinct({ location: opportunities.location })
+    .from(opportunities)
+    .where(
+      and(eq(opportunities.status, "open"), gt(opportunities.startDate, now)),
+    )
+    .orderBy(asc(opportunities.location));
+  return rows.map((r) => r.location).filter((l): l is string => l !== null);
+}
+
+function endOfSunday(from: Date): Date {
+  const d = new Date(from);
+  const daysUntilSunday = d.getDay() === 0 ? 0 : 7 - d.getDay();
+  d.setDate(d.getDate() + daysUntilSunday);
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
 export async function listOpenOpportunities(
   params: ListOpportunitiesParams,
 ): Promise<{ data: OpportunityWithSpots[]; total: number }> {
-  const { limit, offset, search } = params;
+  const { limit, offset, search, categoryId, locationFilter, dateRange } =
+    params;
 
   const now = new Date();
 
@@ -95,35 +138,41 @@ export async function listOpenOpportunities(
   // An opportunity is "available" if it has no max or rsvpCount < maxVolunteers
   const availabilityFilter = sql`(${opportunities.maxVolunteers} IS NULL OR COALESCE(${rsvpCountSubquery.rsvpCount}, 0) < ${opportunities.maxVolunteers})`;
 
-  query = query.where(
+  const extraConditions = [
     search
-      ? and(
-          baseConditions,
-          availabilityFilter,
-          sql`(${opportunities.title} ILIKE ${`%${search}%`} OR ${opportunities.description} ILIKE ${`%${search}%`} OR ${opportunities.location} ILIKE ${`%${search}%`})`,
-        )
-      : and(baseConditions, availabilityFilter),
+      ? sql`(${opportunities.title} ILIKE ${`%${search}%`} OR ${opportunities.description} ILIKE ${`%${search}%`} OR ${opportunities.location} ILIKE ${`%${search}%`})`
+      : undefined,
+    categoryId ? eq(opportunities.categoryId, categoryId) : undefined,
+    locationFilter
+      ? sql`${opportunities.location} ILIKE ${`%${locationFilter}%`}`
+      : undefined,
+    dateRange === "week"
+      ? lte(opportunities.startDate, endOfSunday(now))
+      : dateRange === "month"
+        ? lte(
+            opportunities.startDate,
+            new Date(now.getTime() + 30 * 86_400_000),
+          )
+        : undefined,
+  ].filter(Boolean);
+
+  const fullConditions = and(
+    baseConditions,
+    availabilityFilter,
+    ...(extraConditions as NonNullable<(typeof extraConditions)[number]>[]),
   );
+
+  query = query.where(fullConditions);
 
   // Count available opportunities (matches the filter)
   const countSubquery = db
-    .select({
-      id: opportunities.id,
-    })
+    .select({ id: opportunities.id })
     .from(opportunities)
     .leftJoin(
       rsvpCountSubquery,
       eq(opportunities.id, rsvpCountSubquery.opportunityId),
     )
-    .where(
-      search
-        ? and(
-            baseConditions,
-            availabilityFilter,
-            sql`(${opportunities.title} ILIKE ${`%${search}%`} OR ${opportunities.description} ILIKE ${`%${search}%`} OR ${opportunities.location} ILIKE ${`%${search}%`})`,
-          )
-        : and(baseConditions, availabilityFilter),
-    )
+    .where(fullConditions)
     .as("available_opps");
 
   const [countResult] = await db.select({ total: count() }).from(countSubquery);
