@@ -52,11 +52,24 @@ export async function GET(request: Request): Promise<NextResponse> {
       0,
     );
     const search = searchParams.get("search")?.trim() || "";
+    const rawCategoryId = searchParams.get("categoryId");
+    const categoryId = rawCategoryId
+      ? Number.parseInt(rawCategoryId, 10)
+      : undefined;
+    const locationFilter = searchParams.get("locationFilter")?.trim() || "";
+    const rawDateRange = searchParams.get("dateRange");
+    const dateRange =
+      rawDateRange === "week" || rawDateRange === "month"
+        ? rawDateRange
+        : undefined;
 
     const { data, total } = await listOpenOpportunities({
       limit,
       offset,
       search,
+      ...(categoryId && { categoryId }),
+      ...(locationFilter && { locationFilter }),
+      ...(dateRange && { dateRange }),
     });
 
     return NextResponse.json({ data, total });

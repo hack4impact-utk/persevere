@@ -26,7 +26,9 @@ export default function VolunteerCalendarPage(): JSX.Element {
     void fetchEvents(start, end);
   }, [fetchEvents]);
 
-  const { rsvpedIds, rsvpStatusMap, handleRsvpChange } = useOpportunities("");
+  const { rsvpedIds, rsvpStatusMap, handleRsvpChange } = useOpportunities({
+    search: "",
+  });
 
   const rsvpColorMap = useMemo((): Record<string, string> => {
     const map: Record<string, string> = {};
