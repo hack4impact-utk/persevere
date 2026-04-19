@@ -5,7 +5,6 @@ import Box from "@mui/material/Box";
 import ButtonBase from "@mui/material/ButtonBase";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -28,12 +27,11 @@ export default function AnnouncementsCard(): JSX.Element {
       <Card sx={{ borderRadius: 2, boxShadow: 2, height: "100%" }}>
         <CardContent sx={{ p: 2.5 }}>
           <Box display="flex" alignItems="center" gap={1} mb={2}>
-            <CampaignIcon color="primary" />
+            <CampaignIcon sx={{ color: "primary.main" }} />
             <Typography variant="h6" fontWeight={700}>
               Announcements
             </Typography>
           </Box>
-          <Divider sx={{ mb: 2 }} />
 
           <AsyncContent
             loading={loading}
@@ -41,9 +39,9 @@ export default function AnnouncementsCard(): JSX.Element {
             empty={announcements.length === 0}
             emptyMessage="No announcements yet."
           >
-            <Box sx={{ overflowY: "auto", maxHeight: 240 }}>
-              <Stack spacing={1.5}>
-                {announcements.map((announcement) => (
+            <Box sx={{ overflowY: "auto", maxHeight: 320 }}>
+              <Stack spacing={0}>
+                {announcements.map((announcement, i) => (
                   <ButtonBase
                     key={announcement.id}
                     onClick={() => setSelected(announcement)}
@@ -51,23 +49,36 @@ export default function AnnouncementsCard(): JSX.Element {
                       display: "block",
                       textAlign: "left",
                       width: "100%",
-                      p: 1.5,
-                      borderRadius: 1,
-                      border: "1px solid",
+                      py: 1.5,
+                      borderTop: i === 0 ? "none" : "1px solid",
                       borderColor: "divider",
                       "&:hover": { bgcolor: "action.hover" },
                     }}
                   >
-                    <Typography
-                      variant="subtitle2"
-                      fontWeight={600}
-                      noWrap
-                      sx={{ mb: 0.25 }}
-                    >
-                      {announcement.subject}
+                    <Box display="flex" justifyContent="space-between" alignItems="baseline" gap={1}>
+                      <Typography variant="body2" fontWeight={600} color="text.primary">
+                        {announcement.subject}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" flexShrink={0}>
+                        {new Date(announcement.sentAt).toLocaleString("en-US", { month: "short", day: "numeric" })}
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+                      by {announcement.senderName || "Staff"}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatDate(announcement.sentAt)}
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      lineHeight={1.45}
+                      mt={0.5}
+                      sx={{
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {announcement.body}
                     </Typography>
                   </ButtonBase>
                 ))}
