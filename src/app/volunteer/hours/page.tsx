@@ -5,6 +5,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { JSX, useMemo, useState } from "react";
 
@@ -210,16 +211,23 @@ export default function HoursPage(): JSX.Element {
                         justifyContent: "center",
                       }}
                     >
-                      <Box
-                        sx={{
-                          width: "80%",
-                          height: `${heightPct}%`,
-                          minHeight: h > 0 ? "4px" : "0",
-                          bgcolor: h > 0 ? "primary.main" : "grey.200",
-                          borderRadius: "4px 4px 0 0",
-                          transition: "height 0.3s",
-                        }}
-                      />
+                      <Tooltip
+                        title={h > 0 ? `${h} hr` : "No hours"}
+                        placement="top"
+                        arrow
+                      >
+                        <Box
+                          sx={{
+                            width: "80%",
+                            height: `${heightPct}%`,
+                            minHeight: h > 0 ? "4px" : "0",
+                            bgcolor: h > 0 ? "primary.main" : "grey.200",
+                            borderRadius: "4px 4px 0 0",
+                            transition: "height 0.3s",
+                            cursor: "pointer",
+                          }}
+                        />
+                      </Tooltip>
                     </Box>
                     <Typography
                       variant="caption"

@@ -23,6 +23,15 @@ export default function RecentHours(): JSX.Element {
   const { hours, loading, error } = useVolunteerHours();
   const { data: dashboardData } = useVolunteerDashboard();
 
+  const now = new Date();
+  const thisMonthHours = hours.filter((e) => {
+    const d = new Date(e.date);
+    return (
+      d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+    );
+  });
+  const totalThisMonth = thisMonthHours.reduce((sum, e) => sum + e.hours, 0);
+
   return (
     <Card sx={{ borderRadius: 2, boxShadow: 2, height: "100%" }}>
       <CardContent sx={{ p: 2.5 }}>
@@ -33,17 +42,32 @@ export default function RecentHours(): JSX.Element {
           </Typography>
         </Box>
 
-        {/* Progress bar mock based on verified hours */}
         {dashboardData && (
           <Box mb={2}>
-            <Box display="flex" alignItems="baseline" gap={1} mb={1}>
+            <Box display="flex" alignItems="baseline" gap={0.5} mb={1}>
               <Typography
                 variant="h3"
                 fontWeight={800}
                 color="primary.main"
                 lineHeight={1}
               >
-                {dashboardData.verifiedHours}
+                {dashboardData.monthlyVerifiedHours}
+              </Typography>
+              <Typography
+                variant="h3"
+                fontWeight={800}
+                color="primary.main"
+                lineHeight={1}
+              >
+                /
+              </Typography>
+              <Typography
+                variant="h3"
+                fontWeight={800}
+                color="primary.main"
+                lineHeight={1}
+              >
+                {totalThisMonth}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 verified hours so far
@@ -61,7 +85,7 @@ export default function RecentHours(): JSX.Element {
                 sx={{
                   height: "100%",
                   bgcolor: "primary.main",
-                  width: `${Math.min((dashboardData.verifiedHours / 15) * 100, 100)}%`,
+                  width: `${totalThisMonth > 0 ? Math.min((dashboardData.monthlyVerifiedHours / totalThisMonth) * 100, 100) : 0}%`,
                 }}
               />
             </Box>
@@ -71,11 +95,11 @@ export default function RecentHours(): JSX.Element {
         <AsyncContent
           loading={loading}
           error={error}
-          empty={hours.length === 0}
-          emptyMessage="No hours logged yet."
+          empty={thisMonthHours.length === 0}
+          emptyMessage="No hours logged this month."
         >
           <Stack spacing={0}>
-            {hours.slice(0, 4).map((entry, i) => (
+            {thisMonthHours.slice(0, 4).map((entry, i) => (
               <Box
                 key={entry.id}
                 sx={{

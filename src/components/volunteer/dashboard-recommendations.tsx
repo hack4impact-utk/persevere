@@ -17,10 +17,8 @@ export default function DashboardRecommendations(): JSX.Element {
   const { recommendations, loading, error } = useRecommendations();
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  const displayed = recommendations.slice(0, 4);
-
   return (
-    <Card sx={{ borderRadius: 2, boxShadow: 2, height: "100%" }}>
+    <Card sx={{ borderRadius: 2, boxShadow: 2 }}>
       <CardContent sx={{ p: 2.5 }}>
         <Box
           display="flex"
@@ -63,9 +61,13 @@ export default function DashboardRecommendations(): JSX.Element {
                 sm: "repeat(2, 1fr)",
               },
               gap: 2,
+              height: 288,
+              overflowY: "auto",
+              alignItems: "start",
+              pr: 0.5,
             }}
           >
-            {displayed.map((opp) => (
+            {recommendations.map((opp) => (
               <OpportunityCard
                 key={opp.id}
                 opportunity={opp}

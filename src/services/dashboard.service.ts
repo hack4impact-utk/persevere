@@ -64,6 +64,7 @@ export type VolunteerDashboard = {
     verified: number;
     pending: number;
     total: number;
+    monthlyVerified: number;
   };
 };
 
@@ -270,44 +271,46 @@ export async function getVolunteerDashboard(
   volunteerId: number,
 ): Promise<VolunteerDashboard> {
   const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [upcoming, verifiedAgg, pendingAgg] = await Promise.all([
-    db
-      .select({
-        rsvpStatus: volunteerRsvps.status,
-        opportunityId: opportunities.id,
-        opportunityStartDate: opportunities.startDate,
-      })
-      .from(volunteerRsvps)
-      .innerJoin(
-        opportunities,
-        eq(volunteerRsvps.opportunityId, opportunities.id),
-      )
-      .where(
-        and(
-          eq(volunteerRsvps.volunteerId, volunteerId),
-          gte(opportunities.startDate, now),
-        ),
-      )
-      .orderBy(opportunities.startDate)
-      .limit(DEFAULT_PAGE_SIZE),
+  const [upcoming, verifiedAgg, pendingAgg, monthlyVerifiedAgg] =
+    await Promise.all([
+      db
+        .select({
+          rsvpStatus: volunteerRsvps.status,
+          opportunityId: opportunities.id,
+          opportunityStartDate: opportunities.startDate,
+        })
+        .from(volunteerRsvps)
+        .innerJoin(
+          opportunities,
+          eq(volunteerRsvps.opportunityId, opportunities.id),
+        )
+        .where(
+          and(
+            eq(volunteerRsvps.volunteerId, volunteerId),
+            gte(opportunities.startDate, now),
+          ),
+        )
+        .orderBy(opportunities.startDate)
+        .limit(DEFAULT_PAGE_SIZE),
 
-    // VERIFIED = approved + previously-approved portion of edit_requested entries
-    db
-      .select({
-        total: sql<string>`coalesce(sum(case
+      // VERIFIED = approved + previously-approved portion of edit_requested entries
+      db
+        .select({
+          total: sql<string>`coalesce(sum(case
           when ${volunteerHours.status} = 'approved' then ${volunteerHours.hours}
           when ${volunteerHours.status} = 'edit_requested' then coalesce(${volunteerHours.previousHours}, ${volunteerHours.hours})
           else 0
         end), 0)`,
-      })
-      .from(volunteerHours)
-      .where(eq(volunteerHours.volunteerId, volunteerId)),
+        })
+        .from(volunteerHours)
+        .where(eq(volunteerHours.volunteerId, volunteerId)),
 
-    // PENDING = pending entries + extra hours above approved baseline in edit_requested entries
-    db
-      .select({
-        total: sql<string>`coalesce(sum(case
+      // PENDING = pending entries + extra hours above approved baseline in edit_requested entries
+      db
+        .select({
+          total: sql<string>`coalesce(sum(case
           when ${volunteerHours.status} = 'pending' then ${volunteerHours.hours}
           when ${volunteerHours.status} = 'edit_requested'
                and ${volunteerHours.previousHours} is not null
@@ -315,13 +318,31 @@ export async function getVolunteerDashboard(
                then ${volunteerHours.hours} - ${volunteerHours.previousHours}
           else 0
         end), 0)`,
-      })
-      .from(volunteerHours)
-      .where(eq(volunteerHours.volunteerId, volunteerId)),
-  ]);
+        })
+        .from(volunteerHours)
+        .where(eq(volunteerHours.volunteerId, volunteerId)),
+
+      // MONTHLY VERIFIED = approved/edit_requested hours logged this calendar month
+      db
+        .select({
+          total: sql<string>`coalesce(sum(case
+          when ${volunteerHours.status} = 'approved' then ${volunteerHours.hours}
+          when ${volunteerHours.status} = 'edit_requested' then coalesce(${volunteerHours.previousHours}, ${volunteerHours.hours})
+          else 0
+        end), 0)`,
+        })
+        .from(volunteerHours)
+        .where(
+          and(
+            eq(volunteerHours.volunteerId, volunteerId),
+            gte(volunteerHours.date, monthStart),
+          ),
+        ),
+    ]);
 
   const verified = toNumber(verifiedAgg[0]?.total);
   const pending = toNumber(pendingAgg[0]?.total);
+  const monthlyVerified = toNumber(monthlyVerifiedAgg[0]?.total);
 
   return {
     upcomingRsvps: upcoming.map((row) => ({
@@ -335,6 +356,7 @@ export async function getVolunteerDashboard(
       verified,
       pending,
       total: verified + pending,
+      monthlyVerified,
     },
   };
 }

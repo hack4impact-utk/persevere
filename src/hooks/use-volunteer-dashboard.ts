@@ -8,6 +8,7 @@ export type VolunteerDashboardData = {
   verifiedHours: number;
   pendingHours: number;
   upcomingCount: number;
+  monthlyVerifiedHours: number;
 };
 
 type State = {
@@ -39,6 +40,7 @@ export function useVolunteerDashboard(): State {
           verifiedHours: res.data.hours.verified ?? 0,
           pendingHours: res.data.hours.pending ?? 0,
           upcomingCount: res.data.upcomingRsvps.length ?? 0,
+          monthlyVerifiedHours: res.data.hours.monthlyVerified ?? 0,
         });
         setError(null);
       } catch (error_) {
