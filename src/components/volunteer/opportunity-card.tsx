@@ -22,6 +22,18 @@ function getTimeShort(dateStr: string): string {
     hour12: true,
   });
 }
+function getDuration(startStr: string, endStr: string | null): string | null {
+  if (!endStr) return null;
+  const mins = Math.round(
+    (new Date(endStr).getTime() - new Date(startStr).getTime()) / 60_000,
+  );
+  if (mins <= 0) return null;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h} hr${h === 1 ? "" : "s"}`;
+  return `${h} hr${h === 1 ? "" : "s"} ${m} min`;
+}
 
 type OpportunityCardProps = {
   opportunity: Opportunity;
@@ -43,7 +55,7 @@ export function OpportunityCard({
       onClick={onClick}
       elevation={0}
       sx={{
-        borderRadius: 2.5, // 10px / 8px scale? approx 2.5 is 20px, actually borderRadius: 2 is 16px if we follow theme. Let's use 2.
+        borderRadius: 1.25,
         border: "1px solid",
         borderColor: "divider",
         display: "flex",
@@ -85,8 +97,7 @@ export function OpportunityCard({
           {month}
         </Typography>
         <Typography
-          variant="h4"
-          sx={{ fontWeight: 700, lineHeight: 1, my: 0.5 }}
+          sx={{ fontSize: "1.75rem", fontWeight: 700, lineHeight: 1, my: 0.5 }}
         >
           {day}
         </Typography>
@@ -170,6 +181,9 @@ export function OpportunityCard({
             <LocationOnIcon sx={{ fontSize: 16, color: "text.secondary" }} />
             <Typography variant="caption" color="text.secondary" noWrap>
               {opportunity.location}
+              {getDuration(opportunity.startDate, opportunity.endDate)
+                ? ` · ${getDuration(opportunity.startDate, opportunity.endDate)}`
+                : ""}
             </Typography>
           </Box>
         )}

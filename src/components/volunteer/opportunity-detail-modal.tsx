@@ -41,6 +41,18 @@ function getTimeShort(dateStr: string): string {
     hour12: true,
   });
 }
+function getDuration(startStr: string, endStr: string | null): string | null {
+  if (!endStr) return null;
+  const mins = Math.round(
+    (new Date(endStr).getTime() - new Date(startStr).getTime()) / 60_000,
+  );
+  if (mins <= 0) return null;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h} hr${h === 1 ? "" : "s"}`;
+  return `${h} hr${h === 1 ? "" : "s"} ${m} min`;
+}
 
 export default function OpportunityDetailModal({
   opportunityId,
@@ -150,6 +162,9 @@ export default function OpportunityDetailModal({
                       />
                       <Typography variant="body2">
                         {opportunity.location}
+                        {getDuration(opportunity.startDate, opportunity.endDate)
+                          ? ` · ${getDuration(opportunity.startDate, opportunity.endDate)}`
+                          : ""}
                       </Typography>
                     </Box>
                   )}
