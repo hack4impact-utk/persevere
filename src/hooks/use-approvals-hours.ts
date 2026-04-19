@@ -11,8 +11,9 @@ export type ApprovalsHoursRecord = {
   opportunityTitle: string | null;
   date: string;
   hours: number;
+  previousHours: number | null;
   notes: string | null;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "edit_requested";
   rejectionReason: string | null;
 };
 
@@ -45,9 +46,14 @@ export function useApprovalsHours(): {
     let cancelled = false;
     setLoading(true);
     apiClient
-      .get<{ data: ApprovalsHoursRecord[] }>("/api/staff/hours?status=pending")
+      .get<{ data: ApprovalsHoursRecord[] }>("/api/staff/hours")
       .then((res) => {
-        if (!cancelled) setHours(res.data);
+        if (!cancelled)
+          setHours(
+            res.data.filter(
+              (h) => h.status === "pending" || h.status === "edit_requested",
+            ),
+          );
       })
       .catch((error_) => {
         if (!cancelled) handleApiError(error_, "Failed to load hours");

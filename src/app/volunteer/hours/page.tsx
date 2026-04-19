@@ -9,16 +9,39 @@ import Typography from "@mui/material/Typography";
 import { JSX, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/shared";
+import VolunteerEditHoursModal from "@/components/volunteer/volunteer-edit-hours-modal";
+import VolunteerHoursDetailModal from "@/components/volunteer/volunteer-hours-detail-modal";
 import VolunteerHoursTable from "@/components/volunteer/volunteer-hours-table";
 import VolunteerLogHoursModal from "@/components/volunteer/volunteer-log-hours-modal";
+import { useRsvps } from "@/hooks/use-rsvps";
 import { useVolunteerDashboard } from "@/hooks/use-volunteer-dashboard";
+import type { VolunteerHourEntry } from "@/hooks/use-volunteer-hours";
 import { useVolunteerHours } from "@/hooks/use-volunteer-hours";
 
 export default function HoursPage(): JSX.Element {
-  const { hours, loading, isMutating, error, logHours, deleteHours } =
-    useVolunteerHours();
+  const {
+    hours,
+    loading,
+    isMutating,
+    error,
+    logHours,
+    editHours,
+    deleteHours,
+  } = useVolunteerHours();
   const { data: dashboardData } = useVolunteerDashboard();
+  const { past, loading: rsvpsLoading } = useRsvps();
   const [modalOpen, setModalOpen] = useState(false);
+  const [editEntry, setEditEntry] = useState<VolunteerHourEntry | null>(null);
+  const [detailEntry, setDetailEntry] = useState<VolunteerHourEntry | null>(
+    null,
+  );
+
+  const logPastOptions = useMemo(() => {
+    const loggedSet = new Set(hours.map((h) => h.opportunityId));
+    return past.filter(
+      (r) => r.rsvpStatus === "attended" && !loggedSet.has(r.opportunityId),
+    );
+  }, [past, hours]);
 
   // Compute year at a glance data
   const chartData = useMemo(() => {
@@ -227,6 +250,8 @@ export default function HoursPage(): JSX.Element {
           hours={hours}
           loading={loading}
           onDelete={deleteHours}
+          onEdit={setEditEntry}
+          onViewDetail={setDetailEntry}
         />
       </Card>
 
@@ -236,6 +261,23 @@ export default function HoursPage(): JSX.Element {
         onSuccess={() => setModalOpen(false)}
         logHours={logHours}
         isMutating={isMutating}
+        pastOptions={logPastOptions}
+        optionsLoading={loading || rsvpsLoading}
+      />
+
+      <VolunteerEditHoursModal
+        open={!!editEntry}
+        entry={editEntry}
+        onClose={() => setEditEntry(null)}
+        onSuccess={() => setEditEntry(null)}
+        editHours={editHours}
+        isMutating={isMutating}
+      />
+
+      <VolunteerHoursDetailModal
+        open={!!detailEntry}
+        entry={detailEntry}
+        onClose={() => setDetailEntry(null)}
       />
     </Box>
   );

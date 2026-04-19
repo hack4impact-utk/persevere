@@ -11,7 +11,7 @@ export type VolunteerHour = {
   date: string;
   hours: number;
   notes?: string | null;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "edit_requested";
   rejectionReason?: string | null;
   verifiedBy?: number | null;
   verifiedAt?: string | null;

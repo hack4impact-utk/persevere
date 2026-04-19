@@ -9,52 +9,65 @@ import {
   DialogActions,
   DialogContent,
   InputAdornment,
-  MenuItem,
   TextField,
-  Typography,
 } from "@mui/material";
-import { JSX, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 
 import { ModalTitleBar } from "@/components/shared";
-import type { RsvpItem } from "@/components/volunteer/types";
-import type { LogHoursInput } from "@/hooks/use-volunteer-hours";
+import type {
+  EditHoursInput,
+  VolunteerHourEntry,
+} from "@/hooks/use-volunteer-hours";
 
 type Props = {
   open: boolean;
+  entry: VolunteerHourEntry | null;
   onClose: () => void;
   onSuccess: () => void;
-  logHours: (input: LogHoursInput) => Promise<unknown>;
+  editHours: (
+    hoursId: number,
+    input: EditHoursInput,
+  ) => Promise<VolunteerHourEntry | null>;
   isMutating: boolean;
-  pastOptions: RsvpItem[];
-  optionsLoading: boolean;
 };
 
-export default function VolunteerLogHoursModal({
+export default function VolunteerEditHoursModal({
   open,
+  entry,
   onClose,
   onSuccess,
-  logHours,
+  editHours,
   isMutating,
-  pastOptions,
-  optionsLoading,
 }: Props): JSX.Element {
-  const [opportunityId, setOpportunityId] = useState("");
   const [date, setDate] = useState("");
   const [hours, setHours] = useState("");
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (entry) {
+      setDate(new Date(entry.date).toISOString().split("T")[0] ?? "");
+      setHours(String(entry.hours));
+      setNotes(entry.notes ?? "");
+      setFormError(null);
+    }
+  }, [entry]);
+
   const today = new Date().toISOString().split("T")[0];
+  const editAlertMessage =
+    entry?.status === "approved"
+      ? "Editing will submit an edit request for staff to review."
+      : entry?.status === "edit_requested"
+        ? "You already have a pending edit request. Saving will update it."
+        : entry?.status === "rejected"
+          ? "Editing will resubmit these hours for staff review."
+          : null;
 
   const handleSubmit = async (): Promise<void> => {
+    if (!entry) return;
     setFormError(null);
-    const parsedOpportunityId = Number.parseInt(opportunityId, 10);
     const parsedHours = Number.parseFloat(hours);
 
-    if (!opportunityId || Number.isNaN(parsedOpportunityId)) {
-      setFormError("Please select an opportunity.");
-      return;
-    }
     if (!date) {
       setFormError("Please select a date.");
       return;
@@ -69,71 +82,31 @@ export default function VolunteerLogHoursModal({
       return;
     }
 
-    const result = await logHours({
-      opportunityId: parsedOpportunityId,
+    const result = await editHours(entry.id, {
       date,
       hours: parsedHours,
       notes: notes.trim() || undefined,
     });
 
     if (result) {
-      setOpportunityId("");
-      setDate("");
-      setHours("");
-      setNotes("");
       onSuccess();
     }
   };
 
   const handleClose = (): void => {
-    setOpportunityId("");
-    setDate("");
-    setHours("");
-    setNotes("");
     setFormError(null);
     onClose();
   };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
-      <ModalTitleBar title="Log New Hours" onClose={handleClose} />
+      <ModalTitleBar title="Edit Hours Entry" onClose={handleClose} />
       <DialogContent dividers sx={{ p: 3 }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {editAlertMessage && (
+            <Alert severity="info">{editAlertMessage}</Alert>
+          )}
           {formError && <Alert severity="error">{formError}</Alert>}
-
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 600,
-              color: "text.secondary",
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
-              mb: -1,
-            }}
-          >
-            Activity Details
-          </Typography>
-
-          <TextField
-            select
-            label="Opportunity"
-            value={opportunityId}
-            onChange={(e) => setOpportunityId(e.target.value)}
-            fullWidth
-            disabled={optionsLoading || isMutating}
-          >
-            {optionsLoading ? (
-              <MenuItem disabled>Loading…</MenuItem>
-            ) : pastOptions.length === 0 ? (
-              <MenuItem disabled>No eligible past events found</MenuItem>
-            ) : (
-              pastOptions.map((r) => (
-                <MenuItem key={r.opportunityId} value={String(r.opportunityId)}>
-                  {r.opportunityTitle ?? `Opportunity #${r.opportunityId}`}
-                </MenuItem>
-              ))
-            )}
-          </TextField>
 
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
             <TextField
@@ -166,22 +139,8 @@ export default function VolunteerLogHoursModal({
             />
           </Box>
 
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 600,
-              color: "text.secondary",
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
-              mb: -1,
-              mt: 1,
-            }}
-          >
-            Notes
-          </Typography>
-
           <TextField
-            label="What did you do? (optional)"
+            label="Notes (optional)"
             multiline
             rows={3}
             value={notes}
@@ -198,10 +157,10 @@ export default function VolunteerLogHoursModal({
         <Button
           variant="contained"
           onClick={() => void handleSubmit()}
-          disabled={isMutating || optionsLoading}
+          disabled={isMutating}
           startIcon={isMutating ? <CircularProgress size={16} /> : undefined}
         >
-          {isMutating ? "Submitting…" : "Submit Hours"}
+          {isMutating ? "Saving…" : "Save Changes"}
         </Button>
       </DialogActions>
     </Dialog>

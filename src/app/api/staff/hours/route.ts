@@ -8,7 +8,7 @@ import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
 import { parseBodyOrError } from "@/utils/server/route-helpers";
 
 const hoursStatusSchema = z
-  .enum(["pending", "approved", "rejected"])
+  .enum(["pending", "approved", "rejected", "edit_requested"] as const)
   .optional();
 
 const logHoursSchema = z.object({

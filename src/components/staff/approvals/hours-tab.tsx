@@ -17,7 +17,12 @@ import { useSnackbar } from "notistack";
 import { JSX, useCallback, useState } from "react";
 
 import { ConfirmDialog } from "@/components/shared";
-import { EmptyState } from "@/components/ui";
+import {
+  EmptyState,
+  getHoursStatusColor,
+  getHoursStatusLabel,
+  StatusBadge,
+} from "@/components/ui";
 import type { ApprovalsHoursRecord } from "@/hooks/use-approvals-hours";
 
 type HoursTabProps = {
@@ -77,6 +82,7 @@ export default function HoursTab({
               <TableCell sx={{ fontWeight: 600 }}>Event</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Hours</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Notes</TableCell>
               <TableCell sx={{ fontWeight: 600 }} align="right">
                 Actions
@@ -107,8 +113,17 @@ export default function HoursTab({
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2" fontWeight={600}>
-                    {row.hours}h
+                    {row.previousHours == null
+                      ? `${row.hours}h`
+                      : `${row.previousHours}h → ${row.hours}h`}
                   </Typography>
+                </TableCell>
+                <TableCell>
+                  <StatusBadge
+                    label={getHoursStatusLabel(row.status)}
+                    color={getHoursStatusColor(row.status)}
+                    sx={{ borderRadius: "100px" }}
+                  />
                 </TableCell>
                 <TableCell>
                   <Typography

@@ -11,15 +11,13 @@ import NextLink from "next/link";
 import { JSX } from "react";
 
 import { AsyncContent } from "@/components/shared";
-import { StatusBadge } from "@/components/ui";
+import {
+  getHoursStatusColor,
+  getHoursStatusLabel,
+  StatusBadge,
+} from "@/components/ui";
 import { useVolunteerDashboard } from "@/hooks/use-volunteer-dashboard";
 import { useVolunteerHours } from "@/hooks/use-volunteer-hours";
-
-const HOURS_STATUS_COLOR = {
-  approved: "success",
-  pending: "warning",
-  rejected: "error",
-} as const;
 
 export default function RecentHours(): JSX.Element {
   const { hours, loading, error } = useVolunteerHours();
@@ -105,8 +103,8 @@ export default function RecentHours(): JSX.Element {
                   {entry.hours} hr
                 </Typography>
                 <StatusBadge
-                  label={entry.status}
-                  color={HOURS_STATUS_COLOR[entry.status]}
+                  label={getHoursStatusLabel(entry.status)}
+                  color={getHoursStatusColor(entry.status)}
                 />
               </Box>
             ))}

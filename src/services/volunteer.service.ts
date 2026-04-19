@@ -116,7 +116,7 @@ export type GetVolunteerProfileResult = {
     date: Date;
     hours: number;
     notes: string | null;
-    status: "pending" | "approved" | "rejected";
+    status: "pending" | "approved" | "rejected" | "edit_requested";
     rejectionReason: string | null;
     verifiedAt: Date | null;
   }[];

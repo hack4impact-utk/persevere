@@ -292,31 +292,32 @@ export async function getVolunteerDashboard(
       .orderBy(opportunities.startDate)
       .limit(DEFAULT_PAGE_SIZE),
 
-    // VERIFIED = status approved
+    // VERIFIED = approved + previously-approved portion of edit_requested entries
     db
       .select({
-        total: sql<string>`coalesce(sum(${volunteerHours.hours}), 0)`,
+        total: sql<string>`coalesce(sum(case
+          when ${volunteerHours.status} = 'approved' then ${volunteerHours.hours}
+          when ${volunteerHours.status} = 'edit_requested' then coalesce(${volunteerHours.previousHours}, ${volunteerHours.hours})
+          else 0
+        end), 0)`,
       })
       .from(volunteerHours)
-      .where(
-        and(
-          eq(volunteerHours.volunteerId, volunteerId),
-          eq(volunteerHours.status, "approved"),
-        ),
-      ),
+      .where(eq(volunteerHours.volunteerId, volunteerId)),
 
-    // PENDING = status pending
+    // PENDING = pending entries + extra hours above approved baseline in edit_requested entries
     db
       .select({
-        total: sql<string>`coalesce(sum(${volunteerHours.hours}), 0)`,
+        total: sql<string>`coalesce(sum(case
+          when ${volunteerHours.status} = 'pending' then ${volunteerHours.hours}
+          when ${volunteerHours.status} = 'edit_requested'
+               and ${volunteerHours.previousHours} is not null
+               and ${volunteerHours.hours} > ${volunteerHours.previousHours}
+               then ${volunteerHours.hours} - ${volunteerHours.previousHours}
+          else 0
+        end), 0)`,
       })
       .from(volunteerHours)
-      .where(
-        and(
-          eq(volunteerHours.volunteerId, volunteerId),
-          eq(volunteerHours.status, "pending"),
-        ),
-      ),
+      .where(eq(volunteerHours.volunteerId, volunteerId)),
   ]);
 
   const verified = toNumber(verifiedAgg[0]?.total);

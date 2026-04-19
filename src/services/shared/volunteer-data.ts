@@ -4,7 +4,7 @@
  * Extracts the parallel data queries (skills, interests, hours, RSVPs) shared by
  * volunteer.service.ts (self-service profile) and volunteer-detail.service.ts (staff view).
  */
-import { and, desc, eq, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 
 import db from "@/db";
 import {
@@ -59,7 +59,7 @@ export type VolunteerDetailData = {
     date: Date;
     hours: number;
     notes: string | null;
-    status: "pending" | "approved" | "rejected";
+    status: "pending" | "approved" | "rejected" | "edit_requested";
     rejectionReason: string | null;
     verifiedAt: Date | null;
   }[];
@@ -80,14 +80,15 @@ export async function fetchVolunteerDetailData(
     hoursBreakdown,
   ] = await Promise.all([
     db
-      .select({ total: sql<number>`COALESCE(SUM(${volunteerHours.hours}), 0)` })
+      .select({
+        total: sql<number>`COALESCE(SUM(CASE
+          WHEN ${volunteerHours.status} = 'approved' THEN ${volunteerHours.hours}
+          WHEN ${volunteerHours.status} = 'edit_requested' THEN COALESCE(${volunteerHours.previousHours}, ${volunteerHours.hours})
+          ELSE 0
+        END), 0)`,
+      })
       .from(volunteerHours)
-      .where(
-        and(
-          eq(volunteerHours.volunteerId, volunteerId),
-          eq(volunteerHours.status, "approved"),
-        ),
-      ),
+      .where(eq(volunteerHours.volunteerId, volunteerId)),
 
     db
       .select({

@@ -10,7 +10,7 @@ export type VolunteerHourEntry = {
   date: string;
   hours: number;
   notes?: string | null;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "edit_requested";
   rejectionReason?: string | null;
 };
 
@@ -21,12 +21,22 @@ export type LogHoursInput = {
   notes?: string;
 };
 
+export type EditHoursInput = {
+  hours?: number;
+  date?: string;
+  notes?: string;
+};
+
 export function useVolunteerHours(): {
   hours: VolunteerHourEntry[];
   loading: boolean;
   isMutating: boolean;
   error: string | null;
   logHours: (input: LogHoursInput) => Promise<VolunteerHourEntry | null>;
+  editHours: (
+    hoursId: number,
+    input: EditHoursInput,
+  ) => Promise<VolunteerHourEntry | null>;
   deleteHours: (hoursId: number) => Promise<boolean>;
 } {
   const [hours, setHours] = useState<VolunteerHourEntry[]>([]);
@@ -84,6 +94,32 @@ export function useVolunteerHours(): {
     [handleApiError],
   );
 
+  const editHours = useCallback(
+    async (
+      hoursId: number,
+      input: EditHoursInput,
+    ): Promise<VolunteerHourEntry | null> => {
+      setSubmitting(true);
+      setError(null);
+      try {
+        const result = await apiClient.put<{ data: VolunteerHourEntry }>(
+          `/api/volunteer/hours/${hoursId}`,
+          input,
+        );
+        setRefreshKey((k) => k + 1);
+        return result.data;
+      } catch (error_) {
+        if (!handleApiError(error_, "Failed to update hours")) {
+          console.error("[useVolunteerHours] editHours:", error_);
+        }
+        return null;
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [handleApiError],
+  );
+
   const deleteHours = useCallback(
     async (hoursId: number): Promise<boolean> => {
       setSubmitting(true);
@@ -104,5 +140,13 @@ export function useVolunteerHours(): {
     [handleApiError],
   );
 
-  return { hours, loading, isMutating, error, logHours, deleteHours };
+  return {
+    hours,
+    loading,
+    isMutating,
+    error,
+    logHours,
+    editHours,
+    deleteHours,
+  };
 }

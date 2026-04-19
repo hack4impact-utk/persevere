@@ -1,6 +1,7 @@
 "use client";
 
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import {
   Box,
   IconButton,
@@ -17,6 +18,7 @@ import { JSX } from "react";
 
 import {
   getHoursStatusColor,
+  getHoursStatusLabel,
   LoadingSkeleton,
   StatusBadge,
 } from "@/components/ui";
@@ -26,12 +28,16 @@ type Props = {
   hours: VolunteerHourEntry[];
   loading: boolean;
   onDelete: (hoursId: number) => Promise<boolean>;
+  onEdit: (entry: VolunteerHourEntry) => void;
+  onViewDetail: (entry: VolunteerHourEntry) => void;
 };
 
 export default function VolunteerHoursTable({
   hours,
   loading,
   onDelete,
+  onEdit,
+  onViewDetail,
 }: Props): JSX.Element {
   if (loading) {
     return (
@@ -66,15 +72,21 @@ export default function VolunteerHoursTable({
                 <TableCell>Date</TableCell>
                 <TableCell align="right">Hours</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Notes</TableCell>
                 <TableCell align="center" sx={{ pr: 3 }}>
-                  Actions
+                  Manage
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {hours.map((entry) => (
-                <TableRow key={entry.id}>
+                <TableRow
+                  key={entry.id}
+                  onClick={() => onViewDetail(entry)}
+                  sx={{
+                    cursor: "pointer",
+                    "&:hover": { bgcolor: "action.hover" },
+                  }}
+                >
                   <TableCell sx={{ pl: 3 }}>
                     {entry.opportunityTitle ?? "Unknown Opportunity"}
                   </TableCell>
@@ -89,9 +101,9 @@ export default function VolunteerHoursTable({
                   <TableCell>
                     <Stack spacing={0.5} alignItems="flex-start">
                       <StatusBadge
-                        label={entry.status}
+                        label={getHoursStatusLabel(entry.status)}
                         color={getHoursStatusColor(entry.status)}
-                        sx={{ borderRadius: 1 }}
+                        sx={{ borderRadius: "100px" }}
                       />
                       {entry.status === "rejected" && entry.rejectionReason && (
                         <Typography variant="caption" color="error">
@@ -100,26 +112,42 @@ export default function VolunteerHoursTable({
                       )}
                     </Stack>
                   </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" color="text.secondary">
-                      {entry.notes ?? "—"}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="center" sx={{ pr: 3 }}>
-                    {entry.status === "pending" && (
-                      <Tooltip title="Delete entry">
+                  <TableCell
+                    align="center"
+                    sx={{ pr: 3 }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Stack
+                      direction="row"
+                      spacing={0.5}
+                      justifyContent="center"
+                    >
+                      <Tooltip title="Edit entry">
                         <span>
                           <IconButton
                             size="small"
-                            color="error"
-                            onClick={() => void onDelete(entry.id)}
+                            onClick={() => onEdit(entry)}
                             sx={{ p: 0.5 }}
                           >
-                            <DeleteOutlineIcon sx={{ fontSize: "1rem" }} />
+                            <EditOutlinedIcon sx={{ fontSize: "1rem" }} />
                           </IconButton>
                         </span>
                       </Tooltip>
-                    )}
+                      {entry.status === "pending" && (
+                        <Tooltip title="Delete entry">
+                          <span>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => void onDelete(entry.id)}
+                              sx={{ p: 0.5 }}
+                            >
+                              <DeleteOutlineIcon sx={{ fontSize: "1rem" }} />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      )}
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))}

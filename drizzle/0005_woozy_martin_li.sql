@@ -1,0 +1,1 @@
+ALTER TYPE "public"."hours_status" ADD VALUE 'edit_requested';
