@@ -3,5 +3,5 @@ export { ChangePasswordSection } from "./change-password-section";
 export { ConfirmDialog } from "./confirm-dialog";
 export { DetailField } from "./detail-field";
 export { ModalTitleBar } from "./modal-title-bar";
-export { TablePaginationFooter } from "./table-pagination-footer";
 export { PageHeader } from "./page-header";
+export { TablePaginationFooter } from "./table-pagination-footer";

@@ -16,7 +16,6 @@ import type { AnnouncementItem } from "@/hooks/use-announcements";
 import { useAnnouncements } from "@/hooks/use-announcements";
 
 import AnnouncementDetailModal from "./announcement-detail-modal";
-import { formatDate } from "./utils";
 
 export default function AnnouncementsCard(): JSX.Element {
   const { announcements, loading, error } = useAnnouncements();
@@ -55,16 +54,37 @@ export default function AnnouncementsCard(): JSX.Element {
                       "&:hover": { bgcolor: "action.hover" },
                     }}
                   >
-                    <Box display="flex" justifyContent="space-between" alignItems="baseline" gap={1}>
-                      <Typography variant="body2" fontWeight={600} color="text.primary">
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="baseline"
+                      gap={1}
+                    >
+                      <Typography
+                        variant="body2"
+                        fontWeight={600}
+                        color="text.primary"
+                      >
                         {announcement.subject}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" flexShrink={0}>
-                        {new Date(announcement.sentAt).toLocaleString("en-US", { month: "short", day: "numeric" })}
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        flexShrink={0}
+                      >
+                        {new Date(announcement.sentAt).toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })}
                       </Typography>
                     </Box>
-                    <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
-                      by {announcement.senderName || "Staff"}
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                      mt={0.5}
+                    >
+                      by Staff
                     </Typography>
                     <Typography
                       variant="body2"

@@ -102,7 +102,16 @@ export default function VolunteerLogHoursModal({
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {formError && <Alert severity="error">{formError}</Alert>}
 
-          <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, mb: -1 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 600,
+              color: "text.secondary",
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+              mb: -1,
+            }}
+          >
             Activity Details
           </Typography>
 
@@ -150,13 +159,25 @@ export default function VolunteerLogHoursModal({
               slotProps={{
                 htmlInput: { min: 0.25, max: 24, step: 0.25 },
                 input: {
-                  endAdornment: <InputAdornment position="end">hrs</InputAdornment>
-                }
+                  endAdornment: (
+                    <InputAdornment position="end">hrs</InputAdornment>
+                  ),
+                },
               }}
             />
           </Box>
 
-          <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, mb: -1, mt: 1 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 600,
+              color: "text.secondary",
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+              mb: -1,
+              mt: 1,
+            }}
+          >
             Notes
           </Typography>
 

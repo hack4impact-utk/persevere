@@ -12,19 +12,23 @@ import { JSX } from "react";
 import { AsyncContent } from "@/components/shared";
 import { getRsvpStatusColor, StatusBadge } from "@/components/ui";
 import { useRsvps } from "@/hooks/use-rsvps";
+
 import { formatTime } from "./utils";
+
+/** Returns a compact "Mon DD · H:MM AM" string, or empty string if no date. */
+function getCompactDate(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const datePart = d.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+  const timePart = formatTime(dateStr);
+  return `${datePart} · ${timePart}`;
+}
 
 export default function MyRsvps(): JSX.Element {
   const { upcoming, loading, error } = useRsvps();
-
-  // Helper inside component to get date + time compact
-  const getCompactDate = (dateStr?: string) => {
-    if (!dateStr) return "";
-    const d = new Date(dateStr);
-    const datePart = d.toLocaleString("en-US", { month: "short", day: "numeric" });
-    const timePart = formatTime(dateStr);
-    return `${datePart} · ${timePart}`;
-  };
 
   return (
     <Card sx={{ borderRadius: 2, boxShadow: 2, height: "100%" }}>
@@ -32,7 +36,7 @@ export default function MyRsvps(): JSX.Element {
         <Box display="flex" alignItems="center" gap={1} mb={2}>
           <EventIcon sx={{ color: "primary.main" }} />
           <Typography variant="h6" fontWeight={700}>
-            Your Upcoming Sessions
+            Your Upcoming Events
           </Typography>
         </Box>
 
@@ -62,14 +66,18 @@ export default function MyRsvps(): JSX.Element {
                   </Typography>
 
                   <Box display="flex" alignItems="center" gap={0.5}>
-                    <CalendarTodayIcon sx={{ fontSize: 13, color: "text.secondary" }} />
+                    <CalendarTodayIcon
+                      sx={{ fontSize: 13, color: "text.secondary" }}
+                    />
                     <Typography variant="body2" color="text.secondary" noWrap>
                       {getCompactDate(rsvp.opportunityStartDate)}
                     </Typography>
                   </Box>
 
                   <Box display="flex" alignItems="center" gap={0.5}>
-                    <LocationOnIcon sx={{ fontSize: 13, color: "text.secondary" }} />
+                    <LocationOnIcon
+                      sx={{ fontSize: 13, color: "text.secondary" }}
+                    />
                     <Typography variant="body2" color="text.secondary" noWrap>
                       {rsvp.opportunityLocation || "TBD"}
                     </Typography>

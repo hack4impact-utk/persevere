@@ -42,7 +42,9 @@ export default function VolunteerHoursTable({
   }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+    <Box
+      sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}
+    >
       <Box sx={{ pt: 2.5, px: 3, pb: 2 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
           Recent Activity
@@ -65,7 +67,9 @@ export default function VolunteerHoursTable({
                 <TableCell align="right">Hours</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Notes</TableCell>
-                <TableCell align="center" sx={{ pr: 3 }}>Actions</TableCell>
+                <TableCell align="center" sx={{ pr: 3 }}>
+                  Actions
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

@@ -5,8 +5,8 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { JSX } from "react";
 
 import AnnouncementsCard from "@/components/volunteer/communications-card";
@@ -72,11 +72,7 @@ export default function VolunteerDashboardPage(): JSX.Element {
             </Typography>
           </Box>
           <Box sx={{ display: "flex", gap: 1.5 }}>
-            <Button
-              component={Link}
-              href="/volunteer/hours"
-              variant="outlined"
-            >
+            <Button component={Link} href="/volunteer/hours" variant="outlined">
               Log Hours
             </Button>
             <Button
@@ -96,13 +92,19 @@ export default function VolunteerDashboardPage(): JSX.Element {
       {/* Row 2 — Main Grid */}
       <Grid container spacing={3} alignItems="flex-start">
         {/* Left Column: Recommendations & Upcoming */}
-        <Grid size={{ xs: 12, md: 8 }} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <Grid
+          size={{ xs: 12, md: 8 }}
+          sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+        >
           <DashboardRecommendations />
           <MyRsvps />
         </Grid>
 
         {/* Right Column: Announcements & Hours */}
-        <Grid size={{ xs: 12, md: 4 }} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <Grid
+          size={{ xs: 12, md: 4 }}
+          sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+        >
           <AnnouncementsCard />
           <RecentHours />
         </Grid>

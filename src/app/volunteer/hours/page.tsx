@@ -23,7 +23,7 @@ export default function HoursPage(): JSX.Element {
   // Compute year at a glance data
   const chartData = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    const monthlyHours = new Array(12).fill(0);
+    const monthlyHours: number[] = Array.from({ length: 12 }, () => 0);
 
     for (const entry of hours) {
       if (entry.status !== "approved") continue;
@@ -68,26 +68,74 @@ export default function HoursPage(): JSX.Element {
         </Alert>
       )}
 
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 2fr" }, gap: 3, mb: 3 }}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "1fr 2fr" },
+          gap: 3,
+          mb: 3,
+        }}
+      >
         {/* Stats Column */}
-        <Card sx={{ borderRadius: 2, boxShadow: 2, display: "flex", flexDirection: "column" }}>
+        <Card
+          sx={{
+            borderRadius: 2,
+            boxShadow: 2,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <CardContent sx={{ p: 3 }}>
-            <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, mb: 2, display: "block" }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 600,
+                color: "text.secondary",
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+                mb: 2,
+                display: "block",
+              }}
+            >
               Verified Hours
             </Typography>
-            <Typography variant="h2" sx={{ fontWeight: 800, color: "primary.main", lineHeight: 1, mb: 1 }}>
+            <Typography
+              variant="h2"
+              sx={{
+                fontWeight: 800,
+                color: "primary.main",
+                lineHeight: 1,
+                mb: 1,
+              }}
+            >
               {dashboardData?.verifiedHours ?? 0}
             </Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
               approved all-time hours
             </Typography>
 
-            <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, mb: 2, display: "block" }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 600,
+                color: "text.secondary",
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+                mb: 2,
+                display: "block",
+              }}
+            >
               Status summary
             </Typography>
-            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-              <Typography variant="body2" color="text.secondary">Pending Approval</Typography>
-              <Typography variant="body2" fontWeight={600}>{dashboardData?.pendingHours ?? 0} hr</Typography>
+            <Box
+              sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
+            >
+              <Typography variant="body2" color="text.secondary">
+                Pending Approval
+              </Typography>
+              <Typography variant="body2" fontWeight={600}>
+                {dashboardData?.pendingHours ?? 0} hr
+              </Typography>
             </Box>
           </CardContent>
         </Card>
@@ -95,15 +143,50 @@ export default function HoursPage(): JSX.Element {
         {/* Chart Column */}
         <Card sx={{ borderRadius: 2, boxShadow: 2 }}>
           <CardContent sx={{ p: 3 }}>
-            <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, mb: 2, display: "block" }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 600,
+                color: "text.secondary",
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+                mb: 2,
+                display: "block",
+              }}
+            >
               Year at a glance
             </Typography>
-            <Box sx={{ display: "flex", alignItems: "flex-end", gap: 1, height: 180, mt: 3 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "flex-end",
+                gap: 1,
+                height: 180,
+                mt: 3,
+              }}
+            >
               {chartData.map((h, i) => {
                 const heightPct = (h / maxChartVal) * 100;
                 return (
-                  <Box key={i} sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%" }}>
-                    <Box sx={{ flex: 1, display: "flex", alignItems: "flex-end", width: "100%", justifyContent: "center" }}>
+                  <Box
+                    key={i}
+                    sx={{
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      height: "100%",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "flex-end",
+                        width: "100%",
+                        justifyContent: "center",
+                      }}
+                    >
                       <Box
                         sx={{
                           width: "80%",
@@ -115,7 +198,11 @@ export default function HoursPage(): JSX.Element {
                         }}
                       />
                     </Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, fontSize: 10 }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ mt: 1, fontSize: 10 }}
+                    >
                       {"JFMAMJJASOND"[i]}
                     </Typography>
                   </Box>
@@ -126,7 +213,16 @@ export default function HoursPage(): JSX.Element {
         </Card>
       </Box>
 
-      <Card sx={{ borderRadius: 2, boxShadow: 2, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+      <Card
+        sx={{
+          borderRadius: 2,
+          boxShadow: 2,
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0,
+        }}
+      >
         <VolunteerHoursTable
           hours={hours}
           loading={loading}

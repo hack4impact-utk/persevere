@@ -12,8 +12,8 @@ import { JSX } from "react";
 
 import { AsyncContent } from "@/components/shared";
 import { StatusBadge } from "@/components/ui";
-import { useVolunteerHours } from "@/hooks/use-volunteer-hours";
 import { useVolunteerDashboard } from "@/hooks/use-volunteer-dashboard";
+import { useVolunteerHours } from "@/hooks/use-volunteer-hours";
 
 const HOURS_STATUS_COLOR = {
   approved: "success",
@@ -39,15 +39,33 @@ export default function RecentHours(): JSX.Element {
         {dashboardData && (
           <Box mb={2}>
             <Box display="flex" alignItems="baseline" gap={1} mb={1}>
-              <Typography variant="h3" fontWeight={800} color="primary.main" lineHeight={1}>
+              <Typography
+                variant="h3"
+                fontWeight={800}
+                color="primary.main"
+                lineHeight={1}
+              >
                 {dashboardData.verifiedHours}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 verified hours so far
               </Typography>
             </Box>
-            <Box sx={{ height: 8, borderRadius: 4, bgcolor: "rgba(50,123,247,.16)", overflow: "hidden" }}>
-              <Box sx={{ height: "100%", bgcolor: "primary.main", width: `${Math.min((dashboardData.verifiedHours / 15) * 100, 100)}%` }} />
+            <Box
+              sx={{
+                height: 8,
+                borderRadius: 4,
+                bgcolor: "rgba(50,123,247,.16)",
+                overflow: "hidden",
+              }}
+            >
+              <Box
+                sx={{
+                  height: "100%",
+                  bgcolor: "primary.main",
+                  width: `${Math.min((dashboardData.verifiedHours / 15) * 100, 100)}%`,
+                }}
+              />
             </Box>
           </Box>
         )}
@@ -80,7 +98,11 @@ export default function RecentHours(): JSX.Element {
                   >
                     {entry.opportunityTitle ?? "General hours"}
                   </Typography>
-                  <Typography variant="body2" fontWeight={600} color="text.primary">
+                  <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    color="text.primary"
+                  >
                     {entry.hours} hr
                   </Typography>
                   <StatusBadge

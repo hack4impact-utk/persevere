@@ -68,23 +68,29 @@ export default function OpportunityDetailModal({
     opportunity.spotsRemaining <= 0;
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <ModalTitleBar
         title={loading ? "Loading..." : (opportunity?.title ?? "Opportunity")}
         onClose={onClose}
       />
 
-      <DialogContent dividers sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+      <DialogContent
+        dividers
+        sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}
+      >
         <AsyncContent loading={loading} error={error}>
           {opportunity && (
             <>
               {/* Header block with Date box and info */}
-              <Box sx={{ display: "flex", gap: 2, pb: 3, borderBottom: "1px solid", borderColor: "divider" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 2,
+                  pb: 3,
+                  borderBottom: "1px solid",
+                  borderColor: "divider",
+                }}
+              >
                 {opportunity.startDate && (
                   <Box
                     sx={{
@@ -100,10 +106,21 @@ export default function OpportunityDetailModal({
                       flexShrink: 0,
                     }}
                   >
-                    <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: "0.08em", color: "primary.main", textTransform: "uppercase" }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                        color: "primary.main",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       {getMonthShort(opportunity.startDate)}
                     </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1, my: 0.5 }}>
+                    <Typography
+                      variant="h4"
+                      sx={{ fontWeight: 700, lineHeight: 1, my: 0.5 }}
+                    >
                       {getDay(opportunity.startDate)}
                     </Typography>
                     <Typography variant="caption" sx={{ fontWeight: 500 }}>
@@ -114,21 +131,41 @@ export default function OpportunityDetailModal({
                 <Box flex={1}>
                   <Box display="flex" gap={1} mb={1} flexWrap="wrap">
                     {opportunity.categoryName && (
-                      <Chip label={opportunity.categoryName} color="default" size="small" />
+                      <Chip
+                        label={opportunity.categoryName}
+                        color="default"
+                        size="small"
+                      />
                     )}
-                    <SpotsChip opp={opportunity} size="small" />
+                    <SpotsChip opp={opportunity} />
                   </Box>
                   {opportunity.location && (
-                    <Box display="flex" alignItems="center" gap={1} color="text.primary">
-                      <LocationOnIcon sx={{ fontSize: 18, color: "text.secondary" }} />
-                      <Typography variant="body2">{opportunity.location}</Typography>
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      gap={1}
+                      color="text.primary"
+                    >
+                      <LocationOnIcon
+                        sx={{ fontSize: 18, color: "text.secondary" }}
+                      />
+                      <Typography variant="body2">
+                        {opportunity.location}
+                      </Typography>
                     </Box>
                   )}
                   {opportunity.maxVolunteers !== null && (
-                    <Box display="flex" alignItems="center" gap={1} color="text.secondary" mt={0.5}>
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      gap={1}
+                      color="text.secondary"
+                      mt={0.5}
+                    >
                       <PeopleIcon sx={{ fontSize: 18 }} />
                       <Typography variant="body2">
-                        {opportunity.rsvpCount} / {opportunity.maxVolunteers} volunteers
+                        {opportunity.rsvpCount} / {opportunity.maxVolunteers}{" "}
+                        volunteers
                       </Typography>
                     </Box>
                   )}
@@ -138,27 +175,62 @@ export default function OpportunityDetailModal({
               {/* About section */}
               {opportunity.description && (
                 <Box>
-                  <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, mb: 1, display: "block" }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 600,
+                      color: "text.secondary",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                      mb: 1,
+                      display: "block",
+                    }}
+                  >
                     About this opportunity
                   </Typography>
-                  <Typography variant="body2" sx={{ lineHeight: 1.6, color: "text.primary" }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ lineHeight: 1.6, color: "text.primary" }}
+                  >
                     {opportunity.description}
                   </Typography>
                 </Box>
               )}
 
               {/* Skills section */}
-              {(opportunity.requiredSkills.length > 0 || opportunity.requiredInterests.length > 0) && (
+              {(opportunity.requiredSkills.length > 0 ||
+                opportunity.requiredInterests.length > 0) && (
                 <Box>
-                  <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, mb: 1, display: "block" }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 600,
+                      color: "text.secondary",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                      mb: 1,
+                      display: "block",
+                    }}
+                  >
                     Skills & Interests helpful
                   </Typography>
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                     {opportunity.requiredSkills.map((s) => (
-                      <Chip key={s.skillId} label={s.skillName ?? "Unknown"} size="small" variant="outlined" />
+                      <Chip
+                        key={s.skillId}
+                        label={s.skillName ?? "Unknown"}
+                        size="small"
+                        variant="outlined"
+                      />
                     ))}
                     {opportunity.requiredInterests.map((i) => (
-                      <Chip key={i.interestId} label={i.interestName ?? "Unknown"} size="small" variant="outlined" color="primary" />
+                      <Chip
+                        key={i.interestId}
+                        label={i.interestName ?? "Unknown"}
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                      />
                     ))}
                   </Box>
                 </Box>
@@ -167,8 +239,21 @@ export default function OpportunityDetailModal({
               {/* Attendees section */}
               {attendees.length > 0 && (
                 <Box>
-                  <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-                    <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    mb={1}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 600,
+                        color: "text.secondary",
+                        textTransform: "uppercase",
+                        letterSpacing: 0.5,
+                      }}
+                    >
                       Who's attending
                     </Typography>
                     <Button
@@ -180,7 +265,8 @@ export default function OpportunityDetailModal({
                     </Button>
                   </Box>
                   <Typography variant="body2" color="text.secondary">
-                    {attendees.length} volunteer{attendees.length !== 1 ? "s" : ""} RSVP'd
+                    {attendees.length} volunteer
+                    {attendees.length === 1 ? "" : "s"} RSVP'd
                   </Typography>
                   <Collapse in={attendeesExpanded} sx={{ mt: 1 }}>
                     <Typography variant="body2" color="text.secondary">

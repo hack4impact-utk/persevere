@@ -135,14 +135,14 @@ export function OpportunityCard({
           </Typography>
           <Box display="flex" gap={0.5}>
             {matchScore !== undefined && (
-               <Chip
-                 label={`${matchScore} match`}
-                 color="success"
-                 size="small"
-                 sx={{ borderRadius: 1 }}
-               />
-             )}
-            <SpotsChip opp={opportunity} sx={{ borderRadius: 1 }} />
+              <Chip
+                label={`${matchScore} match`}
+                color="success"
+                size="small"
+                sx={{ borderRadius: 1 }}
+              />
+            )}
+            <SpotsChip opp={opportunity} />
           </Box>
         </Box>
 
