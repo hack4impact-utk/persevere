@@ -1,7 +1,6 @@
 "use client";
 
 import LocationOnIcon from "@mui/icons-material/LocationOn";
-import PeopleIcon from "@mui/icons-material/People";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
@@ -151,21 +150,6 @@ export default function OpportunityDetailModal({
                       />
                       <Typography variant="body2">
                         {opportunity.location}
-                      </Typography>
-                    </Box>
-                  )}
-                  {opportunity.maxVolunteers !== null && (
-                    <Box
-                      display="flex"
-                      alignItems="center"
-                      gap={1}
-                      color="text.secondary"
-                      mt={0.5}
-                    >
-                      <PeopleIcon sx={{ fontSize: 18 }} />
-                      <Typography variant="body2">
-                        {opportunity.rsvpCount} / {opportunity.maxVolunteers}{" "}
-                        volunteers
                       </Typography>
                     </Box>
                   )}
