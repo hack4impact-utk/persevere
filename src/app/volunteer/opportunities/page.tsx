@@ -1,171 +1,25 @@
 "use client";
 
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import EventIcon from "@mui/icons-material/Event";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import PeopleIcon from "@mui/icons-material/People";
 import SearchIcon from "@mui/icons-material/Search";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
 import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import Link from "@mui/material/Link";
+import NextLink from "next/link";
 import { JSX, useState } from "react";
 
+import { PageHeader } from "@/components/shared";
 import { EmptyState } from "@/components/ui";
+import { OpportunityCard } from "@/components/volunteer/opportunity-card";
 import OpportunityDetailModal from "@/components/volunteer/opportunity-detail-modal";
-import { SpotsChip } from "@/components/volunteer/spots-chip";
-import type { Opportunity } from "@/components/volunteer/types";
-import { formatDate, formatTime } from "@/components/volunteer/utils";
 import { useOpportunities } from "@/hooks/use-opportunities";
 import { useRecommendations } from "@/hooks/use-recommendations";
-
-type OpportunityCardProps = {
-  opportunity: Opportunity;
-  onClick: () => void;
-  matchScore?: number;
-};
-
-function OpportunityCard({
-  opportunity,
-  onClick,
-  matchScore,
-}: OpportunityCardProps): JSX.Element {
-  return (
-    <Card
-      onClick={onClick}
-      sx={{
-        borderRadius: 2,
-        boxShadow: 2,
-        display: "flex",
-        flexDirection: "column",
-        cursor: "pointer",
-        transition: "transform 0.2s, box-shadow 0.2s",
-        "&:hover": { transform: "translateY(-2px)", boxShadow: 4 },
-      }}
-    >
-      <CardContent sx={{ p: 2.5, flex: 1 }}>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="flex-start"
-          gap={1}
-          mb={1}
-        >
-          <Typography
-            variant="h6"
-            fontWeight={600}
-            sx={{
-              flex: 1,
-              minWidth: 0,
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-          >
-            {opportunity.title}
-          </Typography>
-          <SpotsChip opp={opportunity} />
-          {opportunity.categoryName && (
-            <Chip
-              label={opportunity.categoryName}
-              size="small"
-              color="secondary"
-              variant="outlined"
-            />
-          )}
-          {opportunity.isRecurring && (
-            <Chip label="↻ Recurring" size="small" variant="outlined" />
-          )}
-          {matchScore !== undefined && (
-            <Chip
-              label={`${matchScore} match${matchScore === 1 ? "" : "es"}`}
-              color="success"
-              size="small"
-            />
-          )}
-        </Box>
-
-        {opportunity.description && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            mb={1.5}
-            sx={{
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-          >
-            {opportunity.description}
-          </Typography>
-        )}
-
-        <Box display="flex" alignItems="center" gap={0.5} mb={0.5}>
-          <CalendarTodayIcon sx={{ fontSize: 14, color: "text.secondary" }} />
-          <Typography variant="body2" color="text.secondary">
-            {formatDate(opportunity.startDate)} &middot;{" "}
-            {formatTime(opportunity.startDate)}
-          </Typography>
-        </Box>
-
-        {opportunity.location && (
-          <Box display="flex" alignItems="center" gap={0.5} mb={0.5}>
-            <LocationOnIcon sx={{ fontSize: 14, color: "text.secondary" }} />
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              noWrap
-              sx={{ minWidth: 0 }}
-            >
-              {opportunity.location}
-            </Typography>
-          </Box>
-        )}
-
-        {opportunity.maxVolunteers !== null && (
-          <Box display="flex" alignItems="center" gap={0.5}>
-            <PeopleIcon sx={{ fontSize: 14, color: "text.secondary" }} />
-            <Typography variant="body2" color="text.secondary">
-              {opportunity.rsvpCount} / {opportunity.maxVolunteers} volunteers
-            </Typography>
-          </Box>
-        )}
-
-        {(opportunity.requiredSkills.length > 0 ||
-          opportunity.requiredInterests.length > 0) && (
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 1.5 }}>
-            {opportunity.requiredSkills.map((s) => (
-              <Chip
-                key={s.skillId}
-                label={s.skillName ?? "Unknown"}
-                size="small"
-                variant="outlined"
-              />
-            ))}
-            {opportunity.requiredInterests.map((i) => (
-              <Chip
-                key={i.interestId}
-                label={i.interestName ?? "Unknown"}
-                size="small"
-                variant="outlined"
-                color="primary"
-              />
-            ))}
-          </Box>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
 
 export default function OpportunitiesPage(): JSX.Element {
   const [search, setSearch] = useState("");
@@ -193,39 +47,62 @@ export default function OpportunitiesPage(): JSX.Element {
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: "100%",
-        overflow: "hidden",
+        flex: 1,
+        minHeight: 0,
+        overflow: "auto",
+        px: { xs: 2, md: 4 },
+        pt: { xs: 1, md: 1.5 },
+        pb: 4,
       }}
     >
+      <PageHeader
+        eyebrow="Volunteer Portal"
+        title="Browse Opportunities"
+        subtitle="Find the perfect volunteer opportunity for you"
+        actions={
+          <Button
+            component={NextLink}
+            href="/volunteer/calendar"
+            variant="outlined"
+          >
+            My calendar
+          </Button>
+        }
+      />
+
       <Box
         sx={{
           display: "flex",
           gap: 2,
           mb: 3,
-          flexShrink: 0,
           flexWrap: "wrap",
           alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
-        <TextField
-          size="small"
-          label="Search opportunities"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-          }}
-          placeholder="Search by title, description, or location..."
-          sx={{ flex: 1, minWidth: 240 }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+        <Box sx={{ display: "flex", gap: 2, flex: 1, flexWrap: "wrap" }}>
+          <TextField
+            size="small"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
+            placeholder="Search opportunities"
+            sx={{ minWidth: 240, flex: 1, maxWidth: 400 }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        </Box>
+        <Typography variant="body2" color="text.secondary">
+          {opportunities.length} opportunities
+        </Typography>
       </Box>
 
       {error && (
@@ -240,7 +117,7 @@ export default function OpportunitiesPage(): JSX.Element {
         </Alert>
       )}
 
-      <Box sx={{ flex: 1, overflow: "auto", minHeight: 0 }}>
+      <Box sx={{ minHeight: 0 }}>
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
             <CircularProgress />
@@ -249,18 +126,14 @@ export default function OpportunitiesPage(): JSX.Element {
 
         {!loading && !search && !recsLoading && recommendations.length > 0 && (
           <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" fontWeight={600} mb={2}>
+            <Typography variant="h6" fontWeight={700} mb={2}>
               Recommended for You
             </Typography>
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "repeat(2, 1fr)",
-                  md: "repeat(3, 1fr)",
-                },
-                gap: 3,
+                gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))",
+                gap: 2,
               }}
             >
               {recommendations.map((opp) => (
@@ -291,19 +164,17 @@ export default function OpportunitiesPage(): JSX.Element {
         )}
 
         {!loading && opportunities.length > 0 && (
-          <Box>
-            <Typography variant="h6" fontWeight={600} mb={2}>
-              Open Opportunities
-            </Typography>
+          <Box mb={2}>
+            {recommendations.length > 0 && (
+              <Typography variant="h6" fontWeight={700} mb={2}>
+                All Opportunities
+              </Typography>
+            )}
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "repeat(2, 1fr)",
-                  md: "repeat(3, 1fr)",
-                },
-                gap: 3,
+                gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))",
+                gap: 2,
               }}
             >
               {opportunities.map((opp) => (

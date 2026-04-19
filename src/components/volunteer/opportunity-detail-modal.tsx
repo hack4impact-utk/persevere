@@ -1,7 +1,5 @@
 "use client";
 
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import CloseIcon from "@mui/icons-material/Close";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import PeopleIcon from "@mui/icons-material/People";
 import Box from "@mui/material/Box";
@@ -9,18 +7,15 @@ import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
 import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
-import Divider from "@mui/material/Divider";
-import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import { JSX, useEffect, useState } from "react";
 
-import { AsyncContent } from "@/components/shared";
+import { AsyncContent, ModalTitleBar } from "@/components/shared";
 import RsvpButton from "@/components/volunteer/rsvp-button";
 import { SpotsChip } from "@/components/volunteer/spots-chip";
 import type { RsvpStatus } from "@/components/volunteer/types";
-import { formatDate, formatTime } from "@/components/volunteer/utils";
 import { useAttendees } from "@/hooks/use-attendees";
 import { useOpportunity } from "@/hooks/use-opportunity";
 
@@ -32,6 +27,21 @@ type Props = {
   onClose: () => void;
   onRsvpChange: (newIsRsvped: boolean) => void;
 };
+
+// Helpers for the date block
+function getMonthShort(dateStr: string): string {
+  return new Date(dateStr).toLocaleString("en-US", { month: "short" });
+}
+function getDay(dateStr: string): string {
+  return new Date(dateStr).getDate().toString().padStart(2, "0");
+}
+function getTimeShort(dateStr: string): string {
+  return new Date(dateStr).toLocaleString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
 
 export default function OpportunityDetailModal({
   opportunityId,
@@ -63,221 +73,139 @@ export default function OpportunityDetailModal({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{
-        sx: { borderRadius: 3, boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)" },
-      }}
     >
-      <DialogTitle
-        sx={{
-          fontWeight: 700,
-          fontSize: "1.25rem",
-          pr: 6,
-        }}
-      >
-        {loading ? "Loading..." : (opportunity?.title ?? "Opportunity")}
-        <IconButton
-          aria-label="close"
-          onClick={onClose}
-          sx={{ position: "absolute", right: 8, top: 8 }}
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
+      <ModalTitleBar
+        title={loading ? "Loading..." : (opportunity?.title ?? "Opportunity")}
+        onClose={onClose}
+      />
 
-      <DialogContent>
+      <DialogContent dividers sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
         <AsyncContent loading={loading} error={error}>
           {opportunity && (
-            <Box
-              sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  flexWrap: "wrap",
-                }}
-              >
-                <SpotsChip opp={opportunity} />
-                {opportunity.categoryName && (
-                  <Chip
-                    label={opportunity.categoryName}
-                    size="small"
-                    color="secondary"
-                    variant="outlined"
-                  />
-                )}
-                {opportunity.maxVolunteers !== null && (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <PeopleIcon
-                      sx={{ fontSize: 14, color: "text.secondary" }}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      {opportunity.rsvpCount} / {opportunity.maxVolunteers}{" "}
-                      volunteers
+            <>
+              {/* Header block with Date box and info */}
+              <Box sx={{ display: "flex", gap: 2, pb: 3, borderBottom: "1px solid", borderColor: "divider" }}>
+                {opportunity.startDate && (
+                  <Box
+                    sx={{
+                      width: 84,
+                      height: 84,
+                      bgcolor: "#f2f6ff",
+                      borderRadius: 2,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#27427f",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: "0.08em", color: "primary.main", textTransform: "uppercase" }}>
+                      {getMonthShort(opportunity.startDate)}
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1, my: 0.5 }}>
+                      {getDay(opportunity.startDate)}
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 500 }}>
+                      {getTimeShort(opportunity.startDate)}
                     </Typography>
                   </Box>
                 )}
+                <Box flex={1}>
+                  <Box display="flex" gap={1} mb={1} flexWrap="wrap">
+                    {opportunity.categoryName && (
+                      <Chip label={opportunity.categoryName} color="default" size="small" />
+                    )}
+                    <SpotsChip opp={opportunity} size="small" />
+                  </Box>
+                  {opportunity.location && (
+                    <Box display="flex" alignItems="center" gap={1} color="text.primary">
+                      <LocationOnIcon sx={{ fontSize: 18, color: "text.secondary" }} />
+                      <Typography variant="body2">{opportunity.location}</Typography>
+                    </Box>
+                  )}
+                  {opportunity.maxVolunteers !== null && (
+                    <Box display="flex" alignItems="center" gap={1} color="text.secondary" mt={0.5}>
+                      <PeopleIcon sx={{ fontSize: 18 }} />
+                      <Typography variant="body2">
+                        {opportunity.rsvpCount} / {opportunity.maxVolunteers} volunteers
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
               </Box>
 
+              {/* About section */}
               {opportunity.description && (
-                <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
-                  {opportunity.description}
-                </Typography>
-              )}
-
-              <Divider />
-
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                  <CalendarTodayIcon
-                    sx={{ fontSize: 16, color: "text.secondary" }}
-                  />
-                  <Typography variant="body2">
-                    {formatDate(opportunity.startDate)} &middot;{" "}
-                    {formatTime(opportunity.startDate)}
-                    {opportunity.endDate && (
-                      <> &ndash; {formatTime(opportunity.endDate)}</>
-                    )}
+                <Box>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, mb: 1, display: "block" }}>
+                    About this opportunity
+                  </Typography>
+                  <Typography variant="body2" sx={{ lineHeight: 1.6, color: "text.primary" }}>
+                    {opportunity.description}
                   </Typography>
                 </Box>
-
-                {opportunity.location && (
-                  <Box
-                    sx={{ display: "flex", alignItems: "center", gap: 0.75 }}
-                  >
-                    <LocationOnIcon
-                      sx={{ fontSize: 16, color: "text.secondary" }}
-                    />
-                    <Typography variant="body2">
-                      {opportunity.location}
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
-
-              {(opportunity.requiredSkills.length > 0 ||
-                opportunity.requiredInterests.length > 0) && (
-                <>
-                  <Divider />
-                  <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 1 }}
-                  >
-                    {opportunity.requiredSkills.length > 0 && (
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ fontWeight: 600, textTransform: "uppercase" }}
-                        >
-                          Required Skills
-                        </Typography>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: 0.5,
-                            mt: 0.5,
-                          }}
-                        >
-                          {opportunity.requiredSkills.map((s) => (
-                            <Chip
-                              key={s.skillId}
-                              label={s.skillName ?? "Unknown"}
-                              size="small"
-                              variant="outlined"
-                            />
-                          ))}
-                        </Box>
-                      </Box>
-                    )}
-                    {opportunity.requiredInterests.length > 0 && (
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ fontWeight: 600, textTransform: "uppercase" }}
-                        >
-                          Related Interests
-                        </Typography>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: 0.5,
-                            mt: 0.5,
-                          }}
-                        >
-                          {opportunity.requiredInterests.map((i) => (
-                            <Chip
-                              key={i.interestId}
-                              label={i.interestName ?? "Unknown"}
-                              size="small"
-                              variant="outlined"
-                              color="primary"
-                            />
-                          ))}
-                        </Box>
-                      </Box>
-                    )}
-                  </Box>
-                </>
               )}
 
+              {/* Skills section */}
+              {(opportunity.requiredSkills.length > 0 || opportunity.requiredInterests.length > 0) && (
+                <Box>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, mb: 1, display: "block" }}>
+                    Skills & Interests helpful
+                  </Typography>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {opportunity.requiredSkills.map((s) => (
+                      <Chip key={s.skillId} label={s.skillName ?? "Unknown"} size="small" variant="outlined" />
+                    ))}
+                    {opportunity.requiredInterests.map((i) => (
+                      <Chip key={i.interestId} label={i.interestName ?? "Unknown"} size="small" variant="outlined" color="primary" />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              {/* Attendees section */}
               {attendees.length > 0 && (
-                <>
-                  <Divider />
-                  <Box>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                      }}
+                <Box>
+                  <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                      Who's attending
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="text"
+                      onClick={() => setAttendeesExpanded(!attendeesExpanded)}
                     >
-                      <Typography variant="body2" color="text.secondary">
-                        <PeopleIcon sx={{ fontSize: 14, mr: 0.5 }} />
-                        {attendees.length}{" "}
-                        {attendees.length === 1 ? "person" : "people"} attending
-                      </Typography>
-                      <Button
-                        size="small"
-                        onClick={() => {
-                          setAttendeesExpanded((prev) => !prev);
-                        }}
-                        sx={{ textTransform: "none", minWidth: 0 }}
-                      >
-                        {attendeesExpanded ? "Hide" : "Show names"}
-                      </Button>
-                    </Box>
-                    <Collapse in={attendeesExpanded}>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mt: 1 }}
-                      >
-                        {attendees.map((a) => a.firstName).join(", ")}
-                      </Typography>
-                    </Collapse>
+                      {attendeesExpanded ? "Hide names" : "Show names"}
+                    </Button>
                   </Box>
-                </>
+                  <Typography variant="body2" color="text.secondary">
+                    {attendees.length} volunteer{attendees.length !== 1 ? "s" : ""} RSVP'd
+                  </Typography>
+                  <Collapse in={attendeesExpanded} sx={{ mt: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {attendees.map((a) => a.firstName).join(", ")}
+                    </Typography>
+                  </Collapse>
+                </Box>
               )}
-
-              <Box sx={{ pt: 1 }}>
-                {opportunityId !== null && (
-                  <RsvpButton
-                    opportunityId={opportunityId}
-                    isRsvped={isRsvped}
-                    isFull={isFull}
-                    rsvpStatus={rsvpStatus}
-                    onRsvpChange={onRsvpChange}
-                  />
-                )}
-              </Box>
-            </Box>
+            </>
           )}
         </AsyncContent>
       </DialogContent>
+
+      {opportunityId !== null && (
+        <DialogActions>
+          <Button onClick={onClose}>Close</Button>
+          <RsvpButton
+            opportunityId={opportunityId}
+            isRsvped={isRsvped}
+            isFull={isFull}
+            rsvpStatus={rsvpStatus}
+            onRsvpChange={onRsvpChange}
+          />
+        </DialogActions>
+      )}
     </Dialog>
   );
 }
