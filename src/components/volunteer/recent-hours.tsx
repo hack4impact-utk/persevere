@@ -108,7 +108,6 @@ export default function RecentHours(): JSX.Element {
                   <StatusBadge
                     label={entry.status}
                     color={HOURS_STATUS_COLOR[entry.status]}
-                    sx={{ borderRadius: 1 }}
                   />
                 </Box>
               ))}

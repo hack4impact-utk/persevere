@@ -1,4 +1,3 @@
-import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import type { JSX } from "react";
 
 import { StatusBadge } from "@/components/ui";
@@ -16,15 +15,10 @@ export function SpotsChip({ opp }: { opp: Opportunity }): JSX.Element {
       <StatusBadge
         label={`${opp.spotsRemaining} spot${opp.spotsRemaining === 1 ? "" : "s"} left`}
         color="warning"
-        icon={<PeopleOutlineIcon />}
       />
     );
   }
   return (
-    <StatusBadge
-      label={`${opp.spotsRemaining} spots left`}
-      color="success"
-      icon={<PeopleOutlineIcon />}
-    />
+    <StatusBadge label={`${opp.spotsRemaining} spots left`} color="success" />
   );
 }

@@ -119,6 +119,8 @@ export function OpportunityCard({
           p: 2,
           display: "flex",
           flexDirection: "column",
+          justifyContent: "center",
+          gap: 0.5,
           minWidth: 0,
         }}
       >
@@ -150,7 +152,6 @@ export function OpportunityCard({
                 label={`${matchScore} match`}
                 color="success"
                 size="small"
-                sx={{ borderRadius: 1 }}
               />
             )}
             <SpotsChip opp={opportunity} />
@@ -167,9 +168,6 @@ export function OpportunityCard({
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
-              mt: 0.5,
-              mb: 1,
-              flex: 1,
             }}
           >
             {opportunity.description}
@@ -177,7 +175,7 @@ export function OpportunityCard({
         )}
 
         {opportunity.location && (
-          <Box display="flex" alignItems="center" gap={0.5} mt="auto">
+          <Box display="flex" alignItems="center" gap={0.5}>
             <LocationOnIcon sx={{ fontSize: 16, color: "text.secondary" }} />
             <Typography variant="caption" color="text.secondary" noWrap>
               {opportunity.location}

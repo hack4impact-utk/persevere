@@ -86,7 +86,6 @@ export default function MyRsvps(): JSX.Element {
                   <StatusBadge
                     label={rsvp.rsvpStatus}
                     color={getRsvpStatusColor(rsvp.rsvpStatus)}
-                    sx={{ borderRadius: 1 }}
                   />
                 </Box>
               ))}
