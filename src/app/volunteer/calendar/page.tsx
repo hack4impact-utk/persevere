@@ -1,8 +1,11 @@
 "use client";
 
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import NextLink from "next/link";
 import { JSX, useEffect, useMemo, useState } from "react";
 
+import { PageHeader } from "@/components/shared";
 import { Calendar } from "@/components/staff/calendar";
 import OpportunityDetailModal from "@/components/volunteer/opportunity-detail-modal";
 import { useCalendarEvents } from "@/hooks/use-calendar-events";
@@ -41,20 +44,41 @@ export default function VolunteerCalendarPage(): JSX.Element {
   return (
     <Box
       sx={{
-        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+        minHeight: 0,
+        overflow: "auto",
         px: { xs: 2, md: 4 },
         pt: { xs: 1, md: 1.5 },
-        pb: { xs: 2, md: 4 },
+        pb: 4,
       }}
     >
-      <Calendar
-        readOnly
-        events={calendarEvents}
-        onEventClick={(id) => {
-          setSelectedOpportunityId(Number.parseInt(id, 10));
-        }}
-        eventColors={rsvpColorMap}
+      <PageHeader
+        eyebrow="Volunteer Portal"
+        title="Calendar"
+        subtitle="View all upcoming events and sessions."
+        actions={
+          <Button
+            component={NextLink}
+            href="/volunteer/opportunities"
+            variant="outlined"
+          >
+            Browse list view
+          </Button>
+        }
       />
+
+      <Box sx={{ flex: 1, minHeight: 600 }}>
+        <Calendar
+          readOnly
+          events={calendarEvents}
+          onEventClick={(id) => {
+            setSelectedOpportunityId(Number.parseInt(id, 10));
+          }}
+          eventColors={rsvpColorMap}
+        />
+      </Box>
 
       <OpportunityDetailModal
         opportunityId={selectedOpportunityId}
