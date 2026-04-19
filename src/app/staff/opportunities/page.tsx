@@ -1,41 +1,17 @@
 "use client";
 
-import AddIcon from "@mui/icons-material/Add";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import ListIcon from "@mui/icons-material/List";
-import {
-  Box,
-  Button,
-  CircularProgress,
-  ToggleButton,
-  ToggleButtonGroup,
-} from "@mui/material";
+import { Box, CircularProgress } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { Calendar } from "@/components/staff/calendar";
 import EventDetailModal from "@/components/staff/calendar/event-detail-modal";
-import EventFormModal from "@/components/staff/calendar/event-form-modal";
 import EventList from "@/components/staff/calendar/event-list";
 import { useCalendarEvents } from "@/hooks/use-calendar-events";
 
-type View = "list" | "calendar";
-
-type InitialDates = {
-  startDate: string;
-  startTime: string;
-  endDate: string;
-  endTime: string;
-};
-
-/** Opportunities page — list and calendar views for managing volunteer events. */
 export default function StaffOpportunitiesPage(): JSX.Element {
-  const [view, setView] = useState<View>("list");
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [initialDates, setInitialDates] = useState<InitialDates | undefined>();
 
-  const { events, loading, fetchEvents, updateEvent } = useCalendarEvents();
+  const { events, loading, fetchEvents } = useCalendarEvents();
 
   const loadEvents = useCallback(async (): Promise<void> => {
     try {
@@ -52,123 +28,25 @@ export default function StaffOpportunitiesPage(): JSX.Element {
     void loadEvents();
   }, [loadEvents]);
 
-  const handleEventDrop = useCallback(
-    async (id: string, newStart: Date, newEnd: Date): Promise<void> => {
-      await updateEvent(id, {
-        startDate: newStart.toISOString(),
-        endDate: newEnd.toISOString(),
-      });
-      await loadEvents();
-    },
-    [updateEvent, loadEvents],
-  );
-
-  const handleDateSelect = (startIso: string, endIso: string): void => {
-    const start = new Date(startIso);
-    const end = new Date(endIso);
-    setInitialDates({
-      startDate: start.toISOString().split("T")[0],
-      startTime: start.toTimeString().slice(0, 5),
-      endDate: end.toISOString().split("T")[0],
-      endTime: end.toTimeString().slice(0, 5),
-    });
-    setIsCreateModalOpen(true);
-  };
-
   return (
     <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        gap: 3,
-        px: { xs: 2, md: 4 },
-        pt: { xs: 1, md: 1.5 },
-        pb: { xs: 2, md: 4 },
-      }}
+      sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 3 }}
     >
-      {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "flex-end",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 2,
-        }}
-      >
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-          <ToggleButtonGroup
-            value={view}
-            exclusive
-            onChange={(_, newView: View | null) => {
-              if (newView) setView(newView);
-            }}
-            size="small"
-            aria-label="view toggle"
-          >
-            <ToggleButton value="list" aria-label="list view">
-              <ListIcon fontSize="small" sx={{ mr: 0.5 }} />
-              List
-            </ToggleButton>
-            <ToggleButton value="calendar" aria-label="calendar view">
-              <CalendarMonthIcon fontSize="small" sx={{ mr: 0.5 }} />
-              Calendar
-            </ToggleButton>
-          </ToggleButtonGroup>
-
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              setInitialDates(undefined);
-              setIsCreateModalOpen(true);
-            }}
-            sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
-          >
-            Add Event
-          </Button>
-        </Box>
-      </Box>
-
-      {/* Body */}
       <Box sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
-        {view === "list" ? (
-          loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <EventList
-              events={events}
-              onEventClick={(id) => {
-                setSelectedEventId(id);
-              }}
-            />
-          )
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+            <CircularProgress />
+          </Box>
         ) : (
-          <Calendar
+          <EventList
             events={events}
             onEventClick={(id) => {
               setSelectedEventId(id);
             }}
-            onDateSelect={handleDateSelect}
-            onEventDrop={handleEventDrop}
           />
         )}
       </Box>
 
-      {/* Modals */}
-      <EventFormModal
-        open={isCreateModalOpen}
-        onClose={() => {
-          setIsCreateModalOpen(false);
-        }}
-        onCreated={() => {
-          void loadEvents();
-        }}
-        initialDates={initialDates}
-      />
       <EventDetailModal
         event={
           selectedEventId

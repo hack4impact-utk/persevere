@@ -165,6 +165,11 @@ export default function StaffSidebar(): JSX.Element {
         icon: <CalendarIcon />,
       },
       {
+        label: "Calendar",
+        href: "/staff/calendar",
+        icon: <CalendarIcon />,
+      },
+      {
         label: "Approvals",
         href: "/staff/approvals",
         icon: <ApprovalsIcon />,

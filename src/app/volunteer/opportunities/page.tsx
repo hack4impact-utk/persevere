@@ -1,9 +1,7 @@
 "use client";
 
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import EventIcon from "@mui/icons-material/Event";
-import ListIcon from "@mui/icons-material/List";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import PeopleIcon from "@mui/icons-material/People";
 import SearchIcon from "@mui/icons-material/Search";
@@ -17,23 +15,16 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
 import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
-import ToggleButton from "@mui/material/ToggleButton";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
-import { JSX, useEffect, useMemo, useState } from "react";
+import { JSX, useState } from "react";
 
-import { Calendar } from "@/components/staff/calendar";
 import { EmptyState } from "@/components/ui";
 import OpportunityDetailModal from "@/components/volunteer/opportunity-detail-modal";
 import { SpotsChip } from "@/components/volunteer/spots-chip";
 import type { Opportunity } from "@/components/volunteer/types";
 import { formatDate, formatTime } from "@/components/volunteer/utils";
-import { useCalendarEvents } from "@/hooks/use-calendar-events";
 import { useOpportunities } from "@/hooks/use-opportunities";
 import { useRecommendations } from "@/hooks/use-recommendations";
-import { RSVP_STATUS_COLORS } from "@/lib/constants";
-
-type View = "list" | "calendar";
 
 type OpportunityCardProps = {
   opportunity: Opportunity;
@@ -178,19 +169,9 @@ function OpportunityCard({
 
 export default function OpportunitiesPage(): JSX.Element {
   const [search, setSearch] = useState("");
-  const [view, setView] = useState<View>("list");
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<
     number | null
   >(null);
-
-  const { events: calendarEvents, fetchEvents } = useCalendarEvents();
-
-  useEffect(() => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 2, 0);
-    void fetchEvents(start, end);
-  }, [fetchEvents]);
 
   const {
     opportunities,
@@ -207,223 +188,154 @@ export default function OpportunitiesPage(): JSX.Element {
 
   const { recommendations, loading: recsLoading } = useRecommendations();
 
-  const rsvpColorMap = useMemo((): Record<string, string> => {
-    const map: Record<string, string> = {};
-    for (const [id, status] of rsvpStatusMap) {
-      map[String(id)] =
-        status === "confirmed"
-          ? RSVP_STATUS_COLORS.confirmed
-          : status === "pending"
-            ? RSVP_STATUS_COLORS.pending
-            : RSVP_STATUS_COLORS.default;
-    }
-    return map;
-  }, [rsvpStatusMap]);
-
   return (
     <Box
       sx={{
-        width: "100%",
-        height: "100vh",
         display: "flex",
         flexDirection: "column",
-        pt: { xs: 1, md: 1.5 },
-        px: { xs: 2, md: 4 },
-        pb: { xs: 2, md: 4 },
+        height: "100%",
         overflow: "hidden",
       }}
     >
-      {/* Header */}
       <Box
         sx={{
           display: "flex",
-          justifyContent: "flex-end",
-          alignItems: "flex-start",
-          mb: 1,
-          flexWrap: "wrap",
           gap: 2,
+          mb: 3,
+          flexShrink: 0,
+          flexWrap: "wrap",
+          alignItems: "center",
         }}
       >
-        <ToggleButtonGroup
-          value={view}
-          exclusive
-          onChange={(_, newView: View | null) => {
-            if (newView) setView(newView);
-          }}
+        <TextField
           size="small"
-          aria-label="view toggle"
-        >
-          <ToggleButton value="list" aria-label="list view">
-            <ListIcon fontSize="small" sx={{ mr: 0.5 }} />
-            List
-          </ToggleButton>
-          <ToggleButton value="calendar" aria-label="calendar view">
-            <CalendarMonthIcon fontSize="small" sx={{ mr: 0.5 }} />
-            Calendar
-          </ToggleButton>
-        </ToggleButtonGroup>
+          label="Search opportunities"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+          }}
+          placeholder="Search by title, description, or location..."
+          sx={{ flex: 1, minWidth: 240 }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
       </Box>
 
-      {/* Search toolbar (list view only) */}
-      {view === "list" && (
-        <Box
-          sx={{
-            display: "flex",
-            gap: 2,
-            mt: 2,
-            mb: 3,
-            flexShrink: 0,
-            flexWrap: "wrap",
-            alignItems: "center",
-          }}
-        >
-          <TextField
-            size="small"
-            label="Search opportunities"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-            }}
-            placeholder="Search by title, description, or location..."
-            sx={{ flex: 1, minWidth: 240 }}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
-        </Box>
-      )}
-
-      {view === "list" && error && (
+      {error && (
         <Alert severity="error" sx={{ mb: 2, flexShrink: 0 }}>
           {error}
         </Alert>
       )}
 
-      {view === "list" && rsvpWarning && (
+      {rsvpWarning && (
         <Alert severity="warning" sx={{ mb: 2, flexShrink: 0 }}>
           Could not load your RSVP status — button states may be inaccurate.
         </Alert>
       )}
 
-      {/* Body */}
       <Box sx={{ flex: 1, overflow: "auto", minHeight: 0 }}>
-        {view === "list" ? (
-          <>
-            {loading && (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                <CircularProgress />
-              </Box>
-            )}
+        {loading && (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+            <CircularProgress />
+          </Box>
+        )}
 
-            {!loading &&
-              !search &&
-              !recsLoading &&
-              recommendations.length > 0 && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" fontWeight={600} mb={2}>
-                    Recommended for You
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: "grid",
-                      gridTemplateColumns: {
-                        xs: "1fr",
-                        sm: "repeat(2, 1fr)",
-                        md: "repeat(3, 1fr)",
-                      },
-                      gap: 3,
-                    }}
-                  >
-                    {recommendations.map((opp) => (
-                      <OpportunityCard
-                        key={opp.id}
-                        opportunity={opp}
-                        matchScore={opp.matchScore}
-                        onClick={() => {
-                          setSelectedOpportunityId(opp.id);
-                        }}
-                      />
-                    ))}
-                  </Box>
-                  <Divider sx={{ mt: 3 }} />
-                </Box>
-              )}
-
-            {!loading && opportunities.length === 0 && (
-              <EmptyState
-                icon={<EventIcon sx={{ fontSize: 64 }} />}
-                message="No opportunities found"
-                subMessage={
-                  search
-                    ? "Try a different search term"
-                    : "Check back soon for new opportunities"
-                }
-              />
-            )}
-
-            {!loading && opportunities.length > 0 && (
-              <Box>
-                <Typography variant="h6" fontWeight={600} mb={2}>
-                  Open Opportunities
-                </Typography>
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: {
-                      xs: "1fr",
-                      sm: "repeat(2, 1fr)",
-                      md: "repeat(3, 1fr)",
-                    },
-                    gap: 3,
-                  }}
-                >
-                  {opportunities.map((opp) => (
-                    <OpportunityCard
-                      key={opp.id}
-                      opportunity={opp}
-                      onClick={() => {
-                        setSelectedOpportunityId(opp.id);
-                      }}
-                    />
-                  ))}
-                </Box>
-              </Box>
-            )}
-
-            {hasMore && !loading && (
-              <Box sx={{ textAlign: "center", mt: 4, mb: 2 }}>
-                <Button
-                  variant="outlined"
+        {!loading && !search && !recsLoading && recommendations.length > 0 && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h6" fontWeight={600} mb={2}>
+              Recommended for You
+            </Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, 1fr)",
+                  md: "repeat(3, 1fr)",
+                },
+                gap: 3,
+              }}
+            >
+              {recommendations.map((opp) => (
+                <OpportunityCard
+                  key={opp.id}
+                  opportunity={opp}
+                  matchScore={opp.matchScore}
                   onClick={() => {
-                    void loadMore();
+                    setSelectedOpportunityId(opp.id);
                   }}
-                  disabled={loadingMore}
-                  startIcon={
-                    loadingMore ? (
-                      <CircularProgress size={16} color="inherit" />
-                    ) : undefined
-                  }
-                >
-                  {loadingMore ? "Loading..." : "Load More"}
-                </Button>
-              </Box>
-            )}
-          </>
-        ) : (
-          <Calendar
-            readOnly
-            events={calendarEvents}
-            onEventClick={(id) => {
-              setSelectedOpportunityId(Number.parseInt(id, 10));
-            }}
-            eventColors={rsvpColorMap}
+                />
+              ))}
+            </Box>
+            <Divider sx={{ mt: 3 }} />
+          </Box>
+        )}
+
+        {!loading && opportunities.length === 0 && (
+          <EmptyState
+            icon={<EventIcon sx={{ fontSize: 64 }} />}
+            message="No opportunities found"
+            subMessage={
+              search
+                ? "Try a different search term"
+                : "Check back soon for new opportunities"
+            }
           />
+        )}
+
+        {!loading && opportunities.length > 0 && (
+          <Box>
+            <Typography variant="h6" fontWeight={600} mb={2}>
+              Open Opportunities
+            </Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, 1fr)",
+                  md: "repeat(3, 1fr)",
+                },
+                gap: 3,
+              }}
+            >
+              {opportunities.map((opp) => (
+                <OpportunityCard
+                  key={opp.id}
+                  opportunity={opp}
+                  onClick={() => {
+                    setSelectedOpportunityId(opp.id);
+                  }}
+                />
+              ))}
+            </Box>
+          </Box>
+        )}
+
+        {hasMore && !loading && (
+          <Box sx={{ textAlign: "center", mt: 4, mb: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                void loadMore();
+              }}
+              disabled={loadingMore}
+              startIcon={
+                loadingMore ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : undefined
+              }
+            >
+              {loadingMore ? "Loading..." : "Load More"}
+            </Button>
+          </Box>
         )}
       </Box>
 

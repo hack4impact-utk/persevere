@@ -126,6 +126,11 @@ const volunteerNavItems: NavItem[] = [
     icon: <CalendarIcon />,
   },
   {
+    label: "Calendar",
+    href: "/volunteer/calendar",
+    icon: <CalendarIcon />,
+  },
+  {
     label: "Onboarding",
     href: "/volunteer/onboarding",
     icon: <DocumentIcon />,
