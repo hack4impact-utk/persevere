@@ -56,6 +56,10 @@ const authOptions: NextAuthOptions = {
             return null;
           }
 
+          if (!user.isActive) {
+            return null;
+          }
+
           // Auto-verify email on first sign-in if not already verified
           let isEmailVerified = user.isEmailVerified;
           if (!user.isEmailVerified) {

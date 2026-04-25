@@ -1,42 +1,41 @@
 "use client";
 
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import {
   Box,
-  IconButton,
+  Chip,
+  Divider,
   Stack,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import { JSX } from "react";
 
-import {
-  getHoursStatusColor,
-  getHoursStatusLabel,
-  LoadingSkeleton,
-  StatusBadge,
-} from "@/components/ui";
+import { getHoursStatusLabel, LoadingSkeleton } from "@/components/ui";
 import type { VolunteerHourEntry } from "@/hooks/use-volunteer-hours";
+
+function hoursStatusChipColor(
+  status: string,
+): "success" | "warning" | "error" | "default" {
+  if (status === "approved") return "success";
+  if (status === "rejected") return "error";
+  if (status === "pending" || status === "edit_requested") return "warning";
+  return "default";
+}
 
 type Props = {
   hours: VolunteerHourEntry[];
   loading: boolean;
-  onDelete: (hoursId: number) => Promise<boolean>;
-  onEdit: (entry: VolunteerHourEntry) => void;
   onViewDetail: (entry: VolunteerHourEntry) => void;
 };
 
 export default function VolunteerHoursTable({
   hours,
   loading,
-  onDelete,
-  onEdit,
   onViewDetail,
 }: Props): JSX.Element {
   if (loading) {
@@ -51,10 +50,14 @@ export default function VolunteerHoursTable({
     <Box
       sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}
     >
-      <Box sx={{ pt: 2.5, px: 3, pb: 2 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-          Recent Activity
-        </Typography>
+      <Box sx={{ pt: 2.5, px: 3, pb: 0 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+          <AccessTimeIcon sx={{ color: "primary.main", fontSize: "1.25rem" }} />
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Recent Activity
+          </Typography>
+        </Box>
+        <Divider />
       </Box>
 
       {hours.length === 0 ? (
@@ -67,14 +70,11 @@ export default function VolunteerHoursTable({
         <Box sx={{ overflowX: "auto", flex: 1 }}>
           <Table size="small">
             <TableHead>
-              <TableRow>
+              <TableRow sx={{ bgcolor: "#fafafa" }}>
                 <TableCell sx={{ pl: 3 }}>Opportunity</TableCell>
                 <TableCell>Date</TableCell>
                 <TableCell align="right">Hours</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell align="center" sx={{ pr: 3 }}>
-                  Manage
-                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -84,10 +84,10 @@ export default function VolunteerHoursTable({
                   onClick={() => onViewDetail(entry)}
                   sx={{
                     cursor: "pointer",
-                    "&:hover": { bgcolor: "action.hover" },
+                    "&:hover": { bgcolor: "rgba(50,123,247,.04)" },
                   }}
                 >
-                  <TableCell sx={{ pl: 3 }}>
+                  <TableCell sx={{ pl: 3, fontWeight: 500 }}>
                     {entry.opportunityTitle ?? "Unknown Opportunity"}
                   </TableCell>
                   <TableCell>
@@ -97,55 +97,24 @@ export default function VolunteerHoursTable({
                       day: "numeric",
                     })}
                   </TableCell>
-                  <TableCell align="right">{entry.hours.toFixed(2)}</TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}
+                  >
+                    {entry.hours.toFixed(2)}
+                  </TableCell>
                   <TableCell>
                     <Stack spacing={0.5} alignItems="flex-start">
-                      <StatusBadge
+                      <Chip
                         label={getHoursStatusLabel(entry.status)}
-                        color={getHoursStatusColor(entry.status)}
-                        sx={{ borderRadius: "100px" }}
+                        color={hoursStatusChipColor(entry.status)}
+                        variant="outlined"
+                        size="small"
                       />
                       {entry.status === "rejected" && entry.rejectionReason && (
                         <Typography variant="caption" color="error">
                           {entry.rejectionReason}
                         </Typography>
-                      )}
-                    </Stack>
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ pr: 3 }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Stack
-                      direction="row"
-                      spacing={0.5}
-                      justifyContent="center"
-                    >
-                      <Tooltip title="Edit entry">
-                        <span>
-                          <IconButton
-                            size="small"
-                            onClick={() => onEdit(entry)}
-                            sx={{ p: 0.5 }}
-                          >
-                            <EditOutlinedIcon sx={{ fontSize: "1rem" }} />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                      {entry.status === "pending" && (
-                        <Tooltip title="Delete entry">
-                          <span>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => void onDelete(entry.id)}
-                              sx={{ p: 0.5 }}
-                            >
-                              <DeleteOutlineIcon sx={{ fontSize: "1rem" }} />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
                       )}
                     </Stack>
                   </TableCell>

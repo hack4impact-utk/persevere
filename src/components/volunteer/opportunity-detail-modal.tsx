@@ -279,7 +279,7 @@ export default function OpportunityDetailModal({
         </AsyncContent>
       </DialogContent>
 
-      {opportunityId !== null && (
+      {!loading && opportunity !== null && (
         <DialogActions>
           <Button onClick={onClose}>Close</Button>
           {opportunity?.status === "completed" ? (
@@ -288,7 +288,7 @@ export default function OpportunityDetailModal({
             </Button>
           ) : (
             <RsvpButton
-              opportunityId={opportunityId}
+              opportunityId={opportunity.id}
               isRsvped={isRsvped}
               isFull={isFull}
               rsvpStatus={rsvpStatus}

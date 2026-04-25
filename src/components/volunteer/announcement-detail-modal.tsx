@@ -1,8 +1,10 @@
 "use client";
 
+import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { JSX } from "react";
 
@@ -24,20 +26,35 @@ export default function AnnouncementDetailModal({
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <ModalTitleBar title={announcement?.subject ?? ""} onClose={onClose} />
       <DialogContent dividers>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          display="block"
-          mb={2}
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={0.75}
+          sx={{ mb: 2 }}
         >
-          {announcement
-            ? new Date(announcement.sentAt).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })
-            : ""}
-        </Typography>
+          <Avatar sx={{ width: 20, height: 20, fontSize: 10 }}>
+            {announcement
+              ? `${announcement.senderFirstName.charAt(0)}${announcement.senderLastName.charAt(0)}`.toUpperCase()
+              : ""}
+          </Avatar>
+          <Typography sx={{ fontSize: 12, color: "rgba(0,0,0,.6)" }}>
+            {announcement
+              ? `${announcement.senderFirstName} ${announcement.senderLastName}`
+              : ""}
+          </Typography>
+          <Typography sx={{ fontSize: 12, color: "rgba(0,0,0,.6)" }}>
+            ·
+          </Typography>
+          <Typography sx={{ fontSize: 12, color: "rgba(0,0,0,.6)" }}>
+            {announcement
+              ? new Date(announcement.sentAt).toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })
+              : ""}
+          </Typography>
+        </Stack>
         <Box
           sx={{
             "& p": { mt: 0, mb: 1.5 },

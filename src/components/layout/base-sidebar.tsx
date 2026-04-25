@@ -240,18 +240,47 @@ export default function BaseSidebar({
             <Divider />
           </>
         )}
-        <MenuItem
-          onClick={() => {
-            closePopover();
-            router.push(settingsRoute);
-          }}
-          sx={{ py: 1.25, gap: 1.5 }}
-        >
-          <ListItemIcon sx={{ minWidth: "auto", color: "inherit" }}>
-            <SettingsIcon fontSize="small" />
-          </ListItemIcon>
-          Settings
-        </MenuItem>
+        {session?.user?.role === "volunteer" ? (
+          <>
+            <MenuItem
+              onClick={() => {
+                closePopover();
+                router.push("/volunteer/profile");
+              }}
+              sx={{ py: 1.25, gap: 1.5 }}
+            >
+              <ListItemIcon sx={{ minWidth: "auto", color: "inherit" }}>
+                <PersonIcon fontSize="small" />
+              </ListItemIcon>
+              Profile
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                closePopover();
+                router.push("/volunteer/profile?tab=settings");
+              }}
+              sx={{ py: 1.25, gap: 1.5 }}
+            >
+              <ListItemIcon sx={{ minWidth: "auto", color: "inherit" }}>
+                <SettingsIcon fontSize="small" />
+              </ListItemIcon>
+              Settings
+            </MenuItem>
+          </>
+        ) : (
+          <MenuItem
+            onClick={() => {
+              closePopover();
+              router.push(settingsRoute);
+            }}
+            sx={{ py: 1.25, gap: 1.5 }}
+          >
+            <ListItemIcon sx={{ minWidth: "auto", color: "inherit" }}>
+              <SettingsIcon fontSize="small" />
+            </ListItemIcon>
+            Settings
+          </MenuItem>
+        )}
         <MenuItem
           onClick={() => {
             closePopover();

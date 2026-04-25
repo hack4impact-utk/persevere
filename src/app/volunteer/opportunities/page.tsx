@@ -8,6 +8,7 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
 import MenuItem from "@mui/material/MenuItem";
+import Skeleton from "@mui/material/Skeleton";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import NextLink from "next/link";
@@ -154,9 +155,13 @@ export default function OpportunitiesPage(): JSX.Element {
             <MenuItem value="month">This month</MenuItem>
           </TextField>
         </Box>
-        <Typography variant="body2" color="text.secondary">
-          {opportunities.length} opportunities
-        </Typography>
+        {loading ? (
+          <Skeleton variant="text" width={110} height={20} />
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            {opportunities.length} opportunities
+          </Typography>
+        )}
       </Box>
 
       {error && (

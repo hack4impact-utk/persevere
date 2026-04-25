@@ -5,6 +5,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Skeleton from "@mui/material/Skeleton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { JSX, useMemo, useState } from "react";
@@ -20,16 +21,10 @@ import type { VolunteerHourEntry } from "@/hooks/use-volunteer-hours";
 import { useVolunteerHours } from "@/hooks/use-volunteer-hours";
 
 export default function HoursPage(): JSX.Element {
-  const {
-    hours,
-    loading,
-    isMutating,
-    error,
-    logHours,
-    editHours,
-    deleteHours,
-  } = useVolunteerHours();
-  const { data: dashboardData } = useVolunteerDashboard();
+  const { hours, loading, isMutating, error, logHours, editHours } =
+    useVolunteerHours();
+  const { data: dashboardData, isLoading: dashboardLoading } =
+    useVolunteerDashboard();
   const { past, loading: rsvpsLoading } = useRsvps();
   const [modalOpen, setModalOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<VolunteerHourEntry | null>(null);
@@ -123,17 +118,21 @@ export default function HoursPage(): JSX.Element {
             >
               Verified Hours
             </Typography>
-            <Typography
-              variant="h2"
-              sx={{
-                fontWeight: 800,
-                color: "primary.main",
-                lineHeight: 1,
-                mb: 1,
-              }}
-            >
-              {dashboardData?.verifiedHours ?? 0}
-            </Typography>
+            {dashboardLoading ? (
+              <Skeleton variant="text" width={80} height={56} sx={{ mb: 1 }} />
+            ) : (
+              <Typography
+                variant="h2"
+                sx={{
+                  fontWeight: 800,
+                  color: "primary.main",
+                  lineHeight: 1,
+                  mb: 1,
+                }}
+              >
+                {dashboardData?.verifiedHours ?? 0}
+              </Typography>
+            )}
             <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
               approved all-time hours
             </Typography>
@@ -151,16 +150,20 @@ export default function HoursPage(): JSX.Element {
             >
               Status summary
             </Typography>
-            <Box
-              sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
-            >
-              <Typography variant="body2" color="text.secondary">
-                Pending Approval
-              </Typography>
-              <Typography variant="body2" fontWeight={600}>
-                {dashboardData?.pendingHours ?? 0} hr
-              </Typography>
-            </Box>
+            {dashboardLoading ? (
+              <Skeleton variant="text" width="90%" height={20} />
+            ) : (
+              <Box
+                sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Pending Approval
+                </Typography>
+                <Typography variant="body2" fontWeight={600}>
+                  {dashboardData?.pendingHours ?? 0} hr
+                </Typography>
+              </Box>
+            )}
           </CardContent>
         </Card>
 
@@ -180,66 +183,74 @@ export default function HoursPage(): JSX.Element {
             >
               Year at a glance
             </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "flex-end",
-                gap: 1,
-                height: 180,
-                mt: 3,
-              }}
-            >
-              {chartData.map((h, i) => {
-                const heightPct = (h / maxChartVal) * 100;
-                return (
-                  <Box
-                    key={i}
-                    sx={{
-                      flex: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      height: "100%",
-                    }}
-                  >
+            {dashboardLoading ? (
+              <Skeleton
+                variant="rectangular"
+                height={180}
+                sx={{ borderRadius: 1, mt: 3 }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "flex-end",
+                  gap: 1,
+                  height: 180,
+                  mt: 3,
+                }}
+              >
+                {chartData.map((h, i) => {
+                  const heightPct = (h / maxChartVal) * 100;
+                  return (
                     <Box
+                      key={i}
                       sx={{
                         flex: 1,
                         display: "flex",
-                        alignItems: "flex-end",
-                        width: "100%",
-                        justifyContent: "center",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        height: "100%",
                       }}
                     >
-                      <Tooltip
-                        title={h > 0 ? `${h} hr` : "No hours"}
-                        placement="top"
-                        arrow
+                      <Box
+                        sx={{
+                          flex: 1,
+                          display: "flex",
+                          alignItems: "flex-end",
+                          width: "100%",
+                          justifyContent: "center",
+                        }}
                       >
-                        <Box
-                          sx={{
-                            width: "80%",
-                            height: `${heightPct}%`,
-                            minHeight: h > 0 ? "4px" : "0",
-                            bgcolor: h > 0 ? "primary.main" : "grey.200",
-                            borderRadius: "4px 4px 0 0",
-                            transition: "height 0.3s",
-                            cursor: "pointer",
-                          }}
-                        />
-                      </Tooltip>
+                        <Tooltip
+                          title={h > 0 ? `${h} hr` : "No hours"}
+                          placement="top"
+                          arrow
+                        >
+                          <Box
+                            sx={{
+                              width: "80%",
+                              height: `${heightPct}%`,
+                              minHeight: h > 0 ? "4px" : "0",
+                              bgcolor: h > 0 ? "primary.main" : "grey.200",
+                              borderRadius: "4px 4px 0 0",
+                              transition: "height 0.3s",
+                              cursor: "pointer",
+                            }}
+                          />
+                        </Tooltip>
+                      </Box>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mt: 1, fontSize: 10 }}
+                      >
+                        {"JFMAMJJASOND"[i]}
+                      </Typography>
                     </Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ mt: 1, fontSize: 10 }}
-                    >
-                      {"JFMAMJJASOND"[i]}
-                    </Typography>
-                  </Box>
-                );
-              })}
-            </Box>
+                  );
+                })}
+              </Box>
+            )}
           </CardContent>
         </Card>
       </Box>
@@ -257,8 +268,6 @@ export default function HoursPage(): JSX.Element {
         <VolunteerHoursTable
           hours={hours}
           loading={loading}
-          onDelete={deleteHours}
-          onEdit={setEditEntry}
           onViewDetail={setDetailEntry}
         />
       </Card>
@@ -286,6 +295,10 @@ export default function HoursPage(): JSX.Element {
         open={!!detailEntry}
         entry={detailEntry}
         onClose={() => setDetailEntry(null)}
+        onEdit={(entry) => {
+          setDetailEntry(null);
+          setEditEntry(entry);
+        }}
       />
     </Box>
   );

@@ -2,6 +2,8 @@
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import Skeleton from "@mui/material/Skeleton";
 import NextLink from "next/link";
 import { JSX, useMemo, useState } from "react";
 
@@ -22,6 +24,7 @@ export default function VolunteerCalendarPage(): JSX.Element {
     rsvpedIds,
     rsvpStatusMap,
     rsvpItems,
+    loading,
     handleRsvpChange,
     loadOpportunities,
   } = useOpportunities({ search: "" });
@@ -100,18 +103,24 @@ export default function VolunteerCalendarPage(): JSX.Element {
         }}
       >
         <Box>
-          <Calendar
-            readOnly
-            compact
-            events={calendarEvents}
-            onEventClick={(id) => {
-              setSelectedOpportunityId(Number.parseInt(id, 10));
-            }}
-            eventColors={rsvpColorMap}
-          />
+          {loading ? (
+            <Card elevation={1} sx={{ borderRadius: 2, overflow: "hidden" }}>
+              <Skeleton variant="rectangular" height={500} />
+            </Card>
+          ) : (
+            <Calendar
+              readOnly
+              compact
+              events={calendarEvents}
+              onEventClick={(id) => {
+                setSelectedOpportunityId(Number.parseInt(id, 10));
+              }}
+              eventColors={rsvpColorMap}
+            />
+          )}
         </Box>
 
-        <UpcomingSessions rsvpItems={rsvpItems} />
+        <UpcomingSessions rsvpItems={rsvpItems} loading={loading} />
       </Box>
 
       <OpportunityDetailModal

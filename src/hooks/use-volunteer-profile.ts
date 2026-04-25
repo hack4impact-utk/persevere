@@ -47,6 +47,9 @@ type VolunteerProfileData = {
 };
 
 type UpdateProfileData = {
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
   phone?: string | null;
   bio?: string | null;
   availability?: AvailabilityData | null;

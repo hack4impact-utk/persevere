@@ -21,6 +21,7 @@ import {
   type SxProps,
   Typography,
 } from "@mui/material";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useSnackbar } from "notistack";
 import { JSX, useEffect, useState } from "react";
@@ -31,6 +32,7 @@ import type {
   Day,
 } from "@/components/volunteer/availability-editor";
 import ProfileEditForm from "@/components/volunteer/profile-edit-form";
+import VolunteerAccountSettings from "@/components/volunteer/volunteer-account-settings";
 import { useOnboardingDocuments } from "@/hooks/use-onboarding-documents";
 import { useVolunteerProfile } from "@/hooks/use-volunteer-profile";
 
@@ -232,15 +234,23 @@ function AvailabilityGrid({
 export default function VolunteerProfilePage(): JSX.Element {
   const { data: session } = useSession();
   const { enqueueSnackbar } = useSnackbar();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeTab =
+    searchParams.get("tab") === "settings" ? "settings" : "profile";
+
   const {
     profile: profileData,
     loading,
     fetchProfile,
     updateProfile,
   } = useVolunteerProfile();
-  const { documents, signatures, fetchSignatures } = useOnboardingDocuments(
-    "/api/volunteer/onboarding/documents",
-  );
+  const {
+    documents,
+    signatures,
+    loading: documentsLoading,
+    fetchSignatures,
+  } = useOnboardingDocuments("/api/volunteer/onboarding/documents");
 
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -253,11 +263,20 @@ export default function VolunteerProfilePage(): JSX.Element {
     void fetchSignatures();
   }, [fetchSignatures]);
 
+  const handleTabChange = (_: React.SyntheticEvent, value: string): void => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "settings") {
+      params.set("tab", "settings");
+    } else {
+      params.delete("tab");
+    }
+    router.replace(`/volunteer/profile?${params.toString()}`);
+  };
+
   const handleSave = async (data: {
     phone?: string | null;
     bio?: string | null;
     availability?: AvailabilityData | null;
-    notificationPreference?: "email" | "sms" | "both" | "none" | null;
     employer?: string | null;
     jobTitle?: string | null;
     city?: string | null;
@@ -485,421 +504,527 @@ export default function VolunteerProfilePage(): JSX.Element {
     : "Volunteer";
 
   return (
-    <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-      <Box sx={{ px: 3, pt: 1, pb: 4 }}>
-        {/* ── Hero banner ─────────────────────────────────────── */}
-        <Card
-          elevation={0}
-          sx={{
-            border: "1px solid",
-            borderColor: "grey.200",
-            borderRadius: 2,
-            overflow: "hidden",
-            mb: 3,
-          }}
-        >
-          {/* Gradient band */}
-          <Box
+    <Box sx={{ flex: 1, display: "flex", minHeight: 0 }}>
+      {/* ── Left nav ──────────────────────────────────────────── */}
+      <Box
+        component="nav"
+        sx={{
+          width: 200,
+          flexShrink: 0,
+          borderRight: "1px solid",
+          borderColor: "divider",
+          overflowY: "auto",
+          py: 3,
+          px: 2,
+        }}
+      >
+        <Box sx={{ px: 1, mb: 2 }}>
+          <Typography
+            variant="overline"
             sx={{
-              height: 120,
-              background: "linear-gradient(135deg, #327bf7 0%, #1a4db5 100%)",
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "flex-end",
-              p: 2,
+              color: "text.secondary",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
             }}
           >
-            {!editMode && (
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<EditIcon />}
+            My Account
+          </Typography>
+        </Box>
+        {(
+          [
+            { label: "Profile", value: "profile" },
+            { label: "Settings", value: "settings" },
+          ] as const
+        ).map((item) => {
+          const isActive = activeTab === item.value;
+          return (
+            <Box
+              key={item.value}
+              onClick={() => handleTabChange(null as never, item.value)}
+              sx={{
+                px: 1,
+                py: 0.75,
+                borderRadius: 1,
+                cursor: "pointer",
+                backgroundColor: isActive ? "primary.main" : "transparent",
+                "&:hover": {
+                  backgroundColor: isActive ? "primary.main" : "action.hover",
+                },
+                transition: "background-color 0.15s",
+              }}
+            >
+              <Typography
+                variant="body2"
                 sx={{
-                  bgcolor: "rgba(255,255,255,0.15)",
-                  "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
-                  color: "white",
-                  backdropFilter: "blur(4px)",
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? "primary.contrastText" : "text.primary",
                 }}
-                onClick={() => setEditMode(true)}
               >
-                Edit profile
-              </Button>
-            )}
-          </Box>
-
-          <CardContent sx={{ pt: 0, px: { xs: 2.5, md: 3.5 }, pb: 3 }}>
-            <Box sx={{ mt: -6, mb: 1.5 }}>
-              <Avatar
-                sx={{
-                  width: 96,
-                  height: 96,
-                  bgcolor: "primary.dark",
-                  fontSize: "2rem",
-                  fontWeight: 700,
-                  border: "4px solid white",
-                }}
-              >
-                {initials(user.firstName, user.lastName)}
-              </Avatar>
-            </Box>
-            <Typography variant="h5" fontWeight={700} mb={1.5}>
-              {fullName || "—"}
-            </Typography>
-            <Box display="flex" flexWrap="wrap" gap={1}>
-              <Chip
-                label={volunteerTypeDisplay}
-                size="small"
-                sx={{
-                  bgcolor: "primary.main",
-                  color: "white",
-                  fontWeight: 600,
-                }}
-              />
-              <Chip
-                icon={<AccessTimeIcon />}
-                label={`${totalHours.toFixed(2)} hrs`}
-                size="small"
-                variant="outlined"
-              />
-              <Chip
-                icon={<PsychologyIcon />}
-                label={`${skills.length} skills`}
-                size="small"
-                variant="outlined"
-              />
-              <Chip
-                icon={<FavoriteBorderIcon />}
-                label={`${interests.length} interests`}
-                size="small"
-                variant="outlined"
-              />
-            </Box>
-          </CardContent>
-        </Card>
-
-        {/* ── Edit mode ───────────────────────────────────────── */}
-        {editMode ? (
-          <Card
-            elevation={0}
-            sx={{
-              border: "1px solid",
-              borderColor: "grey.200",
-              borderRadius: 2,
-            }}
-          >
-            <CardContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
-              <Typography variant="subtitle1" fontWeight={700} mb={3}>
-                Edit Profile
+                {item.label}
               </Typography>
-              <ProfileEditForm
-                initialData={{
-                  phone: user.phone,
-                  bio: user.bio,
-                  availability: vol.availability,
-                  notificationPreference: vol.notificationPreference,
-                  skills: profileData.skills,
-                  interests: profileData.interests,
-                  employer: vol.employer,
-                  jobTitle: vol.jobTitle,
-                  city: vol.city,
-                  state: vol.state,
-                  referralSource: vol.referralSource,
-                }}
-                onSave={handleSave}
-                onCancel={() => setEditMode(false)}
-                loading={saving}
-              />
-            </CardContent>
-          </Card>
-        ) : (
-          /* ── Three-zone view ─────────────────────────────────── */
-          <Grid container spacing={3}>
-            {/* Sidebar */}
-            <Grid size={{ xs: 12, md: 4 }}>
+            </Box>
+          );
+        })}
+      </Box>
+
+      {/* ── Content ───────────────────────────────────────────── */}
+      <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+        <Box sx={{ px: 3, pt: 3, pb: 4 }}>
+          {activeTab === "settings" ? (
+            <VolunteerAccountSettings
+              initialFirstName={user.firstName ?? ""}
+              initialLastName={user.lastName ?? ""}
+              initialEmail={user.email}
+              initialPhone={user.phone ?? ""}
+              initialNotificationPreference={
+                vol.notificationPreference ?? "email"
+              }
+            />
+          ) : (
+            <>
+              {/* ── Hero banner ─────────────────────────────────────── */}
               <Card
                 elevation={0}
                 sx={{
                   border: "1px solid",
                   borderColor: "grey.200",
                   borderRadius: 2,
-                  height: { xs: "auto", md: 0 },
-                  minHeight: { xs: "auto", md: "100%" },
-                  display: "flex",
-                  flexDirection: "column",
+                  overflow: "hidden",
+                  mb: 3,
                 }}
               >
-                <CardContent
+                {/* Gradient band */}
+                <Box
                   sx={{
-                    p: 3,
-                    flex: 1,
+                    height: 120,
+                    background:
+                      "linear-gradient(135deg, #327bf7 0%, #1a4db5 100%)",
                     display: "flex",
-                    flexDirection: "column",
-                    minHeight: 0,
+                    alignItems: "flex-start",
+                    justifyContent: "flex-end",
+                    p: 2,
                   }}
                 >
-                  <Stack
-                    spacing={3}
-                    divider={<Divider />}
-                    sx={{ flex: 1, minHeight: 0 }}
-                  >
-                    <SidebarCard title="Contact">
-                      <Stack spacing={2}>
-                        <DetailField label="Email" value={user.email} />
-                        <DetailField label="Phone" value={user.phone ?? "—"} />
-                        <DetailField
-                          label="Job Title"
-                          value={vol.jobTitle ?? "—"}
-                        />
-                        <DetailField
-                          label="City / State"
-                          value={
-                            vol.city && vol.state
-                              ? `${vol.city}, ${vol.state}`
-                              : (vol.city ?? vol.state ?? "—")
-                          }
-                        />
-                      </Stack>
-                    </SidebarCard>
-
-                    <SidebarCard title="Notifications">
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <Box
-                          sx={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: "50%",
-                            bgcolor:
-                              vol.notificationPreference === "none"
-                                ? "grey.400"
-                                : "success.main",
-                          }}
-                        />
-                        <Typography variant="body2">
-                          {vol.notificationPreference === "none"
-                            ? "Notifications off"
-                            : "Email notifications on"}
-                        </Typography>
-                      </Box>
-                    </SidebarCard>
-
-                    <SidebarCard
-                      title="About Me"
+                  {!editMode && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      startIcon={<EditIcon />}
                       sx={{
-                        flex: 1,
-                        minHeight: 0,
+                        bgcolor: "rgba(255,255,255,0.15)",
+                        "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
+                        color: "white",
+                        backdropFilter: "blur(4px)",
+                      }}
+                      onClick={() => setEditMode(true)}
+                    >
+                      Edit profile
+                    </Button>
+                  )}
+                </Box>
+
+                <CardContent sx={{ pt: 0, px: { xs: 2.5, md: 3.5 }, pb: 3 }}>
+                  <Box sx={{ mt: -6, mb: 1.5 }}>
+                    <Avatar
+                      sx={{
+                        width: 96,
+                        height: 96,
+                        bgcolor: "primary.dark",
+                        fontSize: "2rem",
+                        fontWeight: 700,
+                        border: "4px solid white",
+                      }}
+                    >
+                      {initials(user.firstName, user.lastName)}
+                    </Avatar>
+                  </Box>
+                  <Typography variant="h5" fontWeight={700} mb={1.5}>
+                    {fullName || "—"}
+                  </Typography>
+                  <Box display="flex" flexWrap="wrap" gap={1}>
+                    <Chip
+                      label={volunteerTypeDisplay}
+                      size="small"
+                      sx={{
+                        bgcolor: "primary.main",
+                        color: "white",
+                        fontWeight: 600,
+                      }}
+                    />
+                    <Chip
+                      icon={<AccessTimeIcon />}
+                      label={`${totalHours.toFixed(2)} hrs`}
+                      size="small"
+                      variant="outlined"
+                    />
+                    <Chip
+                      icon={<PsychologyIcon />}
+                      label={`${skills.length} skills`}
+                      size="small"
+                      variant="outlined"
+                    />
+                    <Chip
+                      icon={<FavoriteBorderIcon />}
+                      label={`${interests.length} interests`}
+                      size="small"
+                      variant="outlined"
+                    />
+                  </Box>
+                </CardContent>
+              </Card>
+
+              {/* ── Edit mode ───────────────────────────────────────── */}
+              {editMode ? (
+                <Card
+                  elevation={0}
+                  sx={{
+                    border: "1px solid",
+                    borderColor: "grey.200",
+                    borderRadius: 2,
+                  }}
+                >
+                  <CardContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
+                    <Typography variant="subtitle1" fontWeight={700} mb={3}>
+                      Edit Profile
+                    </Typography>
+                    <ProfileEditForm
+                      initialData={{
+                        phone: user.phone,
+                        bio: user.bio,
+                        availability: vol.availability,
+                        skills: profileData.skills,
+                        interests: profileData.interests,
+                        employer: vol.employer,
+                        jobTitle: vol.jobTitle,
+                        city: vol.city,
+                        state: vol.state,
+                        referralSource: vol.referralSource,
+                      }}
+                      onSave={handleSave}
+                      onCancel={() => setEditMode(false)}
+                      loading={saving}
+                    />
+                  </CardContent>
+                </Card>
+              ) : (
+                /* ── Three-zone view ─────────────────────────────────── */
+                <Grid container spacing={3}>
+                  {/* Sidebar */}
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <Card
+                      elevation={0}
+                      sx={{
+                        border: "1px solid",
+                        borderColor: "grey.200",
+                        borderRadius: 2,
+                        height: { xs: "auto", md: 0 },
+                        minHeight: { xs: "auto", md: "100%" },
                         display: "flex",
                         flexDirection: "column",
                       }}
                     >
-                      <Box
+                      <CardContent
                         sx={{
+                          p: 3,
                           flex: 1,
-                          overflowY: "auto",
+                          display: "flex",
+                          flexDirection: "column",
                           minHeight: 0,
                         }}
                       >
-                        <Typography
-                          variant="body2"
-                          color={user.bio ? "text.secondary" : "text.disabled"}
-                          sx={{ lineHeight: 1.75, wordBreak: "break-word" }}
+                        <Stack
+                          spacing={3}
+                          divider={<Divider />}
+                          sx={{ flex: 1, minHeight: 0 }}
                         >
-                          {user.bio ?? "No bio yet."}
-                        </Typography>
-                      </Box>
-                    </SidebarCard>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
+                          <SidebarCard title="Contact">
+                            <Stack spacing={2}>
+                              <DetailField label="Email" value={user.email} />
+                              <DetailField
+                                label="Phone"
+                                value={user.phone ?? "—"}
+                              />
+                              <DetailField
+                                label="Job Title"
+                                value={vol.jobTitle ?? "—"}
+                              />
+                              <DetailField
+                                label="City / State"
+                                value={
+                                  vol.city && vol.state
+                                    ? `${vol.city}, ${vol.state}`
+                                    : (vol.city ?? vol.state ?? "—")
+                                }
+                              />
+                            </Stack>
+                          </SidebarCard>
 
-            {/* Main content */}
-            <Grid size={{ xs: 12, md: 8 }}>
-              <Stack spacing={3}>
-                {/* Availability */}
-                <SectionCard
-                  icon={<CalendarMonthIcon sx={{ fontSize: 18 }} />}
-                  title="Weekly Availability"
-                >
-                  <AvailabilityGrid availability={vol.availability} />
-                </SectionCard>
+                          <SidebarCard title="Notifications">
+                            <Box display="flex" alignItems="center" gap={1}>
+                              <Box
+                                sx={{
+                                  width: 8,
+                                  height: 8,
+                                  borderRadius: "50%",
+                                  bgcolor:
+                                    vol.notificationPreference === "none"
+                                      ? "grey.400"
+                                      : "success.main",
+                                }}
+                              />
+                              <Typography variant="body2">
+                                {vol.notificationPreference === "none"
+                                  ? "Notifications off"
+                                  : "Email notifications on"}
+                              </Typography>
+                            </Box>
+                          </SidebarCard>
 
-                {/* Skills */}
-                <SectionCard
-                  icon={<PsychologyIcon sx={{ fontSize: 18 }} />}
-                  title="Skills"
-                >
-                  {skills.length === 0 ? (
-                    <Typography variant="body2" color="text.disabled">
-                      No skills added — click &quot;Edit profile&quot; to add
-                      your skills.
-                    </Typography>
-                  ) : (
-                    <Box display="flex" flexWrap="wrap" gap={1}>
-                      {skills.map((skill) => (
-                        <Chip
-                          key={skill.skillId}
-                          label={skill.skillName ?? "Unknown"}
-                          sx={{
-                            bgcolor: "rgba(50, 123, 247, 0.08)",
-                            color: "primary.dark",
-                            fontWeight: 500,
-                            fontSize: "0.8rem",
-                            height: 28,
-                            border: "1px solid rgba(50, 123, 247, 0.2)",
-                          }}
-                        />
-                      ))}
-                    </Box>
-                  )}
-                </SectionCard>
-
-                {/* Interests */}
-                <SectionCard
-                  icon={<FavoriteBorderIcon sx={{ fontSize: 18 }} />}
-                  title="Interests"
-                >
-                  {interests.length === 0 ? (
-                    <Typography variant="body2" color="text.disabled">
-                      No interests added — click &quot;Edit profile&quot; to add
-                      your interests.
-                    </Typography>
-                  ) : (
-                    <Box display="flex" flexWrap="wrap" gap={1}>
-                      {interests.map((interest) => (
-                        <Chip
-                          key={interest.interestId}
-                          label={interest.interestName ?? "Unknown"}
-                          sx={{
-                            bgcolor: "rgba(50, 123, 247, 0.08)",
-                            color: "primary.dark",
-                            fontWeight: 500,
-                            fontSize: "0.8rem",
-                            height: 28,
-                            border: "1px solid rgba(50, 123, 247, 0.2)",
-                          }}
-                        />
-                      ))}
-                    </Box>
-                  )}
-                </SectionCard>
-
-                {/* Documents */}
-                <SectionCard
-                  icon={<DescriptionIcon sx={{ fontSize: 18 }} />}
-                  title="Documents"
-                >
-                  {documents.length === 0 ? (
-                    <Typography variant="body2" color="text.disabled">
-                      No onboarding documents yet.
-                    </Typography>
-                  ) : (
-                    <Box sx={{ overflowY: "auto" }}>
-                      <Stack spacing={0}>
-                        {documents.map((doc) => {
-                          const response = responseMap.get(doc.id);
-                          const signed = response !== undefined;
-                          return (
+                          <SidebarCard
+                            title="About Me"
+                            sx={{
+                              flex: 1,
+                              minHeight: 0,
+                              display: "flex",
+                              flexDirection: "column",
+                            }}
+                          >
                             <Box
-                              key={doc.id}
-                              display="flex"
-                              alignItems="center"
-                              gap={1}
                               sx={{
-                                py: 1,
-                                borderBottom: "1px solid",
-                                borderColor: "grey.100",
-                                "&:last-child": { borderBottom: "none" },
+                                flex: 1,
+                                overflowY: "auto",
+                                minHeight: 0,
                               }}
                             >
-                              <Box sx={{ flex: 1, minWidth: 0 }}>
-                                <Box
-                                  display="flex"
-                                  alignItems="center"
-                                  gap={0.75}
-                                  flexWrap="wrap"
-                                >
-                                  <Typography
-                                    variant="body2"
-                                    fontWeight={500}
-                                    noWrap
-                                  >
-                                    {doc.title}
-                                  </Typography>
-                                  {doc.required && (
-                                    <Chip
-                                      label="Required"
-                                      size="small"
-                                      color="error"
-                                      variant="outlined"
-                                      sx={{
-                                        height: 18,
-                                        fontSize: "0.65rem",
-                                      }}
-                                    />
-                                  )}
-                                </Box>
-                                {signed && response ? (
+                              <Typography
+                                variant="body2"
+                                color={
+                                  user.bio ? "text.secondary" : "text.disabled"
+                                }
+                                sx={{
+                                  lineHeight: 1.75,
+                                  wordBreak: "break-word",
+                                }}
+                              >
+                                {user.bio ?? "No bio yet."}
+                              </Typography>
+                            </Box>
+                          </SidebarCard>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Main content */}
+                  <Grid size={{ xs: 12, md: 8 }}>
+                    <Stack spacing={3}>
+                      {/* Availability */}
+                      <SectionCard
+                        icon={<CalendarMonthIcon sx={{ fontSize: 18 }} />}
+                        title="Weekly Availability"
+                      >
+                        <AvailabilityGrid availability={vol.availability} />
+                      </SectionCard>
+
+                      {/* Skills */}
+                      <SectionCard
+                        icon={<PsychologyIcon sx={{ fontSize: 18 }} />}
+                        title="Skills"
+                      >
+                        {skills.length === 0 ? (
+                          <Typography variant="body2" color="text.disabled">
+                            No skills added — click &quot;Edit profile&quot; to
+                            add your skills.
+                          </Typography>
+                        ) : (
+                          <Box display="flex" flexWrap="wrap" gap={1}>
+                            {skills.map((skill) => (
+                              <Chip
+                                key={skill.skillId}
+                                label={skill.skillName ?? "Unknown"}
+                                sx={{
+                                  bgcolor: "rgba(50, 123, 247, 0.08)",
+                                  color: "primary.dark",
+                                  fontWeight: 500,
+                                  fontSize: "0.8rem",
+                                  height: 28,
+                                  border: "1px solid rgba(50, 123, 247, 0.2)",
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        )}
+                      </SectionCard>
+
+                      {/* Interests */}
+                      <SectionCard
+                        icon={<FavoriteBorderIcon sx={{ fontSize: 18 }} />}
+                        title="Interests"
+                      >
+                        {interests.length === 0 ? (
+                          <Typography variant="body2" color="text.disabled">
+                            No interests added — click &quot;Edit profile&quot;
+                            to add your interests.
+                          </Typography>
+                        ) : (
+                          <Box display="flex" flexWrap="wrap" gap={1}>
+                            {interests.map((interest) => (
+                              <Chip
+                                key={interest.interestId}
+                                label={interest.interestName ?? "Unknown"}
+                                sx={{
+                                  bgcolor: "rgba(50, 123, 247, 0.08)",
+                                  color: "primary.dark",
+                                  fontWeight: 500,
+                                  fontSize: "0.8rem",
+                                  height: 28,
+                                  border: "1px solid rgba(50, 123, 247, 0.2)",
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        )}
+                      </SectionCard>
+
+                      {/* Documents */}
+                      <SectionCard
+                        icon={<DescriptionIcon sx={{ fontSize: 18 }} />}
+                        title="Documents"
+                      >
+                        {documentsLoading ? (
+                          <Stack spacing={1.5}>
+                            {[0, 1, 2].map((i) => (
+                              <Box key={i}>
+                                <Skeleton
+                                  variant="text"
+                                  width="70%"
+                                  height={18}
+                                />
+                                <Skeleton
+                                  variant="text"
+                                  width="40%"
+                                  height={14}
+                                />
+                              </Box>
+                            ))}
+                          </Stack>
+                        ) : documents.length === 0 ? (
+                          <Typography variant="body2" color="text.disabled">
+                            No onboarding documents yet.
+                          </Typography>
+                        ) : (
+                          <Box sx={{ overflowY: "auto" }}>
+                            <Stack spacing={0}>
+                              {documents.map((doc) => {
+                                const response = responseMap.get(doc.id);
+                                const signed = response !== undefined;
+                                return (
                                   <Box
+                                    key={doc.id}
                                     display="flex"
                                     alignItems="center"
-                                    gap={0.5}
-                                    mt={0.25}
+                                    gap={1}
+                                    sx={{
+                                      py: 1,
+                                      borderBottom: "1px solid",
+                                      borderColor: "grey.100",
+                                      "&:last-child": { borderBottom: "none" },
+                                    }}
                                   >
-                                    <CheckCircleIcon
-                                      color="success"
-                                      sx={{ fontSize: 12 }}
-                                    />
-                                    <Typography
-                                      variant="caption"
-                                      color="success.main"
-                                    >
-                                      {doc.actionType === "consent"
-                                        ? response.consentGiven
-                                          ? `Consented · ${new Date(response.signedAt).toLocaleDateString()}`
-                                          : `Declined · ${new Date(response.signedAt).toLocaleDateString()}`
-                                        : doc.actionType === "acknowledge"
-                                          ? `Acknowledged · ${new Date(response.signedAt).toLocaleDateString()}`
-                                          : `Signed · ${new Date(response.signedAt).toLocaleDateString()}`}
-                                    </Typography>
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                      <Box
+                                        display="flex"
+                                        alignItems="center"
+                                        gap={0.75}
+                                        flexWrap="wrap"
+                                      >
+                                        <Typography
+                                          variant="body2"
+                                          fontWeight={500}
+                                          noWrap
+                                        >
+                                          {doc.title}
+                                        </Typography>
+                                        {doc.required && (
+                                          <Chip
+                                            label="Required"
+                                            size="small"
+                                            color="error"
+                                            variant="outlined"
+                                            sx={{
+                                              height: 18,
+                                              fontSize: "0.65rem",
+                                            }}
+                                          />
+                                        )}
+                                      </Box>
+                                      {signed && response ? (
+                                        <Box
+                                          display="flex"
+                                          alignItems="center"
+                                          gap={0.5}
+                                          mt={0.25}
+                                        >
+                                          <CheckCircleIcon
+                                            color="success"
+                                            sx={{ fontSize: 12 }}
+                                          />
+                                          <Typography
+                                            variant="caption"
+                                            color="success.main"
+                                          >
+                                            {doc.actionType === "consent"
+                                              ? response.consentGiven
+                                                ? `Consented · ${new Date(response.signedAt).toLocaleDateString()}`
+                                                : `Declined · ${new Date(response.signedAt).toLocaleDateString()}`
+                                              : doc.actionType === "acknowledge"
+                                                ? `Acknowledged · ${new Date(response.signedAt).toLocaleDateString()}`
+                                                : `Signed · ${new Date(response.signedAt).toLocaleDateString()}`}
+                                          </Typography>
+                                        </Box>
+                                      ) : (
+                                        <Typography
+                                          variant="caption"
+                                          color="text.disabled"
+                                        >
+                                          Pending
+                                        </Typography>
+                                      )}
+                                    </Box>
+                                    {signed ? (
+                                      <Chip
+                                        icon={
+                                          <CheckCircleIcon
+                                            sx={{ fontSize: 14 }}
+                                          />
+                                        }
+                                        label="Completed"
+                                        size="small"
+                                        color="success"
+                                        sx={{ flexShrink: 0 }}
+                                      />
+                                    ) : (
+                                      <Chip
+                                        label="Pending"
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{ flexShrink: 0 }}
+                                      />
+                                    )}
                                   </Box>
-                                ) : (
-                                  <Typography
-                                    variant="caption"
-                                    color="text.disabled"
-                                  >
-                                    Pending
-                                  </Typography>
-                                )}
-                              </Box>
-                              {signed ? (
-                                <Chip
-                                  icon={
-                                    <CheckCircleIcon sx={{ fontSize: 14 }} />
-                                  }
-                                  label="Completed"
-                                  size="small"
-                                  color="success"
-                                  sx={{ flexShrink: 0 }}
-                                />
-                              ) : (
-                                <Chip
-                                  label="Pending"
-                                  size="small"
-                                  variant="outlined"
-                                  sx={{ flexShrink: 0 }}
-                                />
-                              )}
-                            </Box>
-                          );
-                        })}
-                      </Stack>
-                    </Box>
-                  )}
-                </SectionCard>
-              </Stack>
-            </Grid>
-          </Grid>
-        )}
+                                );
+                              })}
+                            </Stack>
+                          </Box>
+                        )}
+                      </SectionCard>
+                    </Stack>
+                  </Grid>
+                </Grid>
+              )}
+            </>
+          )}
+        </Box>
       </Box>
     </Box>
   );

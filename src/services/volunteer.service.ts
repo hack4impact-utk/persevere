@@ -5,7 +5,7 @@ import { users, volunteers } from "@/db/schema";
 import { volunteerHours } from "@/db/schema/opportunities";
 import { toNumber } from "@/services/shared/db-helpers";
 import { fetchVolunteerDetailData } from "@/services/shared/volunteer-data";
-import { NotFoundError } from "@/utils/errors";
+import { ConflictError, NotFoundError } from "@/utils/errors";
 import { sendWelcomeEmail } from "@/utils/server/email";
 import { generateSecurePassword, hashPassword } from "@/utils/server/password";
 
@@ -125,6 +125,9 @@ export type GetVolunteerProfileResult = {
 
 export type VolunteerProfileUpdateParams = {
   volunteerId: number;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
   phone?: string;
   bio?: string;
   availability?: {
@@ -363,6 +366,9 @@ export async function updateVolunteerProfile(
 } | null> {
   const {
     volunteerId,
+    firstName,
+    lastName,
+    email,
     phone,
     bio,
     availability,
@@ -384,8 +390,22 @@ export async function updateVolunteerProfile(
     return null;
   }
 
+  // Check email uniqueness before updating
+  if (email !== undefined) {
+    const existing = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email));
+    if (existing.length > 0 && existing[0].id !== volunteer[0].userId) {
+      throw new ConflictError("That email address is already in use");
+    }
+  }
+
   // Build update objects - only allowed fields
   const userData: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
     phone?: string;
     bio?: string;
   } = {};
@@ -400,6 +420,9 @@ export async function updateVolunteerProfile(
     isAlumni?: boolean;
   } = {};
 
+  if (firstName !== undefined) userData.firstName = firstName;
+  if (lastName !== undefined) userData.lastName = lastName;
+  if (email !== undefined) userData.email = email;
   if (phone !== undefined) userData.phone = phone;
   if (bio !== undefined) userData.bio = bio;
 

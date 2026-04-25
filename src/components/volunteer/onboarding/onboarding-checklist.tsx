@@ -113,7 +113,6 @@ export default function OnboardingChecklist({
       }}
     >
       {minimized ? (
-        /* ── Minimized pill ── */
         <Paper
           elevation={6}
           sx={{
@@ -129,7 +128,6 @@ export default function OnboardingChecklist({
           }}
           onClick={() => setMinimized(false)}
         >
-          {/* Mini progress ring */}
           <Box
             sx={{ position: "relative", display: "inline-flex", flexShrink: 0 }}
           >
@@ -197,7 +195,6 @@ export default function OnboardingChecklist({
           </IconButton>
         </Paper>
       ) : (
-        /* ── Expanded card ── */
         <Card
           sx={{
             borderRadius: 2,
@@ -210,7 +207,6 @@ export default function OnboardingChecklist({
             flexDirection: "column",
           }}
         >
-          {/* Top — circular progress ring */}
           <Box
             sx={{
               flex: "0 0 45%",
@@ -224,7 +220,6 @@ export default function OnboardingChecklist({
               position: "relative",
             }}
           >
-            {/* Minimize button */}
             <IconButton
               size="small"
               aria-label="minimize onboarding checklist"
@@ -239,7 +234,6 @@ export default function OnboardingChecklist({
             </Typography>
 
             <Box sx={{ position: "relative", display: "inline-flex" }}>
-              {/* Track ring */}
               <CircularProgress
                 variant="determinate"
                 value={100}
@@ -252,7 +246,6 @@ export default function OnboardingChecklist({
                   left: 0,
                 }}
               />
-              {/* Value arc */}
               {isLoading ? (
                 <CircularProgress size={120} thickness={4} />
               ) : (
@@ -264,7 +257,6 @@ export default function OnboardingChecklist({
                   sx={{ color: ringColor }}
                 />
               )}
-              {/* Center label */}
               <Box
                 sx={{
                   position: "absolute",
@@ -297,7 +289,6 @@ export default function OnboardingChecklist({
             </Box>
           </Box>
 
-          {/* Bottom — scrollable checklist */}
           <Box
             sx={{
               flex: "0 0 55%",

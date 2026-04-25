@@ -22,12 +22,14 @@ type Props = {
   open: boolean;
   entry: VolunteerHourEntry | null;
   onClose: () => void;
+  onEdit: (entry: VolunteerHourEntry) => void;
 };
 
 export default function VolunteerHoursDetailModal({
   open,
   entry,
   onClose,
+  onEdit,
 }: Props): JSX.Element {
   if (!entry) return <></>;
 
@@ -85,6 +87,15 @@ export default function VolunteerHoursDetailModal({
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={onClose}>Close</Button>
+        <Button
+          variant="contained"
+          onClick={() => {
+            onEdit(entry);
+            onClose();
+          }}
+        >
+          Edit
+        </Button>
       </DialogActions>
     </Dialog>
   );
