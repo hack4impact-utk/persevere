@@ -282,13 +282,19 @@ export default function OpportunityDetailModal({
       {opportunityId !== null && (
         <DialogActions>
           <Button onClick={onClose}>Close</Button>
-          <RsvpButton
-            opportunityId={opportunityId}
-            isRsvped={isRsvped}
-            isFull={isFull}
-            rsvpStatus={rsvpStatus}
-            onRsvpChange={onRsvpChange}
-          />
+          {opportunity?.status === "completed" ? (
+            <Button variant="outlined" disabled fullWidth>
+              Event ended
+            </Button>
+          ) : (
+            <RsvpButton
+              opportunityId={opportunityId}
+              isRsvped={isRsvped}
+              isFull={isFull}
+              rsvpStatus={rsvpStatus}
+              onRsvpChange={onRsvpChange}
+            />
+          )}
         </DialogActions>
       )}
     </Dialog>

@@ -95,7 +95,7 @@ function computeOccurrences(
   return occurrences;
 }
 
-async function autoCompleteExpiredEvents(): Promise<void> {
+export async function autoCompleteExpiredEvents(): Promise<void> {
   await db
     .update(opportunities)
     .set({ status: "completed", updatedAt: new Date() })
@@ -110,11 +110,12 @@ async function autoCompleteExpiredEvents(): Promise<void> {
 export async function listCalendarEvents(
   startDate?: Date,
   endDate?: Date,
-  statusFilter?: "open" | "full" | "completed" | "canceled",
+  statusFilter?: ("open" | "full" | "completed" | "canceled")[],
 ): Promise<CalendarEvent[]> {
   await autoCompleteExpiredEvents();
   const whereClauses = [];
-  if (statusFilter) whereClauses.push(eq(opportunities.status, statusFilter));
+  if (statusFilter?.length)
+    whereClauses.push(inArray(opportunities.status, statusFilter));
   if (startDate) whereClauses.push(gte(opportunities.endDate, startDate));
   if (endDate) whereClauses.push(lte(opportunities.startDate, endDate));
 

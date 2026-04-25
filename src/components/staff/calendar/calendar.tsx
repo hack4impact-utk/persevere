@@ -27,6 +27,7 @@ type CalendarProps = {
   onEventDrop?: (id: string, newStart: Date, newEnd: Date) => Promise<void>;
   readOnly?: boolean;
   eventColors?: Record<string, string>;
+  compact?: boolean;
 };
 
 /**
@@ -47,6 +48,7 @@ export default function Calendar({
   onDateSelect,
   onEventDrop,
   eventColors,
+  compact = false,
 }: CalendarProps): JSX.Element {
   const theme = useTheme();
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
@@ -133,8 +135,7 @@ export default function Calendar({
       {/* FullCalendar */}
       <Box
         sx={{
-          flex: 1,
-          minHeight: 0,
+          ...(compact ? {} : { flex: 1, minHeight: 0 }),
           backgroundColor: "background.paper",
           borderRadius: 3,
           boxShadow: `0 4px 20px ${theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.08)"}`,
@@ -231,16 +232,35 @@ export default function Calendar({
           "& .fc-day-today": {
             backgroundColor: `${theme.palette.action.hover} !important`,
           },
+          ...(compact && {
+            "& .fc-day-today": {
+              backgroundColor: "rgba(50,123,247,0.04) !important",
+            },
+            "& .fc-daygrid-day-frame": { minHeight: "110px" },
+            "& .fc-event": {
+              background: "none !important",
+              border: "none !important",
+              boxShadow: "none !important",
+              padding: "0 !important",
+              "&:hover": { transform: "none", boxShadow: "none !important" },
+            },
+            "& .fc-daygrid-event-harness": { marginBottom: "2px" },
+            "& .fc-daygrid-day-number": { padding: "6px 8px" },
+          }),
         }}
       >
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          initialView="timeGridWeek"
-          headerToolbar={{
-            left: "prev,next today",
-            center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay",
-          }}
+          initialView={compact ? "dayGridMonth" : "timeGridWeek"}
+          headerToolbar={
+            compact
+              ? { left: "prev,next today", center: "title", right: "" }
+              : {
+                  left: "prev,next today",
+                  center: "title",
+                  right: "dayGridMonth,timeGridWeek,timeGridDay",
+                }
+          }
           buttonText={{
             month: "Month",
             week: "Week",
@@ -256,9 +276,69 @@ export default function Calendar({
           select={readOnly ? undefined : handleDateSelect}
           eventClick={handleEventClick}
           eventDrop={readOnly ? undefined : handleEventDrop}
-          height="100%"
-          nowIndicator
-          scrollTime={currentTimeStr}
+          eventContent={
+            compact
+              ? (arg): JSX.Element => {
+                  const color =
+                    arg.event.backgroundColor || theme.palette.primary.main;
+                  const time = arg.event.start
+                    ? new Date(arg.event.start).toLocaleTimeString([], {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })
+                    : "";
+                  return (
+                    <Box
+                      sx={{
+                        fontSize: 11,
+                        fontWeight: 500,
+                        px: "6px",
+                        py: "3px",
+                        borderRadius: "4px",
+                        borderLeft: `3px solid ${color}`,
+                        bgcolor: `${color}20`,
+                        color,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        width: "100%",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {time} · {arg.event.title}
+                    </Box>
+                  );
+                }
+              : undefined
+          }
+          dayCellContent={
+            compact
+              ? (arg): JSX.Element => (
+                  <Box
+                    sx={{
+                      width: 24,
+                      height: 24,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "50%",
+                      bgcolor: arg.isToday ? "primary.main" : "transparent",
+                      color: arg.isToday
+                        ? "primary.contrastText"
+                        : "text.primary",
+                      fontWeight: arg.isToday ? 700 : 500,
+                      fontSize: 14,
+                      ml: "auto",
+                    }}
+                  >
+                    {arg.dayNumberText.replace(".", "")}
+                  </Box>
+                )
+              : undefined
+          }
+          height={compact ? "auto" : "100%"}
+          nowIndicator={!compact}
+          scrollTime={compact ? undefined : currentTimeStr}
         />
       </Box>
 

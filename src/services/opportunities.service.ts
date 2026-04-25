@@ -333,3 +333,76 @@ export async function getOpenOpportunityById(
     requiredInterests: interestRows,
   };
 }
+
+export async function getOpportunityByIdForVolunteer(
+  id: number,
+): Promise<OpportunityWithSpots> {
+  const rsvpCountSubquery = db
+    .select({
+      opportunityId: volunteerRsvps.opportunityId,
+      rsvpCount: count(volunteerRsvps.volunteerId).as("rsvp_count"),
+    })
+    .from(volunteerRsvps)
+    .where(notInArray(volunteerRsvps.status, ["declined", "cancelled"]))
+    .groupBy(volunteerRsvps.opportunityId)
+    .as("rsvp_counts");
+
+  const rows = await db
+    .select({
+      id: opportunities.id,
+      title: opportunities.title,
+      description: opportunities.description,
+      location: opportunities.location,
+      startDate: opportunities.startDate,
+      endDate: opportunities.endDate,
+      status: opportunities.status,
+      maxVolunteers: opportunities.maxVolunteers,
+      isRecurring: opportunities.isRecurring,
+      categoryId: opportunities.categoryId,
+      categoryName: eventCategories.name,
+      rsvpCount: sql<number>`COALESCE(${rsvpCountSubquery.rsvpCount}, 0)`,
+    })
+    .from(opportunities)
+    .leftJoin(
+      rsvpCountSubquery,
+      eq(opportunities.id, rsvpCountSubquery.opportunityId),
+    )
+    .leftJoin(eventCategories, eq(opportunities.categoryId, eventCategories.id))
+    .where(eq(opportunities.id, id));
+
+  if (rows.length === 0) {
+    throw new NotFoundError("Opportunity not found");
+  }
+
+  const opp = rows[0];
+  const rsvpCount = Number(opp.rsvpCount);
+
+  const skillRows = await db
+    .select({
+      skillId: opportunityRequiredSkills.skillId,
+      skillName: skills.name,
+    })
+    .from(opportunityRequiredSkills)
+    .leftJoin(skills, eq(opportunityRequiredSkills.skillId, skills.id))
+    .where(eq(opportunityRequiredSkills.opportunityId, id));
+
+  const interestRows = await db
+    .select({
+      interestId: opportunityInterests.interestId,
+      interestName: interests.name,
+    })
+    .from(opportunityInterests)
+    .leftJoin(interests, eq(opportunityInterests.interestId, interests.id))
+    .where(eq(opportunityInterests.opportunityId, id));
+
+  return {
+    ...opp,
+    categoryId: opp.categoryId ?? null,
+    categoryName: opp.categoryName ?? null,
+    rsvpCount,
+    spotsRemaining:
+      opp.maxVolunteers === null ? null : opp.maxVolunteers - rsvpCount,
+    requiredSkills: skillRows,
+    requiredInterests: interestRows,
+  };
+}

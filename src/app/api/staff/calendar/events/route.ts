@@ -73,8 +73,10 @@ export async function GET(request: Request): Promise<NextResponse> {
       }
     }
 
-    const statusFilter: "open" | undefined =
-      session.user.role === "volunteer" ? "open" : undefined;
+    const statusFilter:
+      | ("open" | "full" | "completed" | "canceled")[]
+      | undefined =
+      session.user.role === "volunteer" ? ["open", "full"] : undefined;
     const calendarEvents = await listCalendarEvents(
       startDate,
       endDate,

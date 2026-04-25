@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getOpenOpportunityById } from "@/services/opportunities.service";
+import { getOpportunityByIdForVolunteer } from "@/services/opportunities.service";
 import { NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
@@ -29,7 +29,7 @@ export async function GET(
       );
     }
 
-    const opportunity = await getOpenOpportunityById(parsedId);
+    const opportunity = await getOpportunityByIdForVolunteer(parsedId);
     return NextResponse.json({ data: opportunity });
   } catch (error) {
     if (error instanceof AuthError) return authErrorResponse(error);

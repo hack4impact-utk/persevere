@@ -16,6 +16,7 @@ export type UseOpportunitiesResult = {
   opportunities: Opportunity[];
   rsvpedIds: Set<number>;
   rsvpStatusMap: Map<number, RsvpStatus>;
+  rsvpItems: RsvpItem[];
   loading: boolean;
   error: string | null;
   rsvpWarning: boolean;
@@ -44,6 +45,7 @@ export function useOpportunities(
   const [rsvpStatusMap, setRsvpStatusMap] = useState<Map<number, RsvpStatus>>(
     new Map(),
   );
+  const [rsvpItems, setRsvpItems] = useState<RsvpItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const handleApiError = useApiErrorHandler(setError);
@@ -86,11 +88,11 @@ export function useOpportunities(
       setHasMore(oppsResult.value.data.length === OPPORTUNITIES_PAGE_SIZE);
 
       if (rsvpsResult.status === "fulfilled") {
-        setRsvpedIds(
-          new Set(rsvpsResult.value.data.all.map((r) => r.opportunityId)),
-        );
+        const allRsvps = rsvpsResult.value.data.all;
+        setRsvpItems(allRsvps);
+        setRsvpedIds(new Set(allRsvps.map((r) => r.opportunityId)));
         const statusMap = new Map<number, RsvpStatus>();
-        for (const r of rsvpsResult.value.data.all) {
+        for (const r of allRsvps) {
           statusMap.set(r.opportunityId, r.rsvpStatus);
         }
         setRsvpStatusMap(statusMap);
@@ -212,6 +214,7 @@ export function useOpportunities(
     opportunities,
     rsvpedIds,
     rsvpStatusMap,
+    rsvpItems,
     loading,
     error,
     rsvpWarning,

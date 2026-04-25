@@ -7,6 +7,9 @@ import type { Opportunity } from "@/components/volunteer/types";
 type SpotsChipProps = { opp: Opportunity; sx?: SxProps<Theme> };
 
 export function SpotsChip({ opp, sx }: SpotsChipProps): JSX.Element {
+  if (opp.status === "completed") {
+    return <StatusBadge label="Completed" color="default" sx={sx} />;
+  }
   if (opp.spotsRemaining === null) {
     return <StatusBadge label="Open enrollment" color="success" sx={sx} />;
   }

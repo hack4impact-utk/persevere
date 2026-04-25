@@ -3,12 +3,13 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import NextLink from "next/link";
-import { JSX, useEffect, useMemo, useState } from "react";
+import { JSX, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/shared";
 import { Calendar } from "@/components/staff/calendar";
 import OpportunityDetailModal from "@/components/volunteer/opportunity-detail-modal";
-import { useCalendarEvents } from "@/hooks/use-calendar-events";
+import UpcomingSessions from "@/components/volunteer/upcoming-sessions";
+import type { CalendarEvent } from "@/hooks/use-calendar-events";
 import { useOpportunities } from "@/hooks/use-opportunities";
 import { RSVP_STATUS_COLORS } from "@/lib/constants";
 
@@ -17,18 +18,35 @@ export default function VolunteerCalendarPage(): JSX.Element {
     number | null
   >(null);
 
-  const { events: calendarEvents, fetchEvents } = useCalendarEvents();
+  const {
+    rsvpedIds,
+    rsvpStatusMap,
+    rsvpItems,
+    handleRsvpChange,
+    loadOpportunities,
+  } = useOpportunities({ search: "" });
 
-  useEffect(() => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 2, 0);
-    void fetchEvents(start, end);
-  }, [fetchEvents]);
-
-  const { rsvpedIds, rsvpStatusMap, handleRsvpChange } = useOpportunities({
-    search: "",
-  });
+  // Derive calendar events from the volunteer's own RSVPs — no date-range window.
+  // This ensures all RSVPd events (past and future) appear and stay in sync.
+  const calendarEvents = useMemo(
+    (): CalendarEvent[] =>
+      rsvpItems
+        .filter(
+          (r) =>
+            r.opportunityStatus !== "canceled" &&
+            r.opportunityStartDate !== null &&
+            r.opportunityEndDate !== null,
+        )
+        .map((r) => ({
+          id: String(r.opportunityId),
+          title: r.opportunityTitle ?? "",
+          location: r.opportunityLocation ?? undefined,
+          start: r.opportunityStartDate!,
+          end: r.opportunityEndDate!,
+          extendedProps: { status: r.opportunityStatus ?? "open" },
+        })),
+    [rsvpItems],
+  );
 
   const rsvpColorMap = useMemo((): Record<string, string> => {
     const map: Record<string, string> = {};
@@ -58,28 +76,42 @@ export default function VolunteerCalendarPage(): JSX.Element {
     >
       <PageHeader
         eyebrow="Volunteer Portal"
-        title="Calendar"
+        title="My Calendar"
         subtitle="View all upcoming events and sessions."
         actions={
           <Button
             component={NextLink}
             href="/volunteer/opportunities"
-            variant="outlined"
+            variant="contained"
           >
-            Browse list view
+            Browse opportunities
           </Button>
         }
       />
 
-      <Box sx={{ flex: 1, minHeight: 600 }}>
-        <Calendar
-          readOnly
-          events={calendarEvents}
-          onEventClick={(id) => {
-            setSelectedOpportunityId(Number.parseInt(id, 10));
-          }}
-          eventColors={rsvpColorMap}
-        />
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" },
+          gap: "20px",
+          flex: 1,
+          minHeight: 0,
+          alignItems: "start",
+        }}
+      >
+        <Box>
+          <Calendar
+            readOnly
+            compact
+            events={calendarEvents}
+            onEventClick={(id) => {
+              setSelectedOpportunityId(Number.parseInt(id, 10));
+            }}
+            eventColors={rsvpColorMap}
+          />
+        </Box>
+
+        <UpcomingSessions rsvpItems={rsvpItems} />
       </Box>
 
       <OpportunityDetailModal
@@ -101,6 +133,7 @@ export default function VolunteerCalendarPage(): JSX.Element {
         onRsvpChange={(newIsRsvped) => {
           if (selectedOpportunityId !== null) {
             handleRsvpChange(selectedOpportunityId, newIsRsvped);
+            void loadOpportunities();
           }
         }}
       />
