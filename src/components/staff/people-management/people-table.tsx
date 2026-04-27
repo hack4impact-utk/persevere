@@ -20,58 +20,70 @@ import { type ReactElement, useCallback } from "react";
 
 import { TablePaginationFooter } from "@/components/shared";
 import { EmptyState } from "@/components/ui";
+import type { Person, PersonRole } from "@/hooks/use-people";
 
-import { type Volunteer } from "./types";
+type PersonStatus = "Active" | "Onboarding" | "Pending" | "Inactive";
 
-type VolunteerStatus = "Active" | "Onboarding" | "Pending" | "Inactive";
-
-const STATUS_COLOR: Record<VolunteerStatus, ChipProps["color"]> = {
+const STATUS_COLOR: Record<PersonStatus, ChipProps["color"]> = {
   Active: "success",
   Onboarding: "warning",
   Pending: "primary",
   Inactive: "default",
 };
 
-function deriveStatus(v: Volunteer): VolunteerStatus {
-  if (!v.isEmailVerified) return "Pending";
-  if (!v.isActive) return "Inactive";
-  if (v.completionPercentage < 100) return "Onboarding";
+const ROLE_META: Record<
+  PersonRole,
+  { label: string; color: ChipProps["color"] }
+> = {
+  admin: { label: "Admin", color: "primary" },
+  staff: { label: "Staff", color: "default" },
+  volunteer: { label: "Volunteer", color: "secondary" },
+};
+
+function deriveStatus(p: Person): PersonStatus {
+  if (!p.isEmailVerified) return "Pending";
+  if (!p.isActive) return "Inactive";
+  if (p.personType === "volunteer" && (p.completionPercentage ?? 100) < 100)
+    return "Onboarding";
   return "Active";
 }
 
-function fmtJoined(d: Date): string {
+function fmtJoined(d?: Date): string {
+  if (!d) return "—";
   return new Date(d).toLocaleString(undefined, {
     month: "short",
     year: "numeric",
   });
 }
 
-type VolunteerTableProps = {
-  volunteers: Volunteer[];
-  totalVolunteers: number;
+type PeopleTableProps = {
+  people: Person[];
+  total: number;
   page: number;
   limit: number;
   onPageChange: (newPage: number) => void;
   onLimitChange: (newLimit: number) => void;
-  onVolunteerClick: (volunteerId: number) => void;
+  onPersonClick: (person: Person) => void;
   loading?: boolean;
+  showPagination?: boolean;
 };
 
-export default function VolunteerTable({
-  volunteers,
-  totalVolunteers,
+export default function PeopleTable({
+  people,
+  total,
   page,
   limit,
   onPageChange,
   onLimitChange,
-  onVolunteerClick,
+  onPersonClick,
   loading = false,
-}: VolunteerTableProps): ReactElement {
+  showPagination = true,
+}: PeopleTableProps): ReactElement {
   const handleRowClick = useCallback(
-    (volunteerId: number): void => {
-      onVolunteerClick(volunteerId);
+    (person: Person): void => {
+      onPersonClick(person);
     },
-    [onVolunteerClick],
+    [onPersonClick],
   );
 
   return (
@@ -89,30 +101,32 @@ export default function VolunteerTable({
           <Box
             sx={{
               position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
+              inset: 0,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: "rgba(255, 255, 255, 0.8)",
+              backgroundColor: "rgba(255,255,255,0.8)",
               zIndex: 1,
             }}
           >
             <CircularProgress />
           </Box>
         )}
-        <Table stickyHeader aria-label="volunteer table">
+        <Table stickyHeader aria-label="people table">
           <TableHead>
             <TableRow>
               <TableCell
-                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "45%" }}
+                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "35%" }}
               >
                 Name
               </TableCell>
               <TableCell
-                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "15%" }}
+                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "13%" }}
+              >
+                Role
+              </TableCell>
+              <TableCell
+                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "13%" }}
               >
                 Status
               </TableCell>
@@ -123,29 +137,30 @@ export default function VolunteerTable({
                 Hours
               </TableCell>
               <TableCell
-                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "15%" }}
+                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "14%" }}
               >
                 Joined
               </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {volunteers.length > 0 ? (
-              volunteers.map((volunteer) => {
-                const status = deriveStatus(volunteer);
+            {people.length > 0 ? (
+              people.map((person) => {
+                const status = deriveStatus(person);
+                const roleMeta = ROLE_META[person.personType];
                 return (
                   <TableRow
-                    key={volunteer.id}
-                    onClick={() => handleRowClick(volunteer.id)}
+                    key={person.key}
+                    onClick={() => handleRowClick(person)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        handleRowClick(volunteer.id);
+                        handleRowClick(person);
                       }
                     }}
                     tabIndex={0}
                     role="button"
-                    aria-label={`View profile for ${volunteer.firstName} ${volunteer.lastName}`}
+                    aria-label={`View profile for ${person.firstName} ${person.lastName}`}
                     sx={{
                       cursor: "pointer",
                       "&:hover": { backgroundColor: "action.hover" },
@@ -156,11 +171,11 @@ export default function VolunteerTable({
                         sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
                       >
                         <Avatar
-                          src={volunteer.profilePicture || undefined}
-                          alt={`${volunteer.firstName} ${volunteer.lastName}`}
+                          src={person.profilePicture || undefined}
+                          alt={`${person.firstName} ${person.lastName}`}
                           sx={{ width: 32, height: 32 }}
                         >
-                          {!volunteer.profilePicture && (
+                          {!person.profilePicture && (
                             <PersonIcon sx={{ fontSize: 18 }} />
                           )}
                         </Avatar>
@@ -173,13 +188,21 @@ export default function VolunteerTable({
                               lineHeight: 1.3,
                             }}
                           >
-                            {volunteer.firstName} {volunteer.lastName}
+                            {person.firstName} {person.lastName}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {volunteer.email}
+                            {person.email}
                           </Typography>
                         </Box>
                       </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={roleMeta.label}
+                        color={roleMeta.color}
+                        variant="outlined"
+                        size="small"
+                      />
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -195,14 +218,20 @@ export default function VolunteerTable({
                         sx={{
                           fontVariantNumeric: "tabular-nums",
                           fontWeight: 500,
+                          color:
+                            person.personType === "volunteer"
+                              ? "text.primary"
+                              : "text.disabled",
                         }}
                       >
-                        {(volunteer.totalHours ?? 0).toFixed(1)}
+                        {person.personType === "volunteer"
+                          ? (person.totalHours ?? 0).toFixed(1)
+                          : "—"}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" color="text.secondary">
-                        {fmtJoined(volunteer.createdAt)}
+                        {fmtJoined(person.createdAt)}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -210,21 +239,23 @@ export default function VolunteerTable({
               })
             ) : loading ? null : (
               <TableRow>
-                <TableCell colSpan={4}>
-                  <EmptyState message="No volunteers found" />
+                <TableCell colSpan={5}>
+                  <EmptyState message="No people found" />
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
-      <TablePaginationFooter
-        total={totalVolunteers}
-        page={page}
-        limit={limit}
-        onPageChange={onPageChange}
-        onLimitChange={onLimitChange}
-      />
+      {showPagination && (
+        <TablePaginationFooter
+          total={total}
+          page={page}
+          limit={limit}
+          onPageChange={onPageChange}
+          onLimitChange={onLimitChange}
+        />
+      )}
     </Paper>
   );
 }

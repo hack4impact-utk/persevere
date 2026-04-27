@@ -25,6 +25,7 @@ export type Volunteer = {
   totalHours?: number;
   profilePicture?: string | null;
   completionPercentage: number;
+  createdAt: Date;
 };
 
 export type VolunteersResponse = {
@@ -56,6 +57,7 @@ type APIVolunteerResponse = {
       | "rejected"
       | null;
     isAlumni: boolean;
+    createdAt: string;
   };
   users: {
     firstName: string;
@@ -110,6 +112,7 @@ export async function fetchVolunteers(
       totalHours: item.totalHours || 0,
       profilePicture: item.users.profilePicture,
       completionPercentage: item.completionPercentage,
+      createdAt: new Date(item.volunteers.createdAt),
     })),
     total: data.total,
     page: filters.page || 1,

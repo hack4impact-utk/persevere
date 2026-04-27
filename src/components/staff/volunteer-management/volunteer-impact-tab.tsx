@@ -196,10 +196,7 @@ export function VolunteerImpactTab({
             iconColor: "info.main",
           },
         ].map((card) => (
-          <Box
-            key={card.label}
-            sx={{ width: { xs: "calc(50% - 8px)", sm: "calc(25% - 12px)" } }}
-          >
+          <Box key={card.label} sx={{ width: "calc(50% - 8px)" }}>
             <StatCard {...card} />
           </Box>
         ))}
@@ -241,7 +238,11 @@ export function VolunteerImpactTab({
             Service History
           </Typography>
           {hasHours ? (
-            <TableContainer component={Paper} variant="outlined">
+            <TableContainer
+              component={Paper}
+              variant="outlined"
+              sx={{ overflowX: "auto" }}
+            >
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -287,7 +288,7 @@ export function VolunteerImpactTab({
                           variant="body2"
                           color="text.secondary"
                           sx={{
-                            maxWidth: 200,
+                            maxWidth: 120,
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",

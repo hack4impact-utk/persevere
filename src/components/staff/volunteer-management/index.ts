@@ -5,7 +5,6 @@
  * not components for the volunteer-facing portal.
  */
 
-export { default as PendingInvitesTable } from "./pending-invites-table";
 export * from "./types";
 export { default as VolunteerList } from "./volunteer-list";
 export { default as VolunteerProfile } from "./volunteer-profile";

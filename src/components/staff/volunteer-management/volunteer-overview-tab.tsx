@@ -821,12 +821,12 @@ export function VolunteerOverviewTab({
       <Box
         sx={{
           display: "flex",
-          flexDirection: { xs: "column", md: "row" },
+          flexDirection: "column",
           gap: 3,
         }}
       >
         {/* Sidebar */}
-        <Box sx={{ width: { xs: "100%", md: "33.333%" }, flexShrink: 0 }}>
+        <Box sx={{ width: "100%", flexShrink: 0 }}>
           <Card
             elevation={0}
             sx={{
@@ -910,13 +910,15 @@ export function VolunteerOverviewTab({
                 </SidebarCard>
 
                 <SidebarCard title="About Me">
-                  <Typography
-                    variant="body2"
-                    color={user.bio ? "text.secondary" : "text.disabled"}
-                    sx={{ lineHeight: 1.75 }}
-                  >
-                    {user.bio ?? "No bio yet."}
-                  </Typography>
+                  <Box sx={{ maxHeight: 160, overflowY: "auto" }}>
+                    <Typography
+                      variant="body2"
+                      color={user.bio ? "text.secondary" : "text.disabled"}
+                      sx={{ lineHeight: 1.75 }}
+                    >
+                      {user.bio ?? "No bio yet."}
+                    </Typography>
+                  </Box>
                 </SidebarCard>
               </Stack>
             </CardContent>
