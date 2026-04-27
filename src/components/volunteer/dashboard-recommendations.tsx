@@ -13,9 +13,32 @@ import { OpportunityCard } from "@/components/volunteer/opportunity-card";
 import OpportunityDetailModal from "@/components/volunteer/opportunity-detail-modal";
 import { useRecommendations } from "@/hooks/use-recommendations";
 
-export default function DashboardRecommendations(): JSX.Element {
+type Props = {
+  onRsvpChange: () => void;
+};
+
+export default function DashboardRecommendations({
+  onRsvpChange,
+}: Props): JSX.Element {
   const { recommendations, loading, error } = useRecommendations();
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [rsvpedIds, setRsvpedIds] = useState(() => new Set<number>());
+
+  const selectedOpp =
+    selectedId === null
+      ? null
+      : (recommendations.find((r) => r.id === selectedId) ?? null);
+
+  // Merge server-known RSVP status with locally-tracked RSVPs from this session
+  const effectiveRsvpStatus =
+    selectedId !== null && rsvpedIds.has(selectedId)
+      ? ("pending" as const)
+      : selectedOpp?.rsvpStatus;
+
+  const isRsvped =
+    effectiveRsvpStatus !== undefined &&
+    effectiveRsvpStatus !== "cancelled" &&
+    effectiveRsvpStatus !== "declined";
 
   return (
     <Card sx={{ borderRadius: 2, boxShadow: 2 }}>
@@ -72,6 +95,9 @@ export default function DashboardRecommendations(): JSX.Element {
                 key={opp.id}
                 opportunity={opp}
                 matchScore={opp.matchScore}
+                rsvpStatus={
+                  rsvpedIds.has(opp.id) ? ("pending" as const) : opp.rsvpStatus
+                }
                 onClick={() => {
                   setSelectedId(opp.id);
                 }}
@@ -82,13 +108,18 @@ export default function DashboardRecommendations(): JSX.Element {
 
         <OpportunityDetailModal
           opportunityId={selectedId}
-          isRsvped={false}
+          isRsvped={isRsvped}
+          rsvpStatus={effectiveRsvpStatus}
           open={selectedId !== null}
           onClose={() => {
             setSelectedId(null);
           }}
-          onRsvpChange={() => {
+          onRsvpChange={(newIsRsvped) => {
+            if (newIsRsvped && selectedId !== null) {
+              setRsvpedIds((prev) => new Set([...prev, selectedId]));
+            }
             setSelectedId(null);
+            onRsvpChange();
           }}
         />
       </CardContent>

@@ -1,4 +1,4 @@
-import { and, count, eq, gte, inArray, lt, lte } from "drizzle-orm";
+import { and, asc, count, eq, gte, inArray, lt, lte } from "drizzle-orm";
 
 import db from "@/db";
 import { eventCategories, opportunities, volunteerRsvps } from "@/db/schema";
@@ -136,9 +136,9 @@ export async function listCalendarEvents(
     )
     .groupBy(opportunities.id, eventCategories.name);
 
-  const rows = await (whereClauses.length > 0
-    ? query.where(and(...whereClauses))
-    : query);
+  const baseQuery =
+    whereClauses.length > 0 ? query.where(and(...whereClauses)) : query;
+  const rows = await baseQuery.orderBy(asc(opportunities.startDate));
 
   return rows.map((r) =>
     toCalendarEvent(r.opportunity, r.categoryName ?? null, r.rsvpCount),

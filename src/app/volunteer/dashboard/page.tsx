@@ -7,7 +7,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { JSX } from "react";
+import { JSX, useCallback, useState } from "react";
 
 import AnnouncementsCard from "@/components/volunteer/communications-card";
 import DashboardRecommendations from "@/components/volunteer/dashboard-recommendations";
@@ -19,6 +19,8 @@ import VolunteerStats from "@/components/volunteer/volunteer-stats";
 export default function VolunteerDashboardPage(): JSX.Element {
   const { data: session } = useSession();
   const firstName = session?.user?.name?.split(" ")[0] || "Volunteer";
+  const [rsvpVersion, setRsvpVersion] = useState(0);
+  const handleRsvpChange = useCallback(() => setRsvpVersion((v) => v + 1), []);
 
   return (
     <Box
@@ -96,8 +98,8 @@ export default function VolunteerDashboardPage(): JSX.Element {
           size={{ xs: 12, md: 8 }}
           sx={{ display: "flex", flexDirection: "column", gap: 3 }}
         >
-          <DashboardRecommendations />
-          <MyRsvps />
+          <DashboardRecommendations onRsvpChange={handleRsvpChange} />
+          <MyRsvps refreshKey={rsvpVersion} />
         </Grid>
 
         {/* Right Column: Announcements & Hours */}

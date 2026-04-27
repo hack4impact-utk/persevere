@@ -5,8 +5,9 @@ import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import { JSX } from "react";
 
+import { getRsvpStatusColor, StatusBadge } from "@/components/ui";
 import { SpotsChip } from "@/components/volunteer/spots-chip";
-import type { Opportunity } from "@/components/volunteer/types";
+import type { Opportunity, RsvpStatus } from "@/components/volunteer/types";
 
 // Helper to format date
 function getMonthShort(dateStr: string): string {
@@ -39,12 +40,14 @@ type OpportunityCardProps = {
   opportunity: Opportunity;
   onClick: () => void;
   matchScore?: number;
+  rsvpStatus?: RsvpStatus;
 };
 
 export function OpportunityCard({
   opportunity,
   onClick,
   matchScore,
+  rsvpStatus,
 }: OpportunityCardProps): JSX.Element {
   const month = getMonthShort(opportunity.startDate);
   const day = getDay(opportunity.startDate);
@@ -146,7 +149,21 @@ export function OpportunityCard({
           >
             {opportunity.title}
           </Typography>
-          <Box display="flex" gap={0.5}>
+          <Box
+            display="flex"
+            gap={0.5}
+            flexWrap="wrap"
+            justifyContent="flex-end"
+          >
+            {rsvpStatus &&
+              rsvpStatus !== "cancelled" &&
+              rsvpStatus !== "declined" && (
+                <StatusBadge
+                  label={rsvpStatus}
+                  color={getRsvpStatusColor(rsvpStatus)}
+                  sx={{ borderRadius: 1 }}
+                />
+              )}
             {matchScore !== undefined && (
               <Chip
                 label={`${matchScore} match`}

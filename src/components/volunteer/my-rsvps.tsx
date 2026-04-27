@@ -7,7 +7,7 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import { JSX } from "react";
+import { JSX, useEffect, useRef } from "react";
 
 import { AsyncContent } from "@/components/shared";
 import { getRsvpStatusColor, StatusBadge } from "@/components/ui";
@@ -27,8 +27,21 @@ function getCompactDate(dateStr?: string | null): string {
   return `${datePart} · ${timePart}`;
 }
 
-export default function MyRsvps(): JSX.Element {
-  const { upcoming, loading, error } = useRsvps();
+type Props = {
+  refreshKey: number;
+};
+
+export default function MyRsvps({ refreshKey }: Props): JSX.Element {
+  const { upcoming, loading, error, loadRsvps } = useRsvps();
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    void loadRsvps();
+  }, [refreshKey, loadRsvps]);
 
   return (
     <Card sx={{ borderRadius: 2, boxShadow: 2, height: "100%" }}>

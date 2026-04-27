@@ -1,5 +1,6 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
+import type { RsvpStatus } from "@/components/volunteer/types";
 import db from "@/db";
 import {
   opportunityInterests,
@@ -30,6 +31,7 @@ export type RecommendedOpportunity = OpportunityWithSpots & {
   matchScore: number;
   matchingSkills: { skillId: number; skillName: string | null }[];
   matchingInterests: { interestId: number; interestName: string | null }[];
+  rsvpStatus?: RsvpStatus;
 };
 
 export type VolunteerMatch = {
@@ -98,7 +100,30 @@ export async function getRecommendedOpportunities(
     return a.startDateMs - b.startDateMs;
   });
 
-  return scored.slice(0, limit).map((opp) => {
+  const topScored = scored.slice(0, limit);
+  const topIds = topScored.map((o) => o.id);
+
+  const existingRsvps =
+    topIds.length > 0
+      ? await db
+          .select({
+            opportunityId: volunteerRsvps.opportunityId,
+            status: volunteerRsvps.status,
+          })
+          .from(volunteerRsvps)
+          .where(
+            and(
+              eq(volunteerRsvps.volunteerId, volunteerId),
+              inArray(volunteerRsvps.opportunityId, topIds),
+            ),
+          )
+      : [];
+
+  const rsvpStatusMap = new Map<number, RsvpStatus>(
+    existingRsvps.map((r) => [r.opportunityId, r.status as RsvpStatus]),
+  );
+
+  return topScored.map((opp) => {
     const result: RecommendedOpportunity = {
       id: opp.id,
       title: opp.title,
@@ -118,6 +143,7 @@ export async function getRecommendedOpportunities(
       matchScore: opp.matchScore,
       matchingSkills: opp.matchingSkills,
       matchingInterests: opp.matchingInterests,
+      rsvpStatus: rsvpStatusMap.get(opp.id),
     };
     return result;
   });
