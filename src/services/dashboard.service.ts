@@ -33,6 +33,14 @@ export type PendingHoursEntry = {
   date: string; // ISO string
 };
 
+export type PendingRsvpEntry = {
+  volunteerId: number;
+  volunteerName: string;
+  opportunityId: number;
+  opportunityTitle: string;
+  rsvpAt: string; // ISO string
+};
+
 export type RecentActivityItem = {
   type: "new_volunteer" | "hours_submitted" | "rsvp_confirmed";
   label: string;
@@ -49,6 +57,7 @@ export type StaffDashboardStats = {
   pendingHoursCount: number;
   onboardingIncomplete: number;
   pendingHoursList: PendingHoursEntry[];
+  pendingRsvpsList: PendingRsvpEntry[];
   recentActivity: RecentActivityItem[];
 };
 
@@ -79,6 +88,7 @@ export async function getStaffDashboardStats(): Promise<StaffDashboardStats> {
     upcomingRows,
     pendingHoursCountRows,
     pendingHoursRows,
+    pendingRsvpsRows,
     [newVolunteerRows, hoursActivityRows, rsvpActivityRows],
   ] = await Promise.all([
     db
@@ -134,6 +144,26 @@ export async function getStaffDashboardStats(): Promise<StaffDashboardStats> {
       .innerJoin(users, eq(volunteers.userId, users.id))
       .where(eq(volunteerHours.status, "pending"))
       .orderBy(desc(volunteerHours.date))
+      .limit(PENDING_HOURS_LIMIT),
+
+    db
+      .select({
+        volunteerId: volunteers.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        opportunityId: opportunities.id,
+        opportunityTitle: opportunities.title,
+        rsvpAt: volunteerRsvps.rsvpAt,
+      })
+      .from(volunteerRsvps)
+      .innerJoin(volunteers, eq(volunteerRsvps.volunteerId, volunteers.id))
+      .innerJoin(users, eq(volunteers.userId, users.id))
+      .innerJoin(
+        opportunities,
+        eq(volunteerRsvps.opportunityId, opportunities.id),
+      )
+      .where(eq(volunteerRsvps.status, "pending"))
+      .orderBy(desc(volunteerRsvps.rsvpAt))
       .limit(PENDING_HOURS_LIMIT),
 
     Promise.all([
@@ -262,6 +292,13 @@ export async function getStaffDashboardStats(): Promise<StaffDashboardStats> {
       volunteerId: row.volunteerId,
       hours: row.hours,
       date: new Date(row.date).toISOString(),
+    })),
+    pendingRsvpsList: pendingRsvpsRows.map((row) => ({
+      volunteerId: row.volunteerId,
+      volunteerName: `${row.firstName} ${row.lastName}`,
+      opportunityId: row.opportunityId,
+      opportunityTitle: row.opportunityTitle,
+      rsvpAt: new Date(row.rsvpAt).toISOString(),
     })),
     recentActivity,
   };
