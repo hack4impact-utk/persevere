@@ -1,7 +1,8 @@
 import type { RsvpStatus } from "@/lib/status-enums";
 
 export type OpportunityStatus = "open" | "full" | "completed" | "canceled";
-export type { RsvpStatus } from "@/lib/status-enums";
+// eslint-disable-next-line unicorn/prefer-export-from
+export type { RsvpStatus };
 
 export type Opportunity = {
   id: number;
