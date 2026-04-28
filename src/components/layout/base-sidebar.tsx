@@ -35,12 +35,6 @@ type BaseSidebarProps = {
   navItems: NavItem[];
 };
 
-function getSettingsRoute(role: string | undefined): string {
-  if (role === "admin") return "/staff/settings";
-  if (role === "staff") return "/staff/profile";
-  return "/volunteer/profile";
-}
-
 export default function BaseSidebar({
   navItems,
 }: BaseSidebarProps): ReactElement {
@@ -58,7 +52,6 @@ export default function BaseSidebar({
   };
 
   const handleSignOut = useSignOut();
-  const settingsRoute = getSettingsRoute(session?.user?.role);
   const popoverOpen = Boolean(anchorEl);
 
   const openPopover = (e: React.MouseEvent<HTMLElement>): void => {
@@ -268,18 +261,32 @@ export default function BaseSidebar({
             </MenuItem>
           </>
         ) : (
-          <MenuItem
-            onClick={() => {
-              closePopover();
-              router.push(settingsRoute);
-            }}
-            sx={{ py: 1.25, gap: 1.5 }}
-          >
-            <ListItemIcon sx={{ minWidth: "auto", color: "inherit" }}>
-              <SettingsIcon fontSize="small" />
-            </ListItemIcon>
-            Settings
-          </MenuItem>
+          <>
+            <MenuItem
+              onClick={() => {
+                closePopover();
+                router.push("/staff/profile");
+              }}
+              sx={{ py: 1.25, gap: 1.5 }}
+            >
+              <ListItemIcon sx={{ minWidth: "auto", color: "inherit" }}>
+                <PersonIcon fontSize="small" />
+              </ListItemIcon>
+              Profile
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                closePopover();
+                router.push("/staff/profile?tab=settings");
+              }}
+              sx={{ py: 1.25, gap: 1.5 }}
+            >
+              <ListItemIcon sx={{ minWidth: "auto", color: "inherit" }}>
+                <SettingsIcon fontSize="small" />
+              </ListItemIcon>
+              Settings
+            </MenuItem>
+          </>
         )}
         <MenuItem
           onClick={() => {

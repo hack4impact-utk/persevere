@@ -1,37 +1,74 @@
 "use client";
 
-import { Download, EmojiEvents } from "@mui/icons-material";
+import {
+  Download,
+  EmojiEvents,
+  PieChartOutlined,
+  ShowChart,
+} from "@mui/icons-material";
 import {
   Alert,
-  Avatar,
   Box,
   Button,
   Card,
   CardContent,
   Divider,
   Grid,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
+  MenuItem,
   TextField,
   Typography,
 } from "@mui/material";
+import { BarChart } from "@mui/x-charts/BarChart";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { PieChart } from "@mui/x-charts/PieChart";
-import { Fragment, JSX, useState } from "react";
+import { JSX, useState } from "react";
 
+import { PageHeader } from "@/components/shared";
 import { useAnalytics } from "@/hooks/use-analytics";
+
+function padTwo(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+function fmtDate(d: Date): string {
+  return `${d.getFullYear()}-${padTwo(d.getMonth() + 1)}-${padTwo(d.getDate())}`;
+}
+
+function getPeriodDates(p: string): {
+  startDate: string | null;
+  endDate: string | null;
+} {
+  const today = new Date();
+  if (p === "30") {
+    const s = new Date(today);
+    s.setDate(today.getDate() - 30);
+    return { startDate: fmtDate(s), endDate: fmtDate(today) };
+  }
+  if (p === "90") {
+    const s = new Date(today);
+    s.setDate(today.getDate() - 90);
+    return { startDate: fmtDate(s), endDate: fmtDate(today) };
+  }
+  if (p === "180") {
+    const s = new Date(today);
+    s.setMonth(today.getMonth() - 6);
+    return { startDate: fmtDate(s), endDate: fmtDate(today) };
+  }
+  if (p === "ytd") {
+    return {
+      startDate: `${today.getFullYear()}-01-01`,
+      endDate: fmtDate(today),
+    };
+  }
+  return { startDate: null, endDate: null };
+}
 
 /** Analytics dashboard for insights and metrics. */
 export default function StaffAnalyticsPage(): JSX.Element {
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
+  const [period, setPeriod] = useState<string>("all");
 
-  const { data, isLoading, error } = useAnalytics(
-    startDate || null,
-    endDate || null,
-  );
+  const { startDate, endDate } = getPeriodDates(period);
+  const { data, isLoading, error } = useAnalytics(startDate, endDate);
 
   function handleExport(): void {
     const params = new URLSearchParams();
@@ -61,20 +98,24 @@ export default function StaffAnalyticsPage(): JSX.Element {
         ? "—"
         : `${((data?.attendanceRate ?? 0) * 100).toFixed(1)}%`,
     },
+    {
+      label: "Active Locations",
+      value: isLoading ? "—" : (data?.hoursByLocation.length ?? 0),
+    },
   ];
 
   const monthLabels = data?.hoursByMonth.map((r) => r.month) ?? [];
   const monthValues = data?.hoursByMonth.map((r) => r.hours) ?? [];
-
   const typeLabels =
     data?.hoursByVolunteerType.map((r) => r.volunteerType) ?? [];
   const typeValues = data?.hoursByVolunteerType.map((r) => r.hours) ?? [];
-
   const pieData = typeLabels.map((label, idx) => ({
     id: label,
     value: typeValues[idx],
-    label: label,
+    label,
   }));
+  const topVolNames = data?.topVolunteers.map((v) => v.name) ?? [];
+  const topVolHours = data?.topVolunteers.map((v) => v.hours) ?? [];
 
   return (
     <Box
@@ -93,70 +134,43 @@ export default function StaffAnalyticsPage(): JSX.Element {
     >
       {error && <Alert severity="error">{error}</Alert>}
 
-      {/* Date range filter + export */}
-      <Box
-        sx={{
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 2,
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            gap: 2,
-          }}
-        >
-          <TextField
-            label="Start Date"
-            type="date"
-            size="small"
-            slotProps={{ inputLabel: { shrink: true } }}
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value);
-            }}
-            sx={{ width: 150 }}
-          />
-          <TextField
-            label="End Date"
-            type="date"
-            size="small"
-            slotProps={{ inputLabel: { shrink: true } }}
-            value={endDate}
-            onChange={(e) => {
-              setEndDate(e.target.value);
-            }}
-            sx={{ width: 150 }}
-          />
-        </Box>
-        <Button
-          variant="contained"
-          disableElevation
-          startIcon={<Download />}
-          onClick={handleExport}
-          sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
-        >
-          Export
-        </Button>
-      </Box>
+      <PageHeader
+        eyebrow="Staff Portal"
+        title="Analytics"
+        subtitle="Volunteer hours, engagement, and program performance"
+        actions={
+          <>
+            <TextField
+              select
+              size="small"
+              value={period}
+              onChange={(e) => {
+                setPeriod(e.target.value);
+              }}
+              sx={{ minWidth: 160 }}
+            >
+              <MenuItem value="30">Last 30 days</MenuItem>
+              <MenuItem value="90">Last 90 days</MenuItem>
+              <MenuItem value="180">Last 6 months</MenuItem>
+              <MenuItem value="ytd">Year to date</MenuItem>
+              <MenuItem value="all">All time</MenuItem>
+            </TextField>
+            <Button
+              variant="contained"
+              startIcon={<Download />}
+              onClick={handleExport}
+            >
+              Export
+            </Button>
+          </>
+        }
+      />
 
       {/* Stat cards */}
       <Grid container spacing={3}>
         {statCards.map(({ label, value }) => (
-          <Grid key={label} size={{ xs: 12, sm: 4 }}>
-            <Card
-              sx={{
-                borderRadius: 2,
-                boxShadow: 1,
-                height: "100%",
-                bgcolor: "background.paper",
-              }}
-            >
+          <Grid key={label} size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card sx={{ borderRadius: 2, boxShadow: 1, height: "100%" }}>
               <CardContent sx={{ p: 3, "&:last-child": { pb: 3 } }}>
                 <Typography
                   variant="body1"
@@ -175,94 +189,38 @@ export default function StaffAnalyticsPage(): JSX.Element {
         ))}
       </Grid>
 
+      {/* Two equal-width chart cards */}
       <Grid container spacing={3}>
-        {/* Hours by month */}
-        <Grid size={{ xs: 12, lg: 8 }}>
-          <Card
-            sx={{
-              borderRadius: 2,
-              boxShadow: 1,
-              height: "100%",
-            }}
-          >
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card sx={{ borderRadius: 2, boxShadow: 1, height: "100%" }}>
             <CardContent sx={{ p: 3, "&:last-child": { pb: 3 } }}>
-              <Typography
-                variant="h6"
-                fontWeight={700}
-                sx={{ mb: 2, color: "text.primary" }}
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}
               >
-                Hours by Month
-              </Typography>
-              {monthLabels.length === 0 && !isLoading ? (
+                <PieChartOutlined
+                  sx={{ color: "primary.main", fontSize: 22 }}
+                />
+                <Typography variant="h6" fontWeight={700} color="text.primary">
+                  Hours by Volunteer Type
+                </Typography>
+              </Box>
+              <Divider sx={{ mb: 2 }} />
+              {typeLabels.length === 0 && !isLoading ? (
                 <Typography
                   variant="body1"
                   color="text.secondary"
                   sx={{ py: 10, textAlign: "center" }}
                 >
-                  No hours data strictly within the selected range.
+                  No volunteer type data available.
                 </Typography>
               ) : (
-                <LineChart
-                  xAxis={[{ scaleType: "point", data: monthLabels }]}
-                  series={[
-                    {
-                      data: monthValues,
-                      label: "Total Hours",
-                      area: true,
-                      color: "#327bf7",
-                      showMark: true,
-                    },
-                  ]}
-                  height={320}
-                  margin={{ top: 20, bottom: 40, left: 40, right: 20 }}
+                <Box
                   sx={{
-                    ".MuiLineElement-root": { strokeWidth: 3 },
-                    ".MuiAreaElement-root": { fillOpacity: 0.2 },
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
-                />
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Hours by volunteer type */}
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <Card
-            sx={{
-              borderRadius: 2,
-              boxShadow: 1,
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <CardContent
-              sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}
-            >
-              <Typography
-                variant="h6"
-                fontWeight={700}
-                sx={{ mb: 2, color: "text.primary" }}
-              >
-                Hours by Volunteer Type
-              </Typography>
-              <Box
-                sx={{
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {typeLabels.length === 0 && !isLoading ? (
-                  <Typography
-                    variant="body1"
-                    color="text.secondary"
-                    sx={{ py: 5, textAlign: "center" }}
-                  >
-                    No volunteer type data available.
-                  </Typography>
-                ) : (
+                >
                   <PieChart
                     series={[
                       {
@@ -287,111 +245,85 @@ export default function StaffAnalyticsPage(): JSX.Element {
                       },
                     }}
                   />
-                )}
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card sx={{ borderRadius: 2, boxShadow: 1, height: "100%" }}>
+            <CardContent sx={{ p: 3, "&:last-child": { pb: 3 } }}>
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}
+              >
+                <EmojiEvents sx={{ color: "primary.main", fontSize: 22 }} />
+                <Typography variant="h6" fontWeight={700} color="text.primary">
+                  Top Volunteers
+                </Typography>
               </Box>
+              <Divider sx={{ mb: 2 }} />
+              {topVolNames.length === 0 && !isLoading ? (
+                <Typography
+                  variant="body1"
+                  color="text.secondary"
+                  sx={{ py: 10, textAlign: "center" }}
+                >
+                  No hours recorded in the selected range.
+                </Typography>
+              ) : (
+                <BarChart
+                  layout="horizontal"
+                  yAxis={[{ scaleType: "band", data: topVolNames }]}
+                  series={[
+                    { data: topVolHours, color: "#327bf7", label: "Hours" },
+                  ]}
+                  height={280}
+                  margin={{ top: 10, bottom: 30, left: 120, right: 20 }}
+                />
+              )}
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Top volunteers list */}
-      <Card sx={{ borderRadius: 4, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
-        <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
-          <Box
-            sx={{
-              p: 3,
-              pb: 2,
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-              borderBottom: "1px solid",
-              borderColor: "divider",
-            }}
-          >
-            <Avatar
-              sx={{
-                bgcolor: "#FFC837",
-                color: "#B36B00",
-                width: 32,
-                height: 32,
-              }}
-            >
-              <EmojiEvents fontSize="small" />
-            </Avatar>
+      {/* Full-width hours by month */}
+      <Card sx={{ borderRadius: 2, boxShadow: 1 }}>
+        <CardContent sx={{ p: 3, "&:last-child": { pb: 3 } }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+            <ShowChart sx={{ color: "primary.main", fontSize: 22 }} />
             <Typography variant="h6" fontWeight={700} color="text.primary">
-              Top Volunteers Leaderboard
+              Hours by Month
             </Typography>
           </Box>
-          {isLoading ? (
+          <Divider sx={{ mb: 2 }} />
+          {monthLabels.length === 0 && !isLoading ? (
             <Typography
               variant="body1"
               color="text.secondary"
-              sx={{ p: 4, textAlign: "center" }}
+              sx={{ py: 10, textAlign: "center" }}
             >
-              Loading leaderboard…
-            </Typography>
-          ) : (data?.topVolunteers ?? []).length === 0 ? (
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              sx={{ p: 4, textAlign: "center" }}
-            >
-              No hours recorded in the selected range to display a leaderboard.
+              No hours data within the selected range.
             </Typography>
           ) : (
-            <List disablePadding>
-              {(data?.topVolunteers ?? []).map((v, idx) => (
-                <Fragment key={v.name}>
-                  <ListItem
-                    sx={{
-                      px: 3,
-                      py: 2,
-                      transition: "background-color 0.2s",
-                      "&:hover": { backgroundColor: "rgba(0,0,0,0.02)" },
-                    }}
-                  >
-                    <ListItemAvatar>
-                      <Avatar
-                        sx={{
-                          bgcolor:
-                            idx === 0
-                              ? "#FFD700"
-                              : idx === 1
-                                ? "#C0C0C0"
-                                : idx === 2
-                                  ? "#cd7f32"
-                                  : "primary.light",
-                          color:
-                            idx < 3
-                              ? "rgba(0,0,0,0.7)"
-                              : "primary.contrastText",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {idx + 1}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={v.name}
-                      secondary={`${v.hours.toFixed(2)} hours logged`}
-                      primaryTypographyProps={{
-                        variant: "subtitle1",
-                        fontWeight: 600,
-                        color: "text.primary",
-                      }}
-                      secondaryTypographyProps={{
-                        variant: "body2",
-                        fontWeight: 500,
-                        color: "primary.main",
-                      }}
-                    />
-                  </ListItem>
-                  {idx < (data?.topVolunteers ?? []).length - 1 && (
-                    <Divider component="li" />
-                  )}
-                </Fragment>
-              ))}
-            </List>
+            <LineChart
+              xAxis={[{ scaleType: "point", data: monthLabels }]}
+              series={[
+                {
+                  data: monthValues,
+                  label: "Total Hours",
+                  area: true,
+                  color: "#327bf7",
+                  showMark: true,
+                },
+              ]}
+              height={320}
+              margin={{ top: 20, bottom: 40, left: 40, right: 20 }}
+              sx={{
+                ".MuiLineElement-root": { strokeWidth: 3 },
+                ".MuiAreaElement-root": { fillOpacity: 0.2 },
+              }}
+            />
           )}
         </CardContent>
       </Card>
