@@ -1,7 +1,11 @@
 import { and, eq } from "drizzle-orm";
 
 import db from "@/db";
-import { interests, volunteerInterests, volunteers } from "@/db/schema";
+import { interests, volunteerInterests } from "@/db/schema";
+import {
+  requireInterest,
+  requireVolunteer,
+} from "@/services/shared/entity-checks";
 import { ConflictError, NotFoundError } from "@/utils/errors";
 
 export type InterestDetail = {
@@ -13,14 +17,7 @@ export type InterestDetail = {
 export async function getVolunteerInterests(
   volunteerId: number,
 ): Promise<InterestDetail[]> {
-  const volunteer = await db
-    .select()
-    .from(volunteers)
-    .where(eq(volunteers.id, volunteerId));
-
-  if (volunteer.length === 0) {
-    throw new NotFoundError("Volunteer not found");
-  }
+  await requireVolunteer(volunteerId);
 
   return db
     .select({
@@ -37,23 +34,8 @@ export async function assignInterest(
   volunteerId: number,
   interestId: number,
 ): Promise<void> {
-  const volunteer = await db
-    .select()
-    .from(volunteers)
-    .where(eq(volunteers.id, volunteerId));
-
-  if (volunteer.length === 0) {
-    throw new NotFoundError("Volunteer not found");
-  }
-
-  const interest = await db
-    .select()
-    .from(interests)
-    .where(eq(interests.id, interestId));
-
-  if (interest.length === 0) {
-    throw new NotFoundError("Interest not found");
-  }
+  await requireVolunteer(volunteerId);
+  await requireInterest(interestId);
 
   const existing = await db
     .select()
@@ -76,11 +58,7 @@ export async function removeInterest(
   volunteerId: number,
   interestId: number,
 ): Promise<void> {
-  const volunteer = await db
-    .select()
-    .from(volunteers)
-    .where(eq(volunteers.id, volunteerId));
-  if (volunteer.length === 0) throw new NotFoundError("Volunteer not found");
+  await requireVolunteer(volunteerId);
 
   const existing = await db
     .select()

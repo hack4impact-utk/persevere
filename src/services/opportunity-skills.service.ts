@@ -2,10 +2,11 @@ import { and, eq } from "drizzle-orm";
 
 import db from "@/db";
 import { skills } from "@/db/schema";
+import { opportunityRequiredSkills } from "@/db/schema/opportunities";
 import {
-  opportunities,
-  opportunityRequiredSkills,
-} from "@/db/schema/opportunities";
+  requireOpportunity,
+  requireSkill,
+} from "@/services/shared/entity-checks";
 import { ConflictError, NotFoundError } from "@/utils/errors";
 
 export type RequiredSkill = {
@@ -13,18 +14,10 @@ export type RequiredSkill = {
   skillName: string | null;
 };
 
-async function requireEvent(eventId: number): Promise<void> {
-  const [event] = await db
-    .select({ id: opportunities.id })
-    .from(opportunities)
-    .where(eq(opportunities.id, eventId));
-  if (!event) throw new NotFoundError("Calendar event not found");
-}
-
 export async function getRequiredSkills(
   eventId: number,
 ): Promise<RequiredSkill[]> {
-  await requireEvent(eventId);
+  await requireOpportunity(eventId);
   return db
     .select({
       skillId: opportunityRequiredSkills.skillId,
@@ -39,12 +32,8 @@ export async function addRequiredSkill(
   eventId: number,
   skillId: number,
 ): Promise<void> {
-  await requireEvent(eventId);
-  const [skill] = await db
-    .select({ id: skills.id })
-    .from(skills)
-    .where(eq(skills.id, skillId));
-  if (!skill) throw new NotFoundError("Skill not found");
+  await requireOpportunity(eventId);
+  await requireSkill(skillId);
   const existing = await db
     .select()
     .from(opportunityRequiredSkills)
@@ -66,7 +55,7 @@ export async function removeRequiredSkill(
   eventId: number,
   skillId: number,
 ): Promise<void> {
-  await requireEvent(eventId);
+  await requireOpportunity(eventId);
   const deleted = await db
     .delete(opportunityRequiredSkills)
     .where(

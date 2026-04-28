@@ -2,7 +2,11 @@ import { and, eq } from "drizzle-orm";
 
 import db from "@/db";
 import { interests } from "@/db/schema";
-import { opportunities, opportunityInterests } from "@/db/schema/opportunities";
+import { opportunityInterests } from "@/db/schema/opportunities";
+import {
+  requireInterest,
+  requireOpportunity,
+} from "@/services/shared/entity-checks";
 import { ConflictError, NotFoundError } from "@/utils/errors";
 
 export type RequiredInterest = {
@@ -10,18 +14,10 @@ export type RequiredInterest = {
   interestName: string | null;
 };
 
-async function requireEvent(eventId: number): Promise<void> {
-  const [event] = await db
-    .select({ id: opportunities.id })
-    .from(opportunities)
-    .where(eq(opportunities.id, eventId));
-  if (!event) throw new NotFoundError("Calendar event not found");
-}
-
 export async function getRequiredInterests(
   eventId: number,
 ): Promise<RequiredInterest[]> {
-  await requireEvent(eventId);
+  await requireOpportunity(eventId);
   return db
     .select({
       interestId: opportunityInterests.interestId,
@@ -36,12 +32,8 @@ export async function addRequiredInterest(
   eventId: number,
   interestId: number,
 ): Promise<void> {
-  await requireEvent(eventId);
-  const [interest] = await db
-    .select({ id: interests.id })
-    .from(interests)
-    .where(eq(interests.id, interestId));
-  if (!interest) throw new NotFoundError("Interest not found");
+  await requireOpportunity(eventId);
+  await requireInterest(interestId);
   const existing = await db
     .select()
     .from(opportunityInterests)
@@ -63,7 +55,7 @@ export async function removeRequiredInterest(
   eventId: number,
   interestId: number,
 ): Promise<void> {
-  await requireEvent(eventId);
+  await requireOpportunity(eventId);
   const deleted = await db
     .delete(opportunityInterests)
     .where(
