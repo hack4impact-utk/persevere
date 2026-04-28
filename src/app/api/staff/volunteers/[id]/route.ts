@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { backgroundCheckStatusSchema } from "@/lib/status-enums";
 import {
   deleteVolunteer,
   getVolunteerDetail,
@@ -25,9 +26,7 @@ const volunteerUpdateSchema = z.object({
   isActive: z.boolean().optional(),
   volunteerType: z.string().optional(),
   isAlumni: z.boolean().optional(),
-  backgroundCheckStatus: z
-    .enum(["not_required", "pending", "approved", "rejected"])
-    .optional(),
+  backgroundCheckStatus: backgroundCheckStatusSchema.optional(),
   availability: z
     .record(
       z.string(),

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { backgroundCheckStatusSchema } from "@/lib/status-enums";
 import { createVolunteer, listVolunteers } from "@/services/volunteer.service";
 import handleError from "@/utils/handle-error";
 import {
@@ -25,9 +26,7 @@ const volunteerCreateSchema = z.object({
   // Volunteer-specific fields
   volunteerType: z.string().optional(),
   isAlumni: z.boolean().optional(),
-  backgroundCheckStatus: z
-    .enum(["not_required", "pending", "approved", "rejected"])
-    .optional(),
+  backgroundCheckStatus: backgroundCheckStatusSchema.optional(),
   availability: z
     .record(
       z.string(),
