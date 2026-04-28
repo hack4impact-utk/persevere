@@ -8,10 +8,10 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   IconButton,
   Paper,
   Stack,
@@ -28,8 +28,8 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { ConfirmDialog } from "@/components/shared";
-import { LoadingSkeleton } from "@/components/ui";
+import { ConfirmDialog, ModalTitleBar } from "@/components/shared";
+import { EmptyState } from "@/components/ui";
 import {
   useVolunteerTypes,
   type VolunteerType,
@@ -175,41 +175,86 @@ export default function VolunteerTypesSettingsClient(): JSX.Element {
         </Button>
       </Box>
 
-      {loading ? (
-        <LoadingSkeleton variant="lines" count={5} />
-      ) : (
-        <TableContainer component={Paper} variant="outlined">
-          <Table size="small">
+      <Paper
+        elevation={0}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          border: "1px solid",
+          borderColor: "grey.200",
+          borderRadius: 2,
+          overflow: "hidden",
+          position: "relative",
+        }}
+      >
+        <TableContainer sx={{ flex: 1, overflow: "auto" }}>
+          <Table stickyHeader size="small">
             <TableHead>
               <TableRow sx={{ backgroundColor: "action.hover" }}>
-                <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 700, py: 1.5 }} align="right">
+                <TableCell
+                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                >
+                  Name
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                >
+                  Status
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                  align="right"
+                >
                   Actions
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {allTypes.length === 0 ? (
+              {loading && (
                 <TableRow>
-                  <TableCell colSpan={3} align="center" sx={{ py: 5 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      No volunteer types yet.{" "}
-                      <Box
-                        component="span"
-                        sx={{
-                          cursor: "pointer",
-                          color: "primary.main",
-                          fontWeight: 500,
-                        }}
-                        onClick={openAdd}
-                      >
-                        Add the first type
-                      </Box>{" "}
-                      to get started.
-                    </Typography>
+                  <TableCell colSpan={3} sx={{ p: 0, borderBottom: 0 }}>
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 48,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "rgba(255, 255, 255, 0.7)",
+                        zIndex: 1,
+                      }}
+                    >
+                      <CircularProgress />
+                    </Box>
                   </TableCell>
                 </TableRow>
+              )}
+              {allTypes.length === 0 ? (
+                loading ? null : (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center" sx={{ py: 5 }}>
+                      <EmptyState
+                        message="No volunteer types yet."
+                        action={
+                          <Box
+                            component="span"
+                            sx={{
+                              cursor: "pointer",
+                              color: "primary.main",
+                              fontWeight: 500,
+                            }}
+                            onClick={openAdd}
+                          >
+                            Add the first type
+                          </Box>
+                        }
+                      />
+                    </TableCell>
+                  </TableRow>
+                )
               ) : (
                 allTypes.map((type, index) => (
                   <TableRow
@@ -275,7 +320,7 @@ export default function VolunteerTypesSettingsClient(): JSX.Element {
             </TableBody>
           </Table>
         </TableContainer>
-      )}
+      </Paper>
 
       {/* Add / Edit Dialog */}
       <Dialog
@@ -284,10 +329,11 @@ export default function VolunteerTypesSettingsClient(): JSX.Element {
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>
-          {editingType ? "Edit Volunteer Type" : "Add Volunteer Type"}
-        </DialogTitle>
-        <DialogContent>
+        <ModalTitleBar
+          title={editingType ? "Edit Volunteer Type" : "Add Volunteer Type"}
+          onClose={() => setDialogOpen(false)}
+        />
+        <DialogContent dividers>
           <TextField
             label="Name"
             value={form.name}
@@ -302,7 +348,11 @@ export default function VolunteerTypesSettingsClient(): JSX.Element {
           <Button onClick={() => setDialogOpen(false)} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} variant="contained" disabled={saving}>
+          <Button
+            onClick={() => void handleSave()}
+            variant="contained"
+            disabled={saving}
+          >
             {saving ? "Saving..." : "Save"}
           </Button>
         </DialogActions>

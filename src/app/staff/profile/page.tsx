@@ -69,13 +69,17 @@ export default function StaffProfilePage(): JSX.Element {
           px: 2,
         }}
       >
-        <Box sx={{ px: 1, mb: 2 }}>
+        <Box sx={{ mb: 1 }}>
           <Typography
-            variant="overline"
+            variant="caption"
             sx={{
+              px: 1.5,
+              display: "block",
               color: "text.secondary",
               fontWeight: 700,
-              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              mb: 1.5,
             }}
           >
             My Account
@@ -89,9 +93,10 @@ export default function StaffProfilePage(): JSX.Element {
               key={item.value}
               onClick={() => handleNavClick(item.value)}
               sx={{
-                px: 1,
-                py: 0.75,
-                borderRadius: 1,
+                px: 1.5,
+                py: 1,
+                mb: 0.5,
+                borderRadius: 1.5,
                 cursor: "pointer",
                 backgroundColor: isActive ? "primary.main" : "transparent",
                 "&:hover": {
@@ -118,13 +123,13 @@ export default function StaffProfilePage(): JSX.Element {
             <Typography
               variant="caption"
               sx={{
-                px: 1,
-                mb: 0.5,
+                px: 1.5,
                 display: "block",
-                color: "text.disabled",
+                color: "text.secondary",
                 fontWeight: 700,
                 textTransform: "uppercase",
-                letterSpacing: "0.08em",
+                letterSpacing: "0.05em",
+                mb: 1.5,
               }}
             >
               Admin Settings
@@ -136,9 +141,10 @@ export default function StaffProfilePage(): JSX.Element {
                   key={item.value}
                   onClick={() => handleNavClick(item.value)}
                   sx={{
-                    px: 1,
-                    py: 0.75,
-                    borderRadius: 1,
+                    px: 1.5,
+                    py: 1,
+                    mb: 0.5,
+                    borderRadius: 1.5,
                     cursor: "pointer",
                     backgroundColor: isActive ? "primary.main" : "transparent",
                     "&:hover": {

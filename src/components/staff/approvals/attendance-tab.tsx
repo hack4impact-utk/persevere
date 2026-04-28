@@ -4,11 +4,13 @@ import EventNoteIcon from "@mui/icons-material/EventNote";
 import {
   Box,
   Button,
+  Card,
   CircularProgress,
   Divider,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -55,54 +57,66 @@ function EventTable({
   onOpen: (event: AttendanceEvent) => void;
 }): JSX.Element {
   return (
-    <Table>
-      <TableHead>
-        <TableRow>
-          <TableCell sx={{ fontWeight: 600 }}>Event</TableCell>
-          <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
-          <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
-          <TableCell sx={{ fontWeight: 600 }} align="right">
-            Actions
-          </TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {events.map((event) => (
-          <TableRow key={event.id} hover>
-            <TableCell>
-              <Typography variant="body2" fontWeight={500}>
-                {event.title}
-              </Typography>
-            </TableCell>
-            <TableCell>
-              <Typography variant="body2">
-                {new Date(event.startDate).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </Typography>
-            </TableCell>
-            <TableCell>
-              <StatusBadge
-                label={event.status}
-                color={EVENT_STATUS_COLORS[event.status] ?? "default"}
-              />
-            </TableCell>
-            <TableCell align="right">
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<EventNoteIcon />}
-                onClick={() => onOpen(event)}
-              >
-                Mark Attendance
-              </Button>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <Card
+      elevation={0}
+      sx={{
+        border: 1,
+        borderColor: "divider",
+        borderRadius: 2,
+        overflow: "hidden",
+      }}
+    >
+      <TableContainer sx={{ position: "relative" }}>
+        <Table stickyHeader size="small">
+          <TableHead>
+            <TableRow sx={{ bgcolor: "grey.50" }}>
+              <TableCell sx={{ fontWeight: 600 }}>Event</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 600 }} align="right">
+                Actions
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {events.map((event) => (
+              <TableRow key={event.id} hover>
+                <TableCell>
+                  <Typography variant="body2" fontWeight={500}>
+                    {event.title}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2">
+                    {new Date(event.startDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <StatusBadge
+                    label={event.status}
+                    color={EVENT_STATUS_COLORS[event.status] ?? "default"}
+                  />
+                </TableCell>
+                <TableCell align="right">
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<EventNoteIcon />}
+                    onClick={() => onOpen(event)}
+                  >
+                    Mark Attendance
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Card>
   );
 }
 

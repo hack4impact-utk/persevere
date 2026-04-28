@@ -9,6 +9,7 @@ import { Calendar } from "@/components/staff/calendar";
 import EventDetailModal from "@/components/staff/calendar/event-detail-modal";
 import EventFormModal from "@/components/staff/calendar/event-form-modal";
 import { useCalendarEvents } from "@/hooks/use-calendar-events";
+import { usePortalLabel } from "@/hooks/use-portal-label";
 
 type InitialDates = {
   startDate: string;
@@ -18,6 +19,7 @@ type InitialDates = {
 };
 
 export default function StaffCalendarPage(): JSX.Element {
+  const portalLabel = usePortalLabel();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [initialDates, setInitialDates] = useState<InitialDates | undefined>();
@@ -75,7 +77,7 @@ export default function StaffCalendarPage(): JSX.Element {
       }}
     >
       <PageHeader
-        eyebrow="Staff Portal"
+        eyebrow={portalLabel}
         title="Calendar"
         actions={
           <Button

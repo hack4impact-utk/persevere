@@ -7,10 +7,10 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   IconButton,
   Paper,
   Stack,
@@ -27,8 +27,8 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { ConfirmDialog } from "@/components/shared";
-import { LoadingSkeleton } from "@/components/ui";
+import { ConfirmDialog, ModalTitleBar } from "@/components/shared";
+import { EmptyState } from "@/components/ui";
 import { useSkills } from "@/hooks/use-skills";
 
 type Skill = {
@@ -291,48 +291,91 @@ export default function SkillsSettingsClient(): JSX.Element {
             </Button>
           </Box>
 
-          {skillsLoading ? (
-            <LoadingSkeleton variant="lines" count={5} />
-          ) : (
-            <TableContainer component={Paper} variant="outlined">
-              <Table size="small">
+          <Paper
+            elevation={0}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              border: "1px solid",
+              borderColor: "grey.200",
+              borderRadius: 2,
+              overflow: "hidden",
+              position: "relative",
+            }}
+          >
+            <TableContainer sx={{ flex: 1, overflow: "auto" }}>
+              <Table stickyHeader size="small">
                 <TableHead>
                   <TableRow sx={{ backgroundColor: "action.hover" }}>
-                    <TableCell sx={{ fontWeight: 700, py: 1.5 }}>
+                    <TableCell
+                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                    >
                       Name
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, py: 1.5 }}>
+                    <TableCell
+                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                    >
                       Description
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, py: 1.5 }}>
+                    <TableCell
+                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                    >
                       Category
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, py: 1.5 }} align="right">
+                    <TableCell
+                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                      align="right"
+                    >
                       Actions
                     </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {skills.length === 0 ? (
+                  {skillsLoading && (
                     <TableRow>
-                      <TableCell colSpan={4} align="center" sx={{ py: 5 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          No skills yet.{" "}
-                          <Box
-                            component="span"
-                            sx={{
-                              cursor: "pointer",
-                              color: "primary.main",
-                              fontWeight: 500,
-                            }}
-                            onClick={openAddSkill}
-                          >
-                            Add the first skill
-                          </Box>{" "}
-                          to get started.
-                        </Typography>
+                      <TableCell colSpan={4} sx={{ p: 0, borderBottom: 0 }}>
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: 48,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "rgba(255, 255, 255, 0.7)",
+                            zIndex: 1,
+                          }}
+                        >
+                          <CircularProgress />
+                        </Box>
                       </TableCell>
                     </TableRow>
+                  )}
+                  {skills.length === 0 ? (
+                    skillsLoading ? null : (
+                      <TableRow>
+                        <TableCell colSpan={4} align="center" sx={{ py: 5 }}>
+                          <EmptyState
+                            message="No skills yet."
+                            action={
+                              <Box
+                                component="span"
+                                sx={{
+                                  cursor: "pointer",
+                                  color: "primary.main",
+                                  fontWeight: 500,
+                                }}
+                                onClick={openAddSkill}
+                              >
+                                Add the first skill
+                              </Box>
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )
                   ) : (
                     skills.map((skill, index) => (
                       <TableRow
@@ -401,7 +444,7 @@ export default function SkillsSettingsClient(): JSX.Element {
                 </TableBody>
               </Table>
             </TableContainer>
-          )}
+          </Paper>
         </Box>
 
         {/* Interests Section */}
@@ -434,45 +477,86 @@ export default function SkillsSettingsClient(): JSX.Element {
             </Button>
           </Box>
 
-          {interestsLoading ? (
-            <LoadingSkeleton variant="lines" count={5} />
-          ) : (
-            <TableContainer component={Paper} variant="outlined">
-              <Table size="small">
+          <Paper
+            elevation={0}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              border: "1px solid",
+              borderColor: "grey.200",
+              borderRadius: 2,
+              overflow: "hidden",
+              position: "relative",
+            }}
+          >
+            <TableContainer sx={{ flex: 1, overflow: "auto" }}>
+              <Table stickyHeader size="small">
                 <TableHead>
                   <TableRow sx={{ backgroundColor: "action.hover" }}>
-                    <TableCell sx={{ fontWeight: 700, py: 1.5 }}>
+                    <TableCell
+                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                    >
                       Name
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, py: 1.5 }}>
+                    <TableCell
+                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                    >
                       Description
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, py: 1.5 }} align="right">
+                    <TableCell
+                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                      align="right"
+                    >
                       Actions
                     </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {interests.length === 0 ? (
+                  {interestsLoading && (
                     <TableRow>
-                      <TableCell colSpan={3} align="center" sx={{ py: 5 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          No interests yet.{" "}
-                          <Box
-                            component="span"
-                            sx={{
-                              cursor: "pointer",
-                              color: "primary.main",
-                              fontWeight: 500,
-                            }}
-                            onClick={openAddInterest}
-                          >
-                            Add the first interest
-                          </Box>{" "}
-                          to get started.
-                        </Typography>
+                      <TableCell colSpan={3} sx={{ p: 0, borderBottom: 0 }}>
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: 48,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "rgba(255, 255, 255, 0.7)",
+                            zIndex: 1,
+                          }}
+                        >
+                          <CircularProgress />
+                        </Box>
                       </TableCell>
                     </TableRow>
+                  )}
+                  {interests.length === 0 ? (
+                    interestsLoading ? null : (
+                      <TableRow>
+                        <TableCell colSpan={3} align="center" sx={{ py: 5 }}>
+                          <EmptyState
+                            message="No interests yet."
+                            action={
+                              <Box
+                                component="span"
+                                sx={{
+                                  cursor: "pointer",
+                                  color: "primary.main",
+                                  fontWeight: 500,
+                                }}
+                                onClick={openAddInterest}
+                              >
+                                Add the first interest
+                              </Box>
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )
                   ) : (
                     interests.map((interest, index) => (
                       <TableRow
@@ -525,7 +609,7 @@ export default function SkillsSettingsClient(): JSX.Element {
                 </TableBody>
               </Table>
             </TableContainer>
-          )}
+          </Paper>
         </Box>
       </Stack>
       {/* Skill Add/Edit Dialog */}
@@ -535,8 +619,11 @@ export default function SkillsSettingsClient(): JSX.Element {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>{editingSkill ? "Edit Skill" : "Add Skill"}</DialogTitle>
-        <DialogContent>
+        <ModalTitleBar
+          title={editingSkill ? "Edit Skill" : "Add Skill"}
+          onClose={() => setSkillDialogOpen(false)}
+        />
+        <DialogContent dividers>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               label="Name"
@@ -576,7 +663,7 @@ export default function SkillsSettingsClient(): JSX.Element {
             Cancel
           </Button>
           <Button
-            onClick={handleSaveSkill}
+            onClick={() => void handleSaveSkill()}
             variant="contained"
             disabled={skillSaving}
           >
@@ -591,10 +678,11 @@ export default function SkillsSettingsClient(): JSX.Element {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>
-          {editingInterest ? "Edit Interest" : "Add Interest"}
-        </DialogTitle>
-        <DialogContent>
+        <ModalTitleBar
+          title={editingInterest ? "Edit Interest" : "Add Interest"}
+          onClose={() => setInterestDialogOpen(false)}
+        />
+        <DialogContent dividers>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               label="Name"
@@ -626,7 +714,7 @@ export default function SkillsSettingsClient(): JSX.Element {
             Cancel
           </Button>
           <Button
-            onClick={handleSaveInterest}
+            onClick={() => void handleSaveInterest()}
             variant="contained"
             disabled={interestSaving}
           >

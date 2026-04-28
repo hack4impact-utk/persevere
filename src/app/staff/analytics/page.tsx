@@ -25,6 +25,7 @@ import { JSX, useState } from "react";
 
 import { PageHeader } from "@/components/shared";
 import { useAnalytics } from "@/hooks/use-analytics";
+import { usePortalLabel } from "@/hooks/use-portal-label";
 
 function padTwo(n: number): string {
   return String(n).padStart(2, "0");
@@ -65,6 +66,7 @@ function getPeriodDates(p: string): {
 
 /** Analytics dashboard for insights and metrics. */
 export default function StaffAnalyticsPage(): JSX.Element {
+  const portalLabel = usePortalLabel();
   const [period, setPeriod] = useState<string>("all");
 
   const { startDate, endDate } = getPeriodDates(period);
@@ -135,7 +137,7 @@ export default function StaffAnalyticsPage(): JSX.Element {
       {error && <Alert severity="error">{error}</Alert>}
 
       <PageHeader
-        eyebrow="Staff Portal"
+        eyebrow={portalLabel}
         title="Analytics"
         subtitle="Volunteer hours, engagement, and program performance"
         actions={

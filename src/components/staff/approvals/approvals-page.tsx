@@ -108,7 +108,30 @@ export default function ApprovalsPage(): JSX.Element {
                 </Box>
               }
             />
-            <Tab label="Attendance" />
+            <Tab
+              label={
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  Attendance
+                  {!attendanceHook.loadingEvents &&
+                    attendanceHook.events.some((e) => e.confirmedCount > 0) && (
+                      <Chip
+                        label={
+                          attendanceHook.events.filter(
+                            (e) => e.confirmedCount > 0,
+                          ).length
+                        }
+                        size="small"
+                        sx={{
+                          height: 18,
+                          fontSize: "0.7rem",
+                          backgroundColor: "primary.main",
+                          color: "white",
+                        }}
+                      />
+                    )}
+                </Box>
+              }
+            />
           </Tabs>
         </Box>
       </PageHeader>

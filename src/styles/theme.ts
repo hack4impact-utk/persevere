@@ -23,6 +23,10 @@ const theme = createTheme({
     success: {
       main: "#4caf50",
     },
+    background: {
+      default: "#fafafa",
+      paper: "#ffffff",
+    },
   },
   components: {
     MuiButton: {

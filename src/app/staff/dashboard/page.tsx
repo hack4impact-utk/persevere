@@ -21,6 +21,7 @@ import { JSX, ReactNode } from "react";
 import { PageHeader } from "@/components/shared";
 import { EmptyState } from "@/components/ui";
 import { useCommunications } from "@/hooks/use-communications";
+import { usePortalLabel } from "@/hooks/use-portal-label";
 import {
   type PendingHoursEntry,
   type PendingRsvpEntry,
@@ -234,6 +235,7 @@ function CardSectionTitle({
 /** Staff dashboard with portal overview. */
 export default function StaffDashboardPage(): JSX.Element {
   const { data: session } = useSession();
+  const portalLabel = usePortalLabel();
   const { data, isLoading, error } = useStaffDashboard();
   const { communications } = useCommunications();
 
@@ -312,7 +314,7 @@ export default function StaffDashboardPage(): JSX.Element {
       {error && <Alert severity="error">{error}</Alert>}
 
       <PageHeader
-        eyebrow="Staff Portal"
+        eyebrow={portalLabel}
         title={`${getGreeting()}, ${firstName}`}
         subtitle={todayLabel}
         actions={

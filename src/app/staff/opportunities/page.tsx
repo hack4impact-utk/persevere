@@ -6,6 +6,7 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import SearchIcon from "@mui/icons-material/Search";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -14,6 +15,7 @@ import Tab from "@mui/material/Tab";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Tabs from "@mui/material/Tabs";
@@ -28,6 +30,7 @@ import EventFormModal from "@/components/staff/calendar/event-form-modal";
 import { EmptyState } from "@/components/ui";
 import { useCalendarEvents } from "@/hooks/use-calendar-events";
 import { useEventCategories } from "@/hooks/use-event-categories";
+import { usePortalLabel } from "@/hooks/use-portal-label";
 
 type TabKey = "upcoming" | "past" | "all";
 
@@ -42,6 +45,7 @@ function formatDate(isoString: string): string {
 }
 
 export default function StaffOpportunitiesPage(): JSX.Element {
+  const portalLabel = usePortalLabel();
   const [activeTab, setActiveTab] = useState<TabKey>("upcoming");
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<number | "">("");
@@ -114,7 +118,7 @@ export default function StaffOpportunitiesPage(): JSX.Element {
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <Box sx={{ px: { xs: 2, md: 4 }, pt: { xs: 1, md: 1.5 } }}>
         <PageHeader
-          eyebrow="Staff Portal"
+          eyebrow={portalLabel}
           title="Opportunities"
           actions={
             <Button
@@ -255,138 +259,153 @@ export default function StaffOpportunitiesPage(): JSX.Element {
             }
           />
         ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
-                  Title
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
-                  Category
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
-                  Date
-                </TableCell>
-                <TableCell
-                  align="right"
-                  sx={{ fontWeight: 600, fontSize: "0.875rem" }}
-                >
-                  RSVPs
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filtered.map((event) => {
-                const { maxVolunteers, rsvpCount, categoryName } =
-                  event.extendedProps ?? {};
-                const filled = rsvpCount ?? 0;
-                const pct = maxVolunteers ? filled / maxVolunteers : 0;
-                const isNearFull = pct > 0.9;
+          <Card
+            elevation={0}
+            sx={{
+              border: 1,
+              borderColor: "divider",
+              borderRadius: 2,
+              overflow: "hidden",
+            }}
+          >
+            <TableContainer sx={{ position: "relative" }}>
+              <Table stickyHeader size="small">
+                <TableHead>
+                  <TableRow sx={{ bgcolor: "grey.50" }}>
+                    <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                      Title
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                      Category
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                      Date
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{ fontWeight: 600, fontSize: "0.875rem" }}
+                    >
+                      RSVPs
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filtered.map((event) => {
+                    const { maxVolunteers, rsvpCount, categoryName } =
+                      event.extendedProps ?? {};
+                    const filled = rsvpCount ?? 0;
+                    const pct = maxVolunteers ? filled / maxVolunteers : 0;
+                    const isNearFull = pct > 0.9;
 
-                return (
-                  <TableRow
-                    key={event.id}
-                    hover
-                    onClick={() => {
-                      setSelectedEventId(event.id);
-                    }}
-                    sx={{ cursor: "pointer" }}
-                  >
-                    <TableCell>
-                      <Typography
-                        variant="body2"
-                        fontWeight={600}
-                        color="text.primary"
+                    return (
+                      <TableRow
+                        key={event.id}
+                        hover
+                        onClick={() => {
+                          setSelectedEventId(event.id);
+                        }}
+                        sx={{ cursor: "pointer" }}
                       >
-                        {event.title}
-                      </Typography>
-                      {event.location && (
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                            mt: 0.25,
-                          }}
-                        >
-                          <LocationOnIcon
-                            sx={{ fontSize: 12, color: "text.secondary" }}
-                          />
-                          <Typography variant="caption" color="text.secondary">
-                            {event.location}
-                          </Typography>
-                        </Box>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {categoryName ? (
-                        <Chip
-                          label={categoryName}
-                          size="small"
-                          variant="outlined"
-                        />
-                      ) : (
-                        <Typography variant="caption" color="text.disabled">
-                          —
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatDate(event.start)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      {maxVolunteers == null ? (
-                        <Typography variant="caption" color="text.disabled">
-                          No limit
-                        </Typography>
-                      ) : (
-                        <Box
-                          sx={{
-                            display: "inline-flex",
-                            flexDirection: "column",
-                            alignItems: "flex-end",
-                            minWidth: 72,
-                          }}
-                        >
+                        <TableCell>
                           <Typography
                             variant="body2"
                             fontWeight={600}
-                            sx={{ fontVariantNumeric: "tabular-nums" }}
+                            color="text.primary"
                           >
-                            {filled} / {maxVolunteers}
+                            {event.title}
                           </Typography>
-                          <Box
-                            sx={{
-                              height: 4,
-                              width: 72,
-                              bgcolor: "action.hover",
-                              borderRadius: 2,
-                              mt: 0.5,
-                              overflow: "hidden",
-                            }}
-                          >
+                          {event.location && (
                             <Box
                               sx={{
-                                width: `${pct * 100}%`,
-                                height: "100%",
-                                bgcolor: isNearFull
-                                  ? "warning.main"
-                                  : "primary.main",
-                                borderRadius: 2,
-                                transition: "width 0.3s",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                                mt: 0.25,
                               }}
+                            >
+                              <LocationOnIcon
+                                sx={{ fontSize: 12, color: "text.secondary" }}
+                              />
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                {event.location}
+                              </Typography>
+                            </Box>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {categoryName ? (
+                            <Chip
+                              label={categoryName}
+                              size="small"
+                              variant="outlined"
                             />
-                          </Box>
-                        </Box>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                          ) : (
+                            <Typography variant="caption" color="text.disabled">
+                              —
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            {formatDate(event.start)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          {maxVolunteers == null ? (
+                            <Typography variant="caption" color="text.disabled">
+                              No limit
+                            </Typography>
+                          ) : (
+                            <Box
+                              sx={{
+                                display: "inline-flex",
+                                flexDirection: "column",
+                                alignItems: "flex-end",
+                                minWidth: 72,
+                              }}
+                            >
+                              <Typography
+                                variant="body2"
+                                fontWeight={600}
+                                sx={{ fontVariantNumeric: "tabular-nums" }}
+                              >
+                                {filled} / {maxVolunteers}
+                              </Typography>
+                              <Box
+                                sx={{
+                                  height: 4,
+                                  width: 72,
+                                  bgcolor: "action.hover",
+                                  borderRadius: 2,
+                                  mt: 0.5,
+                                  overflow: "hidden",
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    width: `${pct * 100}%`,
+                                    height: "100%",
+                                    bgcolor: isNearFull
+                                      ? "warning.main"
+                                      : "primary.main",
+                                    borderRadius: 2,
+                                    transition: "width 0.3s",
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
         )}
       </Box>
 

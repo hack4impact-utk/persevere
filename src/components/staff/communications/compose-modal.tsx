@@ -18,10 +18,10 @@ import {
   List,
   ListItemButton,
   ListItemText,
-  MenuItem,
   Popover,
-  Select,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -291,23 +291,6 @@ export default function ComposeModal({
     onClose();
   }, [submitting, onClose]);
 
-  const getRecipientLabel = useCallback((type: RecipientType): string => {
-    switch (type) {
-      case "volunteers": {
-        return "Volunteers";
-      }
-      case "staff": {
-        return "Staff";
-      }
-      case "both": {
-        return "Staff & Volunteers";
-      }
-      default: {
-        return type;
-      }
-    }
-  }, []);
-
   return (
     <Dialog
       open={open}
@@ -337,7 +320,7 @@ export default function ComposeModal({
         }}
       >
         <Typography variant="h5" fontWeight={600}>
-          Compose Message
+          New communication
         </Typography>
         <IconButton
           onClick={handleClose}
@@ -382,46 +365,55 @@ export default function ComposeModal({
             overflow: "hidden",
           }}
         >
-          {/* To Field */}
-          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+          {/* Recipients Field */}
+          <Box sx={{ mb: 1 }}>
             <Typography
               sx={{
+                fontSize: 12,
+                fontWeight: 600,
                 color: "text.secondary",
-                minWidth: 70,
-                fontSize: "1rem",
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+                mb: 0.75,
               }}
             >
-              To
+              Recipients
             </Typography>
-            <Select
+            <ToggleButtonGroup
               value={recipientType}
-              onChange={(e) =>
-                setRecipientType(e.target.value as RecipientType)
-              }
-              variant="standard"
+              exclusive
+              onChange={(_, val: RecipientType | null) => {
+                if (val) setRecipientType(val);
+              }}
               disabled={submitting}
+              size="small"
               sx={{
-                flex: 1,
-                "& .MuiSelect-select": {
-                  py: 0.5,
-                },
-                "&:before, &:after": {
-                  display: "none",
+                "& .MuiToggleButton-root": {
+                  borderRadius: "6px !important",
+                  px: 1.75,
+                  py: 0.75,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  textTransform: "none",
+                  border: "1px solid rgba(0,0,0,.2)",
+                  mr: 1,
+                  "&.Mui-selected": {
+                    bgcolor: "primary.main",
+                    color: "#fff",
+                    borderColor: "primary.main",
+                    "&:hover": { bgcolor: "primary.dark" },
+                  },
                 },
               }}
             >
-              <MenuItem value="volunteers">
-                {getRecipientLabel("volunteers")}
-              </MenuItem>
-              {userRole === "admin" && [
-                <MenuItem key="staff" value="staff">
-                  {getRecipientLabel("staff")}
-                </MenuItem>,
-                <MenuItem key="both" value="both">
-                  {getRecipientLabel("both")}
-                </MenuItem>,
-              ]}
-            </Select>
+              <ToggleButton value="volunteers">Volunteers</ToggleButton>
+              {userRole === "admin" && (
+                <ToggleButton value="staff">Staff</ToggleButton>
+              )}
+              {userRole === "admin" && (
+                <ToggleButton value="both">Staff & Volunteers</ToggleButton>
+              )}
+            </ToggleButtonGroup>
           </Box>
 
           <Divider />
@@ -613,13 +605,13 @@ export default function ComposeModal({
           <Button
             onClick={handleClose}
             disabled={submitting}
-            variant="outlined"
+            variant="text"
             sx={{ borderRadius: 2, px: 3 }}
           >
             Cancel
           </Button>
           <Button
-            onClick={handleSubmit}
+            onClick={() => void handleSubmit()}
             variant="contained"
             disabled={!isFormValid || submitting}
             sx={{ borderRadius: 2, px: 4 }}
