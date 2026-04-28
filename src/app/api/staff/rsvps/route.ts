@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { rsvpStatusSchema } from "@/lib/status-enums";
 import {
   listRsvpsByStatus,
   updateRsvpStatus,
@@ -13,7 +14,7 @@ import { parseBodyOrError } from "@/utils/server/route-helpers";
 const updateRsvpSchema = z.object({
   volunteerId: z.number().int().positive(),
   opportunityId: z.number().int().positive(),
-  status: z.enum(["confirmed", "declined", "attended", "no_show", "cancelled"]),
+  status: rsvpStatusSchema,
 });
 
 /**
@@ -29,14 +30,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const { searchParams } = new URL(request.url);
     const statusParam = searchParams.get("status") ?? "pending";
-    const statusSchema = z.enum([
-      "pending",
-      "confirmed",
-      "declined",
-      "attended",
-      "no_show",
-    ]);
-    const parsed = statusSchema.safeParse(statusParam);
+    const parsed = rsvpStatusSchema.safeParse(statusParam);
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid status filter" },
