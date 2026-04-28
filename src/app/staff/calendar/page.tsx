@@ -1,10 +1,10 @@
 "use client";
 
-import AddIcon from "@mui/icons-material/Add";
 import { Box, Button, CircularProgress } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
+import { PageHeader } from "@/components/shared/page-header";
 import { Calendar } from "@/components/staff/calendar";
 import EventDetailModal from "@/components/staff/calendar/event-detail-modal";
 import EventFormModal from "@/components/staff/calendar/event-form-modal";
@@ -74,19 +74,21 @@ export default function StaffCalendarPage(): JSX.Element {
         pb: { xs: 2, md: 4 },
       }}
     >
-      <Box sx={{ display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            setInitialDates(undefined);
-            setIsCreateModalOpen(true);
-          }}
-          sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
-        >
-          Add Event
-        </Button>
-      </Box>
+      <PageHeader
+        eyebrow="Staff Portal"
+        title="Calendar"
+        actions={
+          <Button
+            variant="contained"
+            onClick={() => {
+              setInitialDates(undefined);
+              setIsCreateModalOpen(true);
+            }}
+          >
+            New event
+          </Button>
+        }
+      />
 
       <Box sx={{ flex: 1, minHeight: 0 }}>
         {loading ? (

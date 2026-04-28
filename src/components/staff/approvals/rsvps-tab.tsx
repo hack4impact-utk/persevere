@@ -1,15 +1,12 @@
 "use client";
 
 import {
+  Avatar,
   Box,
   Button,
   CircularProgress,
+  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Typography,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
@@ -28,6 +25,13 @@ type RsvpsTabProps = {
 };
 
 type RsvpTarget = { volunteerId: number; opportunityId: number } | null;
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return parts.length >= 2
+    ? (parts[0][0] + parts.at(-1)![0]).toUpperCase()
+    : name.slice(0, 2).toUpperCase();
+}
 
 export default function RsvpsTab({
   rsvps,
@@ -64,95 +68,115 @@ export default function RsvpsTab({
     }
   }, [declineTarget, onDecline, enqueueSnackbar]);
 
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <>
-      {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-          <CircularProgress />
-        </Box>
-      ) : rsvps.length === 0 ? (
+      {rsvps.length === 0 ? (
         <EmptyState
           message="No pending RSVPs"
           subMessage="All RSVP requests have been reviewed."
         />
       ) : (
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 600 }}>Volunteer</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Event</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Event Date</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>RSVP'd At</TableCell>
-              <TableCell sx={{ fontWeight: 600 }} align="right">
-                Actions
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {rsvps.map((row) => (
-              <TableRow key={`${row.volunteerId}-${row.opportunityId}`} hover>
-                <TableCell>
-                  <Typography variant="body2" fontWeight={500}>
+        rsvps.map((row) => {
+          const eventDate = new Date(
+            row.opportunityStartDate,
+          ).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
+          const rsvpDate = new Date(row.rsvpAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          });
+
+          return (
+            <Paper
+              key={`${row.volunteerId}-${row.opportunityId}`}
+              elevation={1}
+              sx={{ p: 2.5, mb: 1.5 }}
+            >
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "auto 1fr auto",
+                  gap: 2,
+                  alignItems: "center",
+                }}
+              >
+                <Avatar
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    bgcolor: "primary.main",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  {getInitials(row.volunteerName)}
+                </Avatar>
+
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography
+                    sx={{ fontWeight: 600, fontSize: "0.9375rem", mb: 0.5 }}
+                  >
                     {row.volunteerName}
                   </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ mb: 0.25 }}>
                     {row.opportunityTitle}
+                    {" · "}
+                    <Box component="span" sx={{ color: "text.secondary" }}>
+                      {eventDate}
+                    </Box>
                   </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">
-                    {new Date(row.opportunityStartDate).toLocaleDateString(
-                      "en-US",
-                      { month: "short", day: "numeric", year: "numeric" },
-                    )}
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontSize: "0.8125rem" }}
+                  >
+                    RSVP&apos;d {rsvpDate}
                   </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" color="text.secondary">
-                    {new Date(row.rsvpAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </Typography>
-                </TableCell>
-                <TableCell align="right">
-                  <Stack direction="row" spacing={1} justifyContent="flex-end">
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="success"
-                      disabled={mutating}
-                      onClick={() =>
-                        setConfirmTarget({
-                          volunteerId: row.volunteerId,
-                          opportunityId: row.opportunityId,
-                        })
-                      }
-                    >
-                      Confirm
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="error"
-                      disabled={mutating}
-                      onClick={() =>
-                        setDeclineTarget({
-                          volunteerId: row.volunteerId,
-                          opportunityId: row.opportunityId,
-                        })
-                      }
-                    >
-                      Decline
-                    </Button>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                </Box>
+
+                <Stack direction="row" spacing={1} flexShrink={0}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    disabled={mutating}
+                    onClick={() =>
+                      setDeclineTarget({
+                        volunteerId: row.volunteerId,
+                        opportunityId: row.opportunityId,
+                      })
+                    }
+                  >
+                    Decline
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    disabled={mutating}
+                    onClick={() =>
+                      setConfirmTarget({
+                        volunteerId: row.volunteerId,
+                        opportunityId: row.opportunityId,
+                      })
+                    }
+                  >
+                    Confirm
+                  </Button>
+                </Stack>
+              </Box>
+            </Paper>
+          );
+        })
       )}
 
       <ConfirmDialog

@@ -47,6 +47,7 @@ import { useVolunteerTypes } from "@/hooks/use-volunteer-types";
 
 import PeopleTable from "./people-table";
 import AddStaffModal from "./staff-add-modal";
+import StaffProfile from "./staff-profile";
 
 export default function PeopleList(): ReactElement {
   const [searchQuery, setSearchQuery] = useState("");
@@ -403,35 +404,23 @@ export default function PeopleList(): ReactElement {
         open={selectedStaffId !== null}
         onClose={handleCloseStaffDrawer}
         PaperProps={{
-          sx: { width: 480, display: "flex", flexDirection: "column" },
+          sx: { width: 520, display: "flex", flexDirection: "column" },
         }}
       >
         <ModalTitleBar title="Staff Profile" onClose={handleCloseStaffDrawer} />
-        <Box sx={{ flex: 1, overflow: "auto", p: 3 }}>
+        <Box sx={{ flex: 1, overflow: "auto" }}>
           {staffProfileLoading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
               <CircularProgress />
             </Box>
           ) : staffProfileError ? (
-            <Alert severity="error">{staffProfileError}</Alert>
+            <Box sx={{ p: 3 }}>
+              <Alert severity="error">{staffProfileError}</Alert>
+            </Box>
           ) : staffProfile ? (
-            <Stack spacing={2}>
-              <Typography variant="h6">
-                {staffProfile.users?.firstName} {staffProfile.users?.lastName}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Email: {staffProfile.users?.email}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Phone: {staffProfile.users?.phone ?? "N/A"}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Role: {staffProfile.isAdmin ? "Admin" : "Staff"}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Status: {staffProfile.users?.isActive ? "Active" : "Inactive"}
-              </Typography>
-            </Stack>
+            <Box sx={{ pt: 3 }}>
+              <StaffProfile profile={staffProfile} />
+            </Box>
           ) : null}
         </Box>
       </Drawer>

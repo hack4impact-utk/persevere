@@ -5,6 +5,7 @@ import { Box, Button, Chip, Tab, Tabs } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { JSX, SyntheticEvent, useCallback, useState } from "react";
 
+import { PageHeader } from "@/components/shared";
 import { useApprovalsAttendance } from "@/hooks/use-approvals-attendance";
 import { useApprovalsHours } from "@/hooks/use-approvals-hours";
 import { useApprovalsRsvps } from "@/hooks/use-approvals-rsvps";
@@ -50,69 +51,67 @@ export default function ApprovalsPage(): JSX.Element {
         overflow: "hidden",
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: 1,
-          borderColor: "divider",
-          mb: 3,
-        }}
+      <PageHeader
+        eyebrow="Staff Portal"
+        title="Approvals"
+        subtitle="Review volunteer submissions and applications"
+        actions={
+          tab === 0 ? (
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={() => setLogModalOpen(true)}
+            >
+              Log Hours
+            </Button>
+          ) : undefined
+        }
       >
-        <Tabs value={tab} onChange={handleTabChange}>
-          <Tab
-            label={
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                Hours
-                {!hoursHook.loading && hoursHook.hours.length > 0 && (
-                  <Chip
-                    label={hoursHook.hours.length}
-                    size="small"
-                    sx={{
-                      height: 18,
-                      fontSize: "0.7rem",
-                      backgroundColor: "primary.main",
-                      color: "white",
-                    }}
-                  />
-                )}
-              </Box>
-            }
-          />
-          <Tab
-            label={
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                RSVPs
-                {!rsvpsHook.loading && rsvpsHook.rsvps.length > 0 && (
-                  <Chip
-                    label={rsvpsHook.rsvps.length}
-                    size="small"
-                    sx={{
-                      height: 18,
-                      fontSize: "0.7rem",
-                      backgroundColor: "primary.main",
-                      color: "white",
-                    }}
-                  />
-                )}
-              </Box>
-            }
-          />
-          <Tab label="Attendance" />
-        </Tabs>
-
-        {tab === 0 && (
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={() => setLogModalOpen(true)}
-          >
-            Log Hours
-          </Button>
-        )}
-      </Box>
+        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Tabs value={tab} onChange={handleTabChange}>
+            <Tab
+              label={
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  Hours
+                  {!hoursHook.loading && hoursHook.hours.length > 0 && (
+                    <Chip
+                      label={hoursHook.hours.length}
+                      size="small"
+                      sx={{
+                        height: 18,
+                        fontSize: "0.7rem",
+                        backgroundColor: "primary.main",
+                        color: "white",
+                      }}
+                    />
+                  )}
+                </Box>
+              }
+            />
+            <Tab
+              label={
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  RSVPs
+                  {!rsvpsHook.loading && rsvpsHook.rsvps.length > 0 && (
+                    <Chip
+                      label={rsvpsHook.rsvps.length}
+                      size="small"
+                      sx={{
+                        height: 18,
+                        fontSize: "0.7rem",
+                        backgroundColor: "primary.main",
+                        color: "white",
+                      }}
+                    />
+                  )}
+                </Box>
+              }
+            />
+            <Tab label="Attendance" />
+          </Tabs>
+        </Box>
+      </PageHeader>
 
       <Box sx={{ flex: 1, overflow: "auto" }}>
         {tab === 0 && (

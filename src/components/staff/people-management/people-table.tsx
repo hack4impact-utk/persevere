@@ -1,6 +1,5 @@
 "use client";
 
-import PersonIcon from "@mui/icons-material/Person";
 import {
   Avatar,
   Box,
@@ -173,11 +172,10 @@ export default function PeopleTable({
                         <Avatar
                           src={person.profilePicture || undefined}
                           alt={`${person.firstName} ${person.lastName}`}
-                          sx={{ width: 32, height: 32 }}
+                          sx={{ width: 32, height: 32, fontSize: 12 }}
                         >
-                          {!person.profilePicture && (
-                            <PersonIcon sx={{ fontSize: 18 }} />
-                          )}
+                          {`${person.firstName?.[0] ?? ""}${person.lastName?.[0] ?? ""}`.toUpperCase() ||
+                            "?"}
                         </Avatar>
                         <Box>
                           <Typography
