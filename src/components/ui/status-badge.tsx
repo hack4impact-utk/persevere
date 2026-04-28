@@ -3,6 +3,7 @@ import type { SxProps, Theme } from "@mui/material/styles";
 import type { JSX, ReactElement } from "react";
 
 import type { RsvpStatus } from "@/components/volunteer/types";
+import type { BackgroundCheckStatus, HoursStatus } from "@/lib/status-enums";
 
 type StatusBadgeProps = {
   label: string;
@@ -59,13 +60,6 @@ export function getRsvpStatusColor(
   }
 }
 
-type HoursStatus =
-  | "pending"
-  | "approved"
-  | "rejected"
-  | "edit_requested"
-  | string;
-
 export function getHoursStatusColor(
   status: HoursStatus,
 ): "success" | "warning" | "error" | "default" {
@@ -80,8 +74,6 @@ export function getHoursStatusLabel(status: HoursStatus): string {
   if (status === "edit_requested") return "Edit Requested";
   return status;
 }
-
-type BackgroundCheckStatus = "approved" | "pending" | "rejected" | string;
 
 export function getBackgroundCheckColor(
   status: BackgroundCheckStatus,
