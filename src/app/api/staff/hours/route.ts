@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { hoursStatusSchema } from "@/lib/status-enums";
 import { listAllHours, logHours } from "@/services/volunteer-hours.service";
 import { NotFoundError, ValidationError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
 import { parseBodyOrError } from "@/utils/server/route-helpers";
-
-const hoursStatusSchema = z
-  .enum(["pending", "approved", "rejected", "edit_requested"] as const)
-  .optional();
 
 const logHoursSchema = z.object({
   volunteerId: z.number().int().positive(),
@@ -32,7 +29,9 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const { searchParams } = new URL(request.url);
     const statusParam = searchParams.get("status");
-    const parsed = hoursStatusSchema.safeParse(statusParam ?? undefined);
+    const parsed = hoursStatusSchema
+      .optional()
+      .safeParse(statusParam ?? undefined);
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid status filter" },
