@@ -14,7 +14,7 @@ import { parseBodyOrError } from "@/utils/server/route-helpers";
 const updateRsvpSchema = z.object({
   volunteerId: z.number().int().positive(),
   opportunityId: z.number().int().positive(),
-  status: rsvpStatusSchema,
+  status: rsvpStatusSchema.exclude(["pending"]),
 });
 
 /**

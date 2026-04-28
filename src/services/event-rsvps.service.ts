@@ -78,13 +78,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 export async function updateRsvpStatus(
   volunteerId: number,
   opportunityId: number,
-  newStatus:
-    | "pending"
-    | "confirmed"
-    | "declined"
-    | "attended"
-    | "no_show"
-    | "cancelled",
+  newStatus: "confirmed" | "declined" | "attended" | "no_show" | "cancelled",
 ): Promise<void> {
   const [rsvp] = await db
     .select()
