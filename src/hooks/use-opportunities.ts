@@ -16,6 +16,7 @@ export type UseOpportunitiesResult = {
   opportunities: Opportunity[];
   rsvpedIds: Set<number>;
   rsvpStatusMap: Map<number, RsvpStatus>;
+  rsvpItems: RsvpItem[];
   loading: boolean;
   error: string | null;
   rsvpWarning: boolean;
@@ -26,7 +27,17 @@ export type UseOpportunitiesResult = {
   handleRsvpChange: (opportunityId: number, newIsRsvped: boolean) => void;
 };
 
-export function useOpportunities(search: string): UseOpportunitiesResult {
+type OpportunitiesFilters = {
+  search: string;
+  categoryId?: number | "";
+  locationFilter?: string;
+  dateRange?: "week" | "month" | "";
+};
+
+export function useOpportunities(
+  filters: OpportunitiesFilters,
+): UseOpportunitiesResult {
+  const { search, categoryId, locationFilter, dateRange } = filters;
   const { enqueueSnackbar } = useSnackbar();
 
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -34,6 +45,7 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
   const [rsvpStatusMap, setRsvpStatusMap] = useState<Map<number, RsvpStatus>>(
     new Map(),
   );
+  const [rsvpItems, setRsvpItems] = useState<RsvpItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const handleApiError = useApiErrorHandler(setError);
@@ -56,6 +68,9 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
         limit: String(OPPORTUNITIES_PAGE_SIZE),
         offset: "0",
         ...(search && { search }),
+        ...(categoryId && { categoryId: String(categoryId) }),
+        ...(locationFilter && { locationFilter }),
+        ...(dateRange && { dateRange }),
       });
 
       const [oppsResult, rsvpsResult] = await Promise.allSettled([
@@ -73,11 +88,11 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
       setHasMore(oppsResult.value.data.length === OPPORTUNITIES_PAGE_SIZE);
 
       if (rsvpsResult.status === "fulfilled") {
-        setRsvpedIds(
-          new Set(rsvpsResult.value.data.all.map((r) => r.opportunityId)),
-        );
+        const allRsvps = rsvpsResult.value.data.all;
+        setRsvpItems(allRsvps);
+        setRsvpedIds(new Set(allRsvps.map((r) => r.opportunityId)));
         const statusMap = new Map<number, RsvpStatus>();
-        for (const r of rsvpsResult.value.data.all) {
+        for (const r of allRsvps) {
           statusMap.set(r.opportunityId, r.rsvpStatus);
         }
         setRsvpStatusMap(statusMap);
@@ -100,11 +115,11 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
     } finally {
       setLoading(false);
     }
-  }, [handleApiError, search]);
+  }, [handleApiError, search, categoryId, locationFilter, dateRange]);
 
   loadOpportunitiesRef.current = loadOpportunities;
 
-  // Debounce search (300ms), instant on mount
+  // Debounce text search (300ms); dropdown filter changes are immediate
   useEffect(() => {
     const timer = setTimeout(
       () => {
@@ -115,7 +130,7 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
     return (): void => {
       clearTimeout(timer);
     };
-  }, [search]);
+  }, [search, categoryId, locationFilter, dateRange]);
 
   const handleRsvpChange = useCallback(
     (opportunityId: number, newIsRsvped: boolean): void => {
@@ -164,6 +179,9 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
       limit: String(OPPORTUNITIES_PAGE_SIZE),
       offset: String(nextPage * OPPORTUNITIES_PAGE_SIZE),
       ...(search && { search }),
+      ...(categoryId && { categoryId: String(categoryId) }),
+      ...(locationFilter && { locationFilter }),
+      ...(dateRange && { dateRange }),
     });
     try {
       const json = await apiClient.get<{ data: Opportunity[]; total: number }>(
@@ -180,12 +198,23 @@ export function useOpportunities(search: string): UseOpportunitiesResult {
     } finally {
       setLoadingMore(false);
     }
-  }, [handleApiError, hasMore, loadingMore, page, search, enqueueSnackbar]);
+  }, [
+    handleApiError,
+    hasMore,
+    loadingMore,
+    page,
+    search,
+    categoryId,
+    locationFilter,
+    dateRange,
+    enqueueSnackbar,
+  ]);
 
   return {
     opportunities,
     rsvpedIds,
     rsvpStatusMap,
+    rsvpItems,
     loading,
     error,
     rsvpWarning,

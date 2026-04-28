@@ -18,8 +18,9 @@ export type AllHoursRecord = {
   opportunityTitle: string | null;
   date: Date;
   hours: number;
+  previousHours: number | null;
   notes: string | null;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "edit_requested";
   rejectionReason: string | null;
 };
 
@@ -28,7 +29,7 @@ export type AllHoursRecord = {
  * Used by staff for the global Approvals > Hours view.
  */
 export async function listAllHours(
-  status?: "pending" | "approved" | "rejected",
+  status?: "pending" | "approved" | "rejected" | "edit_requested",
 ): Promise<AllHoursRecord[]> {
   const conditions = status ? [eq(volunteerHours.status, status)] : [];
 
@@ -41,6 +42,7 @@ export async function listAllHours(
       opportunityTitle: opportunities.title,
       date: volunteerHours.date,
       hours: volunteerHours.hours,
+      previousHours: volunteerHours.previousHours,
       notes: volunteerHours.notes,
       status: volunteerHours.status,
       rejectionReason: volunteerHours.rejectionReason,
@@ -88,7 +90,7 @@ export async function listVolunteerHours(filters: HoursFilters): Promise<{
     date: Date;
     hours: number;
     notes: string | null;
-    status: "pending" | "approved" | "rejected";
+    status: "pending" | "approved" | "rejected" | "edit_requested";
     rejectionReason: string | null;
     verifiedAt: Date | null;
     opportunityTitle: string | null;
@@ -148,7 +150,7 @@ export async function logHours(input: LogHoursInput): Promise<{
   date: Date;
   hours: number;
   notes: string | null;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "edit_requested";
   rejectionReason: string | null;
   verifiedBy: number | null;
   verifiedAt: Date | null;
@@ -247,12 +249,20 @@ export async function approveHours(
     .from(volunteerHours)
     .where(eq(volunteerHours.id, hoursId));
   if (!existing) throw new NotFoundError("Hours record not found");
-  if (existing.status !== "pending") {
-    throw new ConflictError("Only pending hours can be approved");
+  if (!["pending", "edit_requested"].includes(existing.status)) {
+    throw new ConflictError(
+      "Only pending or edit-requested hours can be approved",
+    );
   }
   const [updated] = await db
     .update(volunteerHours)
-    .set({ status: "approved", verifiedBy: approvedBy, verifiedAt: new Date() })
+    .set({
+      status: "approved",
+      verifiedBy: approvedBy,
+      verifiedAt: new Date(),
+      previousHours: null,
+      previousStatus: null,
+    })
     .where(eq(volunteerHours.id, hoursId))
     .returning();
   return updated;
@@ -271,25 +281,41 @@ export async function rejectHours(
     .from(volunteerHours)
     .where(eq(volunteerHours.id, hoursId));
   if (!existing) throw new NotFoundError("Hours record not found");
-  if (existing.status !== "pending") {
-    throw new ConflictError("Only pending hours can be rejected");
+  if (!["pending", "edit_requested"].includes(existing.status)) {
+    throw new ConflictError(
+      "Only pending or edit-requested hours can be rejected",
+    );
   }
   const [updated] = await db
     .update(volunteerHours)
-    .set({
-      status: "rejected",
-      verifiedBy: rejectedBy,
-      verifiedAt: new Date(),
-      rejectionReason: reason ?? null,
-    })
+    .set(
+      existing.previousStatus == null
+        ? {
+            status: "rejected",
+            verifiedBy: rejectedBy,
+            verifiedAt: new Date(),
+            rejectionReason: reason ?? null,
+            previousHours: null,
+            previousStatus: null,
+          }
+        : {
+            hours: existing.previousHours ?? existing.hours,
+            status: existing.previousStatus,
+            previousHours: null,
+            previousStatus: null,
+            verifiedBy: null,
+            verifiedAt: null,
+            rejectionReason: null,
+          },
+    )
     .where(eq(volunteerHours.id, hoursId))
     .returning();
   return updated;
 }
 
 /**
- * Volunteer self-logs hours. Validates the volunteer has an RSVP for the event
- * and that the RSVP status is not declined or no_show.
+ * Volunteer self-logs hours. Requires an attended RSVP and no existing hours
+ * record for the same (volunteerId, opportunityId) pair.
  */
 export async function volunteerLogHours(
   volunteerId: number,
@@ -299,24 +325,36 @@ export async function volunteerLogHours(
   if (hours <= 0 || hours > 24) {
     throw new ValidationError("Hours must be between 0 and 24");
   }
-  const [rsvp] = await db
-    .select()
-    .from(volunteerRsvps)
-    .where(
-      and(
-        eq(volunteerRsvps.volunteerId, volunteerId),
-        eq(volunteerRsvps.opportunityId, opportunityId),
+  const [[rsvp], [existing]] = await Promise.all([
+    db
+      .select()
+      .from(volunteerRsvps)
+      .where(
+        and(
+          eq(volunteerRsvps.volunteerId, volunteerId),
+          eq(volunteerRsvps.opportunityId, opportunityId),
+        ),
       ),
-    );
+    db
+      .select({ id: volunteerHours.id })
+      .from(volunteerHours)
+      .where(
+        and(
+          eq(volunteerHours.volunteerId, volunteerId),
+          eq(volunteerHours.opportunityId, opportunityId),
+        ),
+      ),
+  ]);
   if (!rsvp) {
     throw new ValidationError(
       "You can only log hours for events you RSVPed to",
     );
   }
-  if (["declined", "no_show", "cancelled"].includes(rsvp.status)) {
-    throw new ValidationError(
-      "You cannot log hours for events you declined, cancelled, or did not attend",
-    );
+  if (rsvp.status !== "attended") {
+    throw new ValidationError("You can only log hours for events you attended");
+  }
+  if (existing) {
+    throw new ConflictError("You have already logged hours for this event");
   }
   const [created] = await db
     .insert(volunteerHours)
@@ -333,6 +371,70 @@ export async function volunteerLogHours(
 }
 
 /**
+ * Volunteer requests an edit to their own hours entry. Updates hours, date, and/or
+ * notes. Resets approved/rejected records back to pending for staff re-approval.
+ */
+export async function volunteerEditHoursRequest(
+  hoursId: number,
+  volunteerId: number,
+  data: { hours?: number; date?: string; notes?: string },
+): Promise<HoursRecord> {
+  const [existing] = await db
+    .select()
+    .from(volunteerHours)
+    .where(
+      and(
+        eq(volunteerHours.id, hoursId),
+        eq(volunteerHours.volunteerId, volunteerId),
+      ),
+    );
+  if (!existing) throw new NotFoundError("Hours record not found");
+
+  if (data.hours !== undefined && (data.hours <= 0 || data.hours > 24)) {
+    throw new ValidationError("Hours must be between 0 and 24");
+  }
+
+  const updateData: Partial<typeof volunteerHours.$inferInsert> = {};
+  if (data.hours !== undefined) updateData.hours = data.hours;
+  if (data.date !== undefined) updateData.date = new Date(data.date);
+  if (data.notes !== undefined) updateData.notes = data.notes;
+
+  switch (existing.status) {
+    case "approved": {
+      updateData.status = "edit_requested";
+      updateData.previousStatus = "approved";
+      if (data.hours !== undefined) updateData.previousHours = existing.hours;
+      updateData.verifiedBy = null;
+      updateData.verifiedAt = null;
+      updateData.rejectionReason = null;
+      break;
+    }
+    case "edit_requested": {
+      updateData.status = "edit_requested";
+      // previousStatus/previousHours already point to original approved baseline — do not overwrite
+      break;
+    }
+    case "rejected": {
+      updateData.status = "pending";
+      updateData.verifiedBy = null;
+      updateData.verifiedAt = null;
+      updateData.rejectionReason = null;
+      break;
+    }
+    default: {
+      updateData.status = "pending";
+    }
+  }
+
+  const [updated] = await db
+    .update(volunteerHours)
+    .set(updateData)
+    .where(eq(volunteerHours.id, hoursId))
+    .returning();
+  return updated;
+}
+
+/**
  * Lists all hours for a volunteer with opportunity titles, ordered by date desc.
  */
 export async function listVolunteerOwnHours(volunteerId: number): Promise<
@@ -344,7 +446,7 @@ export async function listVolunteerOwnHours(volunteerId: number): Promise<
     date: Date;
     hours: number;
     notes: string | null;
-    status: "pending" | "approved" | "rejected";
+    status: "pending" | "approved" | "rejected" | "edit_requested";
     rejectionReason: string | null;
     verifiedBy: number | null;
     verifiedAt: Date | null;

@@ -59,7 +59,12 @@ export function getRsvpStatusColor(
   }
 }
 
-type HoursStatus = "pending" | "approved" | "rejected" | string;
+type HoursStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "edit_requested"
+  | string;
 
 export function getHoursStatusColor(
   status: HoursStatus,
@@ -67,7 +72,13 @@ export function getHoursStatusColor(
   if (status === "approved") return "success";
   if (status === "pending") return "warning";
   if (status === "rejected") return "error";
+  if (status === "edit_requested") return "warning";
   return "default";
+}
+
+export function getHoursStatusLabel(status: HoursStatus): string {
+  if (status === "edit_requested") return "Edit Requested";
+  return status;
 }
 
 type BackgroundCheckStatus = "approved" | "pending" | "rejected" | string;

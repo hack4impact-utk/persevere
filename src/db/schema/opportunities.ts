@@ -110,6 +110,8 @@ export const volunteerHours = pgTable("volunteer_hours", {
     .references(() => opportunities.id, { onDelete: "cascade" }),
   date: timestamp("date").notNull(),
   hours: real("hours").notNull(),
+  previousHours: real("previous_hours"),
+  previousStatus: hoursStatusEnum("previous_status"),
   notes: text("notes"),
   status: hoursStatusEnum("status").default("pending").notNull(),
   rejectionReason: text("rejection_reason"),

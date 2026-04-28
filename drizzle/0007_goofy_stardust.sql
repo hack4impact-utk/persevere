@@ -1,0 +1,1 @@
+ALTER TABLE "volunteer_hours" ADD COLUMN "previous_status" "hours_status";

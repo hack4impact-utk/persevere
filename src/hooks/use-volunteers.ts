@@ -4,43 +4,38 @@ import type { Volunteer } from "@/components/staff/volunteer-management/types";
 import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
 import { apiClient } from "@/lib/api-client";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
-import {
-  fetchActiveVolunteers,
-  fetchInactiveVolunteers,
-  fetchPendingInvites,
-} from "@/services/volunteer-client.service";
+import { fetchVolunteers } from "@/services/volunteer-client.service";
+
+export type VolunteerStatusFilter = "active" | "inactive" | "pending";
 
 export type VolunteerFiltersInput = {
   type?: string;
   alumni?: boolean;
+  status?: VolunteerStatusFilter;
 };
 
+function statusToApiParams(status?: VolunteerStatusFilter): {
+  emailVerified?: boolean;
+  isActive?: boolean;
+} {
+  if (status === "active") return { emailVerified: true, isActive: true };
+  if (status === "inactive") return { emailVerified: true, isActive: false };
+  if (status === "pending") return { emailVerified: false };
+  return {};
+}
+
 export type UseVolunteersResult = {
-  // Active
-  activeVolunteers: Volunteer[];
-  totalActiveVolunteers: number;
-  activePage: number;
-  setActivePage: (page: number) => void;
-
-  // Inactive
-  inactiveVolunteers: Volunteer[];
-  totalInactiveVolunteers: number;
-  inactivePage: number;
-  setInactivePage: (page: number) => void;
-
-  // Pending
-  pendingInvites: Volunteer[];
-  totalPendingInvites: number;
-  pendingPage: number;
-  setPendingPage: (page: number) => void;
-
-  // Shared
+  volunteers: Volunteer[];
+  total: number;
+  grandTotal: number;
+  totalActive: number;
+  page: number;
+  setPage: (page: number) => void;
   limit: number;
   setLimit: (limit: number) => void;
   loading: boolean;
   isMutating: boolean;
   error: string | null;
-
   loadVolunteers: () => Promise<void>;
   resendCredentials: (volunteerId: number) => Promise<boolean>;
   updateBackgroundStatus: (
@@ -62,29 +57,17 @@ export function useVolunteers(
   filters: VolunteerFiltersInput,
   { skip = false }: { skip?: boolean } = {},
 ): UseVolunteersResult {
-  // Active volunteers state
-  const [activeVolunteers, setActiveVolunteers] = useState<Volunteer[]>([]);
-  const [totalActiveVolunteers, setTotalActiveVolunteers] = useState(0);
-  const [activePage, setActivePage] = useState(1);
-
-  // Inactive volunteers state
-  const [inactiveVolunteers, setInactiveVolunteers] = useState<Volunteer[]>([]);
-  const [totalInactiveVolunteers, setTotalInactiveVolunteers] = useState(0);
-  const [inactivePage, setInactivePage] = useState(1);
-
-  // Pending invites state
-  const [pendingInvites, setPendingInvites] = useState<Volunteer[]>([]);
-  const [totalPendingInvites, setTotalPendingInvites] = useState(0);
-  const [pendingPage, setPendingPage] = useState(1);
-
-  // Shared state
+  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+  const [total, setTotal] = useState(0);
+  const [grandTotal, setGrandTotal] = useState(0);
+  const [totalActive, setTotalActive] = useState(0);
+  const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const [loading, setLoading] = useState(false);
   const [isMutating, setIsMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const handleApiError = useApiErrorHandler(setError);
 
-  // Use ref to store latest loadVolunteers to avoid dependency issues
   const loadVolunteersRef = useRef<(() => Promise<void>) | undefined>(
     undefined,
   );
@@ -93,39 +76,17 @@ export function useVolunteers(
     setError(null);
     setLoading(true);
     try {
-      const [activeResponse, inactiveResponse, pendingResponse] =
-        await Promise.all([
-          fetchActiveVolunteers({
-            search: searchQuery,
-            page: activePage,
-            limit,
-            type: filters.type,
-            alumni: filters.alumni,
-          }),
-          fetchInactiveVolunteers({
-            search: searchQuery,
-            page: inactivePage,
-            limit,
-            type: filters.type,
-            alumni: filters.alumni,
-          }),
-          fetchPendingInvites({
-            search: searchQuery,
-            page: pendingPage,
-            limit,
-            type: filters.type,
-            alumni: filters.alumni,
-          }),
-        ]);
-
-      setActiveVolunteers(activeResponse.volunteers ?? []);
-      setTotalActiveVolunteers(activeResponse.total ?? 0);
-
-      setInactiveVolunteers(inactiveResponse.volunteers ?? []);
-      setTotalInactiveVolunteers(inactiveResponse.total ?? 0);
-
-      setPendingInvites(pendingResponse.volunteers ?? []);
-      setTotalPendingInvites(pendingResponse.total ?? 0);
+      const apiParams = statusToApiParams(filters.status);
+      const response = await fetchVolunteers({
+        search: searchQuery,
+        page,
+        limit,
+        type: filters.type,
+        alumni: filters.alumni,
+        ...apiParams,
+      });
+      setVolunteers(response.volunteers ?? []);
+      setTotal(response.total ?? 0);
     } catch (error_) {
       if (
         handleApiError(
@@ -134,30 +95,46 @@ export function useVolunteers(
         )
       )
         return;
-      setActiveVolunteers([]);
-      setTotalActiveVolunteers(0);
-      setInactiveVolunteers([]);
-      setTotalInactiveVolunteers(0);
-      setPendingInvites([]);
-      setTotalPendingInvites(0);
+      setVolunteers([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
   }, [
     searchQuery,
-    activePage,
-    inactivePage,
-    pendingPage,
+    page,
     limit,
     filters.type,
     filters.alumni,
+    filters.status,
     handleApiError,
   ]);
 
-  // Keep ref updated with latest loadVolunteers
   loadVolunteersRef.current = loadVolunteers;
 
-  // Debounce search to avoid excessive API calls
+  // Fetch grand total and active count once on mount (for subtitle)
+  useEffect(() => {
+    if (skip) return;
+    void (async (): Promise<void> => {
+      try {
+        const [allRes, activeRes] = await Promise.all([
+          fetchVolunteers({ limit: 1, page: 1 }),
+          fetchVolunteers({
+            limit: 1,
+            page: 1,
+            emailVerified: true,
+            isActive: true,
+          }),
+        ]);
+        setGrandTotal(allRes.total);
+        setTotalActive(activeRes.total);
+      } catch {
+        // Non-critical — subtitle counts can remain 0
+      }
+    })();
+  }, [skip]);
+
+  // Debounce search
   useEffect(() => {
     if (skip) return;
     const debounceTimer = setTimeout(
@@ -166,11 +143,16 @@ export function useVolunteers(
       },
       searchQuery ? 300 : 0,
     );
-
     return (): void => {
       clearTimeout(debounceTimer);
     };
   }, [searchQuery, skip]);
+
+  // Immediate reload on pagination / filter changes
+  useEffect(() => {
+    if (skip) return;
+    void loadVolunteersRef.current?.();
+  }, [page, limit, filters.type, filters.alumni, filters.status, skip]);
 
   const resendCredentials = useCallback(
     async (volunteerId: number): Promise<boolean> => {
@@ -237,12 +219,11 @@ export function useVolunteers(
         void loadVolunteersRef.current?.();
         return result;
       } catch (error_) {
-        // Fallback error logging if handleApiError didn't catch it
         if (!handleApiError(error_)) {
           console.error("[useVolunteers] createVolunteer:", error_);
-          throw error_; // rethrow so component can display it
+          throw error_;
         }
-        return null; // auth error handled
+        return null;
       } finally {
         setIsMutating(false);
       }
@@ -269,42 +250,18 @@ export function useVolunteers(
     [handleApiError],
   );
 
-  // Load immediately when pagination, limit, or filters change (no debounce)
-  useEffect(() => {
-    if (skip) return;
-    void loadVolunteersRef.current?.();
-  }, [
-    activePage,
-    inactivePage,
-    pendingPage,
-    limit,
-    filters.type,
-    filters.alumni,
-    skip,
-  ]);
-
   return {
-    activeVolunteers,
-    totalActiveVolunteers,
-    activePage,
-    setActivePage,
-
-    inactiveVolunteers,
-    totalInactiveVolunteers,
-    inactivePage,
-    setInactivePage,
-
-    pendingInvites,
-    totalPendingInvites,
-    pendingPage,
-    setPendingPage,
-
+    volunteers,
+    total,
+    grandTotal,
+    totalActive,
+    page,
+    setPage,
     limit,
     setLimit,
     loading,
     isMutating,
     error,
-
     loadVolunteers,
     resendCredentials,
     updateBackgroundStatus,

@@ -1,9 +1,9 @@
 "use client";
 
 import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
 import { type JSX, useCallback } from "react";
 
+import { PageHeader } from "@/components/shared";
 import DocumentViewer from "@/components/volunteer/onboarding/document-viewer";
 import OnboardingChecklist from "@/components/volunteer/onboarding/onboarding-checklist";
 import { useOnboarding } from "@/hooks/use-onboarding";
@@ -26,13 +26,12 @@ export default function OnboardingPage(): JSX.Element {
         flexDirection: "column",
       }}
     >
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12 }}>
-          <Grid container spacing={3}>
-            <DocumentViewer onDocumentSigned={handleDocumentSigned} />
-          </Grid>
-        </Grid>
-      </Grid>
+      <PageHeader
+        eyebrow="Volunteer Portal"
+        title="Onboarding"
+        subtitle="Complete your required documents and get ready to volunteer."
+      />
+      <DocumentViewer onDocumentSigned={handleDocumentSigned} />
 
       {/* Floating progress widget — position: fixed, out of layout flow */}
       <OnboardingChecklist

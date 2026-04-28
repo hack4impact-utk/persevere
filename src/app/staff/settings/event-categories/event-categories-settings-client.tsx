@@ -8,10 +8,10 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   IconButton,
   Paper,
   Stack,
@@ -28,8 +28,8 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { ConfirmDialog } from "@/components/shared";
-import { LoadingSkeleton } from "@/components/ui";
+import { ConfirmDialog, ModalTitleBar } from "@/components/shared";
+import { EmptyState } from "@/components/ui";
 import {
   type EventCategory,
   useEventCategories,
@@ -179,41 +179,86 @@ export default function EventCategoriesSettingsClient(): JSX.Element {
         </Button>
       </Box>
 
-      {loading ? (
-        <LoadingSkeleton variant="lines" count={5} />
-      ) : (
-        <TableContainer component={Paper} variant="outlined">
-          <Table size="small">
+      <Paper
+        elevation={0}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          border: "1px solid",
+          borderColor: "grey.200",
+          borderRadius: 2,
+          overflow: "hidden",
+          position: "relative",
+        }}
+      >
+        <TableContainer sx={{ flex: 1, overflow: "auto" }}>
+          <Table stickyHeader size="small">
             <TableHead>
               <TableRow sx={{ backgroundColor: "action.hover" }}>
-                <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 700, py: 1.5 }} align="right">
+                <TableCell
+                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                >
+                  Name
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                >
+                  Status
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                  align="right"
+                >
                   Actions
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {allCategories.length === 0 ? (
+              {loading && (
                 <TableRow>
-                  <TableCell colSpan={3} align="center" sx={{ py: 5 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      No event categories yet.{" "}
-                      <Box
-                        component="span"
-                        sx={{
-                          cursor: "pointer",
-                          color: "primary.main",
-                          fontWeight: 500,
-                        }}
-                        onClick={openAdd}
-                      >
-                        Add the first category
-                      </Box>{" "}
-                      to get started.
-                    </Typography>
+                  <TableCell colSpan={3} sx={{ p: 0, borderBottom: 0 }}>
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 48,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "rgba(255, 255, 255, 0.7)",
+                        zIndex: 1,
+                      }}
+                    >
+                      <CircularProgress />
+                    </Box>
                   </TableCell>
                 </TableRow>
+              )}
+              {allCategories.length === 0 ? (
+                loading ? null : (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center" sx={{ py: 5 }}>
+                      <EmptyState
+                        message="No event categories yet."
+                        action={
+                          <Box
+                            component="span"
+                            sx={{
+                              cursor: "pointer",
+                              color: "primary.main",
+                              fontWeight: 500,
+                            }}
+                            onClick={openAdd}
+                          >
+                            Add the first category
+                          </Box>
+                        }
+                      />
+                    </TableCell>
+                  </TableRow>
+                )
               ) : (
                 allCategories.map((category, index) => (
                   <TableRow
@@ -281,7 +326,7 @@ export default function EventCategoriesSettingsClient(): JSX.Element {
             </TableBody>
           </Table>
         </TableContainer>
-      )}
+      </Paper>
 
       {/* Add / Edit Dialog */}
       <Dialog
@@ -290,10 +335,11 @@ export default function EventCategoriesSettingsClient(): JSX.Element {
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>
-          {editingCategory ? "Edit Event Category" : "Add Event Category"}
-        </DialogTitle>
-        <DialogContent>
+        <ModalTitleBar
+          title={editingCategory ? "Edit Event Category" : "Add Event Category"}
+          onClose={() => setDialogOpen(false)}
+        />
+        <DialogContent dividers>
           <TextField
             label="Name"
             value={form.name}

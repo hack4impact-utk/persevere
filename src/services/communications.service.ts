@@ -246,12 +246,11 @@ export type AnnouncementRecord = {
   subject: string;
   body: string;
   sentAt: Date;
+  senderFirstName: string;
+  senderLastName: string;
 };
 
-/**
- * Lists all announcements sent to volunteers (recipientType "volunteers" or "both"),
- * ordered newest-first. Excludes sender PII.
- */
+/** Lists the 3 most recent announcements sent to volunteers, newest-first. */
 export async function listVolunteerAnnouncements(): Promise<
   AnnouncementRecord[]
 > {
@@ -261,10 +260,14 @@ export async function listVolunteerAnnouncements(): Promise<
       subject: bulkCommunicationLogs.subject,
       body: bulkCommunicationLogs.body,
       sentAt: bulkCommunicationLogs.sentAt,
+      senderFirstName: users.firstName,
+      senderLastName: users.lastName,
     })
     .from(bulkCommunicationLogs)
+    .innerJoin(users, eq(bulkCommunicationLogs.senderId, users.id))
     .where(inArray(bulkCommunicationLogs.recipientType, ["volunteers", "both"]))
-    .orderBy(desc(bulkCommunicationLogs.sentAt));
+    .orderBy(desc(bulkCommunicationLogs.sentAt))
+    .limit(3);
 }
 
 /**

@@ -14,6 +14,7 @@ import {
   DialogActions,
   DialogContent,
   Divider,
+  Drawer,
   FormControl,
   FormControlLabel,
   FormGroup,
@@ -23,38 +24,30 @@ import {
   Select,
   SelectChangeEvent,
   Stack,
-  Tab,
-  Tabs,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
 import { type ReactElement, useCallback, useState } from "react";
 
-import { ModalTitleBar } from "@/components/shared";
+import { ModalTitleBar, PageHeader } from "@/components/shared";
 import { useVolunteerDetail } from "@/hooks/use-volunteer-detail";
 import { useVolunteerTypes } from "@/hooks/use-volunteer-types";
-import { useVolunteers } from "@/hooks/use-volunteers";
+import {
+  useVolunteers,
+  type VolunteerStatusFilter,
+} from "@/hooks/use-volunteers";
 
 import ImportVolunteerModal from "./import-modal";
-import PendingInvitesTable from "./pending-invites-table";
 import AddVolunteerModal from "./volunteer-add-modal";
 import VolunteerProfile from "./volunteer-profile";
 import VolunteerTable from "./volunteer-table";
 
-/**
- * VolunteerList
- *
- * Main volunteer management page component. Displays three tables in tabs:
- * 1. Active Volunteers (email verified and active)
- * 2. Inactive Volunteers (email verified but inactive)
- * 3. Pending Invites (email not yet verified)
- *
- * All tables share a single search box that searches all tables simultaneously.
- */
 export default function VolunteerList(): ReactElement {
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentTab, setCurrentTab] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<VolunteerStatusFilter | "">(
+    "",
+  );
 
   const [filters, setFilters] = useState<{
     type?: string;
@@ -62,28 +55,26 @@ export default function VolunteerList(): ReactElement {
   }>({});
 
   const {
-    activeVolunteers,
-    totalActiveVolunteers,
-    activePage,
-    setActivePage,
-    inactiveVolunteers,
-    totalInactiveVolunteers,
-    inactivePage,
-    setInactivePage,
-    pendingInvites,
-    totalPendingInvites,
-    pendingPage,
-    setPendingPage,
+    volunteers,
+    total,
+    grandTotal,
+    totalActive,
+    page,
+    setPage,
     limit,
     setLimit,
     loading,
     error,
     loadVolunteers,
-  } = useVolunteers(searchQuery, filters);
+    resendCredentials,
+    isMutating,
+  } = useVolunteers(searchQuery, {
+    ...filters,
+    status: statusFilter || undefined,
+  });
 
   const { activeTypes } = useVolunteerTypes();
 
-  // Profile modal state
   const [selectedVolunteerId, setSelectedVolunteerId] = useState<number | null>(
     null,
   );
@@ -102,26 +93,25 @@ export default function VolunteerList(): ReactElement {
   const handleSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>): void => {
       setSearchQuery(event.target.value);
-      // Reset pages when search changes
-      setActivePage(1);
-      setInactivePage(1);
-      setPendingPage(1);
+      setPage(1);
     },
-    [setActivePage, setInactivePage, setPendingPage],
+    [setPage],
+  );
+
+  const handleStatusFilterChange = useCallback(
+    (e: SelectChangeEvent<string>): void => {
+      setStatusFilter((e.target.value as VolunteerStatusFilter) || "");
+      setPage(1);
+    },
+    [setPage],
   );
 
   const handleFilterTypeChange = useCallback(
     (e: SelectChangeEvent<string>): void => {
-      setFilters((prev) => ({
-        ...prev,
-        type: e.target.value || undefined,
-      }));
-      // Reset pages when filters change
-      setActivePage(1);
-      setInactivePage(1);
-      setPendingPage(1);
+      setFilters((prev) => ({ ...prev, type: e.target.value || undefined }));
+      setPage(1);
     },
-    [setActivePage, setInactivePage, setPendingPage],
+    [setPage],
   );
 
   const handleFilterAlumniChange = useCallback(
@@ -130,54 +120,30 @@ export default function VolunteerList(): ReactElement {
         ...prev,
         alumni: e.target.checked ? true : undefined,
       }));
-      // Reset pages when filters change
-      setActivePage(1);
-      setInactivePage(1);
-      setPendingPage(1);
+      setPage(1);
     },
-    [setActivePage, setInactivePage, setPendingPage],
+    [setPage],
   );
 
   const handleClearFilters = useCallback((): void => {
     setFilters({});
-    setActivePage(1);
-    setInactivePage(1);
-    setPendingPage(1);
-  }, [setActivePage, setInactivePage, setPendingPage]);
+    setPage(1);
+  }, [setPage]);
 
-  const handleTabChange = useCallback(
-    (_event: React.SyntheticEvent, newValue: number): void => {
-      setCurrentTab(newValue);
+  const handlePageChange = useCallback(
+    (newPage: number): void => {
+      setPage(newPage);
     },
-    [],
+    [setPage],
   );
-
-  const handleInactivePageChange = useCallback((newPage: number): void => {
-    setInactivePage(newPage);
-  }, []);
 
   const handleLimitChange = useCallback(
     (newLimit: number): void => {
       setLimit(newLimit);
-      // Reset to page 1 when limit changes
-      setActivePage(1);
-      setInactivePage(1);
-      setPendingPage(1);
+      setPage(1);
     },
-    [setLimit, setActivePage, setInactivePage, setPendingPage],
+    [setLimit, setPage],
   );
-
-  const onAddVolunteer = useCallback((): void => {
-    setAddModalOpen(true);
-  }, []);
-
-  const handleActivePageChange = useCallback((newPage: number): void => {
-    setActivePage(newPage);
-  }, []);
-
-  const handlePendingPageChange = useCallback((newPage: number): void => {
-    setPendingPage(newPage);
-  }, []);
 
   const handleVolunteerClick = useCallback(
     async (volunteerId: number): Promise<void> => {
@@ -187,10 +153,21 @@ export default function VolunteerList(): ReactElement {
     [loadVolunteerProfile],
   );
 
-  const handleCloseModal = useCallback((): void => {
+  const handleCloseDrawer = useCallback((): void => {
     setSelectedVolunteerId(null);
     clearProfile();
   }, [clearProfile]);
+
+  const handleResendInvite = useCallback(async (): Promise<void> => {
+    if (!selectedVolunteerId) return;
+    await resendCredentials(selectedVolunteerId);
+  }, [selectedVolunteerId, resendCredentials]);
+
+  const hasAdditionalFilters =
+    filters.type !== undefined || filters.alumni !== undefined;
+
+  const isPendingVolunteer =
+    volunteerProfile?.users != null && !volunteerProfile.users.emailVerifiedAt;
 
   return (
     <Box
@@ -206,10 +183,43 @@ export default function VolunteerList(): ReactElement {
       }}
     >
       {error && (
-        <Box sx={{ mb: 3, flexShrink: 0 }}>
+        <Box sx={{ mb: 2, flexShrink: 0 }}>
           <Alert severity="error">{error}</Alert>
         </Box>
       )}
+
+      <PageHeader
+        eyebrow="Staff Portal"
+        title="Volunteers"
+        subtitle={`${grandTotal} total · ${totalActive} active`}
+        actions={
+          <>
+            <Button
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={() => {
+                globalThis.location.href = "/api/staff/volunteers/export";
+              }}
+            >
+              Export CSV
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<UploadFileIcon />}
+              onClick={() => setImportModalOpen(true)}
+            >
+              Import CSV
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setAddModalOpen(true)}
+            >
+              Invite Volunteer
+            </Button>
+          </>
+        }
+      />
 
       <Box
         sx={{
@@ -218,58 +228,28 @@ export default function VolunteerList(): ReactElement {
           flexDirection: "column",
           minHeight: 0,
           overflow: "hidden",
+          mt: 2,
         }}
       >
+        {/* Toolbar */}
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            mb: 3,
-            gap: 2,
+            mb: 2,
+            gap: 1.5,
             flexWrap: "wrap",
             flexShrink: 0,
           }}
         >
-          <Tabs
-            value={currentTab}
-            onChange={handleTabChange}
-            aria-label="volunteer tabs"
-            sx={{ flex: 1, minWidth: 0 }}
-          >
-            <Tab label="Active Volunteers" />
-            <Tab label="Inactive Volunteers" />
-            <Tab
-              label={
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <span>Pending Invites</span>
-                  {totalPendingInvites > 0 && (
-                    <Box
-                      sx={{
-                        backgroundColor: "primary.main",
-                        color: "primary.contrastText",
-                        borderRadius: "12px",
-                        px: 1,
-                        py: 0.25,
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                        minWidth: "20px",
-                        textAlign: "center",
-                      }}
-                    >
-                      {totalPendingInvites}
-                    </Box>
-                  )}
-                </Box>
-              }
-            />
-          </Tabs>
           <Box
             sx={{
               display: "flex",
               alignItems: "center",
               gap: 1.5,
-              flexShrink: 0,
+              flex: 1,
+              flexWrap: "wrap",
             }}
           >
             <TextField
@@ -278,175 +258,109 @@ export default function VolunteerList(): ReactElement {
               variant="outlined"
               value={searchQuery}
               onChange={handleSearchChange}
-              placeholder="Search by name or email..."
-              sx={{ minWidth: 250 }}
+              placeholder="Search by name or email…"
+              sx={{ minWidth: 240 }}
             />
-            <Tooltip title="Filter">
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel id="status-filter-label">Status</InputLabel>
+              <Select
+                labelId="status-filter-label"
+                label="Status"
+                value={statusFilter}
+                onChange={handleStatusFilterChange}
+              >
+                <MenuItem value="">All statuses</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="inactive">Inactive</MenuItem>
+                <MenuItem value="pending">Pending</MenuItem>
+              </Select>
+            </FormControl>
+            <Tooltip title="More filters">
               <IconButton
                 color="primary"
                 onClick={() => setFilterModalOpen(true)}
                 sx={{
-                  backgroundColor:
-                    Object.keys(filters).length > 0
-                      ? "primary.main"
-                      : "transparent",
-                  color:
-                    Object.keys(filters).length > 0
-                      ? "primary.contrastText"
-                      : "primary.main",
+                  backgroundColor: hasAdditionalFilters
+                    ? "primary.main"
+                    : "transparent",
+                  color: hasAdditionalFilters
+                    ? "primary.contrastText"
+                    : "primary.main",
                   "&:hover": {
-                    backgroundColor:
-                      Object.keys(filters).length > 0
-                        ? "primary.dark"
-                        : "action.hover",
+                    backgroundColor: hasAdditionalFilters
+                      ? "primary.dark"
+                      : "action.hover",
                   },
                 }}
               >
                 <FilterListIcon />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Export CSV">
-              <IconButton
-                color="primary"
-                onClick={() => {
-                  globalThis.location.href = "/api/staff/volunteers/export";
-                }}
-                sx={{
-                  backgroundColor: "primary.main",
-                  color: "primary.contrastText",
-                  "&:hover": {
-                    backgroundColor: "primary.dark",
-                  },
-                }}
-              >
-                <DownloadIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Import CSV">
-              <IconButton
-                color="primary"
-                onClick={() => setImportModalOpen(true)}
-                sx={{
-                  backgroundColor: "primary.main",
-                  color: "primary.contrastText",
-                  "&:hover": {
-                    backgroundColor: "primary.dark",
-                  },
-                }}
-              >
-                <UploadFileIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Add Volunteer">
-              <IconButton
-                color="primary"
-                onClick={onAddVolunteer}
-                sx={{
-                  backgroundColor: "primary.main",
-                  color: "primary.contrastText",
-                  "&:hover": {
-                    backgroundColor: "primary.dark",
-                  },
-                }}
-              >
-                <AddIcon />
-              </IconButton>
-            </Tooltip>
           </Box>
+          <Typography variant="body2" color="text.secondary">
+            {total} result{total === 1 ? "" : "s"}
+          </Typography>
         </Box>
 
-        {/* Active Volunteers Tab */}
-        {currentTab === 0 && (
-          <Box
-            sx={{
-              flex: 1,
-              minHeight: 0,
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <VolunteerTable
-              volunteers={activeVolunteers}
-              totalVolunteers={totalActiveVolunteers}
-              page={activePage}
-              limit={limit}
-              onPageChange={handleActivePageChange}
-              onLimitChange={handleLimitChange}
-              onVolunteerClick={handleVolunteerClick}
-              loading={loading}
-            />
-          </Box>
-        )}
-
-        {/* Inactive Volunteers Tab */}
-        {currentTab === 1 && (
-          <Box
-            sx={{
-              flex: 1,
-              minHeight: 0,
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <VolunteerTable
-              volunteers={inactiveVolunteers}
-              totalVolunteers={totalInactiveVolunteers}
-              page={inactivePage}
-              limit={limit}
-              onPageChange={handleInactivePageChange}
-              onLimitChange={handleLimitChange}
-              onVolunteerClick={handleVolunteerClick}
-              loading={loading}
-            />
-          </Box>
-        )}
-
-        {/* Pending Invites Tab */}
-        {currentTab === 2 && (
-          <Box
-            sx={{
-              flex: 1,
-              minHeight: 0,
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <PendingInvitesTable
-              volunteers={pendingInvites}
-              totalVolunteers={totalPendingInvites}
-              page={pendingPage}
-              limit={limit}
-              onPageChange={handlePendingPageChange}
-              onLimitChange={handleLimitChange}
-              onVolunteerClick={handleVolunteerClick}
-              onRefresh={loadVolunteers}
-              loading={loading}
-            />
-          </Box>
-        )}
+        <VolunteerTable
+          volunteers={volunteers}
+          totalVolunteers={total}
+          page={page}
+          limit={limit}
+          onPageChange={handlePageChange}
+          onLimitChange={handleLimitChange}
+          onVolunteerClick={handleVolunteerClick}
+          loading={loading}
+        />
       </Box>
 
-      {/* Profile modal opens when a volunteer row is clicked */}
-      <Dialog
+      {/* Volunteer detail drawer */}
+      <Drawer
+        anchor="right"
         open={selectedVolunteerId !== null}
-        onClose={handleCloseModal}
-        maxWidth="md"
-        fullWidth
+        onClose={handleCloseDrawer}
+        PaperProps={{
+          sx: {
+            width: 520,
+            display: "flex",
+            flexDirection: "column",
+          },
+        }}
       >
-        <ModalTitleBar title="Volunteer Profile" onClose={handleCloseModal} />
-        <DialogContent>
+        <ModalTitleBar title="Volunteer Profile" onClose={handleCloseDrawer} />
+        {isPendingVolunteer && (
+          <Box
+            sx={{
+              px: 3,
+              py: 1.5,
+              borderBottom: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <Button
+              variant="outlined"
+              size="small"
+              disabled={isMutating}
+              onClick={() => void handleResendInvite()}
+            >
+              Resend Invite
+            </Button>
+          </Box>
+        )}
+        <Box sx={{ flex: 1, overflow: "auto" }}>
           {profileLoading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
               <CircularProgress />
             </Box>
           ) : profileError ? (
-            <Alert severity="error">{profileError}</Alert>
+            <Box sx={{ p: 3 }}>
+              <Alert severity="error">{profileError}</Alert>
+            </Box>
           ) : volunteerProfile ? (
             <VolunteerProfile
               volunteer={volunteerProfile}
               onDelete={() => {
-                setSelectedVolunteerId(null);
-                clearProfile();
+                handleCloseDrawer();
                 void loadVolunteers();
               }}
               onVolunteerUpdated={() => {
@@ -456,8 +370,9 @@ export default function VolunteerList(): ReactElement {
               }}
             />
           ) : null}
-        </DialogContent>
-      </Dialog>
+        </Box>
+      </Drawer>
+
       <AddVolunteerModal
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
@@ -473,7 +388,7 @@ export default function VolunteerList(): ReactElement {
         }}
       />
 
-      {/* Filter Modal */}
+      {/* More filters modal (type + alumni) */}
       <Dialog
         open={filterModalOpen}
         onClose={() => setFilterModalOpen(false)}
@@ -514,9 +429,7 @@ export default function VolunteerList(): ReactElement {
                 </Select>
               </FormControl>
             </Box>
-
             <Divider />
-
             <Box>
               <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
                 Additional Filters
@@ -537,13 +450,7 @@ export default function VolunteerList(): ReactElement {
         </DialogContent>
         <Divider />
         <DialogActions>
-          <Button
-            onClick={handleClearFilters}
-            disabled={
-              Object.keys(filters).length === 0 ||
-              (filters.type === undefined && filters.alumni === undefined)
-            }
-          >
+          <Button onClick={handleClearFilters} disabled={!hasAdditionalFilters}>
             Clear Filters
           </Button>
           <Box sx={{ flex: 1 }} />

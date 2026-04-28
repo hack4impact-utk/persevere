@@ -13,6 +13,7 @@ export {
   getBackgroundCheckColor,
   getBackgroundCheckLabel,
   getHoursStatusColor,
+  getHoursStatusLabel,
   getRsvpStatusColor,
   StatusBadge,
 } from "./status-badge";

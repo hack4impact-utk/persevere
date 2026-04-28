@@ -1,7 +1,7 @@
-import { and, eq, gte, inArray, lt, lte } from "drizzle-orm";
+import { and, asc, count, eq, gte, inArray, lt, lte } from "drizzle-orm";
 
 import db from "@/db";
-import { eventCategories, opportunities } from "@/db/schema";
+import { eventCategories, opportunities, volunteerRsvps } from "@/db/schema";
 import { ConflictError, NotFoundError, ValidationError } from "@/utils/errors";
 
 export type CalendarEvent = {
@@ -13,6 +13,7 @@ export type CalendarEvent = {
   end: string;
   extendedProps: {
     maxVolunteers: number | null;
+    rsvpCount: number;
     status: "open" | "full" | "completed" | "canceled";
     createdById: number | null;
     isRecurring: boolean;
@@ -32,6 +33,7 @@ export type RecurrencePattern = {
 function toCalendarEvent(
   row: typeof opportunities.$inferSelect,
   categoryName: string | null = null,
+  rsvpCount = 0,
 ): CalendarEvent {
   return {
     id: row.id.toString(),
@@ -42,6 +44,7 @@ function toCalendarEvent(
     end: row.endDate.toISOString(),
     extendedProps: {
       maxVolunteers: row.maxVolunteers,
+      rsvpCount,
       status: row.status,
       createdById: row.createdById,
       isRecurring: row.isRecurring,
@@ -95,7 +98,7 @@ function computeOccurrences(
   return occurrences;
 }
 
-async function autoCompleteExpiredEvents(): Promise<void> {
+export async function autoCompleteExpiredEvents(): Promise<void> {
   await db
     .update(opportunities)
     .set({ status: "completed", updatedAt: new Date() })
@@ -110,39 +113,35 @@ async function autoCompleteExpiredEvents(): Promise<void> {
 export async function listCalendarEvents(
   startDate?: Date,
   endDate?: Date,
-  statusFilter?: "open" | "full" | "completed" | "canceled",
+  statusFilter?: ("open" | "full" | "completed" | "canceled")[],
 ): Promise<CalendarEvent[]> {
   await autoCompleteExpiredEvents();
   const whereClauses = [];
-  if (statusFilter) whereClauses.push(eq(opportunities.status, statusFilter));
+  if (statusFilter?.length)
+    whereClauses.push(inArray(opportunities.status, statusFilter));
   if (startDate) whereClauses.push(gte(opportunities.endDate, startDate));
   if (endDate) whereClauses.push(lte(opportunities.startDate, endDate));
 
-  const rows = await (whereClauses.length > 0
-    ? db
-        .select({
-          opportunity: opportunities,
-          categoryName: eventCategories.name,
-        })
-        .from(opportunities)
-        .leftJoin(
-          eventCategories,
-          eq(opportunities.categoryId, eventCategories.id),
-        )
-        .where(and(...whereClauses))
-    : db
-        .select({
-          opportunity: opportunities,
-          categoryName: eventCategories.name,
-        })
-        .from(opportunities)
-        .leftJoin(
-          eventCategories,
-          eq(opportunities.categoryId, eventCategories.id),
-        ));
+  const query = db
+    .select({
+      opportunity: opportunities,
+      categoryName: eventCategories.name,
+      rsvpCount: count(volunteerRsvps.volunteerId),
+    })
+    .from(opportunities)
+    .leftJoin(eventCategories, eq(opportunities.categoryId, eventCategories.id))
+    .leftJoin(
+      volunteerRsvps,
+      eq(volunteerRsvps.opportunityId, opportunities.id),
+    )
+    .groupBy(opportunities.id, eventCategories.name);
+
+  const baseQuery =
+    whereClauses.length > 0 ? query.where(and(...whereClauses)) : query;
+  const rows = await baseQuery.orderBy(asc(opportunities.startDate));
 
   return rows.map((r) =>
-    toCalendarEvent(r.opportunity, r.categoryName ?? null),
+    toCalendarEvent(r.opportunity, r.categoryName ?? null, r.rsvpCount),
   );
 }
 

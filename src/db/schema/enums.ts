@@ -54,4 +54,5 @@ export const hoursStatusEnum = pgEnum("hours_status", [
   "pending",
   "approved",
   "rejected",
+  "edit_requested",
 ]);

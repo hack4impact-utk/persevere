@@ -1,18 +1,17 @@
 "use client";
 
 import AutorenewIcon from "@mui/icons-material/Autorenew";
+import CloseIcon from "@mui/icons-material/Close";
 import {
   Autocomplete,
   Box,
   Button,
   Chip,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
+  Drawer,
   FormControl,
+  IconButton,
   InputLabel,
   MenuItem,
   Select,
@@ -63,6 +62,24 @@ function formatDateTime(isoString: string): string {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function SectionLabel({ children }: { children: string }): JSX.Element {
+  return (
+    <Typography
+      variant="subtitle2"
+      color="text.secondary"
+      sx={{
+        textTransform: "uppercase",
+        fontSize: "0.75rem",
+        letterSpacing: "0.05em",
+        fontWeight: 600,
+        mb: 0.5,
+      }}
+    >
+      {children}
+    </Typography>
+  );
 }
 
 export default function EventDetailModal({
@@ -126,7 +143,6 @@ export default function EventDetailModal({
     Set<number>
   >(new Set());
 
-  // Fetch RSVPs, volunteer matches, and reset mode when event opens
   useEffect(() => {
     if (open && eventId) {
       setMode("view");
@@ -141,9 +157,7 @@ export default function EventDetailModal({
     if (skillsLoading || loadingSkills || loadingInterests) {
       enqueueSnackbar(
         "Skills and interests are still loading. Try again shortly.",
-        {
-          variant: "info",
-        },
+        { variant: "info" },
       );
       return;
     }
@@ -177,7 +191,6 @@ export default function EventDetailModal({
     setEditInitialInterestIds(new Set(resolvedInterests.map((i) => i.id)));
 
     setEditCategoryId(event.extendedProps?.categoryId ?? "");
-
     setMode("edit");
   };
 
@@ -214,7 +227,6 @@ export default function EventDetailModal({
 
       const latestRequirements = await refetchSkills();
 
-      // Diff and apply skill changes
       const currentSkillIds = new Set(
         latestRequirements.requiredSkills.map((s) => s.skillId),
       );
@@ -228,7 +240,6 @@ export default function EventDetailModal({
           !selectedSkillIds.has(s.skillId),
       );
 
-      // Diff and apply interest changes
       const currentInterestIds = new Set(
         latestRequirements.requiredInterests.map((i) => i.interestId),
       );
@@ -290,119 +301,102 @@ export default function EventDetailModal({
   const maxVol = event?.extendedProps?.maxVolunteers;
 
   return (
-    <Dialog
+    <Drawer
+      anchor="right"
       open={open}
       onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
+      PaperProps={{ sx: { width: 640, maxWidth: "100vw" } }}
     >
-      {mode === "view" ? (
-        <>
-          <DialogTitle sx={{ fontWeight: 700, fontSize: "1.5rem", pb: 1 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        {/* Header */}
+        <Box
+          sx={{
+            px: 3.5,
+            py: 3,
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            flexShrink: 0,
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              mb: 1.5,
+            }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              {mode === "view" ? "Opportunity details" : "Edit opportunity"}
+            </Typography>
+            <IconButton size="small" onClick={onClose} sx={{ mt: -0.5 }}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+            <Typography variant="h6" fontWeight={700} sx={{ flex: 1 }}>
               {event?.title ?? ""}
-              {isRecurring && (
-                <AutorenewIcon
-                  fontSize="small"
-                  color="primary"
-                  titleAccess="Recurring event"
-                />
-              )}
-            </Box>
-          </DialogTitle>
-          <DialogContent>
-            {event ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2.5,
-                  pt: 1,
-                }}
-              >
+            </Typography>
+            {isRecurring && (
+              <AutorenewIcon
+                fontSize="small"
+                color="primary"
+                titleAccess="Recurring event"
+              />
+            )}
+          </Box>
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            {event?.extendedProps?.status && (
+              <StatusBadge
+                label={event.extendedProps.status}
+                color={
+                  event.extendedProps.status === "open"
+                    ? "success"
+                    : event.extendedProps.status === "full"
+                      ? "default"
+                      : event.extendedProps.status === "completed"
+                        ? "primary"
+                        : "error"
+                }
+              />
+            )}
+            {event?.extendedProps?.categoryName && (
+              <Chip
+                label={event.extendedProps.categoryName}
+                size="small"
+                variant="outlined"
+              />
+            )}
+          </Box>
+        </Box>
+
+        {/* Scrollable body */}
+        <Box sx={{ flex: 1, overflowY: "auto", px: 3.5, py: 3 }}>
+          {mode === "view" ? (
+            event ? (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
                 {event.description && (
                   <Box>
-                    <Typography
-                      variant="subtitle2"
-                      color="text.secondary"
-                      sx={{
-                        textTransform: "uppercase",
-                        fontSize: "0.75rem",
-                        letterSpacing: "0.05em",
-                        fontWeight: 600,
-                        mb: 0.5,
-                      }}
-                    >
-                      Description
-                    </Typography>
+                    <SectionLabel>Description</SectionLabel>
                     <Typography>{event.description}</Typography>
                   </Box>
                 )}
                 {event.location && (
                   <Box>
-                    <Typography
-                      variant="subtitle2"
-                      color="text.secondary"
-                      sx={{
-                        textTransform: "uppercase",
-                        fontSize: "0.75rem",
-                        letterSpacing: "0.05em",
-                        fontWeight: 600,
-                        mb: 0.5,
-                      }}
-                    >
-                      Location
-                    </Typography>
+                    <SectionLabel>Location</SectionLabel>
                     <Typography>{event.location}</Typography>
                   </Box>
                 )}
                 <Box>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{
-                      textTransform: "uppercase",
-                      fontSize: "0.75rem",
-                      letterSpacing: "0.05em",
-                      fontWeight: 600,
-                      mb: 0.5,
-                    }}
-                  >
-                    Start
-                  </Typography>
+                  <SectionLabel>Start</SectionLabel>
                   <Typography>{formatDateTime(event.start)}</Typography>
                 </Box>
                 <Box>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{
-                      textTransform: "uppercase",
-                      fontSize: "0.75rem",
-                      letterSpacing: "0.05em",
-                      fontWeight: 600,
-                      mb: 0.5,
-                    }}
-                  >
-                    End
-                  </Typography>
+                  <SectionLabel>End</SectionLabel>
                   <Typography>{formatDateTime(event.end)}</Typography>
                 </Box>
                 <Box>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{
-                      textTransform: "uppercase",
-                      fontSize: "0.75rem",
-                      letterSpacing: "0.05em",
-                      fontWeight: 600,
-                      mb: 0.5,
-                    }}
-                  >
-                    Capacity
-                  </Typography>
+                  <SectionLabel>Capacity</SectionLabel>
                   <Typography>
                     {maxVol == null
                       ? "No limit"
@@ -410,46 +404,10 @@ export default function EventDetailModal({
                   </Typography>
                 </Box>
 
-                {event.extendedProps?.categoryName && (
-                  <Box>
-                    <Typography
-                      variant="subtitle2"
-                      color="text.secondary"
-                      sx={{
-                        textTransform: "uppercase",
-                        fontSize: "0.75rem",
-                        letterSpacing: "0.05em",
-                        fontWeight: 600,
-                        mb: 0.5,
-                      }}
-                    >
-                      Category
-                    </Typography>
-                    <Chip
-                      label={event.extendedProps.categoryName}
-                      size="small"
-                      variant="outlined"
-                      color="primary"
-                    />
-                  </Box>
-                )}
-
                 <Divider />
 
                 <Box>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{
-                      textTransform: "uppercase",
-                      fontSize: "0.75rem",
-                      letterSpacing: "0.05em",
-                      fontWeight: 600,
-                      mb: 1,
-                    }}
-                  >
-                    Volunteers Signed Up
-                  </Typography>
+                  <SectionLabel>Volunteers Signed Up</SectionLabel>
                   {rsvpsLoading ? (
                     <CircularProgress size={20} />
                   ) : rsvps.length === 0 ? (
@@ -465,11 +423,7 @@ export default function EventDetailModal({
                       {rsvps.map((r) => (
                         <Box
                           key={r.volunteerId}
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                          }}
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
                         >
                           <Typography variant="body2">
                             {r.firstName} {r.lastName}
@@ -485,39 +439,19 @@ export default function EventDetailModal({
                 </Box>
 
                 <Box>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{
-                      textTransform: "uppercase",
-                      fontSize: "0.75rem",
-                      letterSpacing: "0.05em",
-                      fontWeight: 600,
-                      mb: 1,
-                    }}
-                  >
-                    Top Volunteer Matches
-                  </Typography>
+                  <SectionLabel>Top Volunteer Matches</SectionLabel>
                   {matchesLoading ? (
                     <CircularProgress size={20} />
                   ) : matches.length === 0 ? (
                     <EmptyState message="No matching volunteers found" />
                   ) : (
                     <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 1,
-                      }}
+                      sx={{ display: "flex", flexDirection: "column", gap: 1 }}
                     >
                       {matches.map((m) => (
                         <Box
                           key={m.volunteerId}
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                          }}
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
                         >
                           <Typography variant="body2" fontWeight={500}>
                             {m.firstName} {m.lastName}
@@ -535,19 +469,7 @@ export default function EventDetailModal({
                 </Box>
 
                 <Box>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{
-                      textTransform: "uppercase",
-                      fontSize: "0.75rem",
-                      letterSpacing: "0.05em",
-                      fontWeight: 600,
-                      mb: 0.5,
-                    }}
-                  >
-                    Required Skills
-                  </Typography>
+                  <SectionLabel>Required Skills</SectionLabel>
                   {skillsLoading ? (
                     <CircularProgress size={16} />
                   ) : requiredSkills.length === 0 ? (
@@ -569,19 +491,7 @@ export default function EventDetailModal({
                 </Box>
 
                 <Box>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{
-                      textTransform: "uppercase",
-                      fontSize: "0.75rem",
-                      letterSpacing: "0.05em",
-                      fontWeight: 600,
-                      mb: 0.5,
-                    }}
-                  >
-                    Related Interests
-                  </Typography>
+                  <SectionLabel>Related Interests</SectionLabel>
                   {skillsLoading ? (
                     <CircularProgress size={16} />
                   ) : requiredInterests.length === 0 ? (
@@ -605,44 +515,9 @@ export default function EventDetailModal({
               </Box>
             ) : (
               <CircularProgress size={24} />
-            )}
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
-            <Button
-              onClick={onClose}
-              sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
-            >
-              Close
-            </Button>
-            <Button
-              onClick={handleEditClick}
-              variant="contained"
-              disabled={skillsLoading || loadingSkills || loadingInterests}
-              sx={{
-                borderRadius: 2,
-                textTransform: "none",
-                fontWeight: 600,
-                px: 3,
-              }}
-            >
-              Edit Event
-            </Button>
-          </DialogActions>
-        </>
-      ) : (
-        <>
-          <DialogTitle sx={{ fontWeight: 700, fontSize: "1.5rem", pb: 1 }}>
-            Edit Event
-          </DialogTitle>
-          <DialogContent>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 2.5,
-                pt: 2,
-              }}
-            >
+            )
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
               <TextField
                 label="Title"
                 required
@@ -651,7 +526,6 @@ export default function EventDetailModal({
                 onChange={(e) => {
                   setEditForm({ ...editForm, title: e.target.value });
                 }}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
               />
               <TextField
                 label="Description"
@@ -662,7 +536,6 @@ export default function EventDetailModal({
                 onChange={(e) => {
                   setEditForm({ ...editForm, description: e.target.value });
                 }}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
               />
               <TextField
                 label="Location"
@@ -671,7 +544,6 @@ export default function EventDetailModal({
                 onChange={(e) => {
                   setEditForm({ ...editForm, location: e.target.value });
                 }}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
               />
               <Box sx={{ display: "flex", gap: 2 }}>
                 <TextField
@@ -684,7 +556,6 @@ export default function EventDetailModal({
                     setEditForm({ ...editForm, startDate: e.target.value });
                   }}
                   InputLabelProps={{ shrink: true }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                 />
                 <TextField
                   label="Start Time"
@@ -696,7 +567,6 @@ export default function EventDetailModal({
                     setEditForm({ ...editForm, startTime: e.target.value });
                   }}
                   InputLabelProps={{ shrink: true }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                 />
               </Box>
               <Box sx={{ display: "flex", gap: 2 }}>
@@ -710,7 +580,6 @@ export default function EventDetailModal({
                     setEditForm({ ...editForm, endDate: e.target.value });
                   }}
                   InputLabelProps={{ shrink: true }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                 />
                 <TextField
                   label="End Time"
@@ -722,7 +591,6 @@ export default function EventDetailModal({
                     setEditForm({ ...editForm, endTime: e.target.value });
                   }}
                   InputLabelProps={{ shrink: true }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                 />
               </Box>
               <TextField
@@ -734,13 +602,9 @@ export default function EventDetailModal({
                   setEditForm({ ...editForm, maxVolunteers: e.target.value });
                 }}
                 inputProps={{ min: 1 }}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
               />
 
-              <FormControl
-                fullWidth
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-              >
+              <FormControl fullWidth>
                 <InputLabel id="edit-event-category-label">Category</InputLabel>
                 <Select
                   labelId="edit-event-category-label"
@@ -784,7 +648,6 @@ export default function EventDetailModal({
                     {...params}
                     label="Required Skills"
                     placeholder="Add skills..."
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                   />
                 )}
               />
@@ -812,7 +675,6 @@ export default function EventDetailModal({
                     {...params}
                     label="Related Interests"
                     placeholder="Add interests..."
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                   />
                 )}
               />
@@ -836,7 +698,6 @@ export default function EventDetailModal({
                       onClick={() => {
                         setShowDeleteConfirm(false);
                       }}
-                      sx={{ textTransform: "none" }}
                     >
                       Cancel
                     </Button>
@@ -848,7 +709,6 @@ export default function EventDetailModal({
                       onClick={() => {
                         void handleDelete();
                       }}
-                      sx={{ textTransform: "none" }}
                     >
                       Delete
                     </Button>
@@ -860,45 +720,61 @@ export default function EventDetailModal({
                   onClick={() => {
                     setShowDeleteConfirm(true);
                   }}
-                  sx={{ alignSelf: "flex-start", textTransform: "none" }}
+                  sx={{ alignSelf: "flex-start" }}
                 >
                   Delete Event
                 </Button>
               )}
             </Box>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 3, pt: 2, gap: 1 }}>
-            <Button
-              onClick={() => {
-                setMode("view");
-              }}
-              sx={{
-                borderRadius: 2,
-                textTransform: "none",
-                fontWeight: 600,
-                px: 3,
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                void handleSave();
-              }}
-              variant="contained"
-              disabled={isMutating}
-              sx={{
-                borderRadius: 2,
-                textTransform: "none",
-                fontWeight: 600,
-                px: 3,
-              }}
-            >
-              Save
-            </Button>
-          </DialogActions>
-        </>
-      )}
-    </Dialog>
+          )}
+        </Box>
+
+        {/* Footer */}
+        <Box
+          sx={{
+            px: 3.5,
+            py: 2,
+            borderTop: "1px solid",
+            borderColor: "divider",
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 1,
+            flexShrink: 0,
+          }}
+        >
+          {mode === "view" ? (
+            <>
+              <Button onClick={onClose}>Close</Button>
+              <Button
+                onClick={handleEditClick}
+                variant="contained"
+                disabled={skillsLoading || loadingSkills || loadingInterests}
+              >
+                Edit Event
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={() => {
+                  setMode("view");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  void handleSave();
+                }}
+                variant="contained"
+                disabled={isMutating}
+              >
+                Save
+              </Button>
+            </>
+          )}
+        </Box>
+      </Box>
+    </Drawer>
   );
 }

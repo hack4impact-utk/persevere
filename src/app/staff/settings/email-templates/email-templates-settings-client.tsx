@@ -3,12 +3,11 @@
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import PauseCircleIcon from "@mui/icons-material/PauseCircle";
-import PlayCircleIcon from "@mui/icons-material/PlayCircle";
 import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -30,7 +29,7 @@ import { JSX, useCallback, useEffect, useState } from "react";
 
 import { ConfirmDialog, ModalTitleBar } from "@/components/shared";
 import RichTextEditor from "@/components/staff/communications/rich-text-editor";
-import { LoadingSkeleton } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 import {
   type CreateTemplateInput,
   type EmailTemplate,
@@ -65,8 +64,7 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
     body: "",
   });
   const [saving, setSaving] = useState(false);
-  const [deactivateConfirm, setDeactivateConfirm] =
-    useState<EmailTemplate | null>(null);
+
   const [deleteConfirm, setDeleteConfirm] = useState<EmailTemplate | null>(
     null,
   );
@@ -152,44 +150,6 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
     fetchTemplates,
   ]);
 
-  const handleDeactivate = useCallback(
-    async (template: EmailTemplate) => {
-      try {
-        await hookUpdateTemplate(template.id, { isActive: false });
-        enqueueSnackbar("Template deactivated", { variant: "success" });
-        void fetchTemplates();
-      } catch (error) {
-        enqueueSnackbar(
-          error instanceof Error
-            ? error.message
-            : "Failed to deactivate template",
-          { variant: "error" },
-        );
-      } finally {
-        setDeactivateConfirm(null);
-      }
-    },
-    [enqueueSnackbar, hookUpdateTemplate, fetchTemplates],
-  );
-
-  const handleReactivate = useCallback(
-    async (template: EmailTemplate) => {
-      try {
-        await hookUpdateTemplate(template.id, { isActive: true });
-        enqueueSnackbar("Template reactivated", { variant: "success" });
-        void fetchTemplates();
-      } catch (error) {
-        enqueueSnackbar(
-          error instanceof Error
-            ? error.message
-            : "Failed to reactivate template",
-          { variant: "error" },
-        );
-      }
-    },
-    [enqueueSnackbar, hookUpdateTemplate, fetchTemplates],
-  );
-
   const handleDelete = useCallback(
     async (template: EmailTemplate) => {
       try {
@@ -234,42 +194,85 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
         </Button>
       </Box>
 
-      {loading ? (
-        <LoadingSkeleton variant="lines" count={5} />
-      ) : (
-        <TableContainer component={Paper} variant="outlined">
-          <Table size="small">
+      <Paper
+        elevation={0}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          border: "1px solid",
+          borderColor: "grey.200",
+          borderRadius: 2,
+          overflow: "hidden",
+          position: "relative",
+        }}
+      >
+        <TableContainer sx={{ flex: 1, overflow: "auto" }}>
+          <Table stickyHeader size="small">
             <TableHead>
               <TableRow sx={{ backgroundColor: "action.hover" }}>
-                <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Subject</TableCell>
-                <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 700, py: 1.5 }} align="right">
+                <TableCell
+                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                >
+                  Name
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                >
+                  Subject
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                >
                   Actions
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {templates.length === 0 ? (
+              {loading && (
                 <TableRow>
-                  <TableCell colSpan={4} align="center" sx={{ py: 5 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      No email templates yet.{" "}
-                      <Box
-                        component="span"
-                        sx={{
-                          cursor: "pointer",
-                          color: "primary.main",
-                          fontWeight: 500,
-                        }}
-                        onClick={openAdd}
-                      >
-                        Add the first template
-                      </Box>{" "}
-                      to get started.
-                    </Typography>
+                  <TableCell colSpan={3} sx={{ p: 0, borderBottom: 0 }}>
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 48,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "rgba(255, 255, 255, 0.7)",
+                        zIndex: 1,
+                      }}
+                    >
+                      <CircularProgress />
+                    </Box>
                   </TableCell>
                 </TableRow>
+              )}
+              {templates.length === 0 ? (
+                loading ? null : (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center" sx={{ py: 5 }}>
+                      <EmptyState
+                        message="No email templates yet."
+                        action={
+                          <Box
+                            component="span"
+                            sx={{
+                              cursor: "pointer",
+                              color: "primary.main",
+                              fontWeight: 500,
+                            }}
+                            onClick={openAdd}
+                          >
+                            Add the first template
+                          </Box>
+                        }
+                      />
+                    </TableCell>
+                  </TableRow>
+                )
               ) : (
                 templates.map((template, index) => (
                   <TableRow
@@ -279,7 +282,6 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
                       backgroundColor:
                         index % 2 === 0 ? "transparent" : "action.hover",
                       "&:last-child td": { border: 0 },
-                      opacity: template.isActive ? 1 : 0.6,
                     }}
                   >
                     <TableCell sx={{ fontWeight: 500 }}>
@@ -289,15 +291,6 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
                       <Typography variant="body2" noWrap sx={{ maxWidth: 350 }}>
                         {template.subject}
                       </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={template.isActive ? "Active" : "Inactive"}
-                        size="small"
-                        color={template.isActive ? "success" : "default"}
-                        variant="outlined"
-                        sx={{ fontSize: "0.75rem" }}
-                      />
                     </TableCell>
                     <TableCell align="right">
                       <Stack
@@ -313,36 +306,15 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        {template.isActive ? (
-                          <Tooltip title="Deactivate template">
-                            <IconButton
-                              size="small"
-                              onClick={() => setDeactivateConfirm(template)}
-                            >
-                              <PauseCircleIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        ) : (
-                          <>
-                            <Tooltip title="Reactivate template">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleReactivate(template)}
-                              >
-                                <PlayCircleIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete template">
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => setDeleteConfirm(template)}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </>
-                        )}
+                        <Tooltip title="Delete template">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => setDeleteConfirm(template)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       </Stack>
                     </TableCell>
                   </TableRow>
@@ -351,7 +323,7 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
             </TableBody>
           </Table>
         </TableContainer>
-      )}
+      </Paper>
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="md" fullWidth>
@@ -398,23 +370,15 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
           <Button onClick={closeDialog} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} variant="contained" disabled={saving}>
+          <Button
+            onClick={() => void handleSave()}
+            variant="contained"
+            disabled={saving}
+          >
             {saving ? "Saving..." : "Save Template"}
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Deactivate Confirmation */}
-      <ConfirmDialog
-        open={Boolean(deactivateConfirm)}
-        title="Deactivate Template"
-        message={`Are you sure you want to deactivate "${deactivateConfirm?.name}"? It will no longer be available for selection in the compose modal.`}
-        confirmLabel="Deactivate"
-        onConfirm={() =>
-          deactivateConfirm && handleDeactivate(deactivateConfirm)
-        }
-        onClose={() => setDeactivateConfirm(null)}
-      />
 
       {/* Delete Confirmation */}
       <ConfirmDialog

@@ -1,7 +1,6 @@
 "use client";
 
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import LockIcon from "@mui/icons-material/Lock";
 import PersonIcon from "@mui/icons-material/Person";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import {
@@ -16,14 +15,12 @@ import {
   FormControlLabel,
   Grid,
   Stack,
-  Switch,
   TextField,
   Typography,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { JSX, useEffect, useState } from "react";
 
-import { ChangePasswordSection } from "@/components/shared";
 import { useVolunteerSkillsInterests } from "@/hooks/use-volunteer-skills-interests";
 
 import AvailabilityEditor, {
@@ -54,7 +51,6 @@ type ProfileData = {
   phone?: string | null;
   bio?: string | null;
   availability?: AvailabilityData | null;
-  notificationPreference?: "email" | "sms" | "both" | "none" | null;
   skills?: SkillData[];
   interests?: InterestData[];
   employer?: string | null;
@@ -195,7 +191,6 @@ export default function ProfileEditForm({
     phone: initialData.phone || "",
     bio: initialData.bio || "",
     availability: initialData.availability || {},
-    notificationPreference: initialData.notificationPreference || "email",
     employer: initialData.employer || "",
     jobTitle: initialData.jobTitle || "",
     city: initialData.city || "",
@@ -514,27 +509,6 @@ export default function ProfileEditForm({
                   )}
                 />
               )}
-
-              <Divider sx={{ my: 2.5 }} />
-
-              <SectionLabel>Notifications</SectionLabel>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.notificationPreference !== "none"}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        notificationPreference: e.target.checked
-                          ? "email"
-                          : "none",
-                      })
-                    }
-                    disabled={isSaving}
-                  />
-                }
-                label="Email notifications"
-              />
             </FormSectionCard>
           </Grid>
         </Grid>
@@ -550,14 +524,6 @@ export default function ProfileEditForm({
               setFormData({ ...formData, availability })
             }
           />
-        </FormSectionCard>
-
-        {/* ── Change Password ──────────────────────────── */}
-        <FormSectionCard
-          icon={<LockIcon fontSize="small" />}
-          title="Change Password"
-        >
-          <ChangePasswordSection role="volunteer" disabled={isSaving} />
         </FormSectionCard>
 
         {/* ── Actions ──────────────────────────────────── */}

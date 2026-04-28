@@ -4,6 +4,7 @@ import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
 import { apiClient } from "@/lib/api-client";
 import type {
   PendingHoursEntry,
+  PendingRsvpEntry,
   RecentActivityItem,
   StaffDashboardStats,
   StaffUpcomingOpportunity,
@@ -11,6 +12,7 @@ import type {
 
 export type {
   PendingHoursEntry,
+  PendingRsvpEntry,
   RecentActivityItem,
   StaffUpcomingOpportunity,
 } from "@/services/dashboard.service";
@@ -24,6 +26,7 @@ export type StaffDashboardData = {
   pendingHoursCount: number;
   onboardingIncomplete: number;
   pendingHoursList: PendingHoursEntry[];
+  pendingRsvpsList: PendingRsvpEntry[];
   recentActivity: RecentActivityItem[];
 };
 
@@ -61,6 +64,7 @@ export function useStaffDashboard(): State {
           pendingHoursCount: res.data.pendingHoursCount ?? 0,
           onboardingIncomplete: res.data.onboardingIncomplete ?? 0,
           pendingHoursList: res.data.pendingHoursList ?? [],
+          pendingRsvpsList: res.data.pendingRsvpsList ?? [],
           recentActivity: res.data.recentActivity ?? [],
         });
         setError(null);

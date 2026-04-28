@@ -5,7 +5,6 @@ import Box from "@mui/material/Box";
 import ButtonBase from "@mui/material/ButtonBase";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -17,7 +16,6 @@ import type { AnnouncementItem } from "@/hooks/use-announcements";
 import { useAnnouncements } from "@/hooks/use-announcements";
 
 import AnnouncementDetailModal from "./announcement-detail-modal";
-import { formatDate } from "./utils";
 
 export default function AnnouncementsCard(): JSX.Element {
   const { announcements, loading, error } = useAnnouncements();
@@ -28,12 +26,11 @@ export default function AnnouncementsCard(): JSX.Element {
       <Card sx={{ borderRadius: 2, boxShadow: 2, height: "100%" }}>
         <CardContent sx={{ p: 2.5 }}>
           <Box display="flex" alignItems="center" gap={1} mb={2}>
-            <CampaignIcon color="primary" />
+            <CampaignIcon sx={{ color: "primary.main" }} />
             <Typography variant="h6" fontWeight={700}>
               Announcements
             </Typography>
           </Box>
-          <Divider sx={{ mb: 2 }} />
 
           <AsyncContent
             loading={loading}
@@ -41,38 +38,59 @@ export default function AnnouncementsCard(): JSX.Element {
             empty={announcements.length === 0}
             emptyMessage="No announcements yet."
           >
-            <Box sx={{ overflowY: "auto", maxHeight: 240 }}>
-              <Stack spacing={1.5}>
-                {announcements.map((announcement) => (
-                  <ButtonBase
-                    key={announcement.id}
-                    onClick={() => setSelected(announcement)}
-                    sx={{
-                      display: "block",
-                      textAlign: "left",
-                      width: "100%",
-                      p: 1.5,
-                      borderRadius: 1,
-                      border: "1px solid",
-                      borderColor: "divider",
-                      "&:hover": { bgcolor: "action.hover" },
-                    }}
+            <Stack spacing={0}>
+              {announcements.map((announcement, i) => (
+                <ButtonBase
+                  key={announcement.id}
+                  onClick={() => setSelected(announcement)}
+                  sx={{
+                    display: "block",
+                    textAlign: "left",
+                    width: "100%",
+                    py: 1.5,
+                    borderTop: i === 0 ? "none" : "1px solid",
+                    borderColor: "divider",
+                    "&:hover": { bgcolor: "action.hover" },
+                  }}
+                >
+                  <Box
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="baseline"
+                    gap={1}
                   >
                     <Typography
-                      variant="subtitle2"
+                      variant="body2"
                       fontWeight={600}
-                      noWrap
-                      sx={{ mb: 0.25 }}
+                      color="text.primary"
                     >
                       {announcement.subject}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatDate(announcement.sentAt)}
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      flexShrink={0}
+                    >
+                      {new Date(announcement.sentAt).toLocaleString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
                     </Typography>
-                  </ButtonBase>
-                ))}
-              </Stack>
-            </Box>
+                  </Box>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    mt={0.5}
+                  >
+                    by{" "}
+                    {[announcement.senderFirstName, announcement.senderLastName]
+                      .filter(Boolean)
+                      .join(" ") || "Staff"}
+                  </Typography>
+                </ButtonBase>
+              ))}
+            </Stack>
           </AsyncContent>
 
           <Box mt={2}>

@@ -126,16 +126,21 @@ const volunteerNavItems: NavItem[] = [
     icon: <CalendarIcon />,
   },
   {
-    label: "Onboarding",
-    href: "/volunteer/onboarding",
-    icon: <DocumentIcon />,
+    label: "My Calendar",
+    href: "/volunteer/calendar",
+    icon: <CalendarIcon />,
   },
+  { label: "My Hours", href: "/volunteer/hours", icon: <ClockIcon /> },
   {
     label: "Announcements",
     href: "/volunteer/announcements",
     icon: <MegaphoneIcon />,
   },
-  { label: "Hours", href: "/volunteer/hours", icon: <ClockIcon /> },
+  {
+    label: "Onboarding",
+    href: "/volunteer/onboarding",
+    icon: <DocumentIcon />,
+  },
 ];
 
 /**

@@ -1,24 +1,33 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
-import LinkIcon from "@mui/icons-material/Link";
-import OndemandVideoIcon from "@mui/icons-material/OndemandVideo";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import SearchIcon from "@mui/icons-material/Search";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
-import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useSnackbar } from "notistack";
@@ -30,8 +39,8 @@ import {
   useState,
 } from "react";
 
-import { ConfirmDialog, ModalTitleBar } from "@/components/shared";
-import OnboardingModuleCard from "@/components/shared/onboarding-module-card";
+import { ConfirmDialog, ModalTitleBar, PageHeader } from "@/components/shared";
+import { EmptyState } from "@/components/ui";
 import {
   type CreateDocumentInput,
   type OnboardingDocument,
@@ -62,6 +71,26 @@ const DEFAULT_FORM: FormState = {
   description: "",
 };
 
+const TYPE_COLOR: Record<string, string> = {
+  pdf: "#d32f2f",
+  video: "#6a1b9a",
+  link: "#327bf7",
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  pdf: "PDF",
+  video: "VIDEO",
+  link: "LINK",
+};
+
+const ACTION_CHIP_COLOR: Record<ActionType, "primary" | "warning" | "default"> =
+  {
+    sign: "primary",
+    consent: "warning",
+    acknowledge: "default",
+    informational: "default",
+  };
+
 export default function DocumentManager(): JSX.Element {
   const {
     documents,
@@ -86,6 +115,8 @@ export default function DocumentManager(): JSX.Element {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [actionFilter, setActionFilter] = useState("");
 
   const openAdd = useCallback((): void => {
     setEditTarget(null);
@@ -207,116 +238,246 @@ export default function DocumentManager(): JSX.Element {
     void refetch();
   }, [refetch]);
 
+  const filtered = documents.filter((doc) => {
+    const matchSearch = doc.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchFilter = !actionFilter || doc.actionType === actionFilter;
+    return matchSearch && matchFilter;
+  });
+
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}
-      >
-        <Typography variant="h6" fontWeight={600}>
-          Onboarding Documents
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={openAdd}
+      <PageHeader
+        eyebrow="Staff Portal"
+        title="Onboarding Documents"
+        subtitle="Manage onboarding content — documents to sign, consent forms, acknowledgements, and resources."
+        actions={
+          <Button variant="contained" startIcon={<AddIcon />} onClick={openAdd}>
+            Add Content
+          </Button>
+        }
+      />
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      <Stack direction="row" spacing={2} mb={2}>
+        <TextField
+          placeholder="Search documents..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           size="small"
-        >
-          Add Content
-        </Button>
-      </Box>
+          sx={{ minWidth: 260 }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+        <FormControl size="small" sx={{ minWidth: 180 }}>
+          <InputLabel>Action type</InputLabel>
+          <Select
+            value={actionFilter}
+            label="Action type"
+            onChange={(e) => setActionFilter(e.target.value)}
+          >
+            <MenuItem value="">All</MenuItem>
+            <MenuItem value="sign">Sign</MenuItem>
+            <MenuItem value="consent">Consent</MenuItem>
+            <MenuItem value="acknowledge">Acknowledge</MenuItem>
+            <MenuItem value="informational">Informational</MenuItem>
+          </Select>
+        </FormControl>
+      </Stack>
 
-      <Typography color="text.secondary" mb={3} variant="body2">
-        Manage onboarding content — documents to sign, consent forms,
-        acknowledgements, and informational resources.
-      </Typography>
-
-      {loading && (
-        <Box display="flex" justifyContent="center" py={4}>
-          <CircularProgress />
-        </Box>
-      )}
-
-      {!loading && error && <Alert severity="error">{error}</Alert>}
-
-      {!loading && !error && (
-        <Grid container spacing={3} sx={{ mt: 1 }}>
-          {documents.length === 0 && (
-            <Grid size={{ xs: 12 }}>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ py: 4, textAlign: "center" }}
-              >
-                No documents yet. Add your first onboarding module.
-              </Typography>
-            </Grid>
+      <Card
+        elevation={0}
+        sx={{
+          border: 1,
+          borderColor: "divider",
+          borderRadius: 2,
+          overflow: "hidden",
+        }}
+      >
+        <TableContainer sx={{ position: "relative" }}>
+          {loading && (
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: "rgba(255,255,255,0.8)",
+                zIndex: 1,
+              }}
+            >
+              <CircularProgress />
+            </Box>
           )}
-          {documents.map((doc) => (
-            <Grid key={doc.id} size={{ xs: 12, sm: 6, md: 4 }}>
-              <OnboardingModuleCard
-                title={doc.title}
-                description={doc.description || undefined}
-                icon={
-                  doc.type === "pdf" ? (
-                    <PictureAsPdfIcon />
-                  ) : doc.type === "video" ? (
-                    <OndemandVideoIcon />
-                  ) : (
-                    <LinkIcon />
-                  )
-                }
-                onEdit={() => openEdit(doc)}
-                onClick={() => setPreviewTarget(doc)}
-                onDelete={() => setDeleteTarget(doc)}
-                statusNode={
-                  <Box display="flex" gap={1} mt={1}>
-                    {doc.required && (
-                      <Box
-                        component="span"
-                        sx={{
-                          fontSize: "0.7rem",
-                          px: 1,
-                          py: 0.25,
-                          bgcolor: "error.main",
-                          color: "error.contrastText",
-                          borderRadius: 1,
-                          fontWeight: 600,
-                        }}
-                      >
-                        REQUIRED
+          <Table stickyHeader size="small">
+            <TableHead>
+              <TableRow sx={{ bgcolor: "grey.50" }}>
+                <TableCell
+                  sx={{ pl: 3, fontWeight: 600, fontSize: "0.875rem" }}
+                >
+                  Name
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                  Action Type
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                  Required
+                </TableCell>
+                <TableCell
+                  align="right"
+                  sx={{ fontWeight: 600, fontSize: "0.875rem" }}
+                >
+                  Actions
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filtered.length > 0 ? (
+                filtered.map((doc) => (
+                  <TableRow
+                    key={doc.id}
+                    hover
+                    sx={{ cursor: "pointer" }}
+                    onClick={() => setPreviewTarget(doc)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Preview ${doc.title}`}
+                  >
+                    <TableCell sx={{ pl: 3 }}>
+                      <Box display="flex" alignItems="center" gap={1.5}>
+                        <Box
+                          sx={{
+                            width: 32,
+                            height: 40,
+                            borderRadius: 0.5,
+                            bgcolor: TYPE_COLOR[doc.type] ?? "#666",
+                            color: "#fff",
+                            fontSize: 9,
+                            fontWeight: 700,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            letterSpacing: "0.03em",
+                          }}
+                        >
+                          {TYPE_LABEL[doc.type] ?? doc.type.toUpperCase()}
+                        </Box>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography variant="body2" fontWeight={500} noWrap>
+                            {doc.title}
+                          </Typography>
+                          {doc.description && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ display: "block" }}
+                              noWrap
+                            >
+                              {doc.description}
+                            </Typography>
+                          )}
+                        </Box>
                       </Box>
-                    )}
-                    <Box
-                      component="span"
-                      sx={{
-                        fontSize: "0.7rem",
-                        px: 1,
-                        py: 0.25,
-                        bgcolor: "grey.200",
-                        color: "text.primary",
-                        borderRadius: 1,
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {doc.actionType}
-                    </Box>
-                  </Box>
-                }
-              />
-            </Grid>
-          ))}
-        </Grid>
-      )}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={doc.actionType}
+                        size="small"
+                        color={
+                          ACTION_CHIP_COLOR[doc.actionType as ActionType] ??
+                          "default"
+                        }
+                        sx={{ textTransform: "capitalize" }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography
+                        variant="body2"
+                        color={doc.required ? "text.primary" : "text.disabled"}
+                      >
+                        {doc.required ? "Yes" : "No"}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Stack
+                        direction="row"
+                        spacing={0.5}
+                        justifyContent="flex-end"
+                      >
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewTarget(doc);
+                          }}
+                          aria-label="Preview"
+                        >
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEdit(doc);
+                          }}
+                          aria-label="Edit"
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget(doc);
+                          }}
+                          aria-label="Delete"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : loading ? null : (
+                <TableRow>
+                  <TableCell colSpan={4}>
+                    <EmptyState
+                      message={
+                        searchQuery || actionFilter
+                          ? "No documents match your filters."
+                          : "No documents yet. Add your first onboarding module."
+                      }
+                    />
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Card>
 
       {/* Add / Edit Modal */}
       <Dialog open={modalOpen} onClose={closeModal} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editTarget ? "Edit Document" : "Add Document"}
-        </DialogTitle>
+        <ModalTitleBar
+          title={editTarget ? "Edit Document" : "Add Document"}
+          onClose={closeModal}
+        />
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
@@ -448,7 +609,7 @@ export default function DocumentManager(): JSX.Element {
         fullWidth
       >
         <ModalTitleBar
-          title={previewTarget?.title || "Document Preview"}
+          title={previewTarget?.title ?? "Document Preview"}
           onClose={() => setPreviewTarget(null)}
         />
         {previewTarget && (

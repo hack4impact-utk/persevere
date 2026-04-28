@@ -1,17 +1,16 @@
 "use client";
 
+import CloseIcon from "@mui/icons-material/Close";
 import {
   Autocomplete,
   Box,
   Button,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
+  Drawer,
   FormControl,
   FormControlLabel,
   FormLabel,
+  IconButton,
   InputLabel,
   MenuItem,
   Radio,
@@ -22,7 +21,7 @@ import {
   Typography,
 } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
-import { JSX, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 
 import { useCalendarEvents } from "@/hooks/use-calendar-events";
 import { useEventCategories } from "@/hooks/use-event-categories";
@@ -93,11 +92,10 @@ export default function EventFormModal({
   const { applyToEvents } = useOpportunitySkills(null);
   const { activeCategories } = useEventCategories();
 
-  const [formData, setFormData] = useState<EventFormData>(() => ({
+  const [formData, setFormData] = useState<EventFormData>({
     ...defaultFormData,
     ...initialDates,
-  }));
-
+  });
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrence, setRecurrence] =
     useState<RecurrenceData>(defaultRecurrence);
@@ -107,22 +105,17 @@ export default function EventFormModal({
   );
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | "">("");
 
-  // Sync initialDates when modal opens
-  const handleOpen = (): void => {
-    setFormData({
-      ...defaultFormData,
-      ...initialDates,
-    });
-    setIsRecurring(false);
-    setRecurrence(defaultRecurrence);
-    setSelectedSkills([]);
-    setSelectedInterests([]);
-    setSelectedCategoryId("");
-  };
-
-  const handleClose = (): void => {
-    onClose();
-  };
+  // Reset form whenever drawer opens
+  useEffect(() => {
+    if (open) {
+      setFormData({ ...defaultFormData, ...initialDates });
+      setIsRecurring(false);
+      setRecurrence(defaultRecurrence);
+      setSelectedSkills([]);
+      setSelectedInterests([]);
+      setSelectedCategoryId("");
+    }
+  }, [open, initialDates]);
 
   const handleSubmit = async (): Promise<void> => {
     if (!formData.title.trim()) {
@@ -214,350 +207,354 @@ export default function EventFormModal({
   };
 
   return (
-    <Dialog
+    <Drawer
+      anchor="right"
       open={open}
-      onClose={handleClose}
-      TransitionProps={{ onEnter: handleOpen }}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
+      onClose={onClose}
+      PaperProps={{ sx: { width: 640, maxWidth: "100vw" } }}
     >
-      <DialogTitle sx={{ fontWeight: 700, fontSize: "1.5rem", pb: 1 }}>
-        Create New Event
-      </DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 2 }}>
-          <TextField
-            label="Title"
-            required
-            fullWidth
-            value={formData.title}
-            onChange={(e) => {
-              setFormData({ ...formData, title: e.target.value });
-            }}
-            sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-          />
-          <TextField
-            label="Description"
-            fullWidth
-            multiline
-            rows={3}
-            value={formData.description}
-            onChange={(e) => {
-              setFormData({ ...formData, description: e.target.value });
-            }}
-            sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-          />
-          <TextField
-            label="Location"
-            fullWidth
-            value={formData.location}
-            onChange={(e) => {
-              setFormData({ ...formData, location: e.target.value });
-            }}
-            sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-          />
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <TextField
-              label="Start Date"
-              type="date"
-              required
-              fullWidth
-              value={formData.startDate}
-              onChange={(e) => {
-                setFormData({ ...formData, startDate: e.target.value });
-              }}
-              InputLabelProps={{ shrink: true }}
-              sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-            />
-            <TextField
-              label="Start Time"
-              type="time"
-              required
-              fullWidth
-              value={formData.startTime}
-              onChange={(e) => {
-                setFormData({ ...formData, startTime: e.target.value });
-              }}
-              InputLabelProps={{ shrink: true }}
-              sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-            />
-          </Box>
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <TextField
-              label="End Date"
-              type="date"
-              required
-              fullWidth
-              value={formData.endDate}
-              onChange={(e) => {
-                setFormData({ ...formData, endDate: e.target.value });
-              }}
-              InputLabelProps={{ shrink: true }}
-              sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-            />
-            <TextField
-              label="End Time"
-              type="time"
-              required
-              fullWidth
-              value={formData.endTime}
-              onChange={(e) => {
-                setFormData({ ...formData, endTime: e.target.value });
-              }}
-              InputLabelProps={{ shrink: true }}
-              sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-            />
-          </Box>
-          <TextField
-            label="Max Volunteers"
-            type="number"
-            fullWidth
-            value={formData.maxVolunteers}
-            onChange={(e) => {
-              setFormData({ ...formData, maxVolunteers: e.target.value });
-            }}
-            inputProps={{ min: 1 }}
-            sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-          />
+      <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        {/* Header */}
+        <Box
+          sx={{
+            px: 3.5,
+            py: 3,
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            flexShrink: 0,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Typography variant="h6" fontWeight={700}>
+            New Opportunity
+          </Typography>
+          <IconButton size="small" onClick={onClose}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
 
-          <FormControl
-            fullWidth
-            sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-          >
-            <InputLabel id="event-category-label">Category</InputLabel>
-            <Select
-              labelId="event-category-label"
-              label="Category"
-              value={selectedCategoryId}
+        {/* Scrollable body */}
+        <Box sx={{ flex: 1, overflowY: "auto", px: 3.5, py: 3 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <TextField
+              label="Title"
+              required
+              fullWidth
+              value={formData.title}
               onChange={(e) => {
-                setSelectedCategoryId(e.target.value as number | "");
+                setFormData({ ...formData, title: e.target.value });
               }}
-            >
-              <MenuItem value="">
-                <em>None</em>
-              </MenuItem>
-              {activeCategories.map((c) => (
-                <MenuItem key={c.id} value={c.id}>
-                  {c.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <Autocomplete
-            multiple
-            options={catalogSkills}
-            getOptionLabel={(o) => o.name}
-            value={selectedSkills}
-            onChange={(_, value) => {
-              setSelectedSkills(value);
-            }}
-            renderTags={(value, getTagProps) =>
-              value.map((option, index) => (
-                <Chip
-                  label={option.name}
-                  size="small"
-                  {...getTagProps({ index })}
-                  key={option.id}
-                />
-              ))
-            }
-            renderInput={(params) => (
+            />
+            <TextField
+              label="Description"
+              fullWidth
+              multiline
+              rows={3}
+              value={formData.description}
+              onChange={(e) => {
+                setFormData({ ...formData, description: e.target.value });
+              }}
+            />
+            <TextField
+              label="Location"
+              fullWidth
+              value={formData.location}
+              onChange={(e) => {
+                setFormData({ ...formData, location: e.target.value });
+              }}
+            />
+            <Box sx={{ display: "flex", gap: 2 }}>
               <TextField
-                {...params}
-                label="Required Skills"
-                placeholder="Add skills..."
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-              />
-            )}
-          />
-
-          <Autocomplete
-            multiple
-            options={catalogInterests}
-            getOptionLabel={(o) => o.name}
-            value={selectedInterests}
-            onChange={(_, value) => {
-              setSelectedInterests(value);
-            }}
-            renderTags={(value, getTagProps) =>
-              value.map((option, index) => (
-                <Chip
-                  label={option.name}
-                  size="small"
-                  {...getTagProps({ index })}
-                  key={option.id}
-                />
-              ))
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Related Interests"
-                placeholder="Add interests..."
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-              />
-            )}
-          />
-
-          {/* Recurring toggle */}
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isRecurring}
+                label="Start Date"
+                type="date"
+                required
+                fullWidth
+                value={formData.startDate}
                 onChange={(e) => {
-                  setIsRecurring(e.target.checked);
+                  setFormData({ ...formData, startDate: e.target.value });
                 }}
+                InputLabelProps={{ shrink: true }}
               />
-            }
-            label="Repeats"
-          />
-
-          {isRecurring && (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 2,
-                pl: 2,
-                borderLeft: "2px solid",
-                borderColor: "divider",
+              <TextField
+                label="Start Time"
+                type="time"
+                required
+                fullWidth
+                value={formData.startTime}
+                onChange={(e) => {
+                  setFormData({ ...formData, startTime: e.target.value });
+                }}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Box>
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <TextField
+                label="End Date"
+                type="date"
+                required
+                fullWidth
+                value={formData.endDate}
+                onChange={(e) => {
+                  setFormData({ ...formData, endDate: e.target.value });
+                }}
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                label="End Time"
+                type="time"
+                required
+                fullWidth
+                value={formData.endTime}
+                onChange={(e) => {
+                  setFormData({ ...formData, endTime: e.target.value });
+                }}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Box>
+            <TextField
+              label="Max Volunteers"
+              type="number"
+              fullWidth
+              value={formData.maxVolunteers}
+              onChange={(e) => {
+                setFormData({ ...formData, maxVolunteers: e.target.value });
               }}
-            >
-              <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                <Typography variant="body2" sx={{ minWidth: 60 }}>
-                  Every
-                </Typography>
+              inputProps={{ min: 1 }}
+            />
+
+            <FormControl fullWidth>
+              <InputLabel id="event-category-label">Category</InputLabel>
+              <Select
+                labelId="event-category-label"
+                label="Category"
+                value={selectedCategoryId}
+                onChange={(e) => {
+                  setSelectedCategoryId(e.target.value as number | "");
+                }}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {activeCategories.map((c) => (
+                  <MenuItem key={c.id} value={c.id}>
+                    {c.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Autocomplete
+              multiple
+              options={catalogSkills}
+              getOptionLabel={(o) => o.name}
+              value={selectedSkills}
+              onChange={(_, value) => {
+                setSelectedSkills(value);
+              }}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    label={option.name}
+                    size="small"
+                    {...getTagProps({ index })}
+                    key={option.id}
+                  />
+                ))
+              }
+              renderInput={(params) => (
                 <TextField
-                  type="number"
-                  size="small"
-                  value={recurrence.interval}
-                  onChange={(e) => {
-                    setRecurrence({ ...recurrence, interval: e.target.value });
-                  }}
-                  inputProps={{ min: 1 }}
-                  sx={{ width: 80 }}
+                  {...params}
+                  label="Required Skills"
+                  placeholder="Add skills..."
                 />
-                <FormControl size="small" sx={{ minWidth: 120 }}>
-                  <Select
-                    value={recurrence.frequency}
+              )}
+            />
+
+            <Autocomplete
+              multiple
+              options={catalogInterests}
+              getOptionLabel={(o) => o.name}
+              value={selectedInterests}
+              onChange={(_, value) => {
+                setSelectedInterests(value);
+              }}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    label={option.name}
+                    size="small"
+                    {...getTagProps({ index })}
+                    key={option.id}
+                  />
+                ))
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Related Interests"
+                  placeholder="Add interests..."
+                />
+              )}
+            />
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={isRecurring}
+                  onChange={(e) => {
+                    setIsRecurring(e.target.checked);
+                  }}
+                />
+              }
+              label="Repeats"
+            />
+
+            {isRecurring && (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                  pl: 2,
+                  borderLeft: "2px solid",
+                  borderColor: "divider",
+                }}
+              >
+                <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                  <Typography variant="body2" sx={{ minWidth: 60 }}>
+                    Every
+                  </Typography>
+                  <TextField
+                    type="number"
+                    size="small"
+                    value={recurrence.interval}
                     onChange={(e) => {
                       setRecurrence({
                         ...recurrence,
-                        frequency: e.target.value as
-                          | "daily"
-                          | "weekly"
-                          | "monthly",
+                        interval: e.target.value,
                       });
                     }}
-                  >
-                    <MenuItem value="daily">Day(s)</MenuItem>
-                    <MenuItem value="weekly">Week(s)</MenuItem>
-                    <MenuItem value="monthly">Month(s)</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
-
-              <FormControl>
-                <FormLabel sx={{ fontSize: "0.875rem" }}>
-                  End condition
-                </FormLabel>
-                <RadioGroup
-                  value={recurrence.endCondition}
-                  onChange={(e) => {
-                    setRecurrence({
-                      ...recurrence,
-                      endCondition: e.target.value as RecurrenceEndCondition,
-                    });
-                  }}
-                >
-                  <FormControlLabel
-                    value="endDate"
-                    control={<Radio size="small" />}
-                    label="End date"
+                    inputProps={{ min: 1 }}
+                    sx={{ width: 80 }}
                   />
-                  {recurrence.endCondition === "endDate" && (
-                    <TextField
-                      type="date"
-                      size="small"
-                      value={recurrence.endDate}
+                  <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <Select
+                      value={recurrence.frequency}
                       onChange={(e) => {
                         setRecurrence({
                           ...recurrence,
-                          endDate: e.target.value,
+                          frequency: e.target.value as
+                            | "daily"
+                            | "weekly"
+                            | "monthly",
                         });
                       }}
-                      InputLabelProps={{ shrink: true }}
-                      sx={{ ml: 4, mb: 1, width: 200 }}
-                    />
-                  )}
-                  <FormControlLabel
-                    value="count"
-                    control={<Radio size="small" />}
-                    label="After N occurrences"
-                  />
-                  {recurrence.endCondition === "count" && (
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        ml: 4,
-                        mb: 1,
-                      }}
                     >
+                      <MenuItem value="daily">Day(s)</MenuItem>
+                      <MenuItem value="weekly">Week(s)</MenuItem>
+                      <MenuItem value="monthly">Month(s)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                <FormControl>
+                  <FormLabel sx={{ fontSize: "0.875rem" }}>
+                    End condition
+                  </FormLabel>
+                  <RadioGroup
+                    value={recurrence.endCondition}
+                    onChange={(e) => {
+                      setRecurrence({
+                        ...recurrence,
+                        endCondition: e.target.value as RecurrenceEndCondition,
+                      });
+                    }}
+                  >
+                    <FormControlLabel
+                      value="endDate"
+                      control={<Radio size="small" />}
+                      label="End date"
+                    />
+                    {recurrence.endCondition === "endDate" && (
                       <TextField
-                        type="number"
+                        type="date"
                         size="small"
-                        value={recurrence.count}
+                        value={recurrence.endDate}
                         onChange={(e) => {
                           setRecurrence({
                             ...recurrence,
-                            count: e.target.value,
+                            endDate: e.target.value,
                           });
                         }}
-                        inputProps={{ min: 1 }}
-                        sx={{ width: 80 }}
+                        InputLabelProps={{ shrink: true }}
+                        sx={{ ml: 4, mb: 1, width: 200 }}
                       />
-                      <Typography variant="body2">occurrences</Typography>
-                    </Box>
-                  )}
-                </RadioGroup>
-              </FormControl>
-            </Box>
-          )}
+                    )}
+                    <FormControlLabel
+                      value="count"
+                      control={<Radio size="small" />}
+                      label="After N occurrences"
+                    />
+                    {recurrence.endCondition === "count" && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          ml: 4,
+                          mb: 1,
+                        }}
+                      >
+                        <TextField
+                          type="number"
+                          size="small"
+                          value={recurrence.count}
+                          onChange={(e) => {
+                            setRecurrence({
+                              ...recurrence,
+                              count: e.target.value,
+                            });
+                          }}
+                          inputProps={{ min: 1 }}
+                          sx={{ width: 80 }}
+                        />
+                        <Typography variant="body2">occurrences</Typography>
+                      </Box>
+                    )}
+                  </RadioGroup>
+                </FormControl>
+              </Box>
+            )}
+          </Box>
         </Box>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 3, pt: 2, gap: 1 }}>
-        <Button
-          onClick={handleClose}
+
+        {/* Footer */}
+        <Box
           sx={{
-            borderRadius: 2,
-            textTransform: "none",
-            fontWeight: 600,
-            px: 3,
+            px: 3.5,
+            py: 2,
+            borderTop: "1px solid",
+            borderColor: "divider",
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 1,
+            flexShrink: 0,
           }}
         >
-          Cancel
-        </Button>
-        <Button
-          onClick={() => {
-            void handleSubmit();
-          }}
-          variant="contained"
-          disabled={isMutating}
-          sx={{
-            borderRadius: 2,
-            textTransform: "none",
-            fontWeight: 600,
-            px: 3,
-            boxShadow: 2,
-          }}
-        >
-          Create
-        </Button>
-      </DialogActions>
-    </Dialog>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button
+            onClick={() => {
+              void handleSubmit();
+            }}
+            variant="contained"
+            disabled={isMutating}
+          >
+            Create
+          </Button>
+        </Box>
+      </Box>
+    </Drawer>
   );
 }

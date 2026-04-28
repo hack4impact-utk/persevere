@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { Opportunity } from "@/components/volunteer/types";
+import type { Opportunity, RsvpStatus } from "@/components/volunteer/types";
 import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
 import { apiClient } from "@/lib/api-client";
 
@@ -11,6 +11,7 @@ export type RecommendedOpportunity = Opportunity & {
   matchScore: number;
   matchingSkills: { skillId: number; skillName: string | null }[];
   matchingInterests: { interestId: number; interestName: string | null }[];
+  rsvpStatus?: RsvpStatus;
 };
 
 export type UseRecommendationsResult = {

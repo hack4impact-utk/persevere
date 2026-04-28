@@ -1,22 +1,27 @@
-import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
+import type { SxProps, Theme } from "@mui/material/styles";
 import type { JSX } from "react";
 
 import { StatusBadge } from "@/components/ui";
 import type { Opportunity } from "@/components/volunteer/types";
 
-export function SpotsChip({ opp }: { opp: Opportunity }): JSX.Element {
+type SpotsChipProps = { opp: Opportunity; sx?: SxProps<Theme> };
+
+export function SpotsChip({ opp, sx }: SpotsChipProps): JSX.Element {
+  if (opp.status === "completed") {
+    return <StatusBadge label="Completed" color="default" sx={sx} />;
+  }
   if (opp.spotsRemaining === null) {
-    return <StatusBadge label="Open enrollment" color="success" />;
+    return <StatusBadge label="Open enrollment" color="success" sx={sx} />;
   }
   if (opp.spotsRemaining <= 0) {
-    return <StatusBadge label="Full" color="default" />;
+    return <StatusBadge label="Full" color="default" sx={sx} />;
   }
   if (opp.spotsRemaining <= 3) {
     return (
       <StatusBadge
         label={`${opp.spotsRemaining} spot${opp.spotsRemaining === 1 ? "" : "s"} left`}
         color="warning"
-        icon={<PeopleOutlineIcon />}
+        sx={sx}
       />
     );
   }
@@ -24,7 +29,7 @@ export function SpotsChip({ opp }: { opp: Opportunity }): JSX.Element {
     <StatusBadge
       label={`${opp.spotsRemaining} spots left`}
       color="success"
-      icon={<PeopleOutlineIcon />}
+      sx={sx}
     />
   );
 }

@@ -1,193 +1,196 @@
 "use client";
 
-import AddIcon from "@mui/icons-material/Add";
+import DownloadIcon from "@mui/icons-material/Download";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 import {
   Alert,
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   Divider,
+  Drawer,
   FormControl,
+  FormControlLabel,
+  FormGroup,
   IconButton,
   InputLabel,
   MenuItem,
   Select,
   SelectChangeEvent,
   Stack,
-  Tab,
-  Tabs,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
 import { type ReactElement, useCallback, useState } from "react";
 
-import { ModalTitleBar } from "@/components/shared";
-import VolunteerList from "@/components/staff/volunteer-management/volunteer-list";
-import { useStaff } from "@/hooks/use-staff";
+import { ModalTitleBar, PageHeader } from "@/components/shared";
+import ImportVolunteerModal from "@/components/staff/volunteer-management/import-modal";
+import AddVolunteerModal from "@/components/staff/volunteer-management/volunteer-add-modal";
+import VolunteerProfile from "@/components/staff/volunteer-management/volunteer-profile";
+import {
+  type Person,
+  type PersonRoleFilter,
+  type PersonStatusFilter,
+  usePeople,
+} from "@/hooks/use-people";
 import { useStaffProfile } from "@/hooks/use-staff-profile";
+import { useVolunteerDetail } from "@/hooks/use-volunteer-detail";
+import { useVolunteerTypes } from "@/hooks/use-volunteer-types";
 
+import PeopleTable from "./people-table";
 import AddStaffModal from "./staff-add-modal";
-import StaffTable from "./staff-table";
+import StaffProfile from "./staff-profile";
 
-/**
- * PeopleList
- *
- * Main people management page component for admins. Displays two tabs:
- * 1. Volunteers - Shows volunteer management (reuses VolunteerList)
- * 2. Staff - Shows staff management with ability to add staff
- */
 export default function PeopleList(): ReactElement {
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentTab, setCurrentTab] = useState(0);
-  const [staffTab, setStaffTab] = useState(0); // Staff sub-tabs: 0=Active, 1=Inactive, 2=Pending
-  const [staffFilters, setStaffFilters] = useState<{
-    role?: "admin" | "staff";
-  }>({});
+  const [roleFilter, setRoleFilter] = useState<PersonRoleFilter>("");
+  const [statusFilter, setStatusFilter] = useState<PersonStatusFilter>("");
+  const [typeFilter, setTypeFilter] = useState<string | undefined>();
+  const [alumniFilter, setAlumniFilter] = useState<boolean | undefined>();
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+
+  const hasAdditionalFilters =
+    typeFilter !== undefined || alumniFilter !== undefined;
+
+  const { activeTypes } = useVolunteerTypes();
 
   const {
-    activeStaff,
-    totalActiveStaff,
-    activePage: activeStaffPage,
-    setActivePage: setActiveStaffPage,
-    inactiveStaff,
-    totalInactiveStaff,
-    inactivePage: inactiveStaffPage,
-    setInactivePage: setInactiveStaffPage,
-    pendingStaff,
-    totalPendingStaff,
-    pendingPage: pendingStaffPage,
-    setPendingPage: setPendingStaffPage,
-    limit: staffLimit,
-    setLimit: setStaffLimit,
-    loading: staffLoading,
-    error: staffError,
-    loadStaff,
-  } = useStaff(searchQuery, staffFilters);
+    people,
+    total,
+    grandTotal,
+    totalActive,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    loading,
+    error,
+    loadPeople,
+  } = usePeople(searchQuery, {
+    roleFilter,
+    statusFilter,
+    typeFilter,
+    alumniFilter,
+  });
 
-  // Staff profile state
+  // Volunteer profile drawer
+  const [selectedVolunteerId, setSelectedVolunteerId] = useState<number | null>(
+    null,
+  );
+  const {
+    profile: volunteerProfile,
+    loading: volunteerProfileLoading,
+    error: volunteerProfileError,
+    loadProfile: loadVolunteerProfile,
+    clearProfile: clearVolunteerProfile,
+  } = useVolunteerDetail();
+
+  // Staff profile drawer
   const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
   const {
     profile: staffProfile,
-    loading: profileLoading,
-    error: profileError,
+    loading: staffProfileLoading,
+    error: staffProfileError,
     loadProfile: loadStaffProfile,
-    clearProfile,
+    clearProfile: clearStaffProfile,
   } = useStaffProfile();
 
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [filterModalOpen, setFilterModalOpen] = useState(false);
+  const [addStaffModalOpen, setAddStaffModalOpen] = useState(false);
+  const [addVolunteerModalOpen, setAddVolunteerModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   const handleSearchChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>): void => {
-      setSearchQuery(event.target.value);
-      if (currentTab === 1) {
-        setActiveStaffPage(1);
-        setInactiveStaffPage(1);
-        setPendingStaffPage(1);
-      }
+    (e: React.ChangeEvent<HTMLInputElement>): void => {
+      setSearchQuery(e.target.value);
+      setPage(1);
     },
-    [currentTab, setActiveStaffPage, setInactiveStaffPage, setPendingStaffPage],
+    [setPage],
   );
 
-  const handleTabChange = useCallback(
-    (_event: React.SyntheticEvent, newValue: number): void => {
-      setCurrentTab(newValue);
-      setSearchQuery("");
-      if (newValue === 1) {
-        void loadStaff();
-      }
-    },
-    [loadStaff],
-  );
-
-  const handleStaffTabChange = useCallback(
-    (_event: React.SyntheticEvent, newValue: number): void => {
-      setStaffTab(newValue);
-      setSearchQuery("");
-    },
-    [],
-  );
-
-  const handleFilterRoleChange = useCallback(
+  const handleRoleFilterChange = useCallback(
     (e: SelectChangeEvent<string>): void => {
-      setStaffFilters((prev) => ({
-        ...prev,
-        role:
-          e.target.value === ""
-            ? undefined
-            : (e.target.value as "admin" | "staff"),
-      }));
-      setActiveStaffPage(1);
-      setInactiveStaffPage(1);
-      setPendingStaffPage(1);
+      setRoleFilter((e.target.value as PersonRoleFilter) || "");
+      setPage(1);
     },
-    [setActiveStaffPage, setInactiveStaffPage, setPendingStaffPage],
+    [setPage],
+  );
+
+  const handleStatusFilterChange = useCallback(
+    (e: SelectChangeEvent<string>): void => {
+      setStatusFilter((e.target.value as PersonStatusFilter) || "");
+      setPage(1);
+    },
+    [setPage],
+  );
+
+  const handleFilterTypeChange = useCallback(
+    (e: SelectChangeEvent<string>): void => {
+      setTypeFilter(e.target.value || undefined);
+      setPage(1);
+    },
+    [setPage],
+  );
+
+  const handleFilterAlumniChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>): void => {
+      setAlumniFilter(e.target.checked ? true : undefined);
+      setPage(1);
+    },
+    [setPage],
   );
 
   const handleClearFilters = useCallback((): void => {
-    setStaffFilters({});
-    setActiveStaffPage(1);
-    setInactiveStaffPage(1);
-    setPendingStaffPage(1);
-  }, [setActiveStaffPage, setInactiveStaffPage, setPendingStaffPage]);
+    setTypeFilter(undefined);
+    setAlumniFilter(undefined);
+    setPage(1);
+  }, [setPage]);
 
-  const handleActiveStaffPageChange = useCallback(
-    (newPage: number): void => {
-      setActiveStaffPage(newPage);
-    },
-    [setActiveStaffPage],
+  const handlePageChange = useCallback(
+    (newPage: number): void => setPage(newPage),
+    [setPage],
   );
 
-  const handleInactiveStaffPageChange = useCallback(
-    (newPage: number): void => {
-      setInactiveStaffPage(newPage);
-    },
-    [setInactiveStaffPage],
-  );
-
-  const handlePendingStaffPageChange = useCallback(
-    (newPage: number): void => {
-      setPendingStaffPage(newPage);
-    },
-    [setPendingStaffPage],
-  );
-
-  const handleStaffLimitChange = useCallback(
+  const handleLimitChange = useCallback(
     (newLimit: number): void => {
-      setStaffLimit(newLimit);
-      setActiveStaffPage(1);
-      setInactiveStaffPage(1);
-      setPendingStaffPage(1);
+      setLimit(newLimit);
+      setPage(1);
     },
-    [
-      setStaffLimit,
-      setActiveStaffPage,
-      setInactiveStaffPage,
-      setPendingStaffPage,
-    ],
+    [setLimit, setPage],
   );
 
-  const onAddStaff = useCallback((): void => {
-    setAddModalOpen(true);
-  }, []);
-
-  const handleStaffClick = useCallback(
-    async (staffId: number): Promise<void> => {
-      setSelectedStaffId(staffId);
-      await loadStaffProfile(staffId);
+  const handlePersonClick = useCallback(
+    async (person: Person): Promise<void> => {
+      if (person.personType === "volunteer") {
+        setSelectedVolunteerId(person.id);
+        await loadVolunteerProfile(person.id);
+      } else {
+        setSelectedStaffId(person.id);
+        await loadStaffProfile(person.id);
+      }
     },
-    [loadStaffProfile],
+    [loadVolunteerProfile, loadStaffProfile],
   );
 
-  const handleCloseModal = useCallback((): void => {
+  const handleCloseVolunteerDrawer = useCallback((): void => {
+    setSelectedVolunteerId(null);
+    clearVolunteerProfile();
+  }, [clearVolunteerProfile]);
+
+  const handleCloseStaffDrawer = useCallback((): void => {
     setSelectedStaffId(null);
-    clearProfile();
-  }, [clearProfile]);
+    clearStaffProfile();
+  }, [clearStaffProfile]);
+
+  // Show pagination only when role-filtered (paginated fetch); hide for "all" (full fetch)
+  const showPagination = roleFilter !== "";
 
   return (
     <Box
@@ -196,17 +199,57 @@ export default function PeopleList(): ReactElement {
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        pt: { xs: 1, md: 1.5 },
         px: { xs: 2, md: 4 },
-        pb: 3,
+        pt: { xs: 1, md: 1.5 },
+        pb: { xs: 2, md: 4 },
         overflow: "hidden",
       }}
     >
-      {staffError && currentTab === 1 && (
-        <Box sx={{ mb: 3, flexShrink: 0 }}>
-          <Alert severity="error">{staffError}</Alert>
+      {error && (
+        <Box sx={{ mb: 2, flexShrink: 0 }}>
+          <Alert severity="error">{error}</Alert>
         </Box>
       )}
+
+      <PageHeader
+        eyebrow="Admin Portal"
+        title="People"
+        subtitle={`${grandTotal} total · ${totalActive} active`}
+        actions={
+          <>
+            <Button
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={() => {
+                globalThis.location.href = "/api/staff/volunteers/export";
+              }}
+            >
+              Export CSV
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<UploadFileIcon />}
+              onClick={() => setImportModalOpen(true)}
+            >
+              Import CSV
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<GroupAddIcon />}
+              onClick={() => setAddVolunteerModalOpen(true)}
+            >
+              Add Volunteer
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<PersonAddIcon />}
+              onClick={() => setAddStaffModalOpen(true)}
+            >
+              Add Staff
+            </Button>
+          </>
+        }
+      />
 
       <Box
         sx={{
@@ -215,295 +258,196 @@ export default function PeopleList(): ReactElement {
           flexDirection: "column",
           minHeight: 0,
           overflow: "hidden",
+          mt: 2,
         }}
       >
+        {/* Toolbar */}
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            mb: 3,
-            gap: 2,
+            mb: 2,
+            gap: 1.5,
             flexWrap: "wrap",
             flexShrink: 0,
           }}
         >
-          <Tabs
-            value={currentTab}
-            onChange={handleTabChange}
-            aria-label="people tabs"
-            sx={{ flex: 1, minWidth: 0 }}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              flex: 1,
+              flexWrap: "wrap",
+            }}
           >
-            <Tab label="Volunteers" />
-            <Tab label="Staff" />
-          </Tabs>
+            <TextField
+              size="small"
+              label="Search"
+              variant="outlined"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              placeholder="Search by name or email…"
+              sx={{ minWidth: 240 }}
+            />
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel id="role-filter-label">Role</InputLabel>
+              <Select
+                labelId="role-filter-label"
+                label="Role"
+                value={roleFilter}
+                onChange={handleRoleFilterChange}
+              >
+                <MenuItem value="">All roles</MenuItem>
+                <MenuItem value="admin">Admin</MenuItem>
+                <MenuItem value="staff">Staff</MenuItem>
+                <MenuItem value="volunteer">Volunteer</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel id="status-filter-label">Status</InputLabel>
+              <Select
+                labelId="status-filter-label"
+                label="Status"
+                value={statusFilter}
+                onChange={handleStatusFilterChange}
+              >
+                <MenuItem value="">All statuses</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="inactive">Inactive</MenuItem>
+                <MenuItem value="pending">Pending</MenuItem>
+              </Select>
+            </FormControl>
+            <Tooltip title="More filters">
+              <IconButton
+                color="primary"
+                onClick={() => setFilterModalOpen(true)}
+                sx={{
+                  backgroundColor: hasAdditionalFilters
+                    ? "primary.main"
+                    : "transparent",
+                  color: hasAdditionalFilters
+                    ? "primary.contrastText"
+                    : "primary.main",
+                  "&:hover": {
+                    backgroundColor: hasAdditionalFilters
+                      ? "primary.dark"
+                      : "action.hover",
+                  },
+                }}
+              >
+                <FilterListIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <Typography variant="body2" color="text.secondary">
+            {total} result{total === 1 ? "" : "s"}
+          </Typography>
         </Box>
 
-        {/* Volunteers Tab */}
-        {currentTab === 0 && (
-          <Box
-            sx={{
-              flex: 1,
-              minHeight: 0,
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-              position: "relative",
-            }}
-          >
-            <Box
-              sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                "& > div": {
-                  height: "100% !important",
-                  padding: "0 !important",
-                },
-                // Hide the "Volunteers" heading when rendered inside PeopleList
-                "& h1.MuiTypography-h4": {
-                  display: "none",
-                },
-              }}
-            >
-              <VolunteerList />
-            </Box>
-          </Box>
-        )}
-
-        {/* Staff Tab */}
-        {currentTab === 1 && (
-          <Box
-            sx={{
-              flex: 1,
-              minHeight: 0,
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                mb: 3,
-                gap: 2,
-                flexWrap: "wrap",
-                flexShrink: 0,
-              }}
-            >
-              <Tabs
-                value={staffTab}
-                onChange={handleStaffTabChange}
-                aria-label="staff tabs"
-                sx={{ flex: 1, minWidth: 0 }}
-              >
-                <Tab label="Active Staff" />
-                <Tab label="Inactive Staff" />
-                <Tab
-                  label={
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <span>Pending Invites</span>
-                      {totalPendingStaff > 0 && (
-                        <Box
-                          sx={{
-                            backgroundColor: "primary.main",
-                            color: "primary.contrastText",
-                            borderRadius: "12px",
-                            px: 1,
-                            py: 0.25,
-                            fontSize: "0.75rem",
-                            fontWeight: 600,
-                            minWidth: "20px",
-                            textAlign: "center",
-                          }}
-                        >
-                          {totalPendingStaff}
-                        </Box>
-                      )}
-                    </Box>
-                  }
-                />
-              </Tabs>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1.5,
-                  flexShrink: 0,
-                }}
-              >
-                <TextField
-                  size="small"
-                  label="Search"
-                  variant="outlined"
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  placeholder="Search by name or email..."
-                  sx={{ minWidth: 250 }}
-                />
-                <Tooltip title="Filter">
-                  <IconButton
-                    color="primary"
-                    onClick={() => setFilterModalOpen(true)}
-                    sx={{
-                      backgroundColor:
-                        Object.keys(staffFilters).length > 0
-                          ? "primary.main"
-                          : "transparent",
-                      color:
-                        Object.keys(staffFilters).length > 0
-                          ? "primary.contrastText"
-                          : "primary.main",
-                      "&:hover": {
-                        backgroundColor:
-                          Object.keys(staffFilters).length > 0
-                            ? "primary.dark"
-                            : "action.hover",
-                      },
-                    }}
-                  >
-                    <FilterListIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Add Staff Member">
-                  <IconButton
-                    color="primary"
-                    onClick={onAddStaff}
-                    sx={{
-                      backgroundColor: "primary.main",
-                      color: "primary.contrastText",
-                      "&:hover": {
-                        backgroundColor: "primary.dark",
-                      },
-                    }}
-                  >
-                    <AddIcon />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Box>
-
-            {/* Active Staff Tab */}
-            {staffTab === 0 && (
-              <Box
-                sx={{
-                  flex: 1,
-                  minHeight: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <StaffTable
-                  staff={activeStaff}
-                  totalStaff={totalActiveStaff}
-                  page={activeStaffPage}
-                  limit={staffLimit}
-                  onPageChange={handleActiveStaffPageChange}
-                  onLimitChange={handleStaffLimitChange}
-                  onStaffClick={handleStaffClick}
-                  loading={staffLoading}
-                />
-              </Box>
-            )}
-
-            {/* Inactive Staff Tab */}
-            {staffTab === 1 && (
-              <Box
-                sx={{
-                  flex: 1,
-                  minHeight: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <StaffTable
-                  staff={inactiveStaff}
-                  totalStaff={totalInactiveStaff}
-                  page={inactiveStaffPage}
-                  limit={staffLimit}
-                  onPageChange={handleInactiveStaffPageChange}
-                  onLimitChange={handleStaffLimitChange}
-                  onStaffClick={handleStaffClick}
-                  loading={staffLoading}
-                />
-              </Box>
-            )}
-
-            {/* Pending Invites Tab */}
-            {staffTab === 2 && (
-              <Box
-                sx={{
-                  flex: 1,
-                  minHeight: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <StaffTable
-                  staff={pendingStaff}
-                  totalStaff={totalPendingStaff}
-                  page={pendingStaffPage}
-                  limit={staffLimit}
-                  onPageChange={handlePendingStaffPageChange}
-                  onLimitChange={handleStaffLimitChange}
-                  onStaffClick={handleStaffClick}
-                  loading={staffLoading}
-                />
-              </Box>
-            )}
-          </Box>
-        )}
+        <PeopleTable
+          people={people}
+          total={total}
+          page={page}
+          limit={limit}
+          onPageChange={handlePageChange}
+          onLimitChange={handleLimitChange}
+          onPersonClick={(p) => void handlePersonClick(p)}
+          loading={loading}
+          showPagination={showPagination}
+        />
       </Box>
 
-      {/* Staff Profile Modal */}
-      <Dialog
-        open={selectedStaffId !== null}
-        onClose={handleCloseModal}
-        maxWidth="md"
-        fullWidth
+      {/* Volunteer detail drawer */}
+      <Drawer
+        anchor="right"
+        open={selectedVolunteerId !== null}
+        onClose={handleCloseVolunteerDrawer}
+        PaperProps={{
+          sx: { width: 520, display: "flex", flexDirection: "column" },
+        }}
       >
-        <ModalTitleBar title="Staff Profile" onClose={handleCloseModal} />
-        <DialogContent>
-          {profileLoading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+        <ModalTitleBar
+          title="Volunteer Profile"
+          onClose={handleCloseVolunteerDrawer}
+        />
+        <Box sx={{ flex: 1, overflow: "auto" }}>
+          {volunteerProfileLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
               <CircularProgress />
             </Box>
-          ) : profileError ? (
-            <Alert severity="error">{profileError}</Alert>
-          ) : staffProfile ? (
-            <Stack spacing={2} sx={{ py: 2 }}>
-              <Typography variant="h6">
-                {staffProfile.users?.firstName} {staffProfile.users?.lastName}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Email: {staffProfile.users?.email}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Phone: {staffProfile.users?.phone || "N/A"}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Role: {staffProfile.isAdmin ? "Admin" : "Staff"}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Status: {staffProfile.users?.isActive ? "Active" : "Inactive"}
-              </Typography>
-            </Stack>
+          ) : volunteerProfileError ? (
+            <Box sx={{ p: 3 }}>
+              <Alert severity="error">{volunteerProfileError}</Alert>
+            </Box>
+          ) : volunteerProfile ? (
+            <VolunteerProfile
+              volunteer={volunteerProfile}
+              onDelete={() => {
+                handleCloseVolunteerDrawer();
+                void loadPeople();
+              }}
+              onVolunteerUpdated={() => {
+                if (selectedVolunteerId) {
+                  void loadVolunteerProfile(selectedVolunteerId);
+                }
+              }}
+            />
           ) : null}
-        </DialogContent>
-      </Dialog>
+        </Box>
+      </Drawer>
+
+      {/* Staff detail drawer */}
+      <Drawer
+        anchor="right"
+        open={selectedStaffId !== null}
+        onClose={handleCloseStaffDrawer}
+        PaperProps={{
+          sx: { width: 520, display: "flex", flexDirection: "column" },
+        }}
+      >
+        <ModalTitleBar title="Staff Profile" onClose={handleCloseStaffDrawer} />
+        <Box sx={{ flex: 1, overflow: "auto" }}>
+          {staffProfileLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+              <CircularProgress />
+            </Box>
+          ) : staffProfileError ? (
+            <Box sx={{ p: 3 }}>
+              <Alert severity="error">{staffProfileError}</Alert>
+            </Box>
+          ) : staffProfile ? (
+            <Box sx={{ pt: 3 }}>
+              <StaffProfile profile={staffProfile} />
+            </Box>
+          ) : null}
+        </Box>
+      </Drawer>
 
       <AddStaffModal
-        open={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
+        open={addStaffModalOpen}
+        onClose={() => setAddStaffModalOpen(false)}
         onCreated={() => {
-          void loadStaff();
+          void loadPeople();
+        }}
+      />
+      <AddVolunteerModal
+        open={addVolunteerModalOpen}
+        onClose={() => setAddVolunteerModalOpen(false)}
+        onCreated={() => {
+          void loadPeople();
+        }}
+      />
+      <ImportVolunteerModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImported={() => {
+          void loadPeople();
         }}
       />
 
-      {/* Filter Modal */}
+      {/* More filters dialog (volunteer type + alumni) */}
       <Dialog
         open={filterModalOpen}
         onClose={() => setFilterModalOpen(false)}
@@ -511,7 +455,7 @@ export default function PeopleList(): ReactElement {
         maxWidth="sm"
       >
         <ModalTitleBar
-          title="Filter Staff"
+          title="Filter People"
           onClose={() => setFilterModalOpen(false)}
         />
         <Divider />
@@ -519,36 +463,53 @@ export default function PeopleList(): ReactElement {
           <Stack spacing={3}>
             <Box>
               <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
-                Role
+                Volunteer Type
               </Typography>
               <FormControl fullWidth>
-                <InputLabel id="filter-role-label" shrink>
-                  Role
+                <InputLabel id="filter-type-label" shrink>
+                  Volunteer Type
                 </InputLabel>
                 <Select
-                  labelId="filter-role-label"
-                  label="Role"
-                  value={staffFilters.role || ""}
-                  onChange={handleFilterRoleChange}
+                  labelId="filter-type-label"
+                  label="Volunteer Type"
+                  value={typeFilter ?? ""}
+                  onChange={handleFilterTypeChange}
                   displayEmpty
                   notched
                 >
                   <MenuItem value="">
-                    <em>All Roles</em>
+                    <em>All Types</em>
                   </MenuItem>
-                  <MenuItem value="admin">Admin</MenuItem>
-                  <MenuItem value="staff">Staff</MenuItem>
+                  {activeTypes.map((t) => (
+                    <MenuItem key={t.id} value={t.name}>
+                      {t.name}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
+            </Box>
+            <Divider />
+            <Box>
+              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
+                Additional Filters
+              </Typography>
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={alumniFilter === true}
+                      onChange={handleFilterAlumniChange}
+                    />
+                  }
+                  label="Alumni only"
+                />
+              </FormGroup>
             </Box>
           </Stack>
         </DialogContent>
         <Divider />
         <DialogActions>
-          <Button
-            onClick={handleClearFilters}
-            disabled={Object.keys(staffFilters).length === 0}
-          >
+          <Button onClick={handleClearFilters} disabled={!hasAdditionalFilters}>
             Clear Filters
           </Button>
           <Box sx={{ flex: 1 }} />

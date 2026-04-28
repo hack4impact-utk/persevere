@@ -4,7 +4,6 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -12,86 +11,128 @@ import NextLink from "next/link";
 import { JSX } from "react";
 
 import { AsyncContent } from "@/components/shared";
-import { StatusBadge } from "@/components/ui";
+import {
+  getHoursStatusColor,
+  getHoursStatusLabel,
+  StatusBadge,
+} from "@/components/ui";
+import { useVolunteerDashboard } from "@/hooks/use-volunteer-dashboard";
 import { useVolunteerHours } from "@/hooks/use-volunteer-hours";
-
-import { formatDate } from "./utils";
-
-const HOURS_STATUS_COLOR = {
-  approved: "success",
-  pending: "warning",
-  rejected: "error",
-} as const;
 
 export default function RecentHours(): JSX.Element {
   const { hours, loading, error } = useVolunteerHours();
+  const { data: dashboardData } = useVolunteerDashboard();
+
+  const now = new Date();
+  const thisMonthHours = hours.filter((e) => {
+    const d = new Date(e.date);
+    return (
+      d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+    );
+  });
+  const totalThisMonth = thisMonthHours.reduce((sum, e) => sum + e.hours, 0);
 
   return (
     <Card sx={{ borderRadius: 2, boxShadow: 2, height: "100%" }}>
       <CardContent sx={{ p: 2.5 }}>
         <Box display="flex" alignItems="center" gap={1} mb={2}>
-          <AccessTimeIcon color="primary" />
+          <AccessTimeIcon sx={{ color: "primary.main" }} />
           <Typography variant="h6" fontWeight={700}>
-            Recent Hours
+            Hours This Month
           </Typography>
         </Box>
-        <Divider sx={{ mb: 2 }} />
+
+        {dashboardData && (
+          <Box mb={2}>
+            <Box display="flex" alignItems="baseline" gap={0.5} mb={1}>
+              <Typography
+                variant="h3"
+                fontWeight={800}
+                color="primary.main"
+                lineHeight={1}
+              >
+                {dashboardData.monthlyVerifiedHours}
+              </Typography>
+              <Typography
+                variant="h3"
+                fontWeight={800}
+                color="primary.main"
+                lineHeight={1}
+              >
+                /
+              </Typography>
+              <Typography
+                variant="h3"
+                fontWeight={800}
+                color="primary.main"
+                lineHeight={1}
+              >
+                {totalThisMonth}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                verified hours so far
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                height: 8,
+                borderRadius: 4,
+                bgcolor: "rgba(50,123,247,.16)",
+                overflow: "hidden",
+              }}
+            >
+              <Box
+                sx={{
+                  height: "100%",
+                  bgcolor: "primary.main",
+                  width: `${totalThisMonth > 0 ? Math.min((dashboardData.monthlyVerifiedHours / totalThisMonth) * 100, 100) : 0}%`,
+                }}
+              />
+            </Box>
+          </Box>
+        )}
 
         <AsyncContent
           loading={loading}
           error={error}
-          empty={hours.length === 0}
-          emptyMessage="No hours logged yet."
+          empty={thisMonthHours.length === 0}
+          emptyMessage="No hours logged this month."
         >
-          <Box sx={{ overflowY: "auto", maxHeight: 240 }}>
-            <Stack spacing={2}>
-              {hours.map((entry) => (
-                <Box
-                  key={entry.id}
-                  sx={{
-                    p: 2,
-                    borderRadius: 1,
-                    border: "1px solid",
-                    borderColor: "divider",
-                  }}
+          <Stack spacing={0}>
+            {thisMonthHours.slice(0, 4).map((entry, i) => (
+              <Box
+                key={entry.id}
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 1,
+                  py: 1,
+                  borderTop: i === 0 ? "none" : "1px solid",
+                  borderColor: "divider",
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  noWrap
+                  sx={{ flex: 1, minWidth: 0 }}
                 >
-                  <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="flex-start"
-                    mb={0.5}
-                  >
-                    <Typography
-                      variant="subtitle1"
-                      fontWeight={600}
-                      noWrap
-                      sx={{ flex: 1, minWidth: 0, mr: 1 }}
-                    >
-                      {entry.opportunityTitle ?? "General hours"}
-                    </Typography>
-                    <StatusBadge
-                      label={entry.status}
-                      color={HOURS_STATUS_COLOR[entry.status]}
-                      sx={{ flexShrink: 0 }}
-                    />
-                  </Box>
-
-                  <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      {formatDate(entry.date)}
-                    </Typography>
-                    <Typography variant="body2" fontWeight={700}>
-                      {entry.hours} hrs
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Stack>
-          </Box>
+                  {entry.opportunityTitle ?? "General hours"}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  fontWeight={600}
+                  color="text.primary"
+                >
+                  {entry.hours} hr
+                </Typography>
+                <StatusBadge
+                  label={getHoursStatusLabel(entry.status)}
+                  color={getHoursStatusColor(entry.status)}
+                />
+              </Box>
+            ))}
+          </Stack>
         </AsyncContent>
 
         <Box mt={2}>

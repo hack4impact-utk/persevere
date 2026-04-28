@@ -5,6 +5,8 @@ import {
   getVolunteerProfile,
   updateVolunteerProfile,
 } from "@/services/volunteer.service";
+import { deactivateVolunteer } from "@/services/volunteer-detail.service";
+import { ConflictError, NotFoundError } from "@/utils/errors";
 import handleError from "@/utils/handle-error";
 import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
 
@@ -35,6 +37,9 @@ const availabilitySchema = z.object({
 
 // Volunteer self-update schema - restricted fields only
 const volunteerSelfUpdateSchema = z.object({
+  firstName: z.string().min(1).max(100).optional(),
+  lastName: z.string().min(1).max(100).optional(),
+  email: z.string().email().max(255).optional(),
   phone: z.string().max(20).optional(),
   bio: z.string().max(2000).optional(),
   availability: availabilitySchema.optional(),
@@ -143,6 +148,9 @@ export async function PUT(request: Request): Promise<NextResponse> {
 
     const updatedVolunteer = await updateVolunteerProfile({
       volunteerId,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
       phone: data.phone,
       bio: data.bio,
       availability: data.availability,
@@ -168,7 +176,35 @@ export async function PUT(request: Request): Promise<NextResponse> {
     });
   } catch (error) {
     if (error instanceof AuthError) return authErrorResponse(error);
+    if (error instanceof ConflictError)
+      return NextResponse.json({ error: error.message }, { status: 409 });
     console.error("[PUT /api/volunteer/profile] Unhandled error:", error);
+    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+  }
+}
+
+export async function DELETE(): Promise<NextResponse> {
+  try {
+    const session = await requireAuth();
+    if (session.user.role !== "volunteer") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const volunteerId = session.user.volunteerId;
+    if (!volunteerId) {
+      return NextResponse.json(
+        { error: "Volunteer profile not found" },
+        { status: 404 },
+      );
+    }
+
+    await deactivateVolunteer(volunteerId);
+    return NextResponse.json({ message: "Account deactivated" });
+  } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error);
+    if (error instanceof NotFoundError)
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    console.error("[DELETE /api/volunteer/profile] Unhandled error:", error);
     return NextResponse.json({ error: handleError(error) }, { status: 500 });
   }
 }

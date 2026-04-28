@@ -4,8 +4,9 @@ import PersonIcon from "@mui/icons-material/Person";
 import {
   Avatar,
   Box,
+  Chip,
+  type ChipProps,
   CircularProgress,
-  LinearProgress,
   Paper,
   Table,
   TableBody,
@@ -18,16 +19,33 @@ import {
 import { type ReactElement, useCallback } from "react";
 
 import { TablePaginationFooter } from "@/components/shared";
-import { EmptyState, StatusBadge } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 
 import { type Volunteer } from "./types";
 
-/**
- * VolunteerTable
- *
- * Displays volunteers in a paginated table. Rows are clickable and trigger
- * the onVolunteerClick callback to open the volunteer profile modal.
- */
+type VolunteerStatus = "Active" | "Onboarding" | "Pending" | "Inactive";
+
+const STATUS_COLOR: Record<VolunteerStatus, ChipProps["color"]> = {
+  Active: "success",
+  Onboarding: "warning",
+  Pending: "primary",
+  Inactive: "default",
+};
+
+function deriveStatus(v: Volunteer): VolunteerStatus {
+  if (!v.isEmailVerified) return "Pending";
+  if (!v.isActive) return "Inactive";
+  if (v.completionPercentage < 100) return "Onboarding";
+  return "Active";
+}
+
+function fmtJoined(d: Date): string {
+  return new Date(d).toLocaleString(undefined, {
+    month: "short",
+    year: "numeric",
+  });
+}
+
 type VolunteerTableProps = {
   volunteers: Volunteer[];
   totalVolunteers: number;
@@ -66,13 +84,7 @@ export default function VolunteerTable({
         overflow: "hidden",
       }}
     >
-      <TableContainer
-        sx={{
-          flex: 1,
-          overflow: "auto",
-          position: "relative",
-        }}
-      >
+      <TableContainer sx={{ flex: 1, overflow: "auto", position: "relative" }}>
         {loading && (
           <Box
             sx={{
@@ -95,152 +107,110 @@ export default function VolunteerTable({
           <TableHead>
             <TableRow>
               <TableCell
-                sx={{
-                  fontWeight: 600,
-                  fontSize: "0.875rem",
-                  width: "40%",
-                }}
+                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "45%" }}
               >
                 Name
               </TableCell>
               <TableCell
-                sx={{
-                  fontWeight: 600,
-                  fontSize: "0.875rem",
-                  width: "15%",
-                }}
+                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "15%" }}
               >
-                Role
+                Status
               </TableCell>
               <TableCell
-                sx={{
-                  fontWeight: 600,
-                  fontSize: "0.875rem",
-                  width: "10%",
-                }}
+                align="right"
+                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "10%" }}
               >
                 Hours
               </TableCell>
               <TableCell
-                sx={{
-                  fontWeight: 600,
-                  fontSize: "0.875rem",
-                  width: "15%",
-                }}
+                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "15%" }}
               >
-                Contact
-              </TableCell>
-              <TableCell
-                sx={{
-                  fontWeight: 600,
-                  fontSize: "0.875rem",
-                  width: "20%",
-                  minWidth: 160,
-                }}
-              >
-                Onboarding
+                Joined
               </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {volunteers.length > 0 ? (
-              volunteers.map((volunteer) => (
-                <TableRow
-                  key={volunteer.id}
-                  onClick={() => handleRowClick(volunteer.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleRowClick(volunteer.id);
-                    }
-                  }}
-                  tabIndex={0}
-                  role="button"
-                  aria-label={`View profile for ${volunteer.firstName} ${volunteer.lastName}`}
-                  sx={{
-                    cursor: "pointer",
-                    "&:hover": {
-                      backgroundColor: "action.hover",
-                    },
-                  }}
-                >
-                  <TableCell>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
-                      }}
-                    >
-                      <Avatar
-                        src={volunteer.profilePicture || undefined}
-                        alt={`${volunteer.firstName} ${volunteer.lastName}`}
-                        sx={{ width: 40, height: 40 }}
-                      >
-                        {!volunteer.profilePicture && <PersonIcon />}
-                      </Avatar>
+              volunteers.map((volunteer) => {
+                const status = deriveStatus(volunteer);
+                return (
+                  <TableRow
+                    key={volunteer.id}
+                    onClick={() => handleRowClick(volunteer.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleRowClick(volunteer.id);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`View profile for ${volunteer.firstName} ${volunteer.lastName}`}
+                    sx={{
+                      cursor: "pointer",
+                      "&:hover": { backgroundColor: "action.hover" },
+                    }}
+                  >
+                    <TableCell>
                       <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                      >
+                        <Avatar
+                          src={volunteer.profilePicture || undefined}
+                          alt={`${volunteer.firstName} ${volunteer.lastName}`}
+                          sx={{ width: 32, height: 32 }}
+                        >
+                          {!volunteer.profilePicture && (
+                            <PersonIcon sx={{ fontSize: 18 }} />
+                          )}
+                        </Avatar>
+                        <Box>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 600,
+                              color: "text.primary",
+                              lineHeight: 1.3,
+                            }}
+                          >
+                            {volunteer.firstName} {volunteer.lastName}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {volunteer.email}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={status}
+                        color={STATUS_COLOR[status]}
+                        variant="outlined"
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography
+                        variant="body2"
                         sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 0.5,
+                          fontVariantNumeric: "tabular-nums",
+                          fontWeight: 500,
                         }}
                       >
-                        <Box>
-                          {volunteer.firstName} {volunteer.lastName}
-                        </Box>
-                        {volunteer.isAlumni && (
-                          <StatusBadge
-                            label="Alumni"
-                            color="secondary"
-                            size="small"
-                          />
-                        )}
-                      </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell>{volunteer.volunteerType || "N/A"}</TableCell>
-                  <TableCell>
-                    {volunteer.totalHours?.toFixed(2) || "0.00"}
-                  </TableCell>
-                  <TableCell>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 0.5,
-                      }}
-                    >
-                      <Typography variant="body2">{volunteer.email}</Typography>
-                      {volunteer.phone && (
-                        <Typography variant="body2" color="text.secondary">
-                          {volunteer.phone}
-                        </Typography>
-                      )}
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ minWidth: 120 }}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <LinearProgress
-                        variant="determinate"
-                        value={volunteer.completionPercentage || 0}
-                        sx={{ flex: 1, height: 6, borderRadius: 3 }}
-                        color={
-                          volunteer.completionPercentage === 100
-                            ? "success"
-                            : "primary"
-                        }
-                      />
-                      <Typography variant="caption" sx={{ minWidth: 32 }}>
-                        {volunteer.completionPercentage || 0}%
+                        {(volunteer.totalHours ?? 0).toFixed(1)}
                       </Typography>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        {fmtJoined(volunteer.createdAt)}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             ) : loading ? null : (
               <TableRow>
-                <TableCell colSpan={5}>
+                <TableCell colSpan={4}>
                   <EmptyState message="No volunteers found" />
                 </TableCell>
               </TableRow>

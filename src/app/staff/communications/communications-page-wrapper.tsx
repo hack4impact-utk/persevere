@@ -3,17 +3,13 @@
 import { Box } from "@mui/material";
 import { type ReactElement } from "react";
 
+import { PageHeader } from "@/components/shared";
 import CommunicationsList from "@/components/staff/communications/communications-list";
 
 type CommunicationsPageWrapperProps = {
   userRole: "staff" | "admin";
 };
 
-/**
- * CommunicationsPageWrapper
- *
- * Client component wrapper for the communications page.
- */
 export default function CommunicationsPageWrapper({
   userRole,
 }: CommunicationsPageWrapperProps): ReactElement {
@@ -31,6 +27,10 @@ export default function CommunicationsPageWrapper({
         pb: { xs: 2, md: 4 },
       }}
     >
+      <PageHeader
+        eyebrow={userRole === "admin" ? "Admin Portal" : "Staff Portal"}
+        title="Communication"
+      />
       <CommunicationsList userRole={userRole} />
     </Box>
   );

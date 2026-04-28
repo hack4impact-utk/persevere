@@ -2,24 +2,26 @@
 
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import LinkIcon from "@mui/icons-material/Link";
-import OndemandVideoIcon from "@mui/icons-material/OndemandVideo";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import Grid from "@mui/material/Grid";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { useSnackbar } from "notistack";
 import { type JSX, useCallback, useEffect, useState } from "react";
 
 import { ModalTitleBar } from "@/components/shared";
-import OnboardingModuleCard from "@/components/shared/onboarding-module-card";
 import { useOnboardingDocuments } from "@/hooks/use-onboarding-documents";
 
 type DocumentViewerProps = {
@@ -45,7 +47,6 @@ export default function DocumentViewer({
     void fetchSignatures();
   }, [fetchSignatures]);
 
-  // Map from documentId → { consentGiven, signedAt }
   const responseMap = new Map(
     signatures.map((s) => [
       s.documentId,
@@ -72,55 +73,132 @@ export default function DocumentViewer({
     [signDocument, onDocumentSigned, enqueueSnackbar],
   );
 
-  if (loading) {
-    return (
-      <Grid size={{ xs: 12 }}>
-        <Box display="flex" justifyContent="center" py={4}>
-          <CircularProgress />
-        </Box>
-      </Grid>
-    );
-  }
-
-  if (error) {
-    return (
-      <Grid size={{ xs: 12 }}>
-        {/* Using Typography with error color instead of Alert, since Alert was removed from imports */}
-        <Typography color="error">{error}</Typography>
-      </Grid>
-    );
-  }
-
-  if (documents.length === 0) {
-    return (
-      <Grid size={{ xs: 12 }}>
-        <Typography variant="body2" color="text.secondary">
-          No onboarding documents have been added yet.
-        </Typography>
-      </Grid>
-    );
-  }
-
   const selectedDoc = documents.find((d) => d.id === selectedDocId) ?? null;
   const selectedResponse =
     selectedDocId === null ? undefined : responseMap.get(selectedDocId);
 
   return (
     <>
-      {documents.map((doc) => {
-        const response = responseMap.get(doc.id);
-        const hasResponded = response !== undefined;
+      <Card
+        elevation={0}
+        sx={{
+          border: 1,
+          borderColor: "divider",
+          borderRadius: 2,
+          overflow: "hidden",
+        }}
+      >
+        {loading && (
+          <Box display="flex" justifyContent="center" py={4}>
+            <CircularProgress />
+          </Box>
+        )}
 
-        return (
-          <Grid key={doc.id} size={{ xs: 12, sm: 6, md: 4 }}>
-            <DocumentCard
-              doc={doc}
-              hasResponded={hasResponded}
-              onClick={() => setSelectedDocId(doc.id)}
-            />
-          </Grid>
-        );
-      })}
+        {!loading && error && (
+          <Typography variant="body2" color="error" sx={{ p: 3 }}>
+            {error}
+          </Typography>
+        )}
+
+        {!loading && !error && documents.length === 0 && (
+          <Typography variant="body2" color="text.secondary" sx={{ p: 3 }}>
+            No onboarding documents have been added yet.
+          </Typography>
+        )}
+
+        {!loading && !error && documents.length > 0 && (
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "#fafafa" }}>
+                  <TableCell
+                    sx={{ pl: 3, fontWeight: 600, fontSize: "0.875rem" }}
+                  >
+                    Name
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                    Category
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                    Status
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                    Completed
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {documents.map((doc) => {
+                  const response = responseMap.get(doc.id);
+                  const hasResponded = response !== undefined;
+
+                  return (
+                    <TableRow
+                      key={doc.id}
+                      hover
+                      onClick={() => setSelectedDocId(doc.id)}
+                      sx={{ cursor: "pointer" }}
+                    >
+                      <TableCell sx={{ pl: 3 }}>
+                        <Box display="flex" alignItems="center" gap={1.5}>
+                          <TypeBadge type={doc.type} />
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography variant="body2" fontWeight={500} noWrap>
+                              {doc.title}
+                            </Typography>
+                            {doc.description && (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ display: "block" }}
+                                noWrap
+                              >
+                                {doc.description}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {typeLabel(doc.type)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        {doc.actionType === "informational" ? (
+                          <Typography variant="body2" color="text.secondary">
+                            —
+                          </Typography>
+                        ) : hasResponded ? (
+                          <Chip
+                            icon={<CheckCircleIcon />}
+                            label="Completed"
+                            size="small"
+                            color="success"
+                          />
+                        ) : (
+                          <Chip
+                            label="Pending"
+                            size="small"
+                            variant="outlined"
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {response?.signedAt
+                            ? new Date(response.signedAt).toLocaleDateString()
+                            : "—"}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Card>
 
       <DocumentModal
         doc={selectedDoc}
@@ -133,67 +211,44 @@ export default function DocumentViewer({
 }
 
 // ---------------------------------------------------------------------------
-// DocumentCard
+// TypeBadge + typeLabel
 // ---------------------------------------------------------------------------
 
-type DocCardDoc = {
-  id: number;
-  title: string;
-  type: string;
-  actionType: string;
-  description: string | null;
-  required: boolean;
-};
+function typeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    pdf: "PDF",
+    video: "Video",
+    link: "Link",
+  };
+  return labels[type] ?? "Document";
+}
 
-function DocumentCard({
-  doc,
-  hasResponded,
-  onClick,
-}: {
-  doc: DocCardDoc;
-  hasResponded: boolean;
-  onClick: () => void;
-}): JSX.Element {
-  const Icon =
-    doc.type === "pdf"
-      ? PictureAsPdfIcon
-      : doc.type === "video"
-        ? OndemandVideoIcon
-        : LinkIcon;
+function TypeBadge({ type }: { type: string }): JSX.Element {
+  const map: Record<string, { label: string; bgcolor: string }> = {
+    pdf: { label: "PDF", bgcolor: "error.main" },
+    video: { label: "VID", bgcolor: "primary.main" },
+    link: { label: "LNK", bgcolor: "success.main" },
+  };
+  const { label, bgcolor } = map[type] ?? { label: "DOC", bgcolor: "grey.500" };
 
   return (
-    <OnboardingModuleCard
-      title={doc.title}
-      description={doc.description || undefined}
-      icon={<Icon />}
-      isCompleted={
-        doc.actionType === "informational" ? undefined : hasResponded
-      }
-      onClick={onClick}
-      statusNode={
-        <Box display="flex" alignItems="center" gap={0.75} flexWrap="wrap">
-          {doc.required && (
-            <Chip
-              label="Required"
-              size="small"
-              color="error"
-              variant="outlined"
-            />
-          )}
-          {doc.actionType !== "informational" &&
-            (hasResponded ? (
-              <Chip
-                icon={<CheckCircleIcon />}
-                label="Completed"
-                size="small"
-                color="success"
-              />
-            ) : (
-              <Chip label="Pending" size="small" variant="outlined" />
-            ))}
-        </Box>
-      }
-    />
+    <Box
+      sx={{
+        width: 32,
+        height: 40,
+        borderRadius: 1,
+        bgcolor,
+        color: "#fff",
+        fontSize: 10,
+        fontWeight: 700,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      {label}
+    </Box>
   );
 }
 

@@ -11,6 +11,7 @@ import {
   listDocumentsWithSignatures,
 } from "@/services/onboarding-documents.service";
 import { fetchVolunteerDetailData } from "@/services/shared/volunteer-data";
+import { NotFoundError } from "@/utils/errors";
 
 export type VolunteerDetail = {
   volunteers: typeof import("@/db/schema").volunteers.$inferSelect;
@@ -51,7 +52,7 @@ export type VolunteerDetail = {
     date: Date;
     hours: number;
     notes: string | null;
-    status: "pending" | "approved" | "rejected";
+    status: "pending" | "approved" | "rejected" | "edit_requested";
     rejectionReason: string | null;
     verifiedAt: Date | null;
   }[];
@@ -223,4 +224,22 @@ export async function deleteVolunteer(
   await db.delete(users).where(eq(users.id, volunteer[0].userId));
 
   return volunteer[0];
+}
+
+/**
+ * Soft-deletes a volunteer by setting isActive = false on their user record.
+ * All related data (hours, RSVPs, skills, interests) is preserved for staff reporting.
+ */
+export async function deactivateVolunteer(volunteerId: number): Promise<void> {
+  const volunteer = await db
+    .select({ userId: volunteers.userId })
+    .from(volunteers)
+    .where(eq(volunteers.id, volunteerId));
+
+  if (volunteer.length === 0) throw new NotFoundError("Volunteer not found");
+
+  await db
+    .update(users)
+    .set({ isActive: false })
+    .where(eq(users.id, volunteer[0].userId));
 }

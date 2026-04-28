@@ -1,7 +1,6 @@
 "use client";
 
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import PersonIcon from "@mui/icons-material/Person";
 import {
   Avatar,
   Box,
@@ -162,9 +161,10 @@ export default function StaffTable({
                       <Avatar
                         src={staffMember.profilePicture || undefined}
                         alt={`${staffMember.firstName} ${staffMember.lastName}`}
-                        sx={{ width: 40, height: 40 }}
+                        sx={{ width: 40, height: 40, fontSize: 14 }}
                       >
-                        {!staffMember.profilePicture && <PersonIcon />}
+                        {`${staffMember.firstName?.[0] ?? ""}${staffMember.lastName?.[0] ?? ""}`.toUpperCase() ||
+                          "?"}
                       </Avatar>
                       <Box>
                         {staffMember.firstName} {staffMember.lastName}

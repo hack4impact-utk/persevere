@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 
 import db from "@/db";
 import {
@@ -33,6 +33,14 @@ export type PendingHoursEntry = {
   date: string; // ISO string
 };
 
+export type PendingRsvpEntry = {
+  volunteerId: number;
+  volunteerName: string;
+  opportunityId: number;
+  opportunityTitle: string;
+  rsvpAt: string; // ISO string
+};
+
 export type RecentActivityItem = {
   type: "new_volunteer" | "hours_submitted" | "rsvp_confirmed";
   label: string;
@@ -49,6 +57,7 @@ export type StaffDashboardStats = {
   pendingHoursCount: number;
   onboardingIncomplete: number;
   pendingHoursList: PendingHoursEntry[];
+  pendingRsvpsList: PendingRsvpEntry[];
   recentActivity: RecentActivityItem[];
 };
 
@@ -64,6 +73,7 @@ export type VolunteerDashboard = {
     verified: number;
     pending: number;
     total: number;
+    monthlyVerified: number;
   };
 };
 
@@ -78,6 +88,7 @@ export async function getStaffDashboardStats(): Promise<StaffDashboardStats> {
     upcomingRows,
     pendingHoursCountRows,
     pendingHoursRows,
+    pendingRsvpsRows,
     [newVolunteerRows, hoursActivityRows, rsvpActivityRows],
   ] = await Promise.all([
     db
@@ -133,6 +144,26 @@ export async function getStaffDashboardStats(): Promise<StaffDashboardStats> {
       .innerJoin(users, eq(volunteers.userId, users.id))
       .where(eq(volunteerHours.status, "pending"))
       .orderBy(desc(volunteerHours.date))
+      .limit(PENDING_HOURS_LIMIT),
+
+    db
+      .select({
+        volunteerId: volunteers.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        opportunityId: opportunities.id,
+        opportunityTitle: opportunities.title,
+        rsvpAt: volunteerRsvps.rsvpAt,
+      })
+      .from(volunteerRsvps)
+      .innerJoin(volunteers, eq(volunteerRsvps.volunteerId, volunteers.id))
+      .innerJoin(users, eq(volunteers.userId, users.id))
+      .innerJoin(
+        opportunities,
+        eq(volunteerRsvps.opportunityId, opportunities.id),
+      )
+      .where(eq(volunteerRsvps.status, "pending"))
+      .orderBy(desc(volunteerRsvps.rsvpAt))
       .limit(PENDING_HOURS_LIMIT),
 
     Promise.all([
@@ -262,6 +293,13 @@ export async function getStaffDashboardStats(): Promise<StaffDashboardStats> {
       hours: row.hours,
       date: new Date(row.date).toISOString(),
     })),
+    pendingRsvpsList: pendingRsvpsRows.map((row) => ({
+      volunteerId: row.volunteerId,
+      volunteerName: `${row.firstName} ${row.lastName}`,
+      opportunityId: row.opportunityId,
+      opportunityTitle: row.opportunityTitle,
+      rsvpAt: new Date(row.rsvpAt).toISOString(),
+    })),
     recentActivity,
   };
 }
@@ -270,57 +308,78 @@ export async function getVolunteerDashboard(
   volunteerId: number,
 ): Promise<VolunteerDashboard> {
   const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [upcoming, verifiedAgg, pendingAgg] = await Promise.all([
-    db
-      .select({
-        rsvpStatus: volunteerRsvps.status,
-        opportunityId: opportunities.id,
-        opportunityStartDate: opportunities.startDate,
-      })
-      .from(volunteerRsvps)
-      .innerJoin(
-        opportunities,
-        eq(volunteerRsvps.opportunityId, opportunities.id),
-      )
-      .where(
-        and(
-          eq(volunteerRsvps.volunteerId, volunteerId),
-          gte(opportunities.startDate, now),
-        ),
-      )
-      .orderBy(opportunities.startDate)
-      .limit(DEFAULT_PAGE_SIZE),
+  const [upcoming, verifiedAgg, pendingAgg, monthlyVerifiedAgg] =
+    await Promise.all([
+      db
+        .select({
+          rsvpStatus: volunteerRsvps.status,
+          opportunityId: opportunities.id,
+          opportunityStartDate: opportunities.startDate,
+        })
+        .from(volunteerRsvps)
+        .innerJoin(
+          opportunities,
+          eq(volunteerRsvps.opportunityId, opportunities.id),
+        )
+        .where(
+          and(
+            eq(volunteerRsvps.volunteerId, volunteerId),
+            gte(opportunities.startDate, now),
+          ),
+        )
+        .orderBy(opportunities.startDate)
+        .limit(DEFAULT_PAGE_SIZE),
 
-    // VERIFIED = verifiedAt IS NOT NULL
-    db
-      .select({
-        total: sql<string>`coalesce(sum(${volunteerHours.hours}), 0)`,
-      })
-      .from(volunteerHours)
-      .where(
-        and(
-          eq(volunteerHours.volunteerId, volunteerId),
-          isNotNull(volunteerHours.verifiedAt),
-        ),
-      ),
+      // VERIFIED = approved + previously-approved portion of edit_requested entries
+      db
+        .select({
+          total: sql<string>`coalesce(sum(case
+          when ${volunteerHours.status} = 'approved' then ${volunteerHours.hours}
+          when ${volunteerHours.status} = 'edit_requested' then coalesce(${volunteerHours.previousHours}, ${volunteerHours.hours})
+          else 0
+        end), 0)`,
+        })
+        .from(volunteerHours)
+        .where(eq(volunteerHours.volunteerId, volunteerId)),
 
-    // PENDING = verifiedAt IS NULL
-    db
-      .select({
-        total: sql<string>`coalesce(sum(${volunteerHours.hours}), 0)`,
-      })
-      .from(volunteerHours)
-      .where(
-        and(
-          eq(volunteerHours.volunteerId, volunteerId),
-          isNull(volunteerHours.verifiedAt),
+      // PENDING = pending entries + extra hours above approved baseline in edit_requested entries
+      db
+        .select({
+          total: sql<string>`coalesce(sum(case
+          when ${volunteerHours.status} = 'pending' then ${volunteerHours.hours}
+          when ${volunteerHours.status} = 'edit_requested'
+               and ${volunteerHours.previousHours} is not null
+               and ${volunteerHours.hours} > ${volunteerHours.previousHours}
+               then ${volunteerHours.hours} - ${volunteerHours.previousHours}
+          else 0
+        end), 0)`,
+        })
+        .from(volunteerHours)
+        .where(eq(volunteerHours.volunteerId, volunteerId)),
+
+      // MONTHLY VERIFIED = approved/edit_requested hours logged this calendar month
+      db
+        .select({
+          total: sql<string>`coalesce(sum(case
+          when ${volunteerHours.status} = 'approved' then ${volunteerHours.hours}
+          when ${volunteerHours.status} = 'edit_requested' then coalesce(${volunteerHours.previousHours}, ${volunteerHours.hours})
+          else 0
+        end), 0)`,
+        })
+        .from(volunteerHours)
+        .where(
+          and(
+            eq(volunteerHours.volunteerId, volunteerId),
+            gte(volunteerHours.date, monthStart),
+          ),
         ),
-      ),
-  ]);
+    ]);
 
   const verified = toNumber(verifiedAgg[0]?.total);
   const pending = toNumber(pendingAgg[0]?.total);
+  const monthlyVerified = toNumber(monthlyVerifiedAgg[0]?.total);
 
   return {
     upcomingRsvps: upcoming.map((row) => ({
@@ -334,6 +393,7 @@ export async function getVolunteerDashboard(
       verified,
       pending,
       total: verified + pending,
+      monthlyVerified,
     },
   };
 }

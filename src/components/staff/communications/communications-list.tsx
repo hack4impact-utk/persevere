@@ -124,12 +124,15 @@ export default function CommunicationsList({
       >
         {/* Left Panel - Communications List */}
         <Paper
+          variant="outlined"
           sx={{
-            width: "400px",
+            width: "380px",
             flexShrink: 0,
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
+            borderRadius: 2,
+            borderColor: "divider",
           }}
         >
           {/* Search input */}
@@ -192,9 +195,59 @@ export default function CommunicationsList({
                 <ListItem
                   key={comm.id}
                   disablePadding
-                  secondaryAction={
+                  sx={{
+                    borderLeft:
+                      selectedCommunication?.id === comm.id
+                        ? "4px solid"
+                        : "4px solid transparent",
+                    borderLeftColor:
+                      selectedCommunication?.id === comm.id
+                        ? "primary.main"
+                        : "transparent",
+                  }}
+                >
+                  <ListItemButton
+                    onClick={() => void selectCommunication(comm.id)}
+                    selected={selectedCommunication?.id === comm.id}
+                    sx={{
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      py: 1.75,
+                      pl: 2,
+                      pr: 5,
+                      position: "relative",
+                      "&.Mui-selected": {
+                        bgcolor: "rgba(50,123,247,.06)",
+                        "&:hover": { bgcolor: "rgba(50,123,247,.09)" },
+                      },
+                      "&:hover": { bgcolor: "rgba(0,0,0,.02)" },
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ mb: 0.25 }}
+                    >
+                      {formatDate(comm.sentAt)}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ mb: 0.5 }}
+                    >
+                      {getRecipientLabel(comm.recipientType)}
+                    </Typography>
+                    <Typography
+                      variant="subtitle2"
+                      fontWeight="bold"
+                      sx={{ mb: 0.5 }}
+                    >
+                      {comm.subject}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {truncateText(comm.body, 100)}
+                    </Typography>
                     <IconButton
-                      edge="end"
                       size="small"
                       disabled={isMutating}
                       onClick={(e) => {
@@ -205,53 +258,16 @@ export default function CommunicationsList({
                           subject: comm.subject,
                         });
                       }}
-                      sx={{ mr: 0.5 }}
+                      sx={{
+                        position: "absolute",
+                        top: 10,
+                        right: 8,
+                        color: "text.disabled",
+                        "&:hover": { color: "text.secondary" },
+                      }}
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
-                  }
-                  sx={{
-                    borderRight:
-                      selectedCommunication?.id === comm.id
-                        ? "4px solid #1976d2"
-                        : "4px solid transparent",
-                  }}
-                >
-                  <ListItemButton
-                    onClick={() => void selectCommunication(comm.id)}
-                    selected={selectedCommunication?.id === comm.id}
-                    sx={{
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      py: 2,
-                      px: 2,
-                      pr: 6,
-                    }}
-                  >
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ mb: 0.5 }}
-                    >
-                      {formatDate(comm.sentAt)}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 0.5 }}
-                    >
-                      {getRecipientLabel(comm.recipientType)}
-                    </Typography>
-                    <Typography
-                      variant="subtitle2"
-                      fontWeight="bold"
-                      sx={{ mb: 1 }}
-                    >
-                      {comm.subject}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {truncateText(comm.body, 120)}
-                    </Typography>
                   </ListItemButton>
                 </ListItem>
               ))}
@@ -261,12 +277,15 @@ export default function CommunicationsList({
 
         {/* Right Panel - Communication Details */}
         <Paper
+          variant="outlined"
           sx={{
             flex: 1,
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            p: 3,
+            p: { xs: 2, md: 4 },
+            borderRadius: 2,
+            borderColor: "divider",
           }}
         >
           {selectedCommunication ? (
@@ -280,11 +299,17 @@ export default function CommunicationsList({
               }}
             >
               {/* Subject */}
-              <Typography variant="h4" gutterBottom sx={{ flexShrink: 0 }}>
+              <Typography
+                sx={{
+                  fontSize: 32,
+                  fontWeight: 400,
+                  color: "text.primary",
+                  mb: 3,
+                  flexShrink: 0,
+                }}
+              >
                 {selectedCommunication.subject}
               </Typography>
-
-              <Divider sx={{ my: 2, flexShrink: 0 }} />
 
               {/* Sender and Recipient Info */}
               <Stack
@@ -293,11 +318,18 @@ export default function CommunicationsList({
                 alignItems="center"
                 sx={{ mb: 2, flexShrink: 0 }}
               >
-                <Avatar>
+                <Avatar
+                  sx={{
+                    bgcolor: "rgba(0,0,0,.12)",
+                    color: "rgba(0,0,0,.54)",
+                    width: 40,
+                    height: 40,
+                  }}
+                >
                   <PersonIcon />
                 </Avatar>
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="body1" fontWeight="medium">
+                  <Typography variant="subtitle2" fontWeight={600}>
                     {selectedCommunication.sender
                       ? `${selectedCommunication.sender.firstName} ${selectedCommunication.sender.lastName}`
                       : "Unknown Sender"}
