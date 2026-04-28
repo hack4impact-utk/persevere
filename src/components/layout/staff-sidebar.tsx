@@ -157,8 +157,13 @@ export default function StaffSidebar(): JSX.Element {
   const isAdmin = user?.role === "admin";
 
   const navItems: NavItem[] = useMemo(() => {
-    const baseItems: NavItem[] = [
+    const peopleItem: NavItem = isAdmin
+      ? { label: "People", href: "/staff/people", icon: <UsersIcon /> }
+      : { label: "Volunteers", href: "/staff/volunteers", icon: <UsersIcon /> };
+
+    return [
       { label: "Dashboard", href: "/staff/dashboard", icon: <DashboardIcon /> },
+      peopleItem,
       {
         label: "Opportunities",
         href: "/staff/opportunities",
@@ -175,34 +180,17 @@ export default function StaffSidebar(): JSX.Element {
         icon: <ApprovalsIcon />,
       },
       {
+        label: "Communication",
+        href: "/staff/communications",
+        icon: <ChatIcon />,
+      },
+      {
         label: "Onboarding",
         href: "/staff/onboarding",
         icon: <DocumentIcon />,
       },
       { label: "Analytics", href: "/staff/analytics", icon: <BarChartIcon /> },
-      {
-        label: "Communication",
-        href: "/staff/communications",
-        icon: <ChatIcon />,
-      },
     ];
-
-    // Admin sees "People" tab, staff sees "Volunteers" tab
-    if (isAdmin) {
-      baseItems.splice(2, 0, {
-        label: "People",
-        href: "/staff/people",
-        icon: <UsersIcon />,
-      });
-    } else {
-      baseItems.splice(2, 0, {
-        label: "Volunteers",
-        href: "/staff/volunteers",
-        icon: <UsersIcon />,
-      });
-    }
-
-    return baseItems;
   }, [isAdmin]);
 
   return <BaseSidebar navItems={navItems} />;
