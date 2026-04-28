@@ -2,8 +2,11 @@ import Chip from "@mui/material/Chip";
 import type { SxProps, Theme } from "@mui/material/styles";
 import type { JSX, ReactElement } from "react";
 
-import type { RsvpStatus } from "@/components/volunteer/types";
-import type { BackgroundCheckStatus, HoursStatus } from "@/lib/status-enums";
+import type {
+  BackgroundCheckStatus,
+  HoursStatus,
+  RsvpStatus,
+} from "@/lib/status-enums";
 
 type StatusBadgeProps = {
   label: string;

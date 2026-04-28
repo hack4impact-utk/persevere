@@ -1,11 +1,7 @@
+import type { RsvpStatus } from "@/lib/status-enums";
+
 export type OpportunityStatus = "open" | "full" | "completed" | "canceled";
-export type RsvpStatus =
-  | "pending"
-  | "confirmed"
-  | "declined"
-  | "attended"
-  | "no_show"
-  | "cancelled";
+export type { RsvpStatus } from "@/lib/status-enums";
 
 export type Opportunity = {
   id: number;
