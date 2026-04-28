@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
-import { backgroundCheckStatusSchema } from "@/lib/status-enums";
+import {
+  backgroundCheckStatusSchema,
+  notificationPreferenceSchema,
+} from "@/lib/status-enums";
 import { createVolunteer, listVolunteers } from "@/services/volunteer.service";
 import handleError from "@/utils/handle-error";
 import {
@@ -33,7 +36,7 @@ const volunteerCreateSchema = z.object({
       z.union([z.string(), z.array(z.string()), z.boolean(), z.number()]),
     )
     .optional(),
-  notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
+  notificationPreference: notificationPreferenceSchema.optional(),
 });
 
 export async function GET(request: Request): Promise<NextResponse> {

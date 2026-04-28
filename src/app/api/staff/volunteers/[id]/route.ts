@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { backgroundCheckStatusSchema } from "@/lib/status-enums";
+import {
+  backgroundCheckStatusSchema,
+  notificationPreferenceSchema,
+} from "@/lib/status-enums";
 import {
   deleteVolunteer,
   getVolunteerDetail,
@@ -33,7 +36,7 @@ const volunteerUpdateSchema = z.object({
       z.union([z.string(), z.array(z.string()), z.boolean(), z.number()]),
     )
     .optional(),
-  notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
+  notificationPreference: notificationPreferenceSchema.optional(),
   employer: z.string().optional(),
   jobTitle: z.string().optional(),
   city: z.string().optional(),

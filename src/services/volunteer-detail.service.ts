@@ -2,6 +2,11 @@ import { eq } from "drizzle-orm";
 
 import db from "@/db";
 import { users, volunteers } from "@/db/schema";
+import type {
+  BackgroundCheckStatus,
+  HoursStatus,
+  NotificationPreference,
+} from "@/lib/status-enums";
 import {
   getOnboardingStatus,
   type OnboardingStatus,
@@ -52,7 +57,7 @@ export type VolunteerDetail = {
     date: Date;
     hours: number;
     notes: string | null;
-    status: "pending" | "approved" | "rejected" | "edit_requested";
+    status: HoursStatus;
     rejectionReason: string | null;
     verifiedAt: Date | null;
   }[];
@@ -72,9 +77,9 @@ export type VolunteerDetailUpdateData = {
   // Volunteer fields
   volunteerType?: string;
   isAlumni?: boolean;
-  backgroundCheckStatus?: "not_required" | "pending" | "approved" | "rejected";
+  backgroundCheckStatus?: BackgroundCheckStatus;
   availability?: Record<string, unknown>;
-  notificationPreference?: "email" | "sms" | "both" | "none";
+  notificationPreference?: NotificationPreference;
   employer?: string;
   jobTitle?: string;
   city?: string;

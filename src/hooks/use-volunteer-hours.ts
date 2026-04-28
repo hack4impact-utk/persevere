@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
 import { apiClient } from "@/lib/api-client";
+import type { HoursStatus } from "@/lib/status-enums";
 
 export type VolunteerHourEntry = {
   id: number;
@@ -10,7 +11,7 @@ export type VolunteerHourEntry = {
   date: string;
   hours: number;
   notes?: string | null;
-  status: "pending" | "approved" | "rejected" | "edit_requested";
+  status: HoursStatus;
   rejectionReason?: string | null;
 };
 

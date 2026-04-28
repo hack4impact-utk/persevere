@@ -8,6 +8,7 @@ import {
   volunteers,
 } from "@/db/schema";
 import { users } from "@/db/schema/users";
+import type { HoursStatus } from "@/lib/status-enums";
 import { ConflictError, NotFoundError, ValidationError } from "@/utils/errors";
 
 export type AllHoursRecord = {
@@ -20,7 +21,7 @@ export type AllHoursRecord = {
   hours: number;
   previousHours: number | null;
   notes: string | null;
-  status: "pending" | "approved" | "rejected" | "edit_requested";
+  status: HoursStatus;
   rejectionReason: string | null;
 };
 
@@ -29,7 +30,7 @@ export type AllHoursRecord = {
  * Used by staff for the global Approvals > Hours view.
  */
 export async function listAllHours(
-  status?: "pending" | "approved" | "rejected" | "edit_requested",
+  status?: HoursStatus,
 ): Promise<AllHoursRecord[]> {
   const conditions = status ? [eq(volunteerHours.status, status)] : [];
 
@@ -90,7 +91,7 @@ export async function listVolunteerHours(filters: HoursFilters): Promise<{
     date: Date;
     hours: number;
     notes: string | null;
-    status: "pending" | "approved" | "rejected" | "edit_requested";
+    status: HoursStatus;
     rejectionReason: string | null;
     verifiedAt: Date | null;
     opportunityTitle: string | null;
@@ -150,7 +151,7 @@ export async function logHours(input: LogHoursInput): Promise<{
   date: Date;
   hours: number;
   notes: string | null;
-  status: "pending" | "approved" | "rejected" | "edit_requested";
+  status: HoursStatus;
   rejectionReason: string | null;
   verifiedBy: number | null;
   verifiedAt: Date | null;
@@ -446,7 +447,7 @@ export async function listVolunteerOwnHours(volunteerId: number): Promise<
     date: Date;
     hours: number;
     notes: string | null;
-    status: "pending" | "approved" | "rejected" | "edit_requested";
+    status: HoursStatus;
     rejectionReason: string | null;
     verifiedBy: number | null;
     verifiedAt: Date | null;

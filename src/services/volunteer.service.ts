@@ -3,6 +3,11 @@ import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import db from "@/db";
 import { users, volunteers } from "@/db/schema";
 import { volunteerHours } from "@/db/schema/opportunities";
+import type {
+  BackgroundCheckStatus,
+  HoursStatus,
+  NotificationPreference,
+} from "@/lib/status-enums";
 import { toNumber } from "@/services/shared/db-helpers";
 import { fetchVolunteerDetailData } from "@/services/shared/volunteer-data";
 import { ConflictError, NotFoundError } from "@/utils/errors";
@@ -50,9 +55,9 @@ export type CreateVolunteerParams = {
   isActive?: boolean;
   volunteerType?: string;
   isAlumni?: boolean;
-  backgroundCheckStatus?: "not_required" | "pending" | "approved" | "rejected";
+  backgroundCheckStatus?: BackgroundCheckStatus;
   availability?: Record<string, string | string[] | boolean | number>;
-  notificationPreference?: "email" | "sms" | "both" | "none";
+  notificationPreference?: NotificationPreference;
   employer?: string;
   jobTitle?: string;
   city?: string;
@@ -64,7 +69,7 @@ export type CreateVolunteerResult = {
   volunteer: typeof volunteers.$inferSelect;
   emailSent: boolean;
   emailError: boolean;
-  backgroundCheckStatus: "not_required" | "pending" | "approved" | "rejected";
+  backgroundCheckStatus: BackgroundCheckStatus;
 };
 
 type TimeRange = { start: string; end: string };
@@ -116,7 +121,7 @@ export type GetVolunteerProfileResult = {
     date: Date;
     hours: number;
     notes: string | null;
-    status: "pending" | "approved" | "rejected" | "edit_requested";
+    status: HoursStatus;
     rejectionReason: string | null;
     verifiedAt: Date | null;
   }[];
@@ -139,7 +144,7 @@ export type VolunteerProfileUpdateParams = {
     saturday?: TimeRange[];
     sunday?: TimeRange[];
   };
-  notificationPreference?: "email" | "sms" | "both" | "none";
+  notificationPreference?: NotificationPreference;
   employer?: string;
   jobTitle?: string;
   city?: string;

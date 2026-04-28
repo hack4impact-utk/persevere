@@ -1,5 +1,10 @@
 import { apiClient } from "@/lib/api-client";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import type {
+  BackgroundCheckStatus,
+  HoursStatus,
+  RsvpStatus,
+} from "@/lib/status-enums";
 import type { DocumentWithSignature } from "@/services/onboarding-documents.service";
 
 export type { DocumentWithSignature } from "@/services/onboarding-documents.service";
@@ -156,7 +161,7 @@ export type FetchVolunteerByIdResult = {
     userId: number;
     volunteerType: string | null;
     isAlumni: boolean;
-    backgroundCheckStatus: "not_required" | "pending" | "approved" | "rejected";
+    backgroundCheckStatus: BackgroundCheckStatus;
     availability: unknown;
     notificationPreference: "email" | "sms" | "both" | "none";
     employer: string | null;
@@ -197,7 +202,7 @@ export type FetchVolunteerByIdResult = {
     opportunityLocation: string | null;
     opportunityStartDate: Date | null;
     opportunityEndDate: Date | null;
-    rsvpStatus: "pending" | "confirmed" | "declined" | "attended" | "no_show";
+    rsvpStatus: RsvpStatus;
     rsvpAt: Date;
     rsvpNotes: string | null;
   }[];
@@ -208,7 +213,7 @@ export type FetchVolunteerByIdResult = {
     date: Date;
     hours: number;
     notes: string | null;
-    status: "pending" | "approved" | "rejected" | "edit_requested";
+    status: HoursStatus;
     rejectionReason: string | null;
     verifiedAt: Date | null;
   }[];

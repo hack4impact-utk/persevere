@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { notificationPreferenceSchema } from "@/lib/status-enums";
 import {
   getVolunteerProfile,
   updateVolunteerProfile,
@@ -43,7 +44,7 @@ const volunteerSelfUpdateSchema = z.object({
   phone: z.string().max(20).optional(),
   bio: z.string().max(2000).optional(),
   availability: availabilitySchema.optional(),
-  notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
+  notificationPreference: notificationPreferenceSchema.optional(),
   employer: z.string().max(200).optional(),
   jobTitle: z.string().max(200).optional(),
   city: z.string().max(100).optional(),
