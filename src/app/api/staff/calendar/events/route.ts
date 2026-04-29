@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import {
+  type OpportunityStatus,
+  opportunityStatusSchema,
+} from "@/lib/status-enums";
+import {
   createCalendarEvent,
   listCalendarEvents,
 } from "@/services/calendar-events.service";
@@ -25,7 +29,7 @@ const eventCreateSchema = z.object({
   startDate: z.string().datetime("Invalid start date"),
   endDate: z.string().datetime("Invalid end date"),
   maxVolunteers: z.number().int().positive().optional(),
-  status: z.enum(["open", "full", "completed", "canceled"]).optional(),
+  status: opportunityStatusSchema.optional(),
   isRecurring: z.boolean().optional(),
   recurrencePattern: recurrencePatternSchema.optional(),
   categoryId: z.number().int().positive().optional(),
@@ -69,9 +73,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       }
     }
 
-    const statusFilter:
-      | ("open" | "full" | "completed" | "canceled")[]
-      | undefined =
+    const statusFilter: OpportunityStatus[] | undefined =
       session.user.role === "volunteer" ? ["open", "full"] : undefined;
     const calendarEvents = await listCalendarEvents(
       startDate,

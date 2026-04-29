@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { recipientTypeSchema } from "@/lib/status-enums";
 import {
   createCommunication,
   listCommunications,
@@ -15,7 +16,7 @@ import {
 const createCommunicationSchema = z.object({
   subject: z.string().min(1, "Subject is required"),
   body: z.string().min(1, "Body is required"),
-  recipientType: z.enum(["volunteers", "staff", "both"]),
+  recipientType: recipientTypeSchema,
 });
 
 export async function GET(request: Request): Promise<NextResponse> {

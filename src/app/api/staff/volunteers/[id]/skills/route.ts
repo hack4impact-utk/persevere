@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { assignableProficiencyLevelSchema } from "@/lib/status-enums";
 import {
   assignSkill,
   getVolunteerSkills,
@@ -14,7 +15,7 @@ import { validateAndParseId } from "@/utils/validate-id";
 
 const addSkillSchema = z.object({
   skillId: z.number().int().positive("Skill ID must be a positive integer"),
-  level: z.enum(["beginner", "intermediate", "advanced"]),
+  level: assignableProficiencyLevelSchema,
 });
 
 export async function GET(

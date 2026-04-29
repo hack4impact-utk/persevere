@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { proficiencyLevelSchema } from "@/lib/status-enums";
 import { assignSkill, removeSkill } from "@/services/volunteer-skills.service";
 import { requireAuth } from "@/utils/server/auth";
 import { handleRouteError } from "@/utils/server/route-helpers";
 
 const assignSkillSchema = z.object({
   skillId: z.number().int().positive(),
-  proficiencyLevel: z
-    .enum(["no_selection", "beginner", "intermediate", "advanced"])
-    .optional()
-    .default("no_selection"),
+  proficiencyLevel: proficiencyLevelSchema.optional().default("no_selection"),
 });
 
 const removeSkillSchema = z.object({

@@ -52,6 +52,10 @@ import {
 import { useVolunteerDetail } from "@/hooks/use-volunteer-detail";
 import { useVolunteerTypes } from "@/hooks/use-volunteer-types";
 import type {
+  BackgroundCheckStatus,
+  NotificationPreference,
+} from "@/lib/status-enums";
+import type {
   DocumentWithSignature,
   FetchVolunteerByIdResult,
 } from "@/services/volunteer-client.service";
@@ -265,9 +269,9 @@ type EditData = {
   isActive?: boolean;
   volunteerType?: string;
   isAlumni?: boolean;
-  backgroundCheckStatus?: "not_required" | "pending" | "approved" | "rejected";
+  backgroundCheckStatus?: BackgroundCheckStatus;
   availability?: Record<string, unknown>;
-  notificationPreference?: "email" | "sms" | "both" | "none";
+  notificationPreference?: NotificationPreference;
   employer?: string;
   jobTitle?: string;
   city?: string;

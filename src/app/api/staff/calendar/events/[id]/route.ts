@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { opportunityStatusSchema } from "@/lib/status-enums";
 import {
   deleteCalendarEvent,
   updateCalendarEvent,
@@ -19,7 +20,7 @@ const eventUpdateSchema = z.object({
   startDate: z.string().datetime("Invalid start date").optional(),
   endDate: z.string().datetime("Invalid end date").optional(),
   maxVolunteers: z.number().int().positive().optional(),
-  status: z.enum(["open", "full", "completed", "canceled"]).optional(),
+  status: opportunityStatusSchema.optional(),
   categoryId: z.number().int().positive().nullable().optional(),
 });
 
