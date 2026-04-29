@@ -126,33 +126,6 @@ export async function fetchVolunteers(
 }
 
 /**
- * Fetches pending invites - volunteers who have not yet verified their email.
- */
-export async function fetchPendingInvites(
-  filters: VolunteerFilters = {},
-): Promise<VolunteersResponse> {
-  return fetchVolunteers({ ...filters, emailVerified: false });
-}
-
-/**
- * Fetches active volunteers - volunteers who have verified their email and are active.
- */
-export async function fetchActiveVolunteers(
-  filters: VolunteerFilters = {},
-): Promise<VolunteersResponse> {
-  return fetchVolunteers({ ...filters, emailVerified: true, isActive: true });
-}
-
-/**
- * Fetches inactive volunteers - volunteers who have the inactive status (excluding pending invites).
- */
-export async function fetchInactiveVolunteers(
-  filters: VolunteerFilters = {},
-): Promise<VolunteersResponse> {
-  return fetchVolunteers({ ...filters, isActive: false, emailVerified: true });
-}
-
-/**
  * Return type for fetchVolunteerById function.
  */
 export type FetchVolunteerByIdResult = {

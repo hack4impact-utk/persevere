@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type { Volunteer } from "@/components/staff/volunteer-management/types";
 import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { usePaginatedSearch } from "@/hooks/use-paginated-search";
 import { apiClient } from "@/lib/api-client";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { fetchVolunteers } from "@/services/volunteer-client.service";
@@ -68,10 +69,6 @@ export function useVolunteers(
   const [error, setError] = useState<string | null>(null);
   const handleApiError = useApiErrorHandler(setError);
 
-  const loadVolunteersRef = useRef<(() => Promise<void>) | undefined>(
-    undefined,
-  );
-
   const loadVolunteers = useCallback(async (): Promise<void> => {
     setError(null);
     setLoading(true);
@@ -110,7 +107,12 @@ export function useVolunteers(
     handleApiError,
   ]);
 
-  loadVolunteersRef.current = loadVolunteers;
+  usePaginatedSearch(
+    loadVolunteers,
+    searchQuery,
+    [page, limit, filters.type, filters.alumni, filters.status],
+    skip,
+  );
 
   // Fetch grand total and active count once on mount (for subtitle)
   useEffect(() => {
@@ -133,26 +135,6 @@ export function useVolunteers(
       }
     })();
   }, [skip]);
-
-  // Debounce search
-  useEffect(() => {
-    if (skip) return;
-    const debounceTimer = setTimeout(
-      () => {
-        void loadVolunteersRef.current?.();
-      },
-      searchQuery ? 300 : 0,
-    );
-    return (): void => {
-      clearTimeout(debounceTimer);
-    };
-  }, [searchQuery, skip]);
-
-  // Immediate reload on pagination / filter changes
-  useEffect(() => {
-    if (skip) return;
-    void loadVolunteersRef.current?.();
-  }, [page, limit, filters.type, filters.alumni, filters.status, skip]);
 
   const resendCredentials = useCallback(
     async (volunteerId: number): Promise<boolean> => {
@@ -216,7 +198,7 @@ export function useVolunteers(
           emailError?: boolean;
           backgroundCheckStatus?: string;
         }>("/api/staff/volunteers", data);
-        void loadVolunteersRef.current?.();
+        void loadVolunteers();
         return result;
       } catch (error_) {
         if (!handleApiError(error_)) {
@@ -228,7 +210,7 @@ export function useVolunteers(
         setIsMutating(false);
       }
     },
-    [handleApiError],
+    [handleApiError, loadVolunteers],
   );
 
   const deleteVolunteer = useCallback(
@@ -236,7 +218,7 @@ export function useVolunteers(
       setIsMutating(true);
       try {
         await apiClient.delete(`/api/staff/volunteers/${volunteerId}`);
-        void loadVolunteersRef.current?.();
+        void loadVolunteers();
         return true;
       } catch (error_) {
         if (!handleApiError(error_)) {
@@ -247,7 +229,7 @@ export function useVolunteers(
         setIsMutating(false);
       }
     },
-    [handleApiError],
+    [handleApiError, loadVolunteers],
   );
 
   return {
