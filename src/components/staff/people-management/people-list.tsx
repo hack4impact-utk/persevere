@@ -29,6 +29,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { useSnackbar } from "notistack";
 import { type ReactElement, useCallback, useState } from "react";
 
 import { ModalTitleBar, PageHeader } from "@/components/shared";
@@ -73,7 +74,9 @@ export default function PeopleList(): ReactElement {
     setLimit,
     loading,
     error,
+    isMutating,
     loadPeople,
+    resendCredentials,
   } = usePeople(searchQuery, {
     roleFilter,
     statusFilter,
@@ -188,6 +191,18 @@ export default function PeopleList(): ReactElement {
     setSelectedStaffId(null);
     clearStaffProfile();
   }, [clearStaffProfile]);
+
+  const { enqueueSnackbar } = useSnackbar();
+
+  const handleResendInvite = useCallback(async (): Promise<void> => {
+    if (!selectedVolunteerId) return;
+    const success = await resendCredentials(selectedVolunteerId);
+    if (success) {
+      enqueueSnackbar("Invite resent successfully", { variant: "success" });
+    } else {
+      enqueueSnackbar("Failed to resend invite", { variant: "error" });
+    }
+  }, [selectedVolunteerId, resendCredentials, enqueueSnackbar]);
 
   // Show pagination only when role-filtered (paginated fetch); hide for "all" (full fetch)
   const showPagination = roleFilter !== "";
@@ -393,6 +408,8 @@ export default function PeopleList(): ReactElement {
                   void loadVolunteerProfile(selectedVolunteerId);
                 }
               }}
+              onResendInvite={() => void handleResendInvite()}
+              resendInviteDisabled={isMutating}
             />
           ) : null}
         </Box>

@@ -153,6 +153,7 @@ export type FetchVolunteerByIdResult = {
     phone: string | null;
     bio: string | null;
     isActive: boolean;
+    isEmailVerified: boolean;
     profilePicture?: string | null;
     emailVerifiedAt?: Date | null;
   } | null;

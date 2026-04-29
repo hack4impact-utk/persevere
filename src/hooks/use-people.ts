@@ -98,6 +98,7 @@ export type UsePeopleResult = {
   isMutating: boolean;
   error: string | null;
   loadPeople: () => Promise<void>;
+  resendCredentials: (volunteerId: number) => Promise<boolean>;
   createStaff: (data: Record<string, unknown>) => Promise<{
     message?: string;
     data?: Staff;
@@ -235,6 +236,26 @@ export function usePeople(
     })();
   }, []);
 
+  const resendCredentials = useCallback(
+    async (volunteerId: number): Promise<boolean> => {
+      setIsMutating(true);
+      try {
+        await apiClient.post(
+          `/api/staff/volunteers/${volunteerId}/resend-credentials`,
+        );
+        return true;
+      } catch (error_) {
+        if (!handleApiError(error_)) {
+          console.error("[usePeople] resendCredentials:", error_);
+        }
+        return false;
+      } finally {
+        setIsMutating(false);
+      }
+    },
+    [handleApiError],
+  );
+
   const createStaff = useCallback(
     async (
       data: Record<string, unknown>,
@@ -280,6 +301,7 @@ export function usePeople(
     isMutating,
     error,
     loadPeople,
+    resendCredentials,
     createStaff,
   };
 }

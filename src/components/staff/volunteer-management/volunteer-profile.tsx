@@ -12,12 +12,16 @@ type VolunteerProfileProps = {
   volunteer: FetchVolunteerByIdResult;
   onDelete?: () => void;
   onVolunteerUpdated?: () => void;
+  onResendInvite?: () => void;
+  resendInviteDisabled?: boolean;
 };
 
 export default function VolunteerProfile({
   volunteer,
   onDelete,
   onVolunteerUpdated,
+  onResendInvite,
+  resendInviteDisabled,
 }: VolunteerProfileProps): JSX.Element {
   const [tab, setTab] = useState(0);
 
@@ -54,6 +58,8 @@ export default function VolunteerProfile({
               volunteer={volunteer}
               onVolunteerUpdated={onVolunteerUpdated}
               onDelete={onDelete}
+              onResendInvite={onResendInvite}
+              resendInviteDisabled={resendInviteDisabled}
             />
           </Box>
         )}

@@ -619,12 +619,16 @@ type VolunteerOverviewTabProps = {
   volunteer: FetchVolunteerByIdResult;
   onVolunteerUpdated?: () => void;
   onDelete?: () => void;
+  onResendInvite?: () => void;
+  resendInviteDisabled?: boolean;
 };
 
 export function VolunteerOverviewTab({
   volunteer,
   onVolunteerUpdated,
   onDelete,
+  onResendInvite,
+  resendInviteDisabled,
 }: VolunteerOverviewTabProps): JSX.Element {
   const { volunteers: vol, users: user } = volunteer;
 
@@ -737,6 +741,22 @@ export function VolunteerOverviewTab({
             gap: 1,
           }}
         >
+          {onResendInvite && !user.isEmailVerified && (
+            <Button
+              variant="contained"
+              size="small"
+              disabled={resendInviteDisabled}
+              sx={{
+                bgcolor: "rgba(255,255,255,0.15)",
+                "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
+                color: "white",
+                backdropFilter: "blur(4px)",
+              }}
+              onClick={onResendInvite}
+            >
+              Resend Invite
+            </Button>
+          )}
           <Button
             variant="contained"
             size="small"
