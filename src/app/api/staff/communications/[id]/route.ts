@@ -4,13 +4,8 @@ import {
   deleteCommunication,
   getCommunicationById,
 } from "@/services/communications.service";
-import { NotFoundError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
-import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
+import { requireStaffAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 import { validateAndParseId } from "@/utils/validate-id";
 
 export async function GET(
@@ -34,11 +29,7 @@ export async function GET(
 
     return NextResponse.json({ communication });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -55,9 +46,6 @@ export async function DELETE(
     await deleteCommunication(parsedId);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError)
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

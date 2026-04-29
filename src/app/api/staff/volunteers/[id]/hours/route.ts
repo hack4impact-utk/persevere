@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { listVolunteerHours } from "@/services/volunteer-hours.service";
-import handleError from "@/utils/handle-error";
-import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
+import { requireStaffAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 import { validateAndParseId } from "@/utils/validate-id";
 
 export async function GET(
@@ -35,7 +31,6 @@ export async function GET(
 
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

@@ -1,13 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import type { MonthlyExportData } from "@/services/analytics.service";
 import { getMonthlyExportData } from "@/services/analytics.service";
-import handleError from "@/utils/handle-error";
-import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
+import { requireStaffAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 
 function escapeCsvField(value: string | number): string {
   const str = String(value);
@@ -69,7 +65,6 @@ export async function GET(request: NextRequest): Promise<Response> {
       },
     });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

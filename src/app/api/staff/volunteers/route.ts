@@ -7,13 +7,11 @@ import {
   notificationPreferenceSchema,
 } from "@/lib/status-enums";
 import { createVolunteer, listVolunteers } from "@/services/volunteer.service";
-import handleError from "@/utils/handle-error";
+import { requireStaffAuth } from "@/utils/server/auth";
 import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 
 const volunteerCreateSchema = z.object({
   // User fields
@@ -66,8 +64,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ data, total });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -93,7 +90,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

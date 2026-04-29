@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { getAnalyticsStats } from "@/services/analytics.service";
-import handleError from "@/utils/handle-error";
-import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
+import { requireStaffAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
@@ -19,7 +15,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const stats = await getAnalyticsStats(startDate, endDate);
     return NextResponse.json({ data: stats }, { status: 200 });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

@@ -10,13 +10,11 @@ import {
   getVolunteerDetail,
   updateVolunteerDetail,
 } from "@/services/volunteer-detail.service";
-import handleError from "@/utils/handle-error";
+import { requireStaffAuth } from "@/utils/server/auth";
 import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 import { validateAndParseId } from "@/utils/validate-id";
 
 const volunteerUpdateSchema = z.object({
@@ -70,8 +68,7 @@ export async function GET(
 
     return NextResponse.json({ data });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -107,8 +104,7 @@ export async function PUT(
       data: updated,
     });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -141,7 +137,6 @@ export async function DELETE(
       data: deleted,
     });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

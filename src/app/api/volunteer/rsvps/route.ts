@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getVolunteerRsvps, RsvpError } from "@/services/rsvp.service";
-import handleError from "@/utils/handle-error";
-import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
+import { requireAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 
 /**
  * GET /api/volunteer/rsvps
@@ -43,10 +43,9 @@ export async function GET(): Promise<NextResponse> {
       },
     });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
     if (error instanceof RsvpError && error.code === "VOLUNTEER_NOT_FOUND") {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

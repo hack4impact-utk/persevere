@@ -6,14 +6,11 @@ import {
   createCommunication,
   listCommunications,
 } from "@/services/communications.service";
-import { NotFoundError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
+import { requireStaffAuth } from "@/utils/server/auth";
 import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 
 const createCommunicationSchema = z.object({
   subject: z.string().min(1, "Subject is required"),
@@ -39,8 +36,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -74,10 +70,6 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(output, { status: 201 });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

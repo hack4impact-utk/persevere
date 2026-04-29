@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { listActiveTemplates } from "@/services/email-templates.service";
-import handleError from "@/utils/handle-error";
-import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
+import { requireStaffAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -16,7 +12,6 @@ export async function GET(): Promise<NextResponse> {
 
     return NextResponse.json({ data: templates });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getOnboardingStatus } from "@/services/onboarding.service";
-import handleError from "@/utils/handle-error";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import { requireAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -29,14 +29,10 @@ export async function GET(): Promise<NextResponse> {
 
     return NextResponse.json({ data: status });
   } catch (error) {
-    if (error instanceof AuthError) {
-      const status = error.code === "Unauthorized" ? 401 : 403;
-      return NextResponse.json({ error: error.code }, { status });
-    }
     console.error(
       "[GET /api/volunteer/onboarding/status] Unhandled error:",
       error,
     );
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

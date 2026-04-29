@@ -5,10 +5,11 @@ import {
   listVolunteerOwnHours,
   volunteerLogHours,
 } from "@/services/volunteer-hours.service";
-import { ValidationError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
-import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
+import { requireAuth } from "@/utils/server/auth";
+import {
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 
 const logHoursSchema = z.object({
   opportunityId: z.number().int().positive(),
@@ -30,8 +31,7 @@ export async function GET(): Promise<NextResponse> {
     const data = await listVolunteerOwnHours(volunteerId);
     return NextResponse.json({ data });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -50,10 +50,6 @@ export async function POST(request: Request): Promise<NextResponse> {
     const data = await volunteerLogHours(volunteerId, parsed.data);
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof ValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

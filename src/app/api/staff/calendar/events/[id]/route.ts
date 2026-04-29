@@ -5,14 +5,11 @@ import {
   deleteCalendarEvent,
   updateCalendarEvent,
 } from "@/services/calendar-events.service";
-import { NotFoundError, ValidationError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
+import { requireStaffAuth } from "@/utils/server/auth";
 import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 import { validateAndParseId } from "@/utils/validate-id";
 
 const eventUpdateSchema = z.object({
@@ -63,14 +60,7 @@ export async function PUT(
       data: calendarEvent,
     });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    if (error instanceof ValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -96,10 +86,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Event deleted successfully" });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

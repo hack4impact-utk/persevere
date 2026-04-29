@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { listVolunteerAnnouncements } from "@/services/communications.service";
-import handleError from "@/utils/handle-error";
-import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
+import { requireAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 
 /**
  * GET /api/volunteer/announcements
@@ -19,7 +19,6 @@ export async function GET(): Promise<NextResponse> {
     const data = await listVolunteerAnnouncements();
     return NextResponse.json({ data });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

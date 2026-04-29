@@ -6,15 +6,11 @@ import {
   getSkillById,
   updateSkill,
 } from "@/services/skills-server.service";
-import { ConflictError, NotFoundError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
+import { requireAuth, requireStaffAuth } from "@/utils/server/auth";
 import {
-  AuthError,
-  authErrorResponse,
-  requireAuth,
-  requireStaffAuth,
-} from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 import { validateAndParseId } from "@/utils/validate-id";
 
 const skillUpdateSchema = z.object({
@@ -40,11 +36,7 @@ export async function GET(
 
     return NextResponse.json({ data: skill });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -74,14 +66,7 @@ export async function PUT(
       data: updatedSkill,
     });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    if (error instanceof ConflictError) {
-      return NextResponse.json({ error: error.message }, { status: 409 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -105,13 +90,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Skill deleted successfully" });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    if (error instanceof ConflictError) {
-      return NextResponse.json({ error: error.message }, { status: 409 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

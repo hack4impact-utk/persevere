@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getEventRsvps } from "@/services/event-rsvps.service";
-import { NotFoundError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
-import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
+import { requireStaffAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 import { validateAndParseId } from "@/utils/validate-id";
 
 /**
@@ -30,10 +25,6 @@ export async function GET(
     const rsvps = await getEventRsvps(eventId);
     return NextResponse.json({ data: rsvps });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

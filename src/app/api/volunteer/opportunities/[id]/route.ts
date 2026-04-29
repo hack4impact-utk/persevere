@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getOpportunityByIdForVolunteer } from "@/services/opportunities.service";
-import { NotFoundError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
-import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
+import { requireAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 import { validateAndParseId } from "@/utils/validate-id";
 
 /**
@@ -32,10 +31,6 @@ export async function GET(
     const opportunity = await getOpportunityByIdForVolunteer(parsedId);
     return NextResponse.json({ data: opportunity });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

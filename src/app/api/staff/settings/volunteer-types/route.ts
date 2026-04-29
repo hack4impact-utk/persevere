@@ -5,10 +5,11 @@ import {
   createVolunteerType,
   listAllVolunteerTypes,
 } from "@/services/volunteer-types.service";
-import { ConflictError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
-import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
+import { requireAuth } from "@/utils/server/auth";
+import {
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 
 const volunteerTypeCreateSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -25,8 +26,7 @@ export async function GET(): Promise<NextResponse> {
 
     return NextResponse.json({ data: types });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -47,10 +47,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof ConflictError) {
-      return NextResponse.json({ error: error.message }, { status: 409 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
