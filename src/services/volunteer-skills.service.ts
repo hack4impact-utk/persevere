@@ -3,10 +3,10 @@ import { and, eq } from "drizzle-orm";
 import db from "@/db";
 import { skills, volunteerSkills } from "@/db/schema";
 import {
+  deleteJunctionRow,
   requireSkill,
   requireVolunteer,
 } from "@/services/shared/entity-checks";
-import { NotFoundError } from "@/utils/errors";
 
 export type SkillDetail = {
   skillId: number;
@@ -81,24 +81,12 @@ export async function removeSkill(
 ): Promise<void> {
   await requireVolunteer(volunteerId);
 
-  const existing = await db
-    .select()
-    .from(volunteerSkills)
-    .where(
-      and(
-        eq(volunteerSkills.volunteerId, volunteerId),
-        eq(volunteerSkills.skillId, skillId),
-      ),
-    );
-  if (existing.length === 0)
-    throw new NotFoundError("Skill assignment not found");
-
-  await db
-    .delete(volunteerSkills)
-    .where(
-      and(
-        eq(volunteerSkills.volunteerId, volunteerId),
-        eq(volunteerSkills.skillId, skillId),
-      ),
-    );
+  await deleteJunctionRow(
+    volunteerSkills,
+    and(
+      eq(volunteerSkills.volunteerId, volunteerId),
+      eq(volunteerSkills.skillId, skillId),
+    ),
+    "Skill assignment not found",
+  );
 }

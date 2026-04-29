@@ -4,10 +4,11 @@ import db from "@/db";
 import { skills } from "@/db/schema";
 import { opportunityRequiredSkills } from "@/db/schema/opportunities";
 import {
+  assertJunctionAbsent,
+  deleteJunctionRow,
   requireOpportunity,
   requireSkill,
 } from "@/services/shared/entity-checks";
-import { ConflictError, NotFoundError } from "@/utils/errors";
 
 export type RequiredSkill = {
   skillId: number;
@@ -34,18 +35,14 @@ export async function addRequiredSkill(
 ): Promise<void> {
   await requireOpportunity(eventId);
   await requireSkill(skillId);
-  const existing = await db
-    .select()
-    .from(opportunityRequiredSkills)
-    .where(
-      and(
-        eq(opportunityRequiredSkills.opportunityId, eventId),
-        eq(opportunityRequiredSkills.skillId, skillId),
-      ),
-    );
-  if (existing.length > 0) {
-    throw new ConflictError("Skill already required for this opportunity");
-  }
+  await assertJunctionAbsent(
+    opportunityRequiredSkills,
+    and(
+      eq(opportunityRequiredSkills.opportunityId, eventId),
+      eq(opportunityRequiredSkills.skillId, skillId),
+    ),
+    "Skill already required for this opportunity",
+  );
   await db
     .insert(opportunityRequiredSkills)
     .values({ opportunityId: eventId, skillId });
@@ -56,15 +53,12 @@ export async function removeRequiredSkill(
   skillId: number,
 ): Promise<void> {
   await requireOpportunity(eventId);
-  const deleted = await db
-    .delete(opportunityRequiredSkills)
-    .where(
-      and(
-        eq(opportunityRequiredSkills.opportunityId, eventId),
-        eq(opportunityRequiredSkills.skillId, skillId),
-      ),
-    )
-    .returning();
-  if (deleted.length === 0)
-    throw new NotFoundError("Skill assignment not found");
+  await deleteJunctionRow(
+    opportunityRequiredSkills,
+    and(
+      eq(opportunityRequiredSkills.opportunityId, eventId),
+      eq(opportunityRequiredSkills.skillId, skillId),
+    ),
+    "Skill assignment not found",
+  );
 }

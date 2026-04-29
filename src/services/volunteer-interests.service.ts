@@ -3,10 +3,11 @@ import { and, eq } from "drizzle-orm";
 import db from "@/db";
 import { interests, volunteerInterests } from "@/db/schema";
 import {
+  assertJunctionAbsent,
+  deleteJunctionRow,
   requireInterest,
   requireVolunteer,
 } from "@/services/shared/entity-checks";
-import { ConflictError, NotFoundError } from "@/utils/errors";
 
 export type InterestDetail = {
   interestId: number;
@@ -37,20 +38,14 @@ export async function assignInterest(
   await requireVolunteer(volunteerId);
   await requireInterest(interestId);
 
-  const existing = await db
-    .select()
-    .from(volunteerInterests)
-    .where(
-      and(
-        eq(volunteerInterests.volunteerId, volunteerId),
-        eq(volunteerInterests.interestId, interestId),
-      ),
-    );
-
-  if (existing.length > 0) {
-    throw new ConflictError("Interest is already assigned to this volunteer");
-  }
-
+  await assertJunctionAbsent(
+    volunteerInterests,
+    and(
+      eq(volunteerInterests.volunteerId, volunteerId),
+      eq(volunteerInterests.interestId, interestId),
+    ),
+    "Interest is already assigned to this volunteer",
+  );
   await db.insert(volunteerInterests).values({ volunteerId, interestId });
 }
 
@@ -60,24 +55,12 @@ export async function removeInterest(
 ): Promise<void> {
   await requireVolunteer(volunteerId);
 
-  const existing = await db
-    .select()
-    .from(volunteerInterests)
-    .where(
-      and(
-        eq(volunteerInterests.volunteerId, volunteerId),
-        eq(volunteerInterests.interestId, interestId),
-      ),
-    );
-  if (existing.length === 0)
-    throw new NotFoundError("Interest assignment not found");
-
-  await db
-    .delete(volunteerInterests)
-    .where(
-      and(
-        eq(volunteerInterests.volunteerId, volunteerId),
-        eq(volunteerInterests.interestId, interestId),
-      ),
-    );
+  await deleteJunctionRow(
+    volunteerInterests,
+    and(
+      eq(volunteerInterests.volunteerId, volunteerId),
+      eq(volunteerInterests.interestId, interestId),
+    ),
+    "Interest assignment not found",
+  );
 }
