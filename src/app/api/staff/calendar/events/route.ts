@@ -2,18 +2,18 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import {
+  type OpportunityStatus,
+  opportunityStatusSchema,
+} from "@/lib/status-enums";
+import {
   createCalendarEvent,
   listCalendarEvents,
 } from "@/services/calendar-events.service";
-import { ConflictError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
+import { requireAuth, requireStaffAuth } from "@/utils/server/auth";
 import {
-  AuthError,
-  authErrorResponse,
-  requireAuth,
-  requireStaffAuth,
-} from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 
 const recurrencePatternSchema = z.object({
   frequency: z.enum(["daily", "weekly", "monthly"]),
@@ -29,7 +29,7 @@ const eventCreateSchema = z.object({
   startDate: z.string().datetime("Invalid start date"),
   endDate: z.string().datetime("Invalid end date"),
   maxVolunteers: z.number().int().positive().optional(),
-  status: z.enum(["open", "full", "completed", "canceled"]).optional(),
+  status: opportunityStatusSchema.optional(),
   isRecurring: z.boolean().optional(),
   recurrencePattern: recurrencePatternSchema.optional(),
   categoryId: z.number().int().positive().optional(),
@@ -73,9 +73,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       }
     }
 
-    const statusFilter:
-      | ("open" | "full" | "completed" | "canceled")[]
-      | undefined =
+    const statusFilter: OpportunityStatus[] | undefined =
       session.user.role === "volunteer" ? ["open", "full"] : undefined;
     const calendarEvents = await listCalendarEvents(
       startDate,
@@ -85,8 +83,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ data: calendarEvents });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -131,10 +128,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof ConflictError) {
-      return NextResponse.json({ error: error.message }, { status: 409 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

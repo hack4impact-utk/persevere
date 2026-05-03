@@ -1,5 +1,10 @@
 import { apiClient } from "@/lib/api-client";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import type {
+  BackgroundCheckStatus,
+  HoursStatus,
+  RsvpStatus,
+} from "@/lib/status-enums";
 import type { DocumentWithSignature } from "@/services/onboarding-documents.service";
 
 export type { DocumentWithSignature } from "@/services/onboarding-documents.service";
@@ -121,33 +126,6 @@ export async function fetchVolunteers(
 }
 
 /**
- * Fetches pending invites - volunteers who have not yet verified their email.
- */
-export async function fetchPendingInvites(
-  filters: VolunteerFilters = {},
-): Promise<VolunteersResponse> {
-  return fetchVolunteers({ ...filters, emailVerified: false });
-}
-
-/**
- * Fetches active volunteers - volunteers who have verified their email and are active.
- */
-export async function fetchActiveVolunteers(
-  filters: VolunteerFilters = {},
-): Promise<VolunteersResponse> {
-  return fetchVolunteers({ ...filters, emailVerified: true, isActive: true });
-}
-
-/**
- * Fetches inactive volunteers - volunteers who have the inactive status (excluding pending invites).
- */
-export async function fetchInactiveVolunteers(
-  filters: VolunteerFilters = {},
-): Promise<VolunteersResponse> {
-  return fetchVolunteers({ ...filters, isActive: false, emailVerified: true });
-}
-
-/**
  * Return type for fetchVolunteerById function.
  */
 export type FetchVolunteerByIdResult = {
@@ -156,7 +134,7 @@ export type FetchVolunteerByIdResult = {
     userId: number;
     volunteerType: string | null;
     isAlumni: boolean;
-    backgroundCheckStatus: "not_required" | "pending" | "approved" | "rejected";
+    backgroundCheckStatus: BackgroundCheckStatus;
     availability: unknown;
     notificationPreference: "email" | "sms" | "both" | "none";
     employer: string | null;
@@ -175,6 +153,7 @@ export type FetchVolunteerByIdResult = {
     phone: string | null;
     bio: string | null;
     isActive: boolean;
+    isEmailVerified: boolean;
     profilePicture?: string | null;
     emailVerifiedAt?: Date | null;
   } | null;
@@ -197,7 +176,7 @@ export type FetchVolunteerByIdResult = {
     opportunityLocation: string | null;
     opportunityStartDate: Date | null;
     opportunityEndDate: Date | null;
-    rsvpStatus: "pending" | "confirmed" | "declined" | "attended" | "no_show";
+    rsvpStatus: RsvpStatus;
     rsvpAt: Date;
     rsvpNotes: string | null;
   }[];
@@ -208,7 +187,7 @@ export type FetchVolunteerByIdResult = {
     date: Date;
     hours: number;
     notes: string | null;
-    status: "pending" | "approved" | "rejected" | "edit_requested";
+    status: HoursStatus;
     rejectionReason: string | null;
     verifiedAt: Date | null;
   }[];

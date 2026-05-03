@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getVolunteerSignatures } from "@/services/onboarding-documents.service";
-import handleError from "@/utils/handle-error";
-import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
+import { requireAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -20,7 +20,6 @@ export async function GET(): Promise<NextResponse> {
 
     return NextResponse.json({ data: signatures });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

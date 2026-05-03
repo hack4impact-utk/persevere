@@ -5,10 +5,11 @@ import {
   deleteTemplate,
   updateTemplate,
 } from "@/services/email-templates.service";
-import { ConflictError, NotFoundError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
-import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
+import { requireAuth } from "@/utils/server/auth";
+import {
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 import { validateAndParseId } from "@/utils/validate-id";
 
 const templateUpdateSchema = z.object({
@@ -56,14 +57,7 @@ export async function PUT(
       data: updated,
     });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    if (error instanceof ConflictError) {
-      return NextResponse.json({ error: error.message }, { status: 409 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -91,10 +85,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Template deleted successfully" });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

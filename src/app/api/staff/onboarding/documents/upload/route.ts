@@ -1,12 +1,8 @@
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
-import handleError from "@/utils/handle-error";
-import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
+import { requireStaffAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 
 const ALLOWED_TYPES = new Set(["application/pdf", "video/mp4", "video/webm"]);
 
@@ -32,8 +28,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ url: blob.url }, { status: 201 });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
     console.error("Upload error:", error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

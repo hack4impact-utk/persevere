@@ -1,8 +1,13 @@
 import { and, eq } from "drizzle-orm";
 
 import db from "@/db";
-import { interests, volunteerInterests, volunteers } from "@/db/schema";
-import { ConflictError, NotFoundError } from "@/utils/errors";
+import { interests, volunteerInterests } from "@/db/schema";
+import {
+  assertJunctionAbsent,
+  deleteJunctionRow,
+  requireInterest,
+  requireVolunteer,
+} from "@/services/shared/entity-checks";
 
 export type InterestDetail = {
   interestId: number;
@@ -13,14 +18,7 @@ export type InterestDetail = {
 export async function getVolunteerInterests(
   volunteerId: number,
 ): Promise<InterestDetail[]> {
-  const volunteer = await db
-    .select()
-    .from(volunteers)
-    .where(eq(volunteers.id, volunteerId));
-
-  if (volunteer.length === 0) {
-    throw new NotFoundError("Volunteer not found");
-  }
+  await requireVolunteer(volunteerId);
 
   return db
     .select({
@@ -37,38 +35,17 @@ export async function assignInterest(
   volunteerId: number,
   interestId: number,
 ): Promise<void> {
-  const volunteer = await db
-    .select()
-    .from(volunteers)
-    .where(eq(volunteers.id, volunteerId));
+  await requireVolunteer(volunteerId);
+  await requireInterest(interestId);
 
-  if (volunteer.length === 0) {
-    throw new NotFoundError("Volunteer not found");
-  }
-
-  const interest = await db
-    .select()
-    .from(interests)
-    .where(eq(interests.id, interestId));
-
-  if (interest.length === 0) {
-    throw new NotFoundError("Interest not found");
-  }
-
-  const existing = await db
-    .select()
-    .from(volunteerInterests)
-    .where(
-      and(
-        eq(volunteerInterests.volunteerId, volunteerId),
-        eq(volunteerInterests.interestId, interestId),
-      ),
-    );
-
-  if (existing.length > 0) {
-    throw new ConflictError("Interest is already assigned to this volunteer");
-  }
-
+  await assertJunctionAbsent(
+    volunteerInterests,
+    and(
+      eq(volunteerInterests.volunteerId, volunteerId),
+      eq(volunteerInterests.interestId, interestId),
+    ),
+    "Interest is already assigned to this volunteer",
+  );
   await db.insert(volunteerInterests).values({ volunteerId, interestId });
 }
 
@@ -76,30 +53,14 @@ export async function removeInterest(
   volunteerId: number,
   interestId: number,
 ): Promise<void> {
-  const volunteer = await db
-    .select()
-    .from(volunteers)
-    .where(eq(volunteers.id, volunteerId));
-  if (volunteer.length === 0) throw new NotFoundError("Volunteer not found");
+  await requireVolunteer(volunteerId);
 
-  const existing = await db
-    .select()
-    .from(volunteerInterests)
-    .where(
-      and(
-        eq(volunteerInterests.volunteerId, volunteerId),
-        eq(volunteerInterests.interestId, interestId),
-      ),
-    );
-  if (existing.length === 0)
-    throw new NotFoundError("Interest assignment not found");
-
-  await db
-    .delete(volunteerInterests)
-    .where(
-      and(
-        eq(volunteerInterests.volunteerId, volunteerId),
-        eq(volunteerInterests.interestId, interestId),
-      ),
-    );
+  await deleteJunctionRow(
+    volunteerInterests,
+    and(
+      eq(volunteerInterests.volunteerId, volunteerId),
+      eq(volunteerInterests.interestId, interestId),
+    ),
+    "Interest assignment not found",
+  );
 }

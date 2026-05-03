@@ -2,14 +2,16 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
-import { createVolunteer, listVolunteers } from "@/services/volunteer.service";
-import handleError from "@/utils/handle-error";
 import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
+  backgroundCheckStatusSchema,
+  notificationPreferenceSchema,
+} from "@/lib/status-enums";
+import { createVolunteer, listVolunteers } from "@/services/volunteer.service";
+import { requireStaffAuth } from "@/utils/server/auth";
+import {
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 
 const volunteerCreateSchema = z.object({
   // User fields
@@ -25,16 +27,14 @@ const volunteerCreateSchema = z.object({
   // Volunteer-specific fields
   volunteerType: z.string().optional(),
   isAlumni: z.boolean().optional(),
-  backgroundCheckStatus: z
-    .enum(["not_required", "pending", "approved", "rejected"])
-    .optional(),
+  backgroundCheckStatus: backgroundCheckStatusSchema.optional(),
   availability: z
     .record(
       z.string(),
       z.union([z.string(), z.array(z.string()), z.boolean(), z.number()]),
     )
     .optional(),
-  notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
+  notificationPreference: notificationPreferenceSchema.optional(),
 });
 
 export async function GET(request: Request): Promise<NextResponse> {
@@ -64,8 +64,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ data, total });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -91,7 +90,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

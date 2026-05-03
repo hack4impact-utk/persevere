@@ -349,13 +349,33 @@ export default function Calendar({
           },
           // Compact mode: keep FullCalendar built-in button styles
           ...(compact && {
+            "& .fc-header-toolbar": {
+              padding: "12px 16px",
+              marginBottom: "0 !important",
+            },
+            "& .fc-toolbar-chunk": {
+              display: "flex",
+              alignItems: "center",
+              "&:first-of-type": {
+                minWidth: 180,
+              },
+              "&:last-of-type": {
+                minWidth: 180,
+                justifyContent: "flex-end",
+              },
+            },
+            "& .fc-toolbar-title": {
+              fontSize: "1.25rem !important",
+              fontWeight: "700 !important",
+            },
             "& .fc-button": {
               backgroundColor: theme.palette.primary.main,
               border: "none",
-              borderRadius: 2,
+              borderRadius: "6px !important",
               textTransform: "capitalize",
               fontWeight: 600,
-              padding: "8px 16px",
+              padding: "6px 14px",
+              fontSize: "0.8125rem",
               transition: "all 0.2s ease-in-out",
               "&:hover": {
                 backgroundColor:
@@ -369,6 +389,15 @@ export default function Calendar({
               "&:focus": {
                 boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`,
               },
+            },
+            "& .fc-button-group": {
+              gap: "4px",
+              "& .fc-button": {
+                borderRadius: "6px !important",
+              },
+            },
+            "& .fc-today-button": {
+              marginLeft: "8px !important",
             },
             "& .fc-button-active": {
               backgroundColor: `${theme.palette.primary.main} !important`,

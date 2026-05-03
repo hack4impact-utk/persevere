@@ -5,14 +5,11 @@ import {
   createDocumentSchema,
   listDocuments,
 } from "@/services/onboarding-documents.service";
-import { ConflictError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
+import { requireStaffAuth } from "@/utils/server/auth";
 import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -22,8 +19,7 @@ export async function GET(): Promise<NextResponse> {
 
     return NextResponse.json({ data: docs });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -41,10 +37,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof ConflictError) {
-      return NextResponse.json({ error: error.message }, { status: 409 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

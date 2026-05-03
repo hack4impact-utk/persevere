@@ -5,14 +5,11 @@ import {
   getStaffProfile,
   updateStaffProfile,
 } from "@/services/staff-server.service";
-import { NotFoundError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
+import { requireStaffAuth } from "@/utils/server/auth";
 import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 
 const updateProfileSchema = z
   .object({
@@ -30,10 +27,7 @@ export async function GET(): Promise<NextResponse> {
     const profile = await getStaffProfile(userId);
     return NextResponse.json({ data: profile }, { status: 200 });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError)
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -48,9 +42,6 @@ export async function PUT(request: Request): Promise<NextResponse> {
     const profile = await updateStaffProfile(userId, parsed.data);
     return NextResponse.json({ data: profile }, { status: 200 });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError)
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

@@ -8,6 +8,9 @@ import { compare, hash } from "bcrypt";
  * @returns A secure random password with letters, numbers, and special characters
  */
 export function generateSecurePassword(length = 12): string {
+  if (length < 8) {
+    throw new Error("Password length must be at least 8 characters");
+  }
   const lowercase = "abcdefghijklmnopqrstuvwxyz";
   const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const numbers = "0123456789";

@@ -2,6 +2,7 @@ import { and, desc, eq, exists, sql } from "drizzle-orm";
 
 import db from "@/db";
 import { opportunities, users, volunteerRsvps, volunteers } from "@/db/schema";
+import type { OpportunityStatus, RsvpStatus } from "@/lib/status-enums";
 import { NotFoundError, ValidationError } from "@/utils/errors";
 
 export type EventRsvp = {
@@ -25,12 +26,7 @@ export type PendingRsvp = {
  * Used by staff for the global Approvals > RSVPs view.
  */
 export async function listRsvpsByStatus(
-  status:
-    | "pending"
-    | "confirmed"
-    | "declined"
-    | "attended"
-    | "no_show" = "pending",
+  status: RsvpStatus = "pending",
 ): Promise<PendingRsvp[]> {
   const rows = await db
     .select({
@@ -77,7 +73,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 export async function updateRsvpStatus(
   volunteerId: number,
   opportunityId: number,
-  newStatus: "confirmed" | "declined" | "attended" | "no_show" | "cancelled",
+  newStatus: Exclude<RsvpStatus, "pending">,
 ): Promise<void> {
   const [rsvp] = await db
     .select()
@@ -114,7 +110,7 @@ export type EventWithConfirmedCount = {
   title: string;
   startDate: Date;
   endDate: Date;
-  status: "open" | "full" | "completed" | "canceled";
+  status: OpportunityStatus;
   confirmedCount: number;
 };
 

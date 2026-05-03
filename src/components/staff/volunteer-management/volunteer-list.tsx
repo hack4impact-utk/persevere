@@ -28,6 +28,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { useSnackbar } from "notistack";
 import { type ReactElement, useCallback, useState } from "react";
 
 import { ModalTitleBar, PageHeader } from "@/components/shared";
@@ -158,16 +159,20 @@ export default function VolunteerList(): ReactElement {
     clearProfile();
   }, [clearProfile]);
 
+  const { enqueueSnackbar } = useSnackbar();
+
   const handleResendInvite = useCallback(async (): Promise<void> => {
     if (!selectedVolunteerId) return;
-    await resendCredentials(selectedVolunteerId);
-  }, [selectedVolunteerId, resendCredentials]);
+    const success = await resendCredentials(selectedVolunteerId);
+    if (success) {
+      enqueueSnackbar("Invite resent successfully", { variant: "success" });
+    } else {
+      enqueueSnackbar("Failed to resend invite", { variant: "error" });
+    }
+  }, [selectedVolunteerId, resendCredentials, enqueueSnackbar]);
 
   const hasAdditionalFilters =
     filters.type !== undefined || filters.alumni !== undefined;
-
-  const isPendingVolunteer =
-    volunteerProfile?.users != null && !volunteerProfile.users.emailVerifiedAt;
 
   return (
     <Box
@@ -328,25 +333,6 @@ export default function VolunteerList(): ReactElement {
         }}
       >
         <ModalTitleBar title="Volunteer Profile" onClose={handleCloseDrawer} />
-        {isPendingVolunteer && (
-          <Box
-            sx={{
-              px: 3,
-              py: 1.5,
-              borderBottom: "1px solid",
-              borderColor: "divider",
-            }}
-          >
-            <Button
-              variant="outlined"
-              size="small"
-              disabled={isMutating}
-              onClick={() => void handleResendInvite()}
-            >
-              Resend Invite
-            </Button>
-          </Box>
-        )}
         <Box sx={{ flex: 1, overflow: "auto" }}>
           {profileLoading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
@@ -368,6 +354,8 @@ export default function VolunteerList(): ReactElement {
                   void handleVolunteerClick(selectedVolunteerId);
                 }
               }}
+              onResendInvite={() => void handleResendInvite()}
+              resendInviteDisabled={isMutating}
             />
           ) : null}
         </Box>

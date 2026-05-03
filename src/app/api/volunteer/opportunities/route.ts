@@ -6,8 +6,8 @@ import {
 } from "@/lib/constants";
 import { listOpenOpportunities } from "@/services/opportunities.service";
 import { getRecommendedOpportunities } from "@/services/recommendation.service";
-import handleError from "@/utils/handle-error";
-import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
+import { requireAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 
 /**
  * GET /api/volunteer/opportunities
@@ -74,7 +74,6 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ data, total });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

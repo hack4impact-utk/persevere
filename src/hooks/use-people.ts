@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type { Staff } from "@/components/staff/people-management/types";
 import { useApiErrorHandler } from "@/hooks/use-api-error-handler";
+import { usePaginatedSearch } from "@/hooks/use-paginated-search";
 import { apiClient } from "@/lib/api-client";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { fetchStaff } from "@/services/staff.service";
@@ -97,6 +98,7 @@ export type UsePeopleResult = {
   isMutating: boolean;
   error: string | null;
   loadPeople: () => Promise<void>;
+  resendCredentials: (volunteerId: number) => Promise<boolean>;
   createStaff: (data: Record<string, unknown>) => Promise<{
     message?: string;
     data?: Staff;
@@ -119,8 +121,6 @@ export function usePeople(
   const [isMutating, setIsMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const handleApiError = useApiErrorHandler(setError);
-
-  const loadPeopleRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
   const loadPeople = useCallback(async (): Promise<void> => {
     setError(null);
@@ -203,23 +203,7 @@ export function usePeople(
     handleApiError,
   ]);
 
-  loadPeopleRef.current = loadPeople;
-
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(
-      () => {
-        void loadPeopleRef.current?.();
-      },
-      searchQuery ? 300 : 0,
-    );
-    return (): void => clearTimeout(timer);
-  }, [searchQuery]);
-
-  // Immediate reload on filter/page/limit changes
-  useEffect(() => {
-    void loadPeopleRef.current?.();
-  }, [
+  usePaginatedSearch(loadPeople, searchQuery, [
     page,
     limit,
     filters.roleFilter,
@@ -252,6 +236,26 @@ export function usePeople(
     })();
   }, []);
 
+  const resendCredentials = useCallback(
+    async (volunteerId: number): Promise<boolean> => {
+      setIsMutating(true);
+      try {
+        await apiClient.post(
+          `/api/staff/volunteers/${volunteerId}/resend-credentials`,
+        );
+        return true;
+      } catch (error_) {
+        if (!handleApiError(error_)) {
+          console.error("[usePeople] resendCredentials:", error_);
+        }
+        return false;
+      } finally {
+        setIsMutating(false);
+      }
+    },
+    [handleApiError],
+  );
+
   const createStaff = useCallback(
     async (
       data: Record<string, unknown>,
@@ -269,7 +273,7 @@ export function usePeople(
           emailSent?: boolean;
           emailError?: boolean;
         }>("/api/staff/staff", data);
-        void loadPeopleRef.current?.();
+        void loadPeople();
         return result;
       } catch (error_) {
         if (!handleApiError(error_)) {
@@ -281,7 +285,7 @@ export function usePeople(
         setIsMutating(false);
       }
     },
-    [handleApiError],
+    [handleApiError, loadPeople],
   );
 
   return {
@@ -297,6 +301,7 @@ export function usePeople(
     isMutating,
     error,
     loadPeople,
+    resendCredentials,
     createStaff,
   };
 }

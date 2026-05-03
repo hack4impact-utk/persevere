@@ -2,17 +2,19 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import {
+  backgroundCheckStatusSchema,
+  notificationPreferenceSchema,
+} from "@/lib/status-enums";
+import {
   deleteVolunteer,
   getVolunteerDetail,
   updateVolunteerDetail,
 } from "@/services/volunteer-detail.service";
-import handleError from "@/utils/handle-error";
+import { requireStaffAuth } from "@/utils/server/auth";
 import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 import { validateAndParseId } from "@/utils/validate-id";
 
 const volunteerUpdateSchema = z.object({
@@ -25,16 +27,14 @@ const volunteerUpdateSchema = z.object({
   isActive: z.boolean().optional(),
   volunteerType: z.string().optional(),
   isAlumni: z.boolean().optional(),
-  backgroundCheckStatus: z
-    .enum(["not_required", "pending", "approved", "rejected"])
-    .optional(),
+  backgroundCheckStatus: backgroundCheckStatusSchema.optional(),
   availability: z
     .record(
       z.string(),
       z.union([z.string(), z.array(z.string()), z.boolean(), z.number()]),
     )
     .optional(),
-  notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
+  notificationPreference: notificationPreferenceSchema.optional(),
   employer: z.string().optional(),
   jobTitle: z.string().optional(),
   city: z.string().optional(),
@@ -68,8 +68,7 @@ export async function GET(
 
     return NextResponse.json({ data });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -105,8 +104,7 @@ export async function PUT(
       data: updated,
     });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -139,7 +137,6 @@ export async function DELETE(
       data: deleted,
     });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

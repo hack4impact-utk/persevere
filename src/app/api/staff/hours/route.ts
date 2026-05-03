@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { hoursStatusSchema } from "@/lib/status-enums";
 import { listAllHours, logHours } from "@/services/volunteer-hours.service";
-import { NotFoundError, ValidationError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
-import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
-
-const hoursStatusSchema = z
-  .enum(["pending", "approved", "rejected", "edit_requested"] as const)
-  .optional();
+import { requireAuth } from "@/utils/server/auth";
+import {
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 
 const logHoursSchema = z.object({
   volunteerId: z.number().int().positive(),
@@ -32,7 +30,9 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const { searchParams } = new URL(request.url);
     const statusParam = searchParams.get("status");
-    const parsed = hoursStatusSchema.safeParse(statusParam ?? undefined);
+    const parsed = hoursStatusSchema
+      .optional()
+      .safeParse(statusParam ?? undefined);
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid status filter" },
@@ -43,8 +43,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const data = await listAllHours(parsed.data);
     return NextResponse.json({ data });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -65,13 +64,6 @@ export async function POST(request: Request): Promise<NextResponse> {
     const result = await logHours(parsed.data);
     return NextResponse.json({ data: result }, { status: 201 });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    if (error instanceof ValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

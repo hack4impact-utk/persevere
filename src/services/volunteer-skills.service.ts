@@ -1,8 +1,12 @@
 import { and, eq } from "drizzle-orm";
 
 import db from "@/db";
-import { skills, volunteers, volunteerSkills } from "@/db/schema";
-import { NotFoundError } from "@/utils/errors";
+import { skills, volunteerSkills } from "@/db/schema";
+import {
+  deleteJunctionRow,
+  requireSkill,
+  requireVolunteer,
+} from "@/services/shared/entity-checks";
 
 export type SkillDetail = {
   skillId: number;
@@ -15,14 +19,7 @@ export type SkillDetail = {
 export async function getVolunteerSkills(
   volunteerId: number,
 ): Promise<SkillDetail[]> {
-  const volunteer = await db
-    .select()
-    .from(volunteers)
-    .where(eq(volunteers.id, volunteerId));
-
-  if (volunteer.length === 0) {
-    throw new NotFoundError("Volunteer not found");
-  }
+  await requireVolunteer(volunteerId);
 
   return db
     .select({
@@ -48,20 +45,8 @@ export async function assignSkill(
     | "intermediate"
     | "advanced" = "no_selection",
 ): Promise<AssignSkillResult> {
-  const volunteer = await db
-    .select()
-    .from(volunteers)
-    .where(eq(volunteers.id, volunteerId));
-
-  if (volunteer.length === 0) {
-    throw new NotFoundError("Volunteer not found");
-  }
-
-  const skill = await db.select().from(skills).where(eq(skills.id, skillId));
-
-  if (skill.length === 0) {
-    throw new NotFoundError("Skill not found");
-  }
+  await requireVolunteer(volunteerId);
+  await requireSkill(skillId);
 
   const existing = await db
     .select()
@@ -94,30 +79,14 @@ export async function removeSkill(
   volunteerId: number,
   skillId: number,
 ): Promise<void> {
-  const volunteer = await db
-    .select()
-    .from(volunteers)
-    .where(eq(volunteers.id, volunteerId));
-  if (volunteer.length === 0) throw new NotFoundError("Volunteer not found");
+  await requireVolunteer(volunteerId);
 
-  const existing = await db
-    .select()
-    .from(volunteerSkills)
-    .where(
-      and(
-        eq(volunteerSkills.volunteerId, volunteerId),
-        eq(volunteerSkills.skillId, skillId),
-      ),
-    );
-  if (existing.length === 0)
-    throw new NotFoundError("Skill assignment not found");
-
-  await db
-    .delete(volunteerSkills)
-    .where(
-      and(
-        eq(volunteerSkills.volunteerId, volunteerId),
-        eq(volunteerSkills.skillId, skillId),
-      ),
-    );
+  await deleteJunctionRow(
+    volunteerSkills,
+    and(
+      eq(volunteerSkills.volunteerId, volunteerId),
+      eq(volunteerSkills.skillId, skillId),
+    ),
+    "Skill assignment not found",
+  );
 }

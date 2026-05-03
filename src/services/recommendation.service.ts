@@ -1,6 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
 
-import type { RsvpStatus } from "@/components/volunteer/types";
 import db from "@/db";
 import {
   opportunityInterests,
@@ -16,6 +15,7 @@ import {
   volunteerSkills,
 } from "@/db/schema/users";
 import { ALL_OPPORTUNITIES_CEILING } from "@/lib/constants";
+import type { RsvpStatus } from "@/lib/status-enums";
 import {
   listOpenOpportunities,
   type OpportunityWithSpots,

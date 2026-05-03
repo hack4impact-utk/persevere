@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { notificationPreferenceSchema } from "@/lib/status-enums";
 import {
   getVolunteerProfile,
   updateVolunteerProfile,
 } from "@/services/volunteer.service";
 import { deactivateVolunteer } from "@/services/volunteer-detail.service";
-import { ConflictError, NotFoundError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
-import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
+import { requireAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 
 const timeRangeSchema = z
   .object({
@@ -43,7 +43,7 @@ const volunteerSelfUpdateSchema = z.object({
   phone: z.string().max(20).optional(),
   bio: z.string().max(2000).optional(),
   availability: availabilitySchema.optional(),
-  notificationPreference: z.enum(["email", "sms", "both", "none"]).optional(),
+  notificationPreference: notificationPreferenceSchema.optional(),
   employer: z.string().max(200).optional(),
   jobTitle: z.string().max(200).optional(),
   city: z.string().max(100).optional(),
@@ -54,13 +54,11 @@ const volunteerSelfUpdateSchema = z.object({
 
 export async function GET(): Promise<NextResponse> {
   try {
-    // Require volunteer role
     const session = await requireAuth();
     if (session.user.role !== "volunteer") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Get volunteerId from session
     const volunteerId = session.user.volunteerId;
     if (!volunteerId) {
       return NextResponse.json(
@@ -104,21 +102,18 @@ export async function GET(): Promise<NextResponse> {
       },
     });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
     console.error("[GET /api/volunteer/profile] Unhandled error:", error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
 export async function PUT(request: Request): Promise<NextResponse> {
   try {
-    // Require volunteer role
     const session = await requireAuth();
     if (session.user.role !== "volunteer") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Get volunteerId from session
     const volunteerId = session.user.volunteerId;
     if (!volunteerId) {
       return NextResponse.json(
@@ -137,7 +132,6 @@ export async function PUT(request: Request): Promise<NextResponse> {
       );
     }
 
-    // Validate the request body with restricted fields
     const result = volunteerSelfUpdateSchema.safeParse(json);
     if (!result.success) {
       const firstError = result.error.issues[0];
@@ -175,11 +169,8 @@ export async function PUT(request: Request): Promise<NextResponse> {
       data: updatedVolunteer,
     });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof ConflictError)
-      return NextResponse.json({ error: error.message }, { status: 409 });
     console.error("[PUT /api/volunteer/profile] Unhandled error:", error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -201,10 +192,7 @@ export async function DELETE(): Promise<NextResponse> {
     await deactivateVolunteer(volunteerId);
     return NextResponse.json({ message: "Account deactivated" });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof NotFoundError)
-      return NextResponse.json({ error: error.message }, { status: 404 });
     console.error("[DELETE /api/volunteer/profile] Unhandled error:", error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

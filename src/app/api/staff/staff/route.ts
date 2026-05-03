@@ -3,10 +3,11 @@ import { z } from "zod";
 
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { createStaff, listStaff } from "@/services/staff-server.service";
-import { ConflictError } from "@/utils/errors";
-import handleError from "@/utils/handle-error";
-import { AuthError, authErrorResponse, requireAuth } from "@/utils/server/auth";
-import { parseBodyOrError } from "@/utils/server/route-helpers";
+import { requireAuth } from "@/utils/server/auth";
+import {
+  handleRouteError,
+  parseBodyOrError,
+} from "@/utils/server/route-helpers";
 
 const staffCreateSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -37,8 +38,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
 
@@ -61,10 +61,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    if (error instanceof ConflictError) {
-      return NextResponse.json({ error: error.message }, { status: 409 });
-    }
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

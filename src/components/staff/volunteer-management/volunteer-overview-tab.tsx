@@ -52,6 +52,10 @@ import {
 import { useVolunteerDetail } from "@/hooks/use-volunteer-detail";
 import { useVolunteerTypes } from "@/hooks/use-volunteer-types";
 import type {
+  BackgroundCheckStatus,
+  NotificationPreference,
+} from "@/lib/status-enums";
+import type {
   DocumentWithSignature,
   FetchVolunteerByIdResult,
 } from "@/services/volunteer-client.service";
@@ -265,9 +269,9 @@ type EditData = {
   isActive?: boolean;
   volunteerType?: string;
   isAlumni?: boolean;
-  backgroundCheckStatus?: "not_required" | "pending" | "approved" | "rejected";
+  backgroundCheckStatus?: BackgroundCheckStatus;
   availability?: Record<string, unknown>;
-  notificationPreference?: "email" | "sms" | "both" | "none";
+  notificationPreference?: NotificationPreference;
   employer?: string;
   jobTitle?: string;
   city?: string;
@@ -615,12 +619,16 @@ type VolunteerOverviewTabProps = {
   volunteer: FetchVolunteerByIdResult;
   onVolunteerUpdated?: () => void;
   onDelete?: () => void;
+  onResendInvite?: () => void;
+  resendInviteDisabled?: boolean;
 };
 
 export function VolunteerOverviewTab({
   volunteer,
   onVolunteerUpdated,
   onDelete,
+  onResendInvite,
+  resendInviteDisabled,
 }: VolunteerOverviewTabProps): JSX.Element {
   const { volunteers: vol, users: user } = volunteer;
 
@@ -733,6 +741,22 @@ export function VolunteerOverviewTab({
             gap: 1,
           }}
         >
+          {onResendInvite && !user.isEmailVerified && (
+            <Button
+              variant="contained"
+              size="small"
+              disabled={resendInviteDisabled}
+              sx={{
+                bgcolor: "rgba(255,255,255,0.15)",
+                "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
+                color: "white",
+                backdropFilter: "blur(4px)",
+              }}
+              onClick={onResendInvite}
+            >
+              Resend Invite
+            </Button>
+          )}
           <Button
             variant="contained"
             size="small"

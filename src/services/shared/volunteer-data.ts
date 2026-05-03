@@ -19,6 +19,7 @@ import {
   volunteerRsvps,
 } from "@/db/schema/opportunities";
 import { DEFAULT_PAGE_SIZE, RECENT_OPPORTUNITIES_LIMIT } from "@/lib/constants";
+import type { HoursStatus } from "@/lib/status-enums";
 
 import { toNumber } from "./db-helpers";
 
@@ -59,7 +60,7 @@ export type VolunteerDetailData = {
     date: Date;
     hours: number;
     notes: string | null;
-    status: "pending" | "approved" | "rejected" | "edit_requested";
+    status: HoursStatus;
     rejectionReason: string | null;
     verifiedAt: Date | null;
   }[];

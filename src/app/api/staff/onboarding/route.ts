@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { listVolunteerOnboarding } from "@/services/onboarding.service";
-import handleError from "@/utils/handle-error";
-import { AuthError, requireAuth } from "@/utils/server/auth";
+import { requireAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 
 export async function GET(request: Request): Promise<NextResponse> {
   try {
@@ -27,13 +27,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ data, total });
   } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json(
-        { error: error.code },
-        { status: error.code === "Unauthorized" ? 401 : 403 },
-      );
-    }
     console.error("[GET /api/staff/onboarding] Unhandled error:", error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }

@@ -2,6 +2,15 @@ import { Resend } from "resend";
 
 import { env } from "@/utils/env";
 
+function escapeHtml(s: string): string {
+  return s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 const resend = new Resend(env.resendApiKey);
 
 function wrapEmailHtml(bodyContent: string): string {
@@ -41,7 +50,7 @@ export async function sendWelcomeEmail(
     <div style="background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 20px; margin: 20px 0;">
       <h2 style="margin-top: 0; color: #333; font-size: 18px;">Your Login Credentials</h2>
       <p style="margin: 10px 0;"><strong>Username (Email):</strong> ${email}</p>
-      <p style="margin: 10px 0;"><strong>Password:</strong> <code style="background-color: #f5f5f5; padding: 4px 8px; border-radius: 4px; font-family: monospace;">${password}</code></p>
+      <p style="margin: 10px 0;"><strong>Password:</strong> <code style="background-color: #f5f5f5; padding: 4px 8px; border-radius: 4px; font-family: monospace;">${escapeHtml(password)}</code></p>
     </div>
 
     <div style="text-align: center; margin: 30px 0;">

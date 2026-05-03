@@ -15,17 +15,12 @@ import {
 } from "@mui/material";
 import { JSX } from "react";
 
-import { getHoursStatusLabel, LoadingSkeleton } from "@/components/ui";
+import {
+  getHoursStatusColor,
+  getHoursStatusLabel,
+  LoadingSkeleton,
+} from "@/components/ui";
 import type { VolunteerHourEntry } from "@/hooks/use-volunteer-hours";
-
-function hoursStatusChipColor(
-  status: string,
-): "success" | "warning" | "error" | "default" {
-  if (status === "approved") return "success";
-  if (status === "rejected") return "error";
-  if (status === "pending" || status === "edit_requested") return "warning";
-  return "default";
-}
 
 type Props = {
   hours: VolunteerHourEntry[];
@@ -107,7 +102,7 @@ export default function VolunteerHoursTable({
                     <Stack spacing={0.5} alignItems="flex-start">
                       <Chip
                         label={getHoursStatusLabel(entry.status)}
-                        color={hoursStatusChipColor(entry.status)}
+                        color={getHoursStatusColor(entry.status)}
                         variant="outlined"
                         size="small"
                       />

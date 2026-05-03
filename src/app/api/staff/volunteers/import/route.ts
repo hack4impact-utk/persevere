@@ -5,12 +5,8 @@ import {
   type ImportRow,
   importVolunteers,
 } from "@/services/volunteer-import.service";
-import handleError from "@/utils/handle-error";
-import {
-  AuthError,
-  authErrorResponse,
-  requireStaffAuth,
-} from "@/utils/server/auth";
+import { requireStaffAuth } from "@/utils/server/auth";
+import { handleRouteError } from "@/utils/server/route-helpers";
 
 const REQUIRED_HEADERS = ["First", "Last", "Email"];
 
@@ -70,7 +66,6 @@ export async function POST(request: Request): Promise<NextResponse> {
     const result = await importVolunteers(rows);
     return NextResponse.json({ data: result });
   } catch (error) {
-    if (error instanceof AuthError) return authErrorResponse(error);
-    return NextResponse.json({ error: handleError(error) }, { status: 500 });
+    return handleRouteError(error);
   }
 }
