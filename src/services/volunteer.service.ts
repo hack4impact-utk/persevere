@@ -10,7 +10,8 @@ import type {
 } from "@/lib/status-enums";
 import { toNumber } from "@/services/shared/db-helpers";
 import { fetchVolunteerDetailData } from "@/services/shared/volunteer-data";
-import { ConflictError, NotFoundError } from "@/utils/errors";
+import { applyVolunteerUpdate } from "@/services/shared/volunteer-update";
+import { NotFoundError } from "@/utils/errors";
 import { sendWelcomeEmail } from "@/utils/server/email";
 import { generateSecurePassword, hashPassword } from "@/utils/server/password";
 
@@ -369,117 +370,8 @@ export async function updateVolunteerProfile(
   volunteers: typeof volunteers.$inferSelect;
   users: typeof users.$inferSelect | null;
 } | null> {
-  const {
-    volunteerId,
-    firstName,
-    lastName,
-    email,
-    phone,
-    bio,
-    availability,
-    notificationPreference,
-    employer,
-    jobTitle,
-    city,
-    state,
-    referralSource,
-    isAlumni,
-  } = params;
-
-  const volunteer = await db
-    .select()
-    .from(volunteers)
-    .where(eq(volunteers.id, volunteerId));
-
-  if (volunteer.length === 0) {
-    return null;
-  }
-
-  // Check email uniqueness before updating
-  if (email !== undefined) {
-    const existing = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.email, email));
-    if (existing.length > 0 && existing[0].id !== volunteer[0].userId) {
-      throw new ConflictError("That email address is already in use");
-    }
-  }
-
-  // Build update objects - only allowed fields
-  const userData: {
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    phone?: string;
-    bio?: string;
-  } = {};
-  const volunteerData: {
-    availability?: VolunteerProfileUpdateParams["availability"];
-    notificationPreference?: "email" | "sms" | "both" | "none";
-    employer?: string;
-    jobTitle?: string;
-    city?: string;
-    state?: string;
-    referralSource?: string;
-    isAlumni?: boolean;
-  } = {};
-
-  if (firstName !== undefined) userData.firstName = firstName;
-  if (lastName !== undefined) userData.lastName = lastName;
-  if (email !== undefined) userData.email = email;
-  if (phone !== undefined) userData.phone = phone;
-  if (bio !== undefined) userData.bio = bio;
-
-  if (availability !== undefined) volunteerData.availability = availability;
-  if (notificationPreference !== undefined)
-    volunteerData.notificationPreference = notificationPreference;
-  if (employer !== undefined) volunteerData.employer = employer;
-  if (jobTitle !== undefined) volunteerData.jobTitle = jobTitle;
-  if (city !== undefined) volunteerData.city = city;
-  if (state !== undefined) volunteerData.state = state;
-  if (referralSource !== undefined)
-    volunteerData.referralSource = referralSource;
-  if (isAlumni !== undefined) volunteerData.isAlumni = isAlumni;
-
-  // Update both tables sequentially (neon-http doesn't support transactions)
-  if (Object.keys(volunteerData).length > 0) {
-    try {
-      await db
-        .update(volunteers)
-        .set(volunteerData)
-        .where(eq(volunteers.id, volunteerId));
-    } catch (error) {
-      console.error(
-        `[volunteer.service] Failed updating volunteers table for volunteerId=${volunteerId}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-  if (Object.keys(userData).length > 0) {
-    try {
-      await db
-        .update(users)
-        .set(userData)
-        .where(eq(users.id, volunteer[0].userId));
-    } catch (error) {
-      console.error(
-        `[volunteer.service] PARTIAL WRITE: volunteers table may have been updated but users table failed for volunteerId=${volunteerId}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  // Fetch updated volunteer data
-  const updatedVolunteer = await db
-    .select()
-    .from(volunteers)
-    .leftJoin(users, eq(volunteers.userId, users.id))
-    .where(eq(volunteers.id, volunteerId));
-
-  return updatedVolunteer[0] ?? null;
+  const { volunteerId, ...fields } = params;
+  return applyVolunteerUpdate(volunteerId, fields);
 }
 
 export async function resetVolunteerCredentials(
