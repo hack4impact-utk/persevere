@@ -8,7 +8,6 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   IconButton,
@@ -27,7 +26,11 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { ConfirmDialog, ModalTitleBar } from "@/components/shared";
+import {
+  ConfirmDialog,
+  MobileDialog,
+  ModalTitleBar,
+} from "@/components/shared";
 import { EmptyState } from "@/components/ui";
 import { useSkills } from "@/hooks/use-skills";
 
@@ -613,7 +616,7 @@ export default function SkillsSettingsClient(): JSX.Element {
         </Box>
       </Stack>
       {/* Skill Add/Edit Dialog */}
-      <Dialog
+      <MobileDialog
         open={skillDialogOpen}
         onClose={() => setSkillDialogOpen(false)}
         maxWidth="sm"
@@ -670,9 +673,9 @@ export default function SkillsSettingsClient(): JSX.Element {
             {skillSaving ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </MobileDialog>
       {/* Interest Add/Edit Dialog */}
-      <Dialog
+      <MobileDialog
         open={interestDialogOpen}
         onClose={() => setInterestDialogOpen(false)}
         maxWidth="sm"
@@ -721,7 +724,7 @@ export default function SkillsSettingsClient(): JSX.Element {
             {interestSaving ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </MobileDialog>
 
       <ConfirmDialog
         open={deleteSkillConfirm !== null}

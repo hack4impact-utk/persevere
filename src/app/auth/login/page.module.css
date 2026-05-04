@@ -1,6 +1,7 @@
 /*login page layout */
 .page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   background-color: #ffffff;
   font-family:
@@ -9,6 +10,8 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* left side 60% */
@@ -64,7 +67,8 @@
 .input {
   width: 100%;
   padding: 1.1rem 1.5rem;
-  font-size: 1rem;
+  /* 16px minimum prevents iOS Safari from auto-zooming on focus. */
+  font-size: max(1rem, 16px);
   border-radius: 999px; /* pill shape */
   border: 1px solid #d4d4d8;
   outline: none;
@@ -157,7 +161,7 @@
 
 @media (max-width: 640px) {
   .hero {
-    min-height: 220px;
+    min-height: 200px;
   }
 
   .main {
@@ -166,5 +170,21 @@
 
   .heading {
     font-size: 2rem;
+    margin-bottom: 1.75rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .hero {
+    min-height: 160px;
+  }
+
+  .main {
+    padding: 1.5rem 1.25rem 2.5rem;
+  }
+
+  .heading {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
   }
 }

@@ -10,6 +10,7 @@ import { JSX } from "react";
 
 import { ModalTitleBar } from "@/components/shared";
 import type { AnnouncementItem } from "@/hooks/use-announcements";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 
 type AnnouncementDetailModalProps = {
   open: boolean;
@@ -22,8 +23,15 @@ export default function AnnouncementDetailModal({
   onClose,
   announcement,
 }: AnnouncementDetailModalProps): JSX.Element {
+  const isMobile = useIsMobile();
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      fullScreen={isMobile}
+    >
       <ModalTitleBar title={announcement?.subject ?? ""} onClose={onClose} />
       <DialogContent dividers>
         <Stack

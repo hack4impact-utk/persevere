@@ -2,6 +2,7 @@
 
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import Box from "@mui/material/Box";
+import ButtonBase from "@mui/material/ButtonBase";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
 import Skeleton from "@mui/material/Skeleton";
@@ -15,6 +16,10 @@ import type { RsvpItem } from "@/components/volunteer/types";
 type UpcomingSessionsProps = {
   rsvpItems: RsvpItem[];
   loading?: boolean;
+  /** When provided, each session row becomes interactive and fires this callback. */
+  onItemClick?: (opportunityId: number) => void;
+  /** Override the default vertical scroll cap (320px). Pass null to remove. */
+  maxHeight?: number | null;
 };
 
 function formatSessionDate(isoString: string): string {
@@ -39,6 +44,8 @@ function statusChipProps(status: string): {
 export default function UpcomingSessions({
   rsvpItems,
   loading,
+  onItemClick,
+  maxHeight = 320,
 }: UpcomingSessionsProps): JSX.Element {
   const now = new Date();
 
@@ -106,21 +113,21 @@ export default function UpcomingSessions({
           sx={{
             display: "flex",
             flexDirection: "column",
-            maxHeight: 320,
-            overflowY: "auto",
+            ...(maxHeight === null ? {} : { maxHeight, overflowY: "auto" }),
           }}
         >
           {upcoming.map((item, i) => {
             const chip = statusChipProps(item.rsvpStatus);
-            return (
-              <Box
-                key={item.opportunityId}
-                sx={{
-                  pt: i === 0 ? 0 : 1.5,
-                  pb: 1.5,
-                  borderTop: i === 0 ? "none" : "1px solid rgba(0,0,0,.06)",
-                }}
-              >
+            const rowSx = {
+              pt: i === 0 ? 0 : 1.5,
+              pb: 1.5,
+              borderTop: i === 0 ? "none" : "1px solid rgba(0,0,0,.06)",
+              display: "block",
+              textAlign: "left",
+              width: "100%",
+            };
+            const rowContents = (
+              <>
                 <Typography
                   sx={{
                     fontSize: 12,
@@ -161,6 +168,25 @@ export default function UpcomingSessions({
                   color={chip.color}
                   sx={{ mt: 1, fontWeight: 500 }}
                 />
+              </>
+            );
+
+            return onItemClick ? (
+              <ButtonBase
+                key={item.opportunityId}
+                onClick={() => onItemClick(item.opportunityId)}
+                sx={{
+                  ...rowSx,
+                  borderRadius: 1,
+                  px: 0.5,
+                  "&:hover": { bgcolor: "action.hover" },
+                }}
+              >
+                {rowContents}
+              </ButtonBase>
+            ) : (
+              <Box key={item.opportunityId} sx={rowSx}>
+                {rowContents}
               </Box>
             );
           })}

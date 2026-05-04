@@ -12,7 +12,6 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
-import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import FormControl from "@mui/material/FormControl";
@@ -39,7 +38,12 @@ import {
   useState,
 } from "react";
 
-import { ConfirmDialog, ModalTitleBar, PageHeader } from "@/components/shared";
+import {
+  ConfirmDialog,
+  MobileDialog,
+  ModalTitleBar,
+  PageHeader,
+} from "@/components/shared";
 import { EmptyState } from "@/components/ui";
 import {
   type CreateDocumentInput,
@@ -473,7 +477,12 @@ export default function DocumentManager(): JSX.Element {
       </Card>
 
       {/* Add / Edit Modal */}
-      <Dialog open={modalOpen} onClose={closeModal} maxWidth="sm" fullWidth>
+      <MobileDialog
+        open={modalOpen}
+        onClose={closeModal}
+        maxWidth="sm"
+        fullWidth
+      >
         <ModalTitleBar
           title={editTarget ? "Edit Document" : "Add Document"}
           onClose={closeModal}
@@ -588,7 +597,7 @@ export default function DocumentManager(): JSX.Element {
             {saving ? "Saving..." : editTarget ? "Save Changes" : "Create"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </MobileDialog>
 
       <ConfirmDialog
         open={!!deleteTarget}
@@ -602,7 +611,7 @@ export default function DocumentManager(): JSX.Element {
       />
 
       {/* Preview Modal */}
-      <Dialog
+      <MobileDialog
         open={!!previewTarget}
         onClose={() => setPreviewTarget(null)}
         maxWidth="lg"
@@ -689,7 +698,7 @@ export default function DocumentManager(): JSX.Element {
             )}
           </DialogContent>
         )}
-      </Dialog>
+      </MobileDialog>
     </Box>
   );
 }

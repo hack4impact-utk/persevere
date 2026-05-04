@@ -8,7 +8,6 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   IconButton,
@@ -27,7 +26,11 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { ConfirmDialog, ModalTitleBar } from "@/components/shared";
+import {
+  ConfirmDialog,
+  MobileDialog,
+  ModalTitleBar,
+} from "@/components/shared";
 import RichTextEditor from "@/components/staff/communications/rich-text-editor";
 import { EmptyState } from "@/components/ui";
 import {
@@ -326,7 +329,12 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
       </Paper>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="md" fullWidth>
+      <MobileDialog
+        open={dialogOpen}
+        onClose={closeDialog}
+        maxWidth="md"
+        fullWidth
+      >
         <ModalTitleBar
           title={editingTemplate ? "Edit Template" : "Add Template"}
           onClose={closeDialog}
@@ -378,7 +386,7 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
             {saving ? "Saving..." : "Save Template"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </MobileDialog>
 
       {/* Delete Confirmation */}
       <ConfirmDialog

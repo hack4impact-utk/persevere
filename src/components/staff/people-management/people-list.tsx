@@ -11,7 +11,6 @@ import {
   Button,
   Checkbox,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   Divider,
@@ -32,7 +31,7 @@ import {
 import { useSnackbar } from "notistack";
 import { type ReactElement, useCallback, useState } from "react";
 
-import { ModalTitleBar, PageHeader } from "@/components/shared";
+import { MobileDialog, ModalTitleBar, PageHeader } from "@/components/shared";
 import ImportVolunteerModal from "@/components/staff/volunteer-management/import-modal";
 import AddVolunteerModal from "@/components/staff/volunteer-management/volunteer-add-modal";
 import VolunteerProfile from "@/components/staff/volunteer-management/volunteer-profile";
@@ -465,7 +464,7 @@ export default function PeopleList(): ReactElement {
       />
 
       {/* More filters dialog (volunteer type + alumni) */}
-      <Dialog
+      <MobileDialog
         open={filterModalOpen}
         onClose={() => setFilterModalOpen(false)}
         fullWidth
@@ -534,7 +533,7 @@ export default function PeopleList(): ReactElement {
             Apply Filters
           </Button>
         </DialogActions>
-      </Dialog>
+      </MobileDialog>
     </Box>
   );
 }

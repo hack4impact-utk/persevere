@@ -19,6 +19,8 @@ import {
   Skeleton,
   Stack,
   type SxProps,
+  Tab,
+  Tabs,
   Typography,
 } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -504,11 +506,19 @@ export default function VolunteerProfilePage(): JSX.Element {
     : "Volunteer";
 
   return (
-    <Box sx={{ flex: 1, display: "flex", minHeight: 0 }}>
-      {/* ── Left nav ──────────────────────────────────────────── */}
+    <Box
+      sx={{
+        flex: 1,
+        display: "flex",
+        flexDirection: { xs: "column", md: "row" },
+        minHeight: 0,
+      }}
+    >
+      {/* ── Side nav (desktop only) ─────────────────────────── */}
       <Box
         component="nav"
         sx={{
+          display: { xs: "none", md: "block" },
           width: 200,
           flexShrink: 0,
           borderRight: "1px solid",
@@ -567,9 +577,30 @@ export default function VolunteerProfilePage(): JSX.Element {
         })}
       </Box>
 
+      {/* ── Mobile-only top tabs ──────────────────────────────── */}
+      <Box
+        sx={{
+          display: { xs: "block", md: "none" },
+          borderBottom: 1,
+          borderColor: "divider",
+          flexShrink: 0,
+          bgcolor: "background.paper",
+        }}
+      >
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          aria-label="Profile sections"
+        >
+          <Tab label="Profile" value="profile" />
+          <Tab label="Settings" value="settings" />
+        </Tabs>
+      </Box>
+
       {/* ── Content ───────────────────────────────────────────── */}
       <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-        <Box sx={{ px: 3, pt: 3, pb: 4 }}>
+        <Box sx={{ px: { xs: 2, md: 3 }, pt: { xs: 2, md: 3 }, pb: 4 }}>
           {activeTab === "settings" ? (
             <VolunteerAccountSettings
               initialFirstName={user.firstName ?? ""}

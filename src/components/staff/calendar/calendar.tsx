@@ -26,6 +26,7 @@ import { enqueueSnackbar } from "notistack";
 import { JSX, useMemo, useRef, useState } from "react";
 
 import type { CalendarEvent } from "@/hooks/use-calendar-events";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 
 type ViewName = "dayGridMonth" | "timeGridWeek" | "timeGridDay";
 
@@ -49,6 +50,11 @@ export default function Calendar({
   compact = false,
 }: CalendarProps): JSX.Element {
   const theme = useTheme();
+  const isMobile = useIsMobile();
+  // Touch devices can't reliably drag FullCalendar events — pixel precision
+  // fights with native scroll. Make the calendar tap-only on mobile and let
+  // the existing detail/edit modal handle changes.
+  const effectiveReadOnly = readOnly || isMobile;
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null,
   );
@@ -202,13 +208,22 @@ export default function Calendar({
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: { xs: "stretch", md: "center" },
+            flexDirection: { xs: "column", md: "row" },
+            gap: { xs: 1.5, md: 0 },
             mb: 1.5,
             flexShrink: 0,
           }}
         >
           {/* Left: view toggle + category filter */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              flexWrap: "wrap",
+            }}
+          >
             <Box
               sx={{
                 display: "flex",
@@ -280,7 +295,14 @@ export default function Calendar({
           </Box>
 
           {/* Right: prev / month-year title / next / today */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              justifyContent: { xs: "space-between", md: "flex-end" },
+            }}
+          >
             <IconButton
               size="small"
               onClick={handlePrev}
@@ -497,15 +519,15 @@ export default function Calendar({
             day: "Day",
             today: "Today",
           }}
-          editable={!readOnly}
-          selectable={!readOnly}
-          selectMirror={!readOnly}
+          editable={!effectiveReadOnly}
+          selectable={!effectiveReadOnly}
+          selectMirror={!effectiveReadOnly}
           dayMaxEvents
           weekends
           events={filteredEvents}
-          select={readOnly ? undefined : handleDateSelect}
+          select={effectiveReadOnly ? undefined : handleDateSelect}
           eventClick={handleEventClick}
-          eventDrop={readOnly ? undefined : handleEventDrop}
+          eventDrop={effectiveReadOnly ? undefined : handleEventDrop}
           eventContent={(arg): JSX.Element => {
             const color =
               arg.event.backgroundColor || theme.palette.primary.main;

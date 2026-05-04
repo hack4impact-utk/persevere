@@ -4,16 +4,17 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { JSX, useCallback, useState } from "react";
 
+import { PageHeader } from "@/components/shared";
 import AnnouncementsCard from "@/components/volunteer/communications-card";
 import DashboardRecommendations from "@/components/volunteer/dashboard-recommendations";
 import MyRsvps from "@/components/volunteer/my-rsvps";
 import RecentHours from "@/components/volunteer/recent-hours";
 import VolunteerStats from "@/components/volunteer/volunteer-stats";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 
 /** Volunteer dashboard with portal overview. */
 export default function VolunteerDashboardPage(): JSX.Element {
@@ -21,6 +22,7 @@ export default function VolunteerDashboardPage(): JSX.Element {
   const firstName = session?.user?.name?.split(" ")[0] || "Volunteer";
   const [rsvpVersion, setRsvpVersion] = useState(0);
   const handleRsvpChange = useCallback(() => setRsvpVersion((v) => v + 1), []);
+  const isMobile = useIsMobile();
 
   return (
     <Box
@@ -36,44 +38,12 @@ export default function VolunteerDashboardPage(): JSX.Element {
         pb: 4,
       }}
     >
-      {/* Page Header Area */}
-      <Box sx={{ pb: 1 }}>
-        <Typography
-          variant="caption"
-          sx={{
-            textTransform: "uppercase",
-            letterSpacing: 0.5,
-            fontWeight: 600,
-            color: "text.secondary",
-            display: "block",
-            mb: 0.5,
-          }}
-        >
-          Volunteer Portal
-        </Typography>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "flex-start", sm: "center" }}
-          gap={2}
-        >
-          <Box>
-            <Typography
-              variant="h4"
-              sx={{
-                fontWeight: 500,
-                color: "text.primary",
-                letterSpacing: "-0.01em",
-                lineHeight: 1.2,
-              }}
-            >
-              Welcome back, {firstName}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Check out your upcoming sessions and new opportunities.
-            </Typography>
-          </Box>
-          <Box sx={{ display: "flex", gap: 1.5 }}>
+      <PageHeader
+        eyebrow="Volunteer Portal"
+        title={`Welcome back, ${firstName}`}
+        subtitle="Check out your upcoming sessions and new opportunities."
+        actions={
+          <>
             <Button component={Link} href="/volunteer/hours" variant="outlined">
               Log Hours
             </Button>
@@ -84,33 +54,39 @@ export default function VolunteerDashboardPage(): JSX.Element {
             >
               Browse Opportunities
             </Button>
-          </Box>
-        </Stack>
-      </Box>
+          </>
+        }
+      />
 
-      {/* Row 1 — Stats */}
       <VolunteerStats />
 
-      {/* Row 2 — Main Grid */}
-      <Grid container spacing={3} alignItems="flex-start">
-        {/* Left Column: Recommendations & Upcoming */}
-        <Grid
-          size={{ xs: 12, md: 8 }}
-          sx={{ display: "flex", flexDirection: "column", gap: 3 }}
-        >
-          <DashboardRecommendations onRsvpChange={handleRsvpChange} />
+      {isMobile ? (
+        // Mobile: single-column stack ordered by actionability —
+        // upcoming RSVPs first so volunteers see what's next at a glance.
+        <Stack spacing={3}>
           <MyRsvps refreshKey={rsvpVersion} />
-        </Grid>
-
-        {/* Right Column: Announcements & Hours */}
-        <Grid
-          size={{ xs: 12, md: 4 }}
-          sx={{ display: "flex", flexDirection: "column", gap: 3 }}
-        >
           <AnnouncementsCard />
+          <DashboardRecommendations onRsvpChange={handleRsvpChange} />
           <RecentHours />
+        </Stack>
+      ) : (
+        <Grid container spacing={3} alignItems="flex-start">
+          <Grid
+            size={{ xs: 12, md: 8 }}
+            sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+          >
+            <DashboardRecommendations onRsvpChange={handleRsvpChange} />
+            <MyRsvps refreshKey={rsvpVersion} />
+          </Grid>
+          <Grid
+            size={{ xs: 12, md: 4 }}
+            sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+          >
+            <AnnouncementsCard />
+            <RecentHours />
+          </Grid>
         </Grid>
-      </Grid>
+      )}
     </Box>
   );
 }

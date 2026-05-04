@@ -1,35 +1,63 @@
 "use client";
 
 import { Box } from "@mui/material";
-import { ReactNode } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  type JSX,
+  type ReactElement,
+  type ReactNode,
+  useState,
+} from "react";
+
+import MobileTopBar from "./mobile-top-bar";
 
 type RoleLayoutProps = {
-  sidebar: ReactNode;
+  /**
+   * The portal sidebar (StaffSidebar or VolunteerSidebar). On mobile,
+   * RoleLayout injects `mobileOpen` and `onMobileClose` so the sidebar
+   * renders inside a temporary Drawer.
+   */
+  sidebar: ReactElement<{
+    mobileOpen?: boolean;
+    onMobileClose?: () => void;
+  }>;
   children: ReactNode;
 };
 
 /**
  * RoleLayout
  *
- * Shared layout wrapper combining a sidebar and main content area. Used by all
- * role-specific layouts (staff, admin, volunteer). The sidebar handles its own
- * session/profile state; this wrapper is a pure structural shell.
- *
- * Note: overflow is "hidden" so each page controls its own scrolling behavior.
+ * Shared shell combining a sidebar and main content area. Used by the staff,
+ * admin, and volunteer route trees. On viewports below the md breakpoint the
+ * sidebar collapses into a drawer opened by the MobileTopBar's hamburger; on
+ * larger viewports the sidebar remains permanent on the left.
  */
 export default function RoleLayout({
   sidebar,
   children,
-}: RoleLayoutProps): ReactNode {
+}: RoleLayoutProps): JSX.Element {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const sidebarWithDrawerProps = isValidElement(sidebar)
+    ? cloneElement(sidebar, {
+        mobileOpen,
+        onMobileClose: () => setMobileOpen(false),
+      })
+    : sidebar;
+
   return (
-    <div
-      style={{
+    <Box
+      sx={{
         display: "flex",
+        flexDirection: { xs: "column", md: "row" },
         height: "100vh",
         overflow: "hidden",
       }}
     >
-      {sidebar}
+      <MobileTopBar onOpenNav={() => setMobileOpen(true)} />
+
+      {sidebarWithDrawerProps}
 
       <Box
         component="main"
@@ -44,6 +72,6 @@ export default function RoleLayout({
       >
         {children}
       </Box>
-    </div>
+    </Box>
   );
 }

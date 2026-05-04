@@ -9,7 +9,6 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   IconButton,
@@ -28,7 +27,11 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { ConfirmDialog, ModalTitleBar } from "@/components/shared";
+import {
+  ConfirmDialog,
+  MobileDialog,
+  ModalTitleBar,
+} from "@/components/shared";
 import { EmptyState } from "@/components/ui";
 import {
   useVolunteerTypes,
@@ -323,7 +326,7 @@ export default function VolunteerTypesSettingsClient(): JSX.Element {
       </Paper>
 
       {/* Add / Edit Dialog */}
-      <Dialog
+      <MobileDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         maxWidth="xs"
@@ -356,7 +359,7 @@ export default function VolunteerTypesSettingsClient(): JSX.Element {
             {saving ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </MobileDialog>
 
       <ConfirmDialog
         open={deactivateConfirm !== null}

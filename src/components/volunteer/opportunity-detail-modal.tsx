@@ -16,6 +16,7 @@ import RsvpButton from "@/components/volunteer/rsvp-button";
 import { SpotsChip } from "@/components/volunteer/spots-chip";
 import type { RsvpStatus } from "@/components/volunteer/types";
 import { useAttendees } from "@/hooks/use-attendees";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useOpportunity } from "@/hooks/use-opportunity";
 
 type Props = {
@@ -67,6 +68,7 @@ export default function OpportunityDetailModal({
   );
   const { attendees } = useAttendees(open ? opportunityId : null);
   const [attendeesExpanded, setAttendeesExpanded] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     setAttendeesExpanded(false);
@@ -79,7 +81,13 @@ export default function OpportunityDetailModal({
     opportunity.spotsRemaining <= 0;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      fullScreen={isMobile}
+    >
       <ModalTitleBar
         title={loading ? "Loading..." : (opportunity?.title ?? "Opportunity")}
         onClose={onClose}
@@ -280,7 +288,15 @@ export default function OpportunityDetailModal({
       </DialogContent>
 
       {!loading && opportunity !== null && (
-        <DialogActions>
+        <DialogActions
+          sx={{
+            position: { xs: "sticky", sm: "static" },
+            bottom: 0,
+            bgcolor: "background.paper",
+            borderTop: { xs: 1, sm: 0 },
+            borderColor: "divider",
+          }}
+        >
           <Button onClick={onClose}>Close</Button>
           {opportunity?.status === "completed" ? (
             <Button variant="outlined" disabled fullWidth>

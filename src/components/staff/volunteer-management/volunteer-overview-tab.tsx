@@ -22,7 +22,6 @@ import {
   Chip,
   CircularProgress,
   Collapse,
-  Dialog,
   DialogActions,
   DialogContent,
   Divider,
@@ -42,7 +41,12 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { ConfirmDialog, DetailField, ModalTitleBar } from "@/components/shared";
+import {
+  ConfirmDialog,
+  DetailField,
+  MobileDialog,
+  ModalTitleBar,
+} from "@/components/shared";
 import {
   getBackgroundCheckColor,
   getBackgroundCheckLabel,
@@ -344,7 +348,7 @@ function StaffEditVolunteerModal({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <MobileDialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={(e) => void handleSubmit(e)}>
         <ModalTitleBar title="Edit Volunteer Profile" onClose={onClose} />
         <DialogContent>
@@ -539,7 +543,7 @@ function StaffEditVolunteerModal({
           </Button>
         </DialogActions>
       </form>
-    </Dialog>
+    </MobileDialog>
   );
 }
 
@@ -565,7 +569,7 @@ function StaffSignDocumentDialog({
   signing: boolean;
 }): JSX.Element {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <MobileDialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       {doc && (
         <>
           <ModalTitleBar title={doc.title} onClose={onClose} />
@@ -609,7 +613,7 @@ function StaffSignDocumentDialog({
           </DialogActions>
         </>
       )}
-    </Dialog>
+    </MobileDialog>
   );
 }
 

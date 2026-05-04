@@ -9,7 +9,6 @@ import {
   Button,
   Checkbox,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -31,6 +30,7 @@ import {
 import { type ReactElement, useCallback, useMemo, useState } from "react";
 import validator from "validator";
 
+import { MobileDialog } from "@/components/shared";
 import { useVolunteerTypes } from "@/hooks/use-volunteer-types";
 import { useVolunteers } from "@/hooks/use-volunteers";
 
@@ -237,7 +237,7 @@ export default function AddVolunteerModal({
   );
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <MobileDialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <form onSubmit={handleSubmit} noValidate>
         <DialogTitle
           sx={{
@@ -439,7 +439,7 @@ export default function AddVolunteerModal({
       </form>
 
       {/* Success Dialog */}
-      <Dialog
+      <MobileDialog
         open={successDialogOpen}
         onClose={() => {
           setSuccessDialogOpen(false);
@@ -587,7 +587,7 @@ export default function AddVolunteerModal({
             Done
           </Button>
         </DialogActions>
-      </Dialog>
-    </Dialog>
+      </MobileDialog>
+    </MobileDialog>
   );
 }

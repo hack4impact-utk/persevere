@@ -99,8 +99,10 @@ export default function AvailabilityEditor({
         border: 1,
         borderColor: "grey.200",
         borderRadius: 2,
-        maxHeight: 340,
-        overflowY: "scroll",
+        // On mobile, let the parent scroll naturally — an inner scrollbar
+        // fights with native touch scroll and cramps the time pickers.
+        maxHeight: { xs: "none", sm: 340 },
+        overflowY: { xs: "visible", sm: "scroll" },
         width: "100%",
       }}
     >

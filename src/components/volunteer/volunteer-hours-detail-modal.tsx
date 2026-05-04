@@ -16,6 +16,7 @@ import {
   getHoursStatusLabel,
   StatusBadge,
 } from "@/components/ui";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import type { VolunteerHourEntry } from "@/hooks/use-volunteer-hours";
 
 type Props = {
@@ -31,10 +32,17 @@ export default function VolunteerHoursDetailModal({
   onClose,
   onEdit,
 }: Props): JSX.Element {
+  const isMobile = useIsMobile();
   if (!entry) return <></>;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="xs"
+      fullWidth
+      fullScreen={isMobile}
+    >
       <ModalTitleBar title="Hours Entry" onClose={onClose} />
       <DialogContent dividers sx={{ p: 3 }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>

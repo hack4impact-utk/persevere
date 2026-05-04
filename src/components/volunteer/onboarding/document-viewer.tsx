@@ -22,6 +22,7 @@ import { useSnackbar } from "notistack";
 import { type JSX, useCallback, useEffect, useState } from "react";
 
 import { ModalTitleBar } from "@/components/shared";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useOnboardingDocuments } from "@/hooks/use-onboarding-documents";
 
 type DocumentViewerProps = {
@@ -282,9 +283,16 @@ function DocumentModal({
   onRespond: (documentId: number, consentGiven?: boolean) => Promise<void>;
 }): JSX.Element {
   const hasResponded = response !== undefined;
+  const isMobile = useIsMobile();
 
   return (
-    <Dialog open={doc !== null} onClose={onClose} maxWidth="xl" fullWidth>
+    <Dialog
+      open={doc !== null}
+      onClose={onClose}
+      maxWidth="xl"
+      fullWidth
+      fullScreen={isMobile}
+    >
       {doc && (
         <>
           <ModalTitleBar
@@ -313,7 +321,7 @@ function DocumentModal({
             }
           >
             {doc.type === "pdf" && (
-              <Box sx={{ height: "80vh", width: "100%" }}>
+              <Box sx={{ height: { xs: "60vh", sm: "80vh" }, width: "100%" }}>
                 <iframe
                   src={doc.url}
                   title={doc.title}
@@ -330,7 +338,7 @@ function DocumentModal({
             {doc.type === "video" && (
               <Box
                 sx={{
-                  height: "80vh",
+                  height: { xs: "55vh", sm: "80vh" },
                   width: "100%",
                   display: "flex",
                   alignItems: "center",
@@ -376,7 +384,16 @@ function DocumentModal({
             )}
           </DialogContent>
 
-          <DialogActions>
+          <DialogActions
+            sx={{
+              flexWrap: "wrap",
+              position: { xs: "sticky", sm: "static" },
+              bottom: 0,
+              bgcolor: "background.paper",
+              borderTop: { xs: 1, sm: 0 },
+              borderColor: "divider",
+            }}
+          >
             {doc.type !== "link" && (
               <Button
                 variant="outlined"

@@ -12,6 +12,7 @@ import { Calendar } from "@/components/staff/calendar";
 import OpportunityDetailModal from "@/components/volunteer/opportunity-detail-modal";
 import UpcomingSessions from "@/components/volunteer/upcoming-sessions";
 import type { CalendarEvent } from "@/hooks/use-calendar-events";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useOpportunities } from "@/hooks/use-opportunities";
 import { RSVP_STATUS_COLORS } from "@/lib/constants";
 
@@ -19,6 +20,7 @@ export default function VolunteerCalendarPage(): JSX.Element {
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<
     number | null
   >(null);
+  const isMobile = useIsMobile();
 
   const {
     rsvpedIds,
@@ -92,36 +94,52 @@ export default function VolunteerCalendarPage(): JSX.Element {
         }
       />
 
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" },
-          gap: "20px",
-          flex: 1,
-          minHeight: 0,
-          alignItems: "start",
-        }}
-      >
-        <Box>
-          {loading ? (
-            <Card elevation={1} sx={{ borderRadius: 2, overflow: "hidden" }}>
-              <Skeleton variant="rectangular" height={500} />
-            </Card>
-          ) : (
-            <Calendar
-              readOnly
-              compact
-              events={calendarEvents}
-              onEventClick={(id) => {
-                setSelectedOpportunityId(Number.parseInt(id, 10));
-              }}
-              eventColors={rsvpColorMap}
-            />
-          )}
-        </Box>
+      {isMobile ? (
+        // Mobile-first calendar view: a tappable list of upcoming sessions.
+        // FullCalendar's month grid is unwieldy at phone widths; the list
+        // surfaces the same RSVP'd events with bigger touch targets.
+        <UpcomingSessions
+          rsvpItems={rsvpItems}
+          loading={loading}
+          maxHeight={null}
+          onItemClick={setSelectedOpportunityId}
+        />
+      ) : (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { md: "1fr", lg: "1fr 320px" },
+            gap: "20px",
+            flex: 1,
+            minHeight: 0,
+            alignItems: "start",
+          }}
+        >
+          <Box>
+            {loading ? (
+              <Card elevation={1} sx={{ borderRadius: 2, overflow: "hidden" }}>
+                <Skeleton variant="rectangular" height={500} />
+              </Card>
+            ) : (
+              <Calendar
+                readOnly
+                compact
+                events={calendarEvents}
+                onEventClick={(id) => {
+                  setSelectedOpportunityId(Number.parseInt(id, 10));
+                }}
+                eventColors={rsvpColorMap}
+              />
+            )}
+          </Box>
 
-        <UpcomingSessions rsvpItems={rsvpItems} loading={loading} />
-      </Box>
+          <UpcomingSessions
+            rsvpItems={rsvpItems}
+            loading={loading}
+            onItemClick={setSelectedOpportunityId}
+          />
+        </Box>
+      )}
 
       <OpportunityDetailModal
         opportunityId={selectedOpportunityId}
