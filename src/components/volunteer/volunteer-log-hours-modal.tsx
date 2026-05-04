@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   InputAdornment,
@@ -15,9 +14,8 @@ import {
 } from "@mui/material";
 import { JSX, useState } from "react";
 
-import { ModalTitleBar } from "@/components/shared";
+import { MobileDialog, ModalTitleBar } from "@/components/shared";
 import type { RsvpItem } from "@/components/volunteer/types";
-import { useIsMobile } from "@/hooks/use-is-mobile";
 import type { LogHoursInput } from "@/hooks/use-volunteer-hours";
 
 type Props = {
@@ -44,8 +42,6 @@ export default function VolunteerLogHoursModal({
   const [hours, setHours] = useState("");
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
-  const isMobile = useIsMobile();
-
   const today = new Date().toISOString().split("T")[0];
 
   const handleSubmit = async (): Promise<void> => {
@@ -97,13 +93,7 @@ export default function VolunteerLogHoursModal({
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="xs"
-      fullWidth
-      fullScreen={isMobile}
-    >
+    <MobileDialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
       <ModalTitleBar title="Log New Hours" onClose={handleClose} />
       <DialogContent dividers sx={{ p: 3 }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -227,6 +217,6 @@ export default function VolunteerLogHoursModal({
           {isMutating ? "Submitting…" : "Submit Hours"}
         </Button>
       </DialogActions>
-    </Dialog>
+    </MobileDialog>
   );
 }
