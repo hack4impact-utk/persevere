@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Typography } from "@mui/material";
+import { Box, Tab, Tabs, Typography } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { type JSX } from "react";
@@ -55,11 +55,19 @@ export default function StaffProfilePage(): JSX.Element {
   };
 
   return (
-    <Box sx={{ flex: 1, display: "flex", minHeight: 0 }}>
-      {/* ── Left nav ──────────────────────────────────────────── */}
+    <Box
+      sx={{
+        flex: 1,
+        display: "flex",
+        flexDirection: { xs: "column", md: "row" },
+        minHeight: 0,
+      }}
+    >
+      {/* ── Left nav (desktop) ────────────────────────────────── */}
       <Box
         component="nav"
         sx={{
+          display: { xs: "none", md: "block" },
           width: 200,
           flexShrink: 0,
           borderRight: "1px solid",
@@ -171,9 +179,35 @@ export default function StaffProfilePage(): JSX.Element {
         )}
       </Box>
 
+      {/* ── Mobile tabs ───────────────────────────────────────── */}
+      <Box
+        sx={{
+          display: { xs: "block", md: "none" },
+          borderBottom: 1,
+          borderColor: "divider",
+          flexShrink: 0,
+          bgcolor: "background.paper",
+        }}
+      >
+        <Tabs
+          value={activeTab}
+          onChange={(_e, v: TabValue) => handleNavClick(v)}
+          variant="scrollable"
+          scrollButtons="auto"
+        >
+          {ACCOUNT_ITEMS.map((item) => (
+            <Tab key={item.value} label={item.label} value={item.value} />
+          ))}
+          {isAdmin &&
+            ADMIN_NAV_ITEMS.map((item) => (
+              <Tab key={item.value} label={item.label} value={item.value} />
+            ))}
+        </Tabs>
+      </Box>
+
       {/* ── Content ───────────────────────────────────────────── */}
       <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-        <Box sx={{ px: 3, pt: 3, pb: 4 }}>
+        <Box sx={{ px: { xs: 2, md: 3 }, pt: { xs: 2, md: 3 }, pb: 4 }}>
           {activeTab === "settings" ? (
             <StaffAccountSettings />
           ) : activeTab === "skills" && isAdmin ? (
