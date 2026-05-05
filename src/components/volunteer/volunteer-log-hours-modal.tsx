@@ -203,6 +203,10 @@ export default function VolunteerLogHoursModal({
           bgcolor: "background.paper",
           borderTop: { xs: 1, sm: 0 },
           borderColor: "divider",
+          paddingBottom: {
+            xs: "max(16px, env(safe-area-inset-bottom, 0px))",
+            sm: 2,
+          },
         }}
       >
         <Button onClick={handleClose} disabled={isMutating}>
