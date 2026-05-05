@@ -23,6 +23,7 @@ export default function VolunteerCalendarPage(): JSX.Element {
   const isMobile = useIsMobile();
 
   const {
+    opportunities,
     rsvpedIds,
     rsvpStatusMap,
     rsvpItems,
@@ -31,11 +32,10 @@ export default function VolunteerCalendarPage(): JSX.Element {
     loadOpportunities,
   } = useOpportunities({ search: "" });
 
-  // Derive calendar events from the volunteer's own RSVPs — no date-range window.
-  // This ensures all RSVPd events (past and future) appear and stay in sync.
   const calendarEvents = useMemo(
-    (): CalendarEvent[] =>
-      rsvpItems
+    (): CalendarEvent[] => [
+      // RSVP'd events — all past and future, colored by RSVP status
+      ...rsvpItems
         .filter(
           (r) =>
             r.opportunityStatus !== "canceled" &&
@@ -50,7 +50,28 @@ export default function VolunteerCalendarPage(): JSX.Element {
           end: r.opportunityEndDate!,
           extendedProps: { status: r.opportunityStatus ?? "open" },
         })),
-    [rsvpItems],
+      // Non-RSVP'd visible opportunities — populates the list view even with zero RSVPs
+      ...opportunities
+        .filter(
+          (o) =>
+            !rsvpedIds.has(o.id) &&
+            o.status !== "canceled" &&
+            o.endDate !== null,
+        )
+        .map((o) => ({
+          id: String(o.id),
+          title: o.title,
+          location: o.location ?? undefined,
+          start: o.startDate,
+          end: o.endDate!,
+          extendedProps: {
+            status: o.status,
+            categoryId: o.categoryId ?? undefined,
+            categoryName: o.categoryName ?? undefined,
+          },
+        })),
+    ],
+    [rsvpItems, opportunities, rsvpedIds],
   );
 
   const rsvpColorMap = useMemo((): Record<string, string> => {
@@ -94,52 +115,43 @@ export default function VolunteerCalendarPage(): JSX.Element {
         }
       />
 
-      {isMobile ? (
-        // Mobile-first calendar view: a tappable list of upcoming sessions.
-        // FullCalendar's month grid is unwieldy at phone widths; the list
-        // surfaces the same RSVP'd events with bigger touch targets.
-        <UpcomingSessions
-          rsvpItems={rsvpItems}
-          loading={loading}
-          maxHeight={null}
-          onItemClick={setSelectedOpportunityId}
-        />
-      ) : (
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { md: "1fr", lg: "1fr 320px" },
-            gap: "20px",
-            flex: 1,
-            minHeight: 0,
-            alignItems: "start",
-          }}
-        >
-          <Box>
-            {loading ? (
-              <Card elevation={1} sx={{ borderRadius: 2, overflow: "hidden" }}>
-                <Skeleton variant="rectangular" height={500} />
-              </Card>
-            ) : (
-              <Calendar
-                readOnly
-                compact
-                events={calendarEvents}
-                onEventClick={(id) => {
-                  setSelectedOpportunityId(Number.parseInt(id, 10));
-                }}
-                eventColors={rsvpColorMap}
-              />
-            )}
-          </Box>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" },
+          gap: "20px",
+          flex: 1,
+          minHeight: 0,
+          alignItems: "start",
+        }}
+      >
+        <Box>
+          {loading ? (
+            <Card elevation={1} sx={{ borderRadius: 2, overflow: "hidden" }}>
+              <Skeleton variant="rectangular" height={500} />
+            </Card>
+          ) : (
+            <Calendar
+              readOnly
+              compact
+              initialView={isMobile ? "listMonth" : "dayGridMonth"}
+              events={calendarEvents}
+              onEventClick={(id) => {
+                setSelectedOpportunityId(Number.parseInt(id, 10));
+              }}
+              eventColors={rsvpColorMap}
+            />
+          )}
+        </Box>
 
+        <Box sx={{ display: { xs: "none", lg: "block" } }}>
           <UpcomingSessions
             rsvpItems={rsvpItems}
             loading={loading}
             onItemClick={setSelectedOpportunityId}
           />
         </Box>
-      )}
+      </Box>
 
       <OpportunityDetailModal
         opportunityId={selectedOpportunityId}
