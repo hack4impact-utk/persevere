@@ -10,6 +10,7 @@ import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
+import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -20,7 +21,11 @@ import Typography from "@mui/material/Typography";
 import { useSnackbar } from "notistack";
 import { type JSX, useCallback, useEffect, useState } from "react";
 
-import { MobileDialog, ModalTitleBar } from "@/components/shared";
+import {
+  MobileDialog,
+  ModalTitleBar,
+  ResponsiveTable,
+} from "@/components/shared";
 import { useOnboardingDocuments } from "@/hooks/use-onboarding-documents";
 
 type DocumentViewerProps = {
@@ -106,66 +111,159 @@ export default function DocumentViewer({
         )}
 
         {!loading && !error && documents.length > 0 && (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ bgcolor: "#fafafa" }}>
-                  <TableCell
-                    sx={{ pl: 3, fontWeight: 600, fontSize: "0.875rem" }}
-                  >
-                    Name
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
-                    Category
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
-                    Status
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
-                    Completed
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+          <ResponsiveTable
+            desktop={
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: "#fafafa" }}>
+                      <TableCell
+                        sx={{ pl: 3, fontWeight: 600, fontSize: "0.875rem" }}
+                      >
+                        Name
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                        Category
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                        Status
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                        Completed
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {documents.map((doc) => {
+                      const response = responseMap.get(doc.id);
+                      const hasResponded = response !== undefined;
+
+                      return (
+                        <TableRow
+                          key={doc.id}
+                          hover
+                          onClick={() => setSelectedDocId(doc.id)}
+                          sx={{ cursor: "pointer" }}
+                        >
+                          <TableCell sx={{ pl: 3 }}>
+                            <Box display="flex" alignItems="center" gap={1.5}>
+                              <TypeBadge type={doc.type} />
+                              <Box sx={{ minWidth: 0 }}>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={500}
+                                  noWrap
+                                >
+                                  {doc.title}
+                                </Typography>
+                                {doc.description && (
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ display: "block" }}
+                                    noWrap
+                                  >
+                                    {doc.description}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" color="text.secondary">
+                              {typeLabel(doc.type)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            {doc.actionType === "informational" ? (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                —
+                              </Typography>
+                            ) : hasResponded ? (
+                              <Chip
+                                icon={<CheckCircleIcon />}
+                                label="Completed"
+                                size="small"
+                                color="success"
+                              />
+                            ) : (
+                              <Chip
+                                label="Pending"
+                                size="small"
+                                variant="outlined"
+                              />
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" color="text.secondary">
+                              {response?.signedAt
+                                ? new Date(
+                                    response.signedAt,
+                                  ).toLocaleDateString()
+                                : "—"}
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            }
+            mobile={
+              <Stack sx={{ p: 2 }}>
                 {documents.map((doc) => {
                   const response = responseMap.get(doc.id);
                   const hasResponded = response !== undefined;
 
                   return (
-                    <TableRow
+                    <Box
                       key={doc.id}
-                      hover
                       onClick={() => setSelectedDocId(doc.id)}
-                      sx={{ cursor: "pointer" }}
+                      sx={{
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                        py: 1.5,
+                        px: 0.5,
+                        borderBottom: "1px solid",
+                        borderColor: "grey.100",
+                        "&:last-child": { borderBottom: "none" },
+                        "&:hover": { bgcolor: "action.hover" },
+                        borderRadius: 1,
+                      }}
                     >
-                      <TableCell sx={{ pl: 3 }}>
-                        <Box display="flex" alignItems="center" gap={1.5}>
-                          <TypeBadge type={doc.type} />
-                          <Box sx={{ minWidth: 0 }}>
-                            <Typography variant="body2" fontWeight={500} noWrap>
-                              {doc.title}
-                            </Typography>
-                            {doc.description && (
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{ display: "block" }}
-                                noWrap
-                              >
-                                {doc.description}
-                              </Typography>
-                            )}
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" color="text.secondary">
-                          {typeLabel(doc.type)}
+                      <TypeBadge type={doc.type} />
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="body2" fontWeight={500} noWrap>
+                          {doc.title}
                         </Typography>
-                      </TableCell>
-                      <TableCell>
+                        {doc.description && (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ display: "block" }}
+                            noWrap
+                          >
+                            {doc.description}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-end",
+                          gap: 0.5,
+                          flexShrink: 0,
+                        }}
+                      >
                         {doc.actionType === "informational" ? (
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="caption" color="text.secondary">
                             —
                           </Typography>
                         ) : hasResponded ? (
@@ -182,20 +280,18 @@ export default function DocumentViewer({
                             variant="outlined"
                           />
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary">
                           {response?.signedAt
                             ? new Date(response.signedAt).toLocaleDateString()
                             : "—"}
                         </Typography>
-                      </TableCell>
-                    </TableRow>
+                      </Box>
+                    </Box>
                   );
                 })}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              </Stack>
+            }
+          />
         )}
       </Card>
 
