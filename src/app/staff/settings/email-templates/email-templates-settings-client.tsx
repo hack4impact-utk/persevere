@@ -6,6 +6,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import {
   Box,
   Button,
+  Card,
   Chip,
   CircularProgress,
   DialogActions,
@@ -30,6 +31,7 @@ import {
   ConfirmDialog,
   MobileDialog,
   ModalTitleBar,
+  ResponsiveTable,
 } from "@/components/shared";
 import RichTextEditor from "@/components/staff/communications/rich-text-editor";
 import { EmptyState } from "@/components/ui";
@@ -209,97 +211,175 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
           position: "relative",
         }}
       >
-        <TableContainer sx={{ flex: 1, overflow: "auto" }}>
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "action.hover" }}>
-                <TableCell
-                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
-                >
-                  Name
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
-                >
-                  Subject
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
-                >
-                  Actions
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading && (
-                <TableRow>
-                  <TableCell colSpan={3} sx={{ p: 0, borderBottom: 0 }}>
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        top: 48,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: "rgba(255, 255, 255, 0.7)",
-                        zIndex: 1,
-                      }}
+        <ResponsiveTable
+          desktop={
+            <TableContainer sx={{ flex: 1, overflow: "auto" }}>
+              <Table stickyHeader size="small">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "action.hover" }}>
+                    <TableCell
+                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
                     >
-                      <CircularProgress />
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              )}
-              {templates.length === 0 ? (
-                loading ? null : (
-                  <TableRow>
-                    <TableCell colSpan={3} align="center" sx={{ py: 5 }}>
-                      <EmptyState
-                        message="No email templates yet."
-                        action={
-                          <Box
-                            component="span"
-                            sx={{
-                              cursor: "pointer",
-                              color: "primary.main",
-                              fontWeight: 500,
-                            }}
-                            onClick={openAdd}
-                          >
-                            Add the first template
-                          </Box>
-                        }
-                      />
+                      Name
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                    >
+                      Subject
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                    >
+                      Actions
                     </TableCell>
                   </TableRow>
-                )
+                </TableHead>
+                <TableBody>
+                  {loading && (
+                    <TableRow>
+                      <TableCell colSpan={3} sx={{ p: 0, borderBottom: 0 }}>
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: 48,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "rgba(255, 255, 255, 0.7)",
+                            zIndex: 1,
+                          }}
+                        >
+                          <CircularProgress />
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {templates.length === 0 ? (
+                    loading ? null : (
+                      <TableRow>
+                        <TableCell colSpan={3} align="center" sx={{ py: 5 }}>
+                          <EmptyState
+                            message="No email templates yet."
+                            action={
+                              <Box
+                                component="span"
+                                sx={{
+                                  cursor: "pointer",
+                                  color: "primary.main",
+                                  fontWeight: 500,
+                                }}
+                                onClick={openAdd}
+                              >
+                                Add the first template
+                              </Box>
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )
+                  ) : (
+                    templates.map((template, index) => (
+                      <TableRow
+                        key={template.id}
+                        hover
+                        sx={{
+                          backgroundColor:
+                            index % 2 === 0 ? "transparent" : "action.hover",
+                          "&:last-child td": { border: 0 },
+                        }}
+                      >
+                        <TableCell sx={{ fontWeight: 500 }}>
+                          {template.name}
+                        </TableCell>
+                        <TableCell>
+                          <Typography
+                            variant="body2"
+                            noWrap
+                            sx={{ maxWidth: 350 }}
+                          >
+                            {template.subject}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Stack
+                            direction="row"
+                            spacing={0.5}
+                            justifyContent="flex-end"
+                          >
+                            <Tooltip title="Edit template">
+                              <IconButton
+                                size="small"
+                                onClick={() => openEdit(template)}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete template">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => setDeleteConfirm(template)}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          }
+          mobile={
+            <Stack spacing={1} sx={{ p: 1.5 }}>
+              {loading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                  <CircularProgress />
+                </Box>
+              ) : templates.length === 0 ? (
+                <EmptyState
+                  message="No email templates yet."
+                  action={
+                    <Box
+                      component="span"
+                      sx={{
+                        cursor: "pointer",
+                        color: "primary.main",
+                        fontWeight: 500,
+                      }}
+                      onClick={openAdd}
+                    >
+                      Add the first template
+                    </Box>
+                  }
+                />
               ) : (
-                templates.map((template, index) => (
-                  <TableRow
-                    key={template.id}
-                    hover
-                    sx={{
-                      backgroundColor:
-                        index % 2 === 0 ? "transparent" : "action.hover",
-                      "&:last-child td": { border: 0 },
-                    }}
-                  >
-                    <TableCell sx={{ fontWeight: 500 }}>
-                      {template.name}
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: 350 }}>
+                templates.map((template) => (
+                  <Card key={template.id} variant="outlined">
+                    <Box sx={{ p: 1.5 }}>
+                      <Typography variant="body2" fontWeight={500}>
+                        {template.name}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        noWrap
+                        sx={{ mt: 0.25 }}
+                      >
                         {template.subject}
                       </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Stack
-                        direction="row"
-                        spacing={0.5}
-                        justifyContent="flex-end"
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          mt: 0.5,
+                          gap: 0.5,
+                        }}
                       >
                         <Tooltip title="Edit template">
                           <IconButton
@@ -318,14 +398,14 @@ export default function EmailTemplatesSettingsClient(): JSX.Element {
                             <DeleteIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
+                      </Box>
+                    </Box>
+                  </Card>
                 ))
               )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            </Stack>
+          }
+        />
       </Paper>
 
       {/* Add/Edit Dialog */}
