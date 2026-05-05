@@ -5,18 +5,16 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
-import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Typography from "@mui/material/Typography";
 import { JSX, useEffect, useState } from "react";
 
-import { AsyncContent, ModalTitleBar } from "@/components/shared";
+import { AsyncContent, MobileDialog, ModalTitleBar } from "@/components/shared";
 import RsvpButton from "@/components/volunteer/rsvp-button";
 import { SpotsChip } from "@/components/volunteer/spots-chip";
 import type { RsvpStatus } from "@/components/volunteer/types";
 import { useAttendees } from "@/hooks/use-attendees";
-import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useOpportunity } from "@/hooks/use-opportunity";
 
 type Props = {
@@ -68,7 +66,6 @@ export default function OpportunityDetailModal({
   );
   const { attendees } = useAttendees(open ? opportunityId : null);
   const [attendeesExpanded, setAttendeesExpanded] = useState(false);
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     setAttendeesExpanded(false);
@@ -81,13 +78,7 @@ export default function OpportunityDetailModal({
     opportunity.spotsRemaining <= 0;
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      fullScreen={isMobile}
-    >
+    <MobileDialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <ModalTitleBar
         title={loading ? "Loading..." : (opportunity?.title ?? "Opportunity")}
         onClose={onClose}
@@ -313,6 +304,6 @@ export default function OpportunityDetailModal({
           )}
         </DialogActions>
       )}
-    </Dialog>
+    </MobileDialog>
   );
 }
