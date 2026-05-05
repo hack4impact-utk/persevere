@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   InputAdornment,
@@ -13,8 +12,7 @@ import {
 } from "@mui/material";
 import { JSX, useEffect, useState } from "react";
 
-import { ModalTitleBar } from "@/components/shared";
-import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileDialog, ModalTitleBar } from "@/components/shared";
 import type {
   EditHoursInput,
   VolunteerHourEntry,
@@ -44,8 +42,6 @@ export default function VolunteerEditHoursModal({
   const [hours, setHours] = useState("");
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
-  const isMobile = useIsMobile();
-
   useEffect(() => {
     if (entry) {
       setDate(new Date(entry.date).toISOString().split("T")[0] ?? "");
@@ -101,13 +97,7 @@ export default function VolunteerEditHoursModal({
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="xs"
-      fullWidth
-      fullScreen={isMobile}
-    >
+    <MobileDialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
       <ModalTitleBar title="Edit Hours Entry" onClose={handleClose} />
       <DialogContent dividers sx={{ p: 3 }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -186,6 +176,6 @@ export default function VolunteerEditHoursModal({
           {isMutating ? "Saving…" : "Save Changes"}
         </Button>
       </DialogActions>
-    </Dialog>
+    </MobileDialog>
   );
 }
