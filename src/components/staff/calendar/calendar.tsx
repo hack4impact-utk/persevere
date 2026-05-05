@@ -13,7 +13,6 @@ import {
   alpha,
   Box,
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -26,6 +25,7 @@ import {
 import { enqueueSnackbar } from "notistack";
 import { JSX, useMemo, useRef, useState } from "react";
 
+import { MobileDialog } from "@/components/shared";
 import type { CalendarEvent } from "@/hooks/use-calendar-events";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 
@@ -598,7 +598,7 @@ export default function Calendar({
       </Box>
 
       {/* View Event Modal (readOnly volunteer calendar only) */}
-      <Dialog
+      <MobileDialog
         open={isViewModalOpen}
         onClose={() => {
           setIsViewModalOpen(false);
@@ -737,7 +737,7 @@ export default function Calendar({
             Close
           </Button>
         </DialogActions>
-      </Dialog>
+      </MobileDialog>
     </Box>
   );
 }
