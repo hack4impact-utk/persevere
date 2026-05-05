@@ -3,20 +3,18 @@
 import {
   Box,
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   Typography,
 } from "@mui/material";
 import { JSX } from "react";
 
-import { DetailField, ModalTitleBar } from "@/components/shared";
+import { DetailField, MobileDialog, ModalTitleBar } from "@/components/shared";
 import {
   getHoursStatusColor,
   getHoursStatusLabel,
   StatusBadge,
 } from "@/components/ui";
-import { useIsMobile } from "@/hooks/use-is-mobile";
 import type { VolunteerHourEntry } from "@/hooks/use-volunteer-hours";
 
 type Props = {
@@ -32,17 +30,10 @@ export default function VolunteerHoursDetailModal({
   onClose,
   onEdit,
 }: Props): JSX.Element {
-  const isMobile = useIsMobile();
   if (!entry) return <></>;
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="xs"
-      fullWidth
-      fullScreen={isMobile}
-    >
+    <MobileDialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <ModalTitleBar title="Hours Entry" onClose={onClose} />
       <DialogContent dividers sx={{ p: 3 }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
@@ -105,6 +96,6 @@ export default function VolunteerHoursDetailModal({
           Edit
         </Button>
       </DialogActions>
-    </Dialog>
+    </MobileDialog>
   );
 }
