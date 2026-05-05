@@ -8,7 +8,6 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
-import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Table from "@mui/material/Table";
@@ -21,8 +20,7 @@ import Typography from "@mui/material/Typography";
 import { useSnackbar } from "notistack";
 import { type JSX, useCallback, useEffect, useState } from "react";
 
-import { ModalTitleBar } from "@/components/shared";
-import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileDialog, ModalTitleBar } from "@/components/shared";
 import { useOnboardingDocuments } from "@/hooks/use-onboarding-documents";
 
 type DocumentViewerProps = {
@@ -283,16 +281,9 @@ function DocumentModal({
   onRespond: (documentId: number, consentGiven?: boolean) => Promise<void>;
 }): JSX.Element {
   const hasResponded = response !== undefined;
-  const isMobile = useIsMobile();
 
   return (
-    <Dialog
-      open={doc !== null}
-      onClose={onClose}
-      maxWidth="xl"
-      fullWidth
-      fullScreen={isMobile}
-    >
+    <MobileDialog open={doc !== null} onClose={onClose} maxWidth="xl" fullWidth>
       {doc && (
         <>
           <ModalTitleBar
@@ -436,7 +427,7 @@ function DocumentModal({
           </DialogActions>
         </>
       )}
-    </Dialog>
+    </MobileDialog>
   );
 }
 
