@@ -229,7 +229,7 @@ export default function OpportunitiesPage(): JSX.Element {
                 display: "grid",
                 gridTemplateColumns: {
                   xs: "1fr",
-                  sm: "repeat(auto-fill, minmax(320px, 1fr))",
+                  sm: "repeat(auto-fill, minmax(280px, 1fr))",
                 },
                 gap: 2,
               }}
