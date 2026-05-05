@@ -289,7 +289,7 @@ export default function Calendar({
               }}
               displayEmpty
               sx={{
-                minWidth: 160,
+                minWidth: { xs: 0, sm: 140 },
                 borderRadius: "8px",
                 bgcolor: "background.paper",
                 fontSize: 14,
@@ -310,6 +310,7 @@ export default function Calendar({
               display: "flex",
               alignItems: "center",
               gap: 1,
+              flexWrap: "wrap",
               justifyContent: { xs: "space-between", md: "flex-end" },
             }}
           >
