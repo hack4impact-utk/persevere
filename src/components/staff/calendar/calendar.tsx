@@ -3,6 +3,7 @@
 import type { DatesSetArg } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import listPlugin from "@fullcalendar/list";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
@@ -28,7 +29,12 @@ import { JSX, useMemo, useRef, useState } from "react";
 import type { CalendarEvent } from "@/hooks/use-calendar-events";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 
-type ViewName = "dayGridMonth" | "timeGridWeek" | "timeGridDay";
+type ViewName =
+  | "dayGridMonth"
+  | "timeGridWeek"
+  | "timeGridDay"
+  | "listMonth"
+  | "listWeek";
 
 type CalendarProps = {
   events: CalendarEvent[];
@@ -38,6 +44,7 @@ type CalendarProps = {
   readOnly?: boolean;
   eventColors?: Record<string, string>;
   compact?: boolean;
+  initialView?: ViewName;
 };
 
 export default function Calendar({
@@ -48,6 +55,7 @@ export default function Calendar({
   onEventDrop,
   eventColors,
   compact = false,
+  initialView,
 }: CalendarProps): JSX.Element {
   const theme = useTheme();
   const isMobile = useIsMobile();
@@ -62,7 +70,9 @@ export default function Calendar({
 
   // Custom toolbar state (staff full-view only)
   const calendarRef = useRef<FullCalendar>(null);
-  const [currentView, setCurrentView] = useState<ViewName>("dayGridMonth");
+  const [currentView, setCurrentView] = useState<ViewName>(
+    initialView ?? "dayGridMonth",
+  );
   const [currentTitle, setCurrentTitle] = useState<string>(
     new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
   );
@@ -505,8 +515,13 @@ export default function Calendar({
       >
         <FullCalendar
           ref={calendarRef}
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
+          plugins={[
+            dayGridPlugin,
+            timeGridPlugin,
+            interactionPlugin,
+            listPlugin,
+          ]}
+          initialView={initialView ?? "dayGridMonth"}
           headerToolbar={
             compact
               ? { left: "prev,next today", center: "title", right: "" }
