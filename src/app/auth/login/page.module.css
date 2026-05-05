@@ -161,7 +161,7 @@
 
 @media (max-width: 640px) {
   .hero {
-    min-height: 200px;
+    display: none;
   }
 
   .main {
