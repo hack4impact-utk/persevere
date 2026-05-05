@@ -592,6 +592,7 @@ export default function VolunteerProfilePage(): JSX.Element {
           onChange={handleTabChange}
           variant="fullWidth"
           aria-label="Profile sections"
+          sx={{ "& .MuiTab-root": { minWidth: 0, flex: 1 } }}
         >
           <Tab label="Profile" value="profile" />
           <Tab label="Settings" value="settings" />
