@@ -25,7 +25,7 @@ import Typography from "@mui/material/Typography";
 import { enqueueSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useMemo, useState } from "react";
 
-import { PageHeader, ResponsiveTable } from "@/components/shared";
+import { FilterDrawer, PageHeader, ResponsiveTable } from "@/components/shared";
 import EventDetailModal from "@/components/staff/calendar/event-detail-modal";
 import EventFormModal from "@/components/staff/calendar/event-form-modal";
 import { EmptyState } from "@/components/ui";
@@ -106,6 +106,14 @@ export default function StaffOpportunitiesPage(): JSX.Element {
       return matchesSearch && matchesCategory && matchesLocation;
     });
   }, [events, activeTab, now, search, categoryId, locationFilter]);
+
+  const activeFilterCount =
+    (categoryId === "" ? 0 : 1) + (locationFilter === "" ? 0 : 1);
+
+  const clearFilters = (): void => {
+    setCategoryId("");
+    setLocationFilter("");
+  };
 
   const selectedEvent = useMemo(
     () =>
@@ -189,42 +197,49 @@ export default function StaffOpportunitiesPage(): JSX.Element {
               },
             }}
           />
-          <TextField
-            select
-            size="small"
-            value={categoryId}
-            onChange={(e) => {
-              setCategoryId(
-                e.target.value === "" ? "" : Number(e.target.value),
-              );
-            }}
-            sx={{ minWidth: 180 }}
-            slotProps={{ select: { displayEmpty: true } }}
+          <FilterDrawer
+            activeFilterCount={activeFilterCount}
+            onClear={clearFilters}
           >
-            <MenuItem value="">All categories</MenuItem>
-            {activeCategories.map((c) => (
-              <MenuItem key={c.id} value={c.id}>
-                {c.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            size="small"
-            value={locationFilter}
-            onChange={(e) => {
-              setLocationFilter(e.target.value);
-            }}
-            sx={{ minWidth: 160 }}
-            slotProps={{ select: { displayEmpty: true } }}
-          >
-            <MenuItem value="">All locations</MenuItem>
-            {locations.map((loc) => (
-              <MenuItem key={loc} value={loc}>
-                {loc}
-              </MenuItem>
-            ))}
-          </TextField>
+            <TextField
+              select
+              size="small"
+              label="Category"
+              value={categoryId}
+              onChange={(e) => {
+                setCategoryId(
+                  e.target.value === "" ? "" : Number(e.target.value),
+                );
+              }}
+              sx={{ minWidth: 180 }}
+              slotProps={{ select: { displayEmpty: true } }}
+            >
+              <MenuItem value="">All categories</MenuItem>
+              {activeCategories.map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              size="small"
+              label="Location"
+              value={locationFilter}
+              onChange={(e) => {
+                setLocationFilter(e.target.value);
+              }}
+              sx={{ minWidth: 160 }}
+              slotProps={{ select: { displayEmpty: true } }}
+            >
+              <MenuItem value="">All locations</MenuItem>
+              {locations.map((loc) => (
+                <MenuItem key={loc} value={loc}>
+                  {loc}
+                </MenuItem>
+              ))}
+            </TextField>
+          </FilterDrawer>
         </Box>
         {!loading && (
           <Typography variant="body2" color="text.secondary">

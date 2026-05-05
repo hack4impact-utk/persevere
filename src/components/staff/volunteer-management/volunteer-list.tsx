@@ -2,7 +2,6 @@
 
 import AddIcon from "@mui/icons-material/Add";
 import DownloadIcon from "@mui/icons-material/Download";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import {
   Alert,
@@ -10,27 +9,20 @@ import {
   Button,
   Checkbox,
   CircularProgress,
-  DialogActions,
-  DialogContent,
-  Divider,
   Drawer,
   FormControl,
   FormControlLabel,
-  FormGroup,
-  IconButton,
   InputLabel,
   MenuItem,
   Select,
   SelectChangeEvent,
-  Stack,
   TextField,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { type ReactElement, useCallback, useState } from "react";
 
-import { MobileDialog, ModalTitleBar, PageHeader } from "@/components/shared";
+import { FilterDrawer, ModalTitleBar, PageHeader } from "@/components/shared";
 import { useVolunteerDetail } from "@/hooks/use-volunteer-detail";
 import { useVolunteerTypes } from "@/hooks/use-volunteer-types";
 import {
@@ -88,7 +80,6 @@ export default function VolunteerList(): ReactElement {
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
-  const [filterModalOpen, setFilterModalOpen] = useState(false);
 
   const handleSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>): void => {
@@ -126,6 +117,7 @@ export default function VolunteerList(): ReactElement {
   );
 
   const handleClearFilters = useCallback((): void => {
+    setStatusFilter("");
     setFilters({});
     setPage(1);
   }, [setPage]);
@@ -170,8 +162,8 @@ export default function VolunteerList(): ReactElement {
     }
   }, [selectedVolunteerId, resendCredentials, enqueueSnackbar]);
 
-  const hasAdditionalFilters =
-    filters.type !== undefined || filters.alumni !== undefined;
+  const activeFilterCount =
+    (statusFilter ? 1 : 0) + (filters.type ? 1 : 0) + (filters.alumni ? 1 : 0);
 
   return (
     <Box
@@ -265,41 +257,50 @@ export default function VolunteerList(): ReactElement {
               placeholder="Search by name or email…"
               sx={{ minWidth: 240 }}
             />
-            <FormControl size="small" sx={{ minWidth: 160 }}>
-              <InputLabel id="status-filter-label">Status</InputLabel>
-              <Select
-                labelId="status-filter-label"
-                label="Status"
-                value={statusFilter}
-                onChange={handleStatusFilterChange}
-              >
-                <MenuItem value="">All statuses</MenuItem>
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-              </Select>
-            </FormControl>
-            <Tooltip title="More filters">
-              <IconButton
-                color="primary"
-                onClick={() => setFilterModalOpen(true)}
-                sx={{
-                  backgroundColor: hasAdditionalFilters
-                    ? "primary.main"
-                    : "transparent",
-                  color: hasAdditionalFilters
-                    ? "primary.contrastText"
-                    : "primary.main",
-                  "&:hover": {
-                    backgroundColor: hasAdditionalFilters
-                      ? "primary.dark"
-                      : "action.hover",
-                  },
-                }}
-              >
-                <FilterListIcon />
-              </IconButton>
-            </Tooltip>
+            <FilterDrawer
+              activeFilterCount={activeFilterCount}
+              onClear={handleClearFilters}
+            >
+              <FormControl size="small" sx={{ minWidth: 160 }}>
+                <InputLabel id="status-filter-label">Status</InputLabel>
+                <Select
+                  labelId="status-filter-label"
+                  label="Status"
+                  value={statusFilter}
+                  onChange={handleStatusFilterChange}
+                >
+                  <MenuItem value="">All statuses</MenuItem>
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="inactive">Inactive</MenuItem>
+                  <MenuItem value="pending">Pending</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl size="small" sx={{ minWidth: 160 }}>
+                <InputLabel id="type-filter-label">Volunteer Type</InputLabel>
+                <Select
+                  labelId="type-filter-label"
+                  label="Volunteer Type"
+                  value={filters.type ?? ""}
+                  onChange={handleFilterTypeChange}
+                >
+                  <MenuItem value="">All types</MenuItem>
+                  {activeTypes.map((t) => (
+                    <MenuItem key={t.id} value={t.name}>
+                      {t.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={filters.alumni === true}
+                    onChange={handleFilterAlumniChange}
+                  />
+                }
+                label="Alumni only"
+              />
+            </FilterDrawer>
           </Box>
           <Typography variant="body2" color="text.secondary">
             {total} result{total === 1 ? "" : "s"}
@@ -374,78 +375,6 @@ export default function VolunteerList(): ReactElement {
           void loadVolunteers();
         }}
       />
-
-      {/* More filters modal (type + alumni) */}
-      <MobileDialog
-        open={filterModalOpen}
-        onClose={() => setFilterModalOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <ModalTitleBar
-          title="Filter Volunteers"
-          onClose={() => setFilterModalOpen(false)}
-        />
-        <Divider />
-        <DialogContent sx={{ px: 3, py: 3 }}>
-          <Stack spacing={3}>
-            <Box>
-              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
-                Volunteer Type
-              </Typography>
-              <FormControl fullWidth>
-                <InputLabel id="filter-type-label" shrink>
-                  Volunteer Type
-                </InputLabel>
-                <Select
-                  labelId="filter-type-label"
-                  label="Volunteer Type"
-                  value={filters.type || ""}
-                  onChange={handleFilterTypeChange}
-                  displayEmpty
-                  notched
-                >
-                  <MenuItem value="">
-                    <em>All Types</em>
-                  </MenuItem>
-                  {activeTypes.map((t) => (
-                    <MenuItem key={t.id} value={t.name}>
-                      {t.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-            <Divider />
-            <Box>
-              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
-                Additional Filters
-              </Typography>
-              <FormGroup>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={filters.alumni === true}
-                      onChange={handleFilterAlumniChange}
-                    />
-                  }
-                  label="Alumni only"
-                />
-              </FormGroup>
-            </Box>
-          </Stack>
-        </DialogContent>
-        <Divider />
-        <DialogActions>
-          <Button onClick={handleClearFilters} disabled={!hasAdditionalFilters}>
-            Clear Filters
-          </Button>
-          <Box sx={{ flex: 1 }} />
-          <Button onClick={() => setFilterModalOpen(false)} variant="contained">
-            Apply Filters
-          </Button>
-        </DialogActions>
-      </MobileDialog>
     </Box>
   );
 }
