@@ -9,7 +9,6 @@ import {
   Chip,
   CircularProgress,
   Divider,
-  Drawer,
   FormControl,
   IconButton,
   InputLabel,
@@ -21,6 +20,7 @@ import {
 import { enqueueSnackbar } from "notistack";
 import { JSX, useEffect, useState } from "react";
 
+import { MobileDialog } from "@/components/shared";
 import { EmptyState, getRsvpStatusColor, StatusBadge } from "@/components/ui";
 import type { CalendarEvent } from "@/hooks/use-calendar-events";
 import { useCalendarEvents } from "@/hooks/use-calendar-events";
@@ -301,12 +301,7 @@ export default function EventDetailModal({
   const maxVol = event?.extendedProps?.maxVolunteers;
 
   return (
-    <Drawer
-      anchor="right"
-      open={open}
-      onClose={onClose}
-      PaperProps={{ sx: { width: 640, maxWidth: "100vw" } }}
-    >
+    <MobileDialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
         {/* Header */}
         <Box
@@ -775,6 +770,6 @@ export default function EventDetailModal({
           )}
         </Box>
       </Box>
-    </Drawer>
+    </MobileDialog>
   );
 }
