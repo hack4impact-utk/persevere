@@ -12,6 +12,7 @@ import { Calendar } from "@/components/staff/calendar";
 import OpportunityDetailModal from "@/components/volunteer/opportunity-detail-modal";
 import UpcomingSessions from "@/components/volunteer/upcoming-sessions";
 import type { CalendarEvent } from "@/hooks/use-calendar-events";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useOpportunities } from "@/hooks/use-opportunities";
 import { RSVP_STATUS_COLORS } from "@/lib/constants";
 
@@ -19,6 +20,7 @@ export default function VolunteerCalendarPage(): JSX.Element {
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<
     number | null
   >(null);
+  const isMobile = useIsMobile();
 
   const {
     rsvpedIds,
@@ -111,6 +113,7 @@ export default function VolunteerCalendarPage(): JSX.Element {
             <Calendar
               readOnly
               compact
+              initialView={isMobile ? "timeGridDay" : "dayGridMonth"}
               events={calendarEvents}
               onEventClick={(id) => {
                 setSelectedOpportunityId(Number.parseInt(id, 10));

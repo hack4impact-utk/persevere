@@ -143,12 +143,26 @@ const volunteerNavItems: NavItem[] = [
   },
 ];
 
+type VolunteerSidebarProps = {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+};
+
 /**
  * VolunteerSidebar
  *
  * Sidebar navigation for volunteer portal routes. Profile is accessible
  * via the header profile icon.
  */
-export default function VolunteerSidebar(): JSX.Element {
-  return <BaseSidebar navItems={volunteerNavItems} />;
+export default function VolunteerSidebar({
+  mobileOpen,
+  onMobileClose,
+}: VolunteerSidebarProps = {}): JSX.Element {
+  return (
+    <BaseSidebar
+      navItems={volunteerNavItems}
+      mobileOpen={mobileOpen}
+      onMobileClose={onMobileClose}
+    />
+  );
 }

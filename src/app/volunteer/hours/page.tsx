@@ -192,10 +192,13 @@ export default function HoursPage(): JSX.Element {
             ) : (
               <Box
                 sx={{
-                  display: "flex",
-                  alignItems: "flex-end",
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "repeat(6, 1fr)",
+                    sm: "repeat(12, 1fr)",
+                  },
+                  gridAutoRows: 150,
                   gap: 1,
-                  height: 180,
                   mt: 3,
                 }}
               >
@@ -205,7 +208,6 @@ export default function HoursPage(): JSX.Element {
                     <Box
                       key={i}
                       sx={{
-                        flex: 1,
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
@@ -242,7 +244,7 @@ export default function HoursPage(): JSX.Element {
                       <Typography
                         variant="caption"
                         color="text.secondary"
-                        sx={{ mt: 1, fontSize: 10 }}
+                        sx={{ mt: 1, fontSize: { xs: 11, sm: 10 } }}
                       >
                         {"JFMAMJJASOND"[i]}
                       </Typography>

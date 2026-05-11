@@ -94,9 +94,9 @@ export default function HoursTab({
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: "auto 1fr auto",
+                  gridTemplateColumns: { xs: "auto 1fr", md: "auto 1fr auto" },
                   gap: 2,
-                  alignItems: "center",
+                  alignItems: { xs: "start", md: "center" },
                 }}
               >
                 <Avatar
@@ -140,7 +140,12 @@ export default function HoursTab({
                   )}
                 </Box>
 
-                <Stack direction="row" spacing={1} flexShrink={0}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  flexShrink={0}
+                  sx={{ gridColumn: { xs: "1 / -1", md: "auto" } }}
+                >
                   <Button
                     size="small"
                     variant="outlined"

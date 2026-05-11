@@ -3,14 +3,13 @@
 import {
   Box,
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   Typography,
 } from "@mui/material";
 import { JSX } from "react";
 
-import { DetailField, ModalTitleBar } from "@/components/shared";
+import { DetailField, MobileDialog, ModalTitleBar } from "@/components/shared";
 import {
   getHoursStatusColor,
   getHoursStatusLabel,
@@ -34,7 +33,7 @@ export default function VolunteerHoursDetailModal({
   if (!entry) return <></>;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <MobileDialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <ModalTitleBar title="Hours Entry" onClose={onClose} />
       <DialogContent dividers sx={{ p: 3 }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
@@ -97,6 +96,6 @@ export default function VolunteerHoursDetailModal({
           Edit
         </Button>
       </DialogActions>
-    </Dialog>
+    </MobileDialog>
   );
 }

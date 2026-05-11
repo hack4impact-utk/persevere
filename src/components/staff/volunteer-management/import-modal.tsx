@@ -9,7 +9,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   Paper,
@@ -25,7 +24,7 @@ import {
 import Papa from "papaparse";
 import { type ReactElement, useCallback, useRef, useState } from "react";
 
-import { ModalTitleBar } from "@/components/shared";
+import { MobileDialog, ModalTitleBar } from "@/components/shared";
 import { useVolunteerImport } from "@/hooks/use-volunteer-import";
 
 type Stage = "idle" | "preview" | "importing" | "results";
@@ -149,7 +148,7 @@ export default function ImportVolunteerModal({
   }, [reset]);
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+    <MobileDialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <ModalTitleBar title="Import Volunteers from CSV" onClose={handleClose} />
 
       <DialogContent dividers>
@@ -365,6 +364,6 @@ export default function ImportVolunteerModal({
           </>
         )}
       </DialogActions>
-    </Dialog>
+    </MobileDialog>
   );
 }

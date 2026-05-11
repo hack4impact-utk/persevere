@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   InputAdornment,
@@ -15,7 +14,7 @@ import {
 } from "@mui/material";
 import { JSX, useState } from "react";
 
-import { ModalTitleBar } from "@/components/shared";
+import { MobileDialog, ModalTitleBar } from "@/components/shared";
 import type { RsvpItem } from "@/components/volunteer/types";
 import type { LogHoursInput } from "@/hooks/use-volunteer-hours";
 
@@ -43,7 +42,6 @@ export default function VolunteerLogHoursModal({
   const [hours, setHours] = useState("");
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
-
   const today = new Date().toISOString().split("T")[0];
 
   const handleSubmit = async (): Promise<void> => {
@@ -95,7 +93,7 @@ export default function VolunteerLogHoursModal({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
+    <MobileDialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
       <ModalTitleBar title="Log New Hours" onClose={handleClose} />
       <DialogContent dividers sx={{ p: 3 }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -135,7 +133,13 @@ export default function VolunteerLogHoursModal({
             )}
           </TextField>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gap: 2,
+            }}
+          >
             <TextField
               label="Date"
               type="date"
@@ -191,7 +195,20 @@ export default function VolunteerLogHoursModal({
           />
         </Box>
       </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
+      <DialogActions
+        sx={{
+          p: 2,
+          position: { xs: "sticky", sm: "static" },
+          bottom: 0,
+          bgcolor: "background.paper",
+          borderTop: { xs: 1, sm: 0 },
+          borderColor: "divider",
+          paddingBottom: {
+            xs: "max(16px, env(safe-area-inset-bottom, 0px))",
+            sm: 2,
+          },
+        }}
+      >
         <Button onClick={handleClose} disabled={isMutating}>
           Cancel
         </Button>
@@ -204,6 +221,6 @@ export default function VolunteerLogHoursModal({
           {isMutating ? "Submitting…" : "Submit Hours"}
         </Button>
       </DialogActions>
-    </Dialog>
+    </MobileDialog>
   );
 }

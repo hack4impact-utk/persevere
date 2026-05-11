@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   InputAdornment,
@@ -13,7 +12,7 @@ import {
 } from "@mui/material";
 import { JSX, useEffect, useState } from "react";
 
-import { ModalTitleBar } from "@/components/shared";
+import { MobileDialog, ModalTitleBar } from "@/components/shared";
 import type {
   EditHoursInput,
   VolunteerHourEntry,
@@ -43,7 +42,6 @@ export default function VolunteerEditHoursModal({
   const [hours, setHours] = useState("");
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
-
   useEffect(() => {
     if (entry) {
       setDate(new Date(entry.date).toISOString().split("T")[0] ?? "");
@@ -99,7 +97,7 @@ export default function VolunteerEditHoursModal({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
+    <MobileDialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
       <ModalTitleBar title="Edit Hours Entry" onClose={handleClose} />
       <DialogContent dividers sx={{ p: 3 }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -108,7 +106,13 @@ export default function VolunteerEditHoursModal({
           )}
           {formError && <Alert severity="error">{formError}</Alert>}
 
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gap: 2,
+            }}
+          >
             <TextField
               label="Date"
               type="date"
@@ -150,7 +154,16 @@ export default function VolunteerEditHoursModal({
           />
         </Box>
       </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
+      <DialogActions
+        sx={{
+          p: 2,
+          position: { xs: "sticky", sm: "static" },
+          bottom: 0,
+          bgcolor: "background.paper",
+          borderTop: { xs: 1, sm: 0 },
+          borderColor: "divider",
+        }}
+      >
         <Button onClick={handleClose} disabled={isMutating}>
           Cancel
         </Button>
@@ -163,6 +176,6 @@ export default function VolunteerEditHoursModal({
           {isMutating ? "Saving…" : "Save Changes"}
         </Button>
       </DialogActions>
-    </Dialog>
+    </MobileDialog>
   );
 }

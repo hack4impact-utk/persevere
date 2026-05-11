@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   Chip,
-  Drawer,
   FormControl,
   FormControlLabel,
   FormLabel,
@@ -23,6 +22,7 @@ import {
 import { enqueueSnackbar } from "notistack";
 import { JSX, useEffect, useState } from "react";
 
+import { MobileDialog } from "@/components/shared";
 import { useCalendarEvents } from "@/hooks/use-calendar-events";
 import { useEventCategories } from "@/hooks/use-event-categories";
 import { useOpportunitySkills } from "@/hooks/use-opportunity-skills";
@@ -207,12 +207,7 @@ export default function EventFormModal({
   };
 
   return (
-    <Drawer
-      anchor="right"
-      open={open}
-      onClose={onClose}
-      PaperProps={{ sx: { width: 640, maxWidth: "100vw" } }}
-    >
+    <MobileDialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
         {/* Header */}
         <Box
@@ -265,7 +260,13 @@ export default function EventFormModal({
                 setFormData({ ...formData, location: e.target.value });
               }}
             />
-            <Box sx={{ display: "flex", gap: 2 }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                gap: 2,
+              }}
+            >
               <TextField
                 label="Start Date"
                 type="date"
@@ -289,7 +290,13 @@ export default function EventFormModal({
                 InputLabelProps={{ shrink: true }}
               />
             </Box>
-            <Box sx={{ display: "flex", gap: 2 }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                gap: 2,
+              }}
+            >
               <TextField
                 label="End Date"
                 type="date"
@@ -489,7 +496,7 @@ export default function EventFormModal({
                           });
                         }}
                         InputLabelProps={{ shrink: true }}
-                        sx={{ ml: 4, mb: 1, width: 200 }}
+                        sx={{ ml: 4, mb: 1, width: { xs: "100%", sm: 200 } }}
                       />
                     )}
                     <FormControlLabel
@@ -505,6 +512,7 @@ export default function EventFormModal({
                           gap: 1,
                           ml: 4,
                           mb: 1,
+                          flexWrap: "wrap",
                         }}
                       >
                         <TextField
@@ -518,7 +526,7 @@ export default function EventFormModal({
                             });
                           }}
                           inputProps={{ min: 1 }}
-                          sx={{ width: 80 }}
+                          sx={{ width: { xs: "100%", sm: 80 } }}
                         />
                         <Typography variant="body2">occurrences</Typography>
                       </Box>
@@ -555,6 +563,6 @@ export default function EventFormModal({
           </Button>
         </Box>
       </Box>
-    </Drawer>
+    </MobileDialog>
   );
 }

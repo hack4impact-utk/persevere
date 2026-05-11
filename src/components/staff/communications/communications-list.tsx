@@ -1,5 +1,6 @@
 "use client";
 
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CreateIcon from "@mui/icons-material/Create";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PersonIcon from "@mui/icons-material/Person";
@@ -8,6 +9,7 @@ import {
   Alert,
   Avatar,
   Box,
+  Button,
   CircularProgress,
   Divider,
   Fab,
@@ -26,6 +28,7 @@ import { type ReactElement, useCallback, useState } from "react";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { EmptyState } from "@/components/ui";
 import { useCommunications } from "@/hooks/use-communications";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 
 import ComposeModal from "./compose-modal";
 
@@ -42,6 +45,7 @@ export type CommunicationsListProps = {
 export default function CommunicationsList({
   userRole,
 }: CommunicationsListProps): ReactElement {
+  const isMobile = useIsMobile();
   const {
     communications,
     selectedCommunication,
@@ -53,6 +57,7 @@ export default function CommunicationsList({
     loadCommunications,
     selectCommunication,
     deleteCommunication,
+    clearSelection,
   } = useCommunications();
   const [composeModalOpen, setComposeModalOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{
@@ -116,6 +121,7 @@ export default function CommunicationsList({
       <Box
         sx={{
           display: "flex",
+          flexDirection: { xs: "column", md: "row" },
           gap: 2,
           flex: 1,
           minHeight: 0,
@@ -126,9 +132,9 @@ export default function CommunicationsList({
         <Paper
           variant="outlined"
           sx={{
-            width: "380px",
+            width: { xs: "100%", md: "380px" },
             flexShrink: 0,
-            display: "flex",
+            display: isMobile && selectedCommunication ? "none" : "flex",
             flexDirection: "column",
             overflow: "hidden",
             borderRadius: 2,
@@ -280,7 +286,7 @@ export default function CommunicationsList({
           variant="outlined"
           sx={{
             flex: 1,
-            display: "flex",
+            display: isMobile && !selectedCommunication ? "none" : "flex",
             flexDirection: "column",
             overflow: "hidden",
             p: { xs: 2, md: 4 },
@@ -298,6 +304,17 @@ export default function CommunicationsList({
                 overflow: "hidden",
               }}
             >
+              {/* Back button (mobile only) */}
+              {isMobile && (
+                <Button
+                  startIcon={<ArrowBackIcon />}
+                  onClick={clearSelection}
+                  sx={{ mb: 1, alignSelf: "flex-start" }}
+                >
+                  Back
+                </Button>
+              )}
+
               {/* Subject */}
               <Typography
                 sx={{

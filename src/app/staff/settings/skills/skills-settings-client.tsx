@@ -6,9 +6,9 @@ import EditIcon from "@mui/icons-material/Edit";
 import {
   Box,
   Button,
+  Card,
   Chip,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   IconButton,
@@ -27,7 +27,12 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { ConfirmDialog, ModalTitleBar } from "@/components/shared";
+import {
+  ConfirmDialog,
+  MobileDialog,
+  ModalTitleBar,
+  ResponsiveTable,
+} from "@/components/shared";
 import { EmptyState } from "@/components/ui";
 import { useSkills } from "@/hooks/use-skills";
 
@@ -303,122 +308,227 @@ export default function SkillsSettingsClient(): JSX.Element {
               position: "relative",
             }}
           >
-            <TableContainer sx={{ flex: 1, overflow: "auto" }}>
-              <Table stickyHeader size="small">
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: "action.hover" }}>
-                    <TableCell
-                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
-                    >
-                      Name
-                    </TableCell>
-                    <TableCell
-                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
-                    >
-                      Description
-                    </TableCell>
-                    <TableCell
-                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
-                    >
-                      Category
-                    </TableCell>
-                    <TableCell
-                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
-                      align="right"
-                    >
-                      Actions
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {skillsLoading && (
-                    <TableRow>
-                      <TableCell colSpan={4} sx={{ p: 0, borderBottom: 0 }}>
-                        <Box
+            <ResponsiveTable
+              desktop={
+                <TableContainer sx={{ flex: 1, overflow: "auto" }}>
+                  <Table stickyHeader size="small">
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: "action.hover" }}>
+                        <TableCell
                           sx={{
-                            position: "absolute",
-                            top: 48,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            backgroundColor: "rgba(255, 255, 255, 0.7)",
-                            zIndex: 1,
+                            fontWeight: 600,
+                            fontSize: "0.875rem",
+                            py: 1.5,
                           }}
                         >
-                          <CircularProgress />
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {skills.length === 0 ? (
-                    skillsLoading ? null : (
-                      <TableRow>
-                        <TableCell colSpan={4} align="center" sx={{ py: 5 }}>
-                          <EmptyState
-                            message="No skills yet."
-                            action={
-                              <Box
-                                component="span"
-                                sx={{
-                                  cursor: "pointer",
-                                  color: "primary.main",
-                                  fontWeight: 500,
-                                }}
-                                onClick={openAddSkill}
-                              >
-                                Add the first skill
-                              </Box>
-                            }
-                          />
-                        </TableCell>
-                      </TableRow>
-                    )
-                  ) : (
-                    skills.map((skill, index) => (
-                      <TableRow
-                        key={skill.id}
-                        hover
-                        sx={{
-                          backgroundColor:
-                            index % 2 === 0 ? "transparent" : "action.hover",
-                          "&:last-child td": { border: 0 },
-                        }}
-                      >
-                        <TableCell sx={{ fontWeight: 500 }}>
-                          {skill.name}
+                          Name
                         </TableCell>
                         <TableCell
-                          sx={{ color: "text.secondary", maxWidth: 300 }}
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "0.875rem",
+                            py: 1.5,
+                          }}
                         >
-                          {skill.description ?? "—"}
+                          Description
                         </TableCell>
-                        <TableCell>
-                          {skill.category ? (
-                            <Chip
-                              label={skill.category}
-                              size="small"
-                              variant="outlined"
-                              sx={{ fontSize: "0.75rem" }}
-                            />
-                          ) : (
+                        <TableCell
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "0.875rem",
+                            py: 1.5,
+                          }}
+                        >
+                          Category
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "0.875rem",
+                            py: 1.5,
+                          }}
+                          align="right"
+                        >
+                          Actions
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {skillsLoading && (
+                        <TableRow>
+                          <TableCell colSpan={4} sx={{ p: 0, borderBottom: 0 }}>
+                            <Box
+                              sx={{
+                                position: "absolute",
+                                top: 48,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                                zIndex: 1,
+                              }}
+                            >
+                              <CircularProgress />
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      {skills.length === 0 ? (
+                        skillsLoading ? null : (
+                          <TableRow>
+                            <TableCell
+                              colSpan={4}
+                              align="center"
+                              sx={{ py: 5 }}
+                            >
+                              <EmptyState
+                                message="No skills yet."
+                                action={
+                                  <Box
+                                    component="span"
+                                    sx={{
+                                      cursor: "pointer",
+                                      color: "primary.main",
+                                      fontWeight: 500,
+                                    }}
+                                    onClick={openAddSkill}
+                                  >
+                                    Add the first skill
+                                  </Box>
+                                }
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )
+                      ) : (
+                        skills.map((skill, index) => (
+                          <TableRow
+                            key={skill.id}
+                            hover
+                            sx={{
+                              backgroundColor:
+                                index % 2 === 0
+                                  ? "transparent"
+                                  : "action.hover",
+                              "&:last-child td": { border: 0 },
+                            }}
+                          >
+                            <TableCell sx={{ fontWeight: 500 }}>
+                              {skill.name}
+                            </TableCell>
+                            <TableCell
+                              sx={{ color: "text.secondary", maxWidth: 300 }}
+                            >
+                              {skill.description ?? "—"}
+                            </TableCell>
+                            <TableCell>
+                              {skill.category ? (
+                                <Chip
+                                  label={skill.category}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ fontSize: "0.75rem" }}
+                                />
+                              ) : (
+                                <Typography
+                                  variant="body2"
+                                  color="text.disabled"
+                                  component="span"
+                                >
+                                  —
+                                </Typography>
+                              )}
+                            </TableCell>
+                            <TableCell align="right">
+                              <Stack
+                                direction="row"
+                                spacing={0.5}
+                                justifyContent="flex-end"
+                              >
+                                <Tooltip title="Edit skill">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => openEditSkill(skill)}
+                                  >
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Delete skill">
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={() => setDeleteSkillConfirm(skill)}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              }
+              mobile={
+                <Stack spacing={1} sx={{ p: 1.5 }}>
+                  {skillsLoading ? (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        py: 4,
+                      }}
+                    >
+                      <CircularProgress />
+                    </Box>
+                  ) : skills.length === 0 ? (
+                    <EmptyState
+                      message="No skills yet."
+                      action={
+                        <Box
+                          component="span"
+                          sx={{
+                            cursor: "pointer",
+                            color: "primary.main",
+                            fontWeight: 500,
+                          }}
+                          onClick={openAddSkill}
+                        >
+                          Add the first skill
+                        </Box>
+                      }
+                    />
+                  ) : (
+                    skills.map((skill) => (
+                      <Card key={skill.id} variant="outlined">
+                        <Box sx={{ p: 1.5 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                            }}
+                          >
                             <Typography
                               variant="body2"
-                              color="text.disabled"
-                              component="span"
+                              fontWeight={500}
+                              sx={{ flex: 1 }}
                             >
-                              —
+                              {skill.name}
                             </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell align="right">
-                          <Stack
-                            direction="row"
-                            spacing={0.5}
-                            justifyContent="flex-end"
-                          >
+                            {skill.category && (
+                              <Chip
+                                label={skill.category}
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontSize: "0.75rem" }}
+                              />
+                            )}
                             <Tooltip title="Edit skill">
                               <IconButton
                                 size="small"
@@ -436,14 +546,23 @@ export default function SkillsSettingsClient(): JSX.Element {
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
+                          </Box>
+                          {skill.description && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ display: "block", mt: 0.5 }}
+                            >
+                              {skill.description}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Card>
                     ))
                   )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                </Stack>
+              }
+            />
           </Paper>
         </Box>
 
@@ -489,99 +608,194 @@ export default function SkillsSettingsClient(): JSX.Element {
               position: "relative",
             }}
           >
-            <TableContainer sx={{ flex: 1, overflow: "auto" }}>
-              <Table stickyHeader size="small">
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: "action.hover" }}>
-                    <TableCell
-                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
-                    >
-                      Name
-                    </TableCell>
-                    <TableCell
-                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
-                    >
-                      Description
-                    </TableCell>
-                    <TableCell
-                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
-                      align="right"
-                    >
-                      Actions
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {interestsLoading && (
-                    <TableRow>
-                      <TableCell colSpan={3} sx={{ p: 0, borderBottom: 0 }}>
-                        <Box
+            <ResponsiveTable
+              desktop={
+                <TableContainer sx={{ flex: 1, overflow: "auto" }}>
+                  <Table stickyHeader size="small">
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: "action.hover" }}>
+                        <TableCell
                           sx={{
-                            position: "absolute",
-                            top: 48,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            backgroundColor: "rgba(255, 255, 255, 0.7)",
-                            zIndex: 1,
+                            fontWeight: 600,
+                            fontSize: "0.875rem",
+                            py: 1.5,
                           }}
                         >
-                          <CircularProgress />
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {interests.length === 0 ? (
-                    interestsLoading ? null : (
-                      <TableRow>
-                        <TableCell colSpan={3} align="center" sx={{ py: 5 }}>
-                          <EmptyState
-                            message="No interests yet."
-                            action={
-                              <Box
-                                component="span"
-                                sx={{
-                                  cursor: "pointer",
-                                  color: "primary.main",
-                                  fontWeight: 500,
-                                }}
-                                onClick={openAddInterest}
-                              >
-                                Add the first interest
-                              </Box>
-                            }
-                          />
-                        </TableCell>
-                      </TableRow>
-                    )
-                  ) : (
-                    interests.map((interest, index) => (
-                      <TableRow
-                        key={interest.id}
-                        hover
-                        sx={{
-                          backgroundColor:
-                            index % 2 === 0 ? "transparent" : "action.hover",
-                          "&:last-child td": { border: 0 },
-                        }}
-                      >
-                        <TableCell sx={{ fontWeight: 500 }}>
-                          {interest.name}
+                          Name
                         </TableCell>
                         <TableCell
-                          sx={{ color: "text.secondary", maxWidth: 400 }}
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "0.875rem",
+                            py: 1.5,
+                          }}
                         >
-                          {interest.description ?? "—"}
+                          Description
                         </TableCell>
-                        <TableCell align="right">
-                          <Stack
-                            direction="row"
-                            spacing={0.5}
-                            justifyContent="flex-end"
+                        <TableCell
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "0.875rem",
+                            py: 1.5,
+                          }}
+                          align="right"
+                        >
+                          Actions
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {interestsLoading && (
+                        <TableRow>
+                          <TableCell colSpan={3} sx={{ p: 0, borderBottom: 0 }}>
+                            <Box
+                              sx={{
+                                position: "absolute",
+                                top: 48,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                                zIndex: 1,
+                              }}
+                            >
+                              <CircularProgress />
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      {interests.length === 0 ? (
+                        interestsLoading ? null : (
+                          <TableRow>
+                            <TableCell
+                              colSpan={3}
+                              align="center"
+                              sx={{ py: 5 }}
+                            >
+                              <EmptyState
+                                message="No interests yet."
+                                action={
+                                  <Box
+                                    component="span"
+                                    sx={{
+                                      cursor: "pointer",
+                                      color: "primary.main",
+                                      fontWeight: 500,
+                                    }}
+                                    onClick={openAddInterest}
+                                  >
+                                    Add the first interest
+                                  </Box>
+                                }
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )
+                      ) : (
+                        interests.map((interest, index) => (
+                          <TableRow
+                            key={interest.id}
+                            hover
+                            sx={{
+                              backgroundColor:
+                                index % 2 === 0
+                                  ? "transparent"
+                                  : "action.hover",
+                              "&:last-child td": { border: 0 },
+                            }}
                           >
+                            <TableCell sx={{ fontWeight: 500 }}>
+                              {interest.name}
+                            </TableCell>
+                            <TableCell
+                              sx={{ color: "text.secondary", maxWidth: 400 }}
+                            >
+                              {interest.description ?? "—"}
+                            </TableCell>
+                            <TableCell align="right">
+                              <Stack
+                                direction="row"
+                                spacing={0.5}
+                                justifyContent="flex-end"
+                              >
+                                <Tooltip title="Edit interest">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => openEditInterest(interest)}
+                                  >
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Delete interest">
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={() =>
+                                      setDeleteInterestConfirm(interest)
+                                    }
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              }
+              mobile={
+                <Stack spacing={1} sx={{ p: 1.5 }}>
+                  {interestsLoading ? (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        py: 4,
+                      }}
+                    >
+                      <CircularProgress />
+                    </Box>
+                  ) : interests.length === 0 ? (
+                    <EmptyState
+                      message="No interests yet."
+                      action={
+                        <Box
+                          component="span"
+                          sx={{
+                            cursor: "pointer",
+                            color: "primary.main",
+                            fontWeight: 500,
+                          }}
+                          onClick={openAddInterest}
+                        >
+                          Add the first interest
+                        </Box>
+                      }
+                    />
+                  ) : (
+                    interests.map((interest) => (
+                      <Card key={interest.id} variant="outlined">
+                        <Box sx={{ p: 1.5 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                            }}
+                          >
+                            <Typography
+                              variant="body2"
+                              fontWeight={500}
+                              sx={{ flex: 1 }}
+                            >
+                              {interest.name}
+                            </Typography>
                             <Tooltip title="Edit interest">
                               <IconButton
                                 size="small"
@@ -601,19 +815,28 @@ export default function SkillsSettingsClient(): JSX.Element {
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
+                          </Box>
+                          {interest.description && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ display: "block", mt: 0.5 }}
+                            >
+                              {interest.description}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Card>
                     ))
                   )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                </Stack>
+              }
+            />
           </Paper>
         </Box>
       </Stack>
       {/* Skill Add/Edit Dialog */}
-      <Dialog
+      <MobileDialog
         open={skillDialogOpen}
         onClose={() => setSkillDialogOpen(false)}
         maxWidth="sm"
@@ -670,9 +893,9 @@ export default function SkillsSettingsClient(): JSX.Element {
             {skillSaving ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </MobileDialog>
       {/* Interest Add/Edit Dialog */}
-      <Dialog
+      <MobileDialog
         open={interestDialogOpen}
         onClose={() => setInterestDialogOpen(false)}
         maxWidth="sm"
@@ -721,7 +944,7 @@ export default function SkillsSettingsClient(): JSX.Element {
             {interestSaving ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </MobileDialog>
 
       <ConfirmDialog
         open={deleteSkillConfirm !== null}

@@ -1,7 +1,6 @@
 "use client";
 
 import DownloadIcon from "@mui/icons-material/Download";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -11,28 +10,20 @@ import {
   Button,
   Checkbox,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  Divider,
   Drawer,
   FormControl,
   FormControlLabel,
-  FormGroup,
-  IconButton,
   InputLabel,
   MenuItem,
   Select,
   SelectChangeEvent,
-  Stack,
   TextField,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { type ReactElement, useCallback, useState } from "react";
 
-import { ModalTitleBar, PageHeader } from "@/components/shared";
+import { FilterDrawer, ModalTitleBar, PageHeader } from "@/components/shared";
 import ImportVolunteerModal from "@/components/staff/volunteer-management/import-modal";
 import AddVolunteerModal from "@/components/staff/volunteer-management/volunteer-add-modal";
 import VolunteerProfile from "@/components/staff/volunteer-management/volunteer-profile";
@@ -56,10 +47,12 @@ export default function PeopleList(): ReactElement {
   const [statusFilter, setStatusFilter] = useState<PersonStatusFilter>("");
   const [typeFilter, setTypeFilter] = useState<string | undefined>();
   const [alumniFilter, setAlumniFilter] = useState<boolean | undefined>();
-  const [filterModalOpen, setFilterModalOpen] = useState(false);
 
-  const hasAdditionalFilters =
-    typeFilter !== undefined || alumniFilter !== undefined;
+  const activeFilterCount =
+    (roleFilter ? 1 : 0) +
+    (statusFilter ? 1 : 0) +
+    (typeFilter ? 1 : 0) +
+    (alumniFilter ? 1 : 0);
 
   const { activeTypes } = useVolunteerTypes();
 
@@ -151,6 +144,8 @@ export default function PeopleList(): ReactElement {
   );
 
   const handleClearFilters = useCallback((): void => {
+    setRoleFilter("");
+    setStatusFilter("");
     setTypeFilter(undefined);
     setAlumniFilter(undefined);
     setPage(1);
@@ -204,8 +199,7 @@ export default function PeopleList(): ReactElement {
     }
   }, [selectedVolunteerId, resendCredentials, enqueueSnackbar]);
 
-  // Show pagination only when role-filtered (paginated fetch); hide for "all" (full fetch)
-  const showPagination = roleFilter !== "";
+  // Pagination is now applied to all views (even when no role filter is active)
 
   return (
     <Box
@@ -306,55 +300,64 @@ export default function PeopleList(): ReactElement {
               placeholder="Search by name or email…"
               sx={{ minWidth: 240 }}
             />
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel id="role-filter-label">Role</InputLabel>
-              <Select
-                labelId="role-filter-label"
-                label="Role"
-                value={roleFilter}
-                onChange={handleRoleFilterChange}
-              >
-                <MenuItem value="">All roles</MenuItem>
-                <MenuItem value="admin">Admin</MenuItem>
-                <MenuItem value="staff">Staff</MenuItem>
-                <MenuItem value="volunteer">Volunteer</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel id="status-filter-label">Status</InputLabel>
-              <Select
-                labelId="status-filter-label"
-                label="Status"
-                value={statusFilter}
-                onChange={handleStatusFilterChange}
-              >
-                <MenuItem value="">All statuses</MenuItem>
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-              </Select>
-            </FormControl>
-            <Tooltip title="More filters">
-              <IconButton
-                color="primary"
-                onClick={() => setFilterModalOpen(true)}
-                sx={{
-                  backgroundColor: hasAdditionalFilters
-                    ? "primary.main"
-                    : "transparent",
-                  color: hasAdditionalFilters
-                    ? "primary.contrastText"
-                    : "primary.main",
-                  "&:hover": {
-                    backgroundColor: hasAdditionalFilters
-                      ? "primary.dark"
-                      : "action.hover",
-                  },
-                }}
-              >
-                <FilterListIcon />
-              </IconButton>
-            </Tooltip>
+            <FilterDrawer
+              activeFilterCount={activeFilterCount}
+              onClear={handleClearFilters}
+            >
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel id="role-filter-label">Role</InputLabel>
+                <Select
+                  labelId="role-filter-label"
+                  label="Role"
+                  value={roleFilter}
+                  onChange={handleRoleFilterChange}
+                >
+                  <MenuItem value="">All roles</MenuItem>
+                  <MenuItem value="admin">Admin</MenuItem>
+                  <MenuItem value="staff">Staff</MenuItem>
+                  <MenuItem value="volunteer">Volunteer</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel id="status-filter-label">Status</InputLabel>
+                <Select
+                  labelId="status-filter-label"
+                  label="Status"
+                  value={statusFilter}
+                  onChange={handleStatusFilterChange}
+                >
+                  <MenuItem value="">All statuses</MenuItem>
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="inactive">Inactive</MenuItem>
+                  <MenuItem value="pending">Pending</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl size="small" sx={{ minWidth: 160 }}>
+                <InputLabel id="type-filter-label">Volunteer Type</InputLabel>
+                <Select
+                  labelId="type-filter-label"
+                  label="Volunteer Type"
+                  value={typeFilter ?? ""}
+                  onChange={handleFilterTypeChange}
+                >
+                  <MenuItem value="">All types</MenuItem>
+                  {activeTypes.map((t) => (
+                    <MenuItem key={t.id} value={t.name}>
+                      {t.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={alumniFilter === true}
+                    onChange={handleFilterAlumniChange}
+                  />
+                }
+                label="Alumni only"
+              />
+            </FilterDrawer>
           </Box>
           <Typography variant="body2" color="text.secondary">
             {total} result{total === 1 ? "" : "s"}
@@ -370,7 +373,6 @@ export default function PeopleList(): ReactElement {
           onLimitChange={handleLimitChange}
           onPersonClick={(p) => void handlePersonClick(p)}
           loading={loading}
-          showPagination={showPagination}
         />
       </Box>
 
@@ -463,78 +465,6 @@ export default function PeopleList(): ReactElement {
           void loadPeople();
         }}
       />
-
-      {/* More filters dialog (volunteer type + alumni) */}
-      <Dialog
-        open={filterModalOpen}
-        onClose={() => setFilterModalOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <ModalTitleBar
-          title="Filter People"
-          onClose={() => setFilterModalOpen(false)}
-        />
-        <Divider />
-        <DialogContent sx={{ px: 3, py: 3 }}>
-          <Stack spacing={3}>
-            <Box>
-              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
-                Volunteer Type
-              </Typography>
-              <FormControl fullWidth>
-                <InputLabel id="filter-type-label" shrink>
-                  Volunteer Type
-                </InputLabel>
-                <Select
-                  labelId="filter-type-label"
-                  label="Volunteer Type"
-                  value={typeFilter ?? ""}
-                  onChange={handleFilterTypeChange}
-                  displayEmpty
-                  notched
-                >
-                  <MenuItem value="">
-                    <em>All Types</em>
-                  </MenuItem>
-                  {activeTypes.map((t) => (
-                    <MenuItem key={t.id} value={t.name}>
-                      {t.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-            <Divider />
-            <Box>
-              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
-                Additional Filters
-              </Typography>
-              <FormGroup>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={alumniFilter === true}
-                      onChange={handleFilterAlumniChange}
-                    />
-                  }
-                  label="Alumni only"
-                />
-              </FormGroup>
-            </Box>
-          </Stack>
-        </DialogContent>
-        <Divider />
-        <DialogActions>
-          <Button onClick={handleClearFilters} disabled={!hasAdditionalFilters}>
-            Clear Filters
-          </Button>
-          <Box sx={{ flex: 1 }} />
-          <Button onClick={() => setFilterModalOpen(false)} variant="contained">
-            Apply Filters
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }

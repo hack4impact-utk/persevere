@@ -3,6 +3,7 @@
 import type { DatesSetArg } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import listPlugin from "@fullcalendar/list";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
@@ -12,7 +13,6 @@ import {
   alpha,
   Box,
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -25,9 +25,16 @@ import {
 import { enqueueSnackbar } from "notistack";
 import { JSX, useMemo, useRef, useState } from "react";
 
+import { MobileDialog } from "@/components/shared";
 import type { CalendarEvent } from "@/hooks/use-calendar-events";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 
-type ViewName = "dayGridMonth" | "timeGridWeek" | "timeGridDay";
+type ViewName =
+  | "dayGridMonth"
+  | "timeGridWeek"
+  | "timeGridDay"
+  | "listMonth"
+  | "listWeek";
 
 type CalendarProps = {
   events: CalendarEvent[];
@@ -37,6 +44,7 @@ type CalendarProps = {
   readOnly?: boolean;
   eventColors?: Record<string, string>;
   compact?: boolean;
+  initialView?: ViewName;
 };
 
 export default function Calendar({
@@ -47,8 +55,14 @@ export default function Calendar({
   onEventDrop,
   eventColors,
   compact = false,
+  initialView,
 }: CalendarProps): JSX.Element {
   const theme = useTheme();
+  const isMobile = useIsMobile();
+  // Touch devices can't reliably drag FullCalendar events — pixel precision
+  // fights with native scroll. Make the calendar tap-only on mobile and let
+  // the existing detail/edit modal handle changes.
+  const effectiveReadOnly = readOnly || isMobile;
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null,
   );
@@ -56,7 +70,9 @@ export default function Calendar({
 
   // Custom toolbar state (staff full-view only)
   const calendarRef = useRef<FullCalendar>(null);
-  const [currentView, setCurrentView] = useState<ViewName>("dayGridMonth");
+  const [currentView, setCurrentView] = useState<ViewName>(
+    initialView ?? "dayGridMonth",
+  );
   const [currentTitle, setCurrentTitle] = useState<string>(
     new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
   );
@@ -202,13 +218,22 @@ export default function Calendar({
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: { xs: "stretch", md: "center" },
+            flexDirection: { xs: "column", md: "row" },
+            gap: { xs: 1.5, md: 0 },
             mb: 1.5,
             flexShrink: 0,
           }}
         >
           {/* Left: view toggle + category filter */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              flexWrap: "wrap",
+            }}
+          >
             <Box
               sx={{
                 display: "flex",
@@ -264,7 +289,7 @@ export default function Calendar({
               }}
               displayEmpty
               sx={{
-                minWidth: 160,
+                minWidth: { xs: 0, sm: 140 },
                 borderRadius: "8px",
                 bgcolor: "background.paper",
                 fontSize: 14,
@@ -280,7 +305,15 @@ export default function Calendar({
           </Box>
 
           {/* Right: prev / month-year title / next / today */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              flexWrap: "wrap",
+              justifyContent: { xs: "space-between", md: "flex-end" },
+            }}
+          >
             <IconButton
               size="small"
               onClick={handlePrev}
@@ -483,8 +516,13 @@ export default function Calendar({
       >
         <FullCalendar
           ref={calendarRef}
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
+          plugins={[
+            dayGridPlugin,
+            timeGridPlugin,
+            interactionPlugin,
+            listPlugin,
+          ]}
+          initialView={initialView ?? "dayGridMonth"}
           headerToolbar={
             compact
               ? { left: "prev,next today", center: "title", right: "" }
@@ -497,15 +535,15 @@ export default function Calendar({
             day: "Day",
             today: "Today",
           }}
-          editable={!readOnly}
-          selectable={!readOnly}
-          selectMirror={!readOnly}
+          editable={!effectiveReadOnly}
+          selectable={!effectiveReadOnly}
+          selectMirror={!effectiveReadOnly}
           dayMaxEvents
           weekends
           events={filteredEvents}
-          select={readOnly ? undefined : handleDateSelect}
+          select={effectiveReadOnly ? undefined : handleDateSelect}
           eventClick={handleEventClick}
-          eventDrop={readOnly ? undefined : handleEventDrop}
+          eventDrop={effectiveReadOnly ? undefined : handleEventDrop}
           eventContent={(arg): JSX.Element => {
             const color =
               arg.event.backgroundColor || theme.palette.primary.main;
@@ -554,14 +592,16 @@ export default function Calendar({
               {arg.dayNumberText.replace(".", "")}
             </Box>
           )}
-          height={compact ? "auto" : "100%"}
-          nowIndicator={!compact}
-          scrollTime={compact ? undefined : currentTimeStr}
+          height={
+            compact ? (isMobile ? "calc(100dvh - 180px)" : "auto") : "100%"
+          }
+          nowIndicator={!compact || isMobile}
+          scrollTime={!compact || isMobile ? currentTimeStr : undefined}
         />
       </Box>
 
       {/* View Event Modal (readOnly volunteer calendar only) */}
-      <Dialog
+      <MobileDialog
         open={isViewModalOpen}
         onClose={() => {
           setIsViewModalOpen(false);
@@ -700,7 +740,7 @@ export default function Calendar({
             Close
           </Button>
         </DialogActions>
-      </Dialog>
+      </MobileDialog>
     </Box>
   );
 }

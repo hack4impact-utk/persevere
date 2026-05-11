@@ -7,7 +7,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
   DialogContent,
   Stack,
   Table,
@@ -19,7 +18,7 @@ import {
 } from "@mui/material";
 import { JSX } from "react";
 
-import { ModalTitleBar } from "@/components/shared";
+import { MobileDialog, ModalTitleBar } from "@/components/shared";
 import { StatusBadge } from "@/components/ui";
 import type {
   AttendanceEvent,
@@ -74,7 +73,7 @@ export default function AttendanceModal({
   });
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <MobileDialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <ModalTitleBar
         title={
           <>
@@ -225,6 +224,6 @@ export default function AttendanceModal({
           </Table>
         )}
       </DialogContent>
-    </Dialog>
+    </MobileDialog>
   );
 }

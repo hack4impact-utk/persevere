@@ -1,29 +1,26 @@
 "use client";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import LogoutIcon from "@mui/icons-material/Logout";
 import PersonIcon from "@mui/icons-material/Person";
-import SettingsIcon from "@mui/icons-material/Settings";
 import {
   Avatar,
+  Box,
   ButtonBase,
-  Divider,
+  Drawer,
   IconButton,
-  ListItemIcon,
-  MenuItem,
-  Popover,
   Tooltip,
   Typography,
 } from "@mui/material";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { type ReactElement, type ReactNode, useState } from "react";
+import { type JSX, type ReactElement, type ReactNode, useState } from "react";
 
-import { useSignOut } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 
 import styles from "./base-sidebar.module.css";
+import ProfileMenu from "./profile-menu";
 
 export type NavItem = {
   label: string;
@@ -33,33 +30,90 @@ export type NavItem = {
 
 type BaseSidebarProps = {
   navItems: NavItem[];
+  /** When true (mobile), the sidebar renders inside a temporary Drawer. */
+  mobileOpen?: boolean;
+  /** Called when the drawer should close (backdrop click or nav-item tap). */
+  onMobileClose?: () => void;
 };
 
 export default function BaseSidebar({
   navItems,
+  mobileOpen = false,
+  onMobileClose,
 }: BaseSidebarProps): ReactElement {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { data: session } = useSession();
+  const isMobile = useIsMobile();
 
+  if (isMobile) {
+    return (
+      <Drawer
+        variant="temporary"
+        anchor="left"
+        open={mobileOpen}
+        onClose={onMobileClose}
+        ModalProps={{ keepMounted: true }}
+        slotProps={{
+          paper: {
+            sx: {
+              width: 280,
+              bgcolor: "primary.main",
+              color: "common.white",
+              pt: "env(safe-area-inset-top, 0px)",
+              pb: "env(safe-area-inset-bottom, 0px)",
+            },
+          },
+        }}
+      >
+        <SidebarContents
+          navItems={navItems}
+          collapsed={false}
+          onNavClick={onMobileClose}
+        />
+      </Drawer>
+    );
+  }
+
+  return <DesktopSidebar navItems={navItems} />;
+}
+
+function DesktopSidebar({ navItems }: { navItems: NavItem[] }): ReactElement {
   const [collapsed, setCollapsed] = useState(false);
+  return (
+    <aside
+      className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ""}`}
+    >
+      <SidebarContents
+        navItems={navItems}
+        collapsed={collapsed}
+        onToggleCollapsed={() => setCollapsed((c) => !c)}
+      />
+    </aside>
+  );
+}
+
+type SidebarContentsProps = {
+  navItems: NavItem[];
+  collapsed: boolean;
+  onToggleCollapsed?: () => void;
+  onNavClick?: () => void;
+};
+
+function SidebarContents({
+  navItems,
+  collapsed,
+  onToggleCollapsed,
+  onNavClick,
+}: SidebarContentsProps): JSX.Element {
+  const pathname = usePathname();
+  const { data: session } = useSession();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
-  const getDashboardRoute = (): string => {
-    if (pathname?.startsWith("/staff")) return "/staff/dashboard";
-    if (pathname?.startsWith("/volunteer")) return "/volunteer/dashboard";
-    return "/home";
-  };
+  const dashboardHref = pathname?.startsWith("/staff")
+    ? "/staff/dashboard"
+    : pathname?.startsWith("/volunteer")
+      ? "/volunteer/dashboard"
+      : "/home";
 
-  const handleSignOut = useSignOut();
-  const popoverOpen = Boolean(anchorEl);
-
-  const openPopover = (e: React.MouseEvent<HTMLElement>): void => {
-    setAnchorEl(e.currentTarget);
-  };
-  const closePopover = (): void => setAnchorEl(null);
-
-  const avatarEl = session?.user?.image ? (
+  const avatar = session?.user?.image ? (
     <Avatar
       alt={session.user.name ?? "User"}
       src={session.user.image}
@@ -79,18 +133,17 @@ export default function BaseSidebar({
   );
 
   return (
-    <aside
-      className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ""}`}
-    >
-      {/* Header row: logo + collapse toggle */}
+    <>
+      {/* Header row: logo + collapse toggle (collapse only on desktop) */}
       <div
         className={`${styles.sidebarHeader} ${collapsed ? styles.sidebarHeaderCollapsed : ""}`}
       >
         {!collapsed && (
           <Link
-            href={getDashboardRoute()}
+            href={dashboardHref}
             aria-label="Go to dashboard"
             style={{ display: "flex" }}
+            onClick={onNavClick}
           >
             <Image
               src="/images/perseverelogo.png"
@@ -101,30 +154,34 @@ export default function BaseSidebar({
             />
           </Link>
         )}
-        <Tooltip
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          placement="right"
-        >
-          <IconButton
-            size="small"
-            onClick={() => setCollapsed((c) => !c)}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            sx={{
-              color: "rgba(255,255,255,0.75)",
-              "&:hover": {
-                color: "#fff",
-                bgcolor: "rgba(255,255,255,0.12)",
-              },
-              ...(collapsed ? {} : { position: "absolute", right: "0.75rem" }),
-            }}
+        {onToggleCollapsed && (
+          <Tooltip
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            placement="right"
           >
-            {collapsed ? (
-              <ChevronRightIcon fontSize="small" />
-            ) : (
-              <ChevronLeftIcon fontSize="small" />
-            )}
-          </IconButton>
-        </Tooltip>
+            <IconButton
+              size="small"
+              onClick={onToggleCollapsed}
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              sx={{
+                color: "rgba(255,255,255,0.75)",
+                "&:hover": {
+                  color: "#fff",
+                  bgcolor: "rgba(255,255,255,0.12)",
+                },
+                ...(collapsed
+                  ? {}
+                  : { position: "absolute", right: "0.75rem" }),
+              }}
+            >
+              {collapsed ? (
+                <ChevronRightIcon fontSize="small" />
+              ) : (
+                <ChevronLeftIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+        )}
       </div>
 
       {/* Navigation */}
@@ -139,6 +196,7 @@ export default function BaseSidebar({
               href={item.href}
               className={styles.link}
               aria-current={isActive ? "page" : undefined}
+              onClick={onNavClick}
             >
               <div
                 className={[
@@ -158,7 +216,6 @@ export default function BaseSidebar({
 
           return collapsed ? (
             <Tooltip key={item.href} title={item.label} placement="right">
-              {/* span needed so Tooltip can attach ref to a DOM element */}
               <span>{itemEl}</span>
             </Tooltip>
           ) : (
@@ -167,8 +224,7 @@ export default function BaseSidebar({
         })}
       </nav>
 
-      {/* Spacer */}
-      <div style={{ flex: 1 }} />
+      <Box sx={{ flex: 1 }} />
 
       {/* Profile zone */}
       <div className={styles.bottomSection}>
@@ -177,13 +233,13 @@ export default function BaseSidebar({
           placement="right"
         >
           <ButtonBase
-            onClick={openPopover}
+            onClick={(e) => setAnchorEl(e.currentTarget)}
             className={`${styles.profileZone} ${collapsed ? styles.profileZoneCollapsed : ""}`}
             aria-label="Open profile menu"
             aria-haspopup="true"
-            aria-expanded={popoverOpen}
+            aria-expanded={Boolean(anchorEl)}
           >
-            {avatarEl}
+            {avatar}
             {!collapsed && session?.user?.name && (
               <Typography
                 variant="body2"
@@ -205,102 +261,11 @@ export default function BaseSidebar({
         </Tooltip>
       </div>
 
-      {/* Profile popover */}
-      <Popover
-        open={popoverOpen}
+      <ProfileMenu
         anchorEl={anchorEl}
-        onClose={closePopover}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        transformOrigin={{ vertical: "bottom", horizontal: "center" }}
-        marginThreshold={0}
-        slotProps={{ paper: { sx: { width: 240, borderRadius: 2 } } }}
-      >
-        {session?.user?.email && (
-          <>
-            <Typography
-              variant="caption"
-              sx={{
-                display: "block",
-                px: 2,
-                pt: 1.5,
-                pb: 0.75,
-                color: "text.secondary",
-                fontWeight: 600,
-              }}
-            >
-              {session.user.email}
-            </Typography>
-            <Divider />
-          </>
-        )}
-        {session?.user?.role === "volunteer" ? (
-          <>
-            <MenuItem
-              onClick={() => {
-                closePopover();
-                router.push("/volunteer/profile");
-              }}
-              sx={{ py: 1.25, gap: 1.5 }}
-            >
-              <ListItemIcon sx={{ minWidth: "auto", color: "inherit" }}>
-                <PersonIcon fontSize="small" />
-              </ListItemIcon>
-              Profile
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                closePopover();
-                router.push("/volunteer/profile?tab=settings");
-              }}
-              sx={{ py: 1.25, gap: 1.5 }}
-            >
-              <ListItemIcon sx={{ minWidth: "auto", color: "inherit" }}>
-                <SettingsIcon fontSize="small" />
-              </ListItemIcon>
-              Settings
-            </MenuItem>
-          </>
-        ) : (
-          <>
-            <MenuItem
-              onClick={() => {
-                closePopover();
-                router.push("/staff/profile");
-              }}
-              sx={{ py: 1.25, gap: 1.5 }}
-            >
-              <ListItemIcon sx={{ minWidth: "auto", color: "inherit" }}>
-                <PersonIcon fontSize="small" />
-              </ListItemIcon>
-              Profile
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                closePopover();
-                router.push("/staff/profile?tab=settings");
-              }}
-              sx={{ py: 1.25, gap: 1.5 }}
-            >
-              <ListItemIcon sx={{ minWidth: "auto", color: "inherit" }}>
-                <SettingsIcon fontSize="small" />
-              </ListItemIcon>
-              Settings
-            </MenuItem>
-          </>
-        )}
-        <MenuItem
-          onClick={() => {
-            closePopover();
-            handleSignOut();
-          }}
-          sx={{ py: 1.25, gap: 1.5, color: "error.main" }}
-        >
-          <ListItemIcon sx={{ minWidth: "auto", color: "inherit" }}>
-            <LogoutIcon fontSize="small" />
-          </ListItemIcon>
-          Sign Out
-        </MenuItem>
-      </Popover>
-    </aside>
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+      />
+    </>
   );
 }
