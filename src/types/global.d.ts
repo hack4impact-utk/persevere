@@ -4,7 +4,7 @@ declare namespace NodeJS {
     DATABASE_URL: string;
     NEXTAUTH_SECRET: string;
     NEXTAUTH_URL?: string;
-    RESEND_API_KEY: string;
-    RESEND_FROM_EMAIL: string;
+    GMAIL_USER: string;
+    GMAIL_APP_PASSWORD: string;
   }
 }
