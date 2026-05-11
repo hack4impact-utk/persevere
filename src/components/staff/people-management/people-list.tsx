@@ -199,8 +199,7 @@ export default function PeopleList(): ReactElement {
     }
   }, [selectedVolunteerId, resendCredentials, enqueueSnackbar]);
 
-  // Show pagination only when role-filtered (paginated fetch); hide for "all" (full fetch)
-  const showPagination = roleFilter !== "";
+  // Pagination is now applied to all views (even when no role filter is active)
 
   return (
     <Box
@@ -374,7 +373,6 @@ export default function PeopleList(): ReactElement {
           onLimitChange={handleLimitChange}
           onPersonClick={(p) => void handlePersonClick(p)}
           loading={loading}
-          showPagination={showPagination}
         />
       </Box>
 

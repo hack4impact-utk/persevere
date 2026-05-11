@@ -23,7 +23,6 @@ export default function VolunteerCalendarPage(): JSX.Element {
   const isMobile = useIsMobile();
 
   const {
-    opportunities,
     rsvpedIds,
     rsvpStatusMap,
     rsvpItems,
@@ -32,10 +31,11 @@ export default function VolunteerCalendarPage(): JSX.Element {
     loadOpportunities,
   } = useOpportunities({ search: "" });
 
+  // Derive calendar events from the volunteer's own RSVPs — no date-range window.
+  // This ensures all RSVPd events (past and future) appear and stay in sync.
   const calendarEvents = useMemo(
-    (): CalendarEvent[] => [
-      // RSVP'd events — all past and future, colored by RSVP status
-      ...rsvpItems
+    (): CalendarEvent[] =>
+      rsvpItems
         .filter(
           (r) =>
             r.opportunityStatus !== "canceled" &&
@@ -50,28 +50,7 @@ export default function VolunteerCalendarPage(): JSX.Element {
           end: r.opportunityEndDate!,
           extendedProps: { status: r.opportunityStatus ?? "open" },
         })),
-      // Non-RSVP'd visible opportunities — populates the list view even with zero RSVPs
-      ...opportunities
-        .filter(
-          (o) =>
-            !rsvpedIds.has(o.id) &&
-            o.status !== "canceled" &&
-            o.endDate !== null,
-        )
-        .map((o) => ({
-          id: String(o.id),
-          title: o.title,
-          location: o.location ?? undefined,
-          start: o.startDate,
-          end: o.endDate!,
-          extendedProps: {
-            status: o.status,
-            categoryId: o.categoryId ?? undefined,
-            categoryName: o.categoryName ?? undefined,
-          },
-        })),
-    ],
-    [rsvpItems, opportunities, rsvpedIds],
+    [rsvpItems],
   );
 
   const rsvpColorMap = useMemo((): Record<string, string> => {
@@ -134,7 +113,7 @@ export default function VolunteerCalendarPage(): JSX.Element {
             <Calendar
               readOnly
               compact
-              initialView={isMobile ? "listMonth" : "dayGridMonth"}
+              initialView={isMobile ? "timeGridDay" : "dayGridMonth"}
               events={calendarEvents}
               onEventClick={(id) => {
                 setSelectedOpportunityId(Number.parseInt(id, 10));
@@ -144,13 +123,7 @@ export default function VolunteerCalendarPage(): JSX.Element {
           )}
         </Box>
 
-        <Box sx={{ display: { xs: "none", lg: "block" } }}>
-          <UpcomingSessions
-            rsvpItems={rsvpItems}
-            loading={loading}
-            onItemClick={setSelectedOpportunityId}
-          />
-        </Box>
+        <UpcomingSessions rsvpItems={rsvpItems} loading={loading} />
       </Box>
 
       <OpportunityDetailModal

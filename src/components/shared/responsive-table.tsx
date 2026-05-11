@@ -42,7 +42,15 @@ export function ResponsiveTable({
 }: ResponsiveTableProps): JSX.Element {
   const isMobile = useIsMobile();
   return (
-    <Box sx={{ width: "100%", flex: 1, minHeight: 0 }}>
+    <Box
+      sx={{
+        width: "100%",
+        flex: 1,
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {isMobile ? mobile : desktop}
     </Box>
   );

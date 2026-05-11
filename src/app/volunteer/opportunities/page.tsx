@@ -138,7 +138,6 @@ export default function OpportunitiesPage(): JSX.Element {
               }}
               label="Category"
               sx={{ minWidth: 180 }}
-              slotProps={{ select: { displayEmpty: true } }}
             >
               <MenuItem value="">All categories</MenuItem>
               {categories.map((c) => (
@@ -156,7 +155,6 @@ export default function OpportunitiesPage(): JSX.Element {
               }}
               label="Location"
               sx={{ minWidth: 160 }}
-              slotProps={{ select: { displayEmpty: true } }}
             >
               <MenuItem value="">Any location</MenuItem>
               {locations.map((loc) => (
@@ -174,7 +172,6 @@ export default function OpportunitiesPage(): JSX.Element {
               }}
               label="Date"
               sx={{ minWidth: 150 }}
-              slotProps={{ select: { displayEmpty: true } }}
             >
               <MenuItem value="">Any date</MenuItem>
               <MenuItem value="week">This week</MenuItem>

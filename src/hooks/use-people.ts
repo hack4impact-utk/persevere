@@ -178,10 +178,11 @@ export function usePeople(
             ...statusParams,
           }),
         ]);
-        setPeople([
+        const combined = [
           ...staffRes.staff.map((s) => staffToPerson(s)),
           ...volunteerRes.volunteers.map((v) => volunteerToPerson(v)),
-        ]);
+        ];
+        setPeople(combined.slice((page - 1) * limit, page * limit));
         setTotal(staffRes.total + volunteerRes.total);
       }
     } catch (error_) {

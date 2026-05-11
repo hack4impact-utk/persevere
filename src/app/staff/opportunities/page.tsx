@@ -212,7 +212,6 @@ export default function StaffOpportunitiesPage(): JSX.Element {
                 );
               }}
               sx={{ minWidth: 180 }}
-              slotProps={{ select: { displayEmpty: true } }}
             >
               <MenuItem value="">All categories</MenuItem>
               {activeCategories.map((c) => (
@@ -230,7 +229,6 @@ export default function StaffOpportunitiesPage(): JSX.Element {
                 setLocationFilter(e.target.value);
               }}
               sx={{ minWidth: 160 }}
-              slotProps={{ select: { displayEmpty: true } }}
             >
               <MenuItem value="">All locations</MenuItem>
               {locations.map((loc) => (

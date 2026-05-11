@@ -592,9 +592,11 @@ export default function Calendar({
               {arg.dayNumberText.replace(".", "")}
             </Box>
           )}
-          height={compact ? "auto" : "100%"}
-          nowIndicator={!compact}
-          scrollTime={compact ? undefined : currentTimeStr}
+          height={
+            compact ? (isMobile ? "calc(100dvh - 180px)" : "auto") : "100%"
+          }
+          nowIndicator={!compact || isMobile}
+          scrollTime={!compact || isMobile ? currentTimeStr : undefined}
         />
       </Box>
 
