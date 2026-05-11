@@ -94,7 +94,10 @@ importers:
         version: 15.5.9(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       next-auth:
         specifier: ^4.24.12
-        version: 4.24.13(next@15.5.9(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 4.24.13(next@15.5.9(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(nodemailer@8.0.7)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      nodemailer:
+        specifier: ^8.0.7
+        version: 8.0.7
       notistack:
         specifier: ^3.0.2
         version: 3.0.2(csstype@3.1.3)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -110,9 +113,6 @@ importers:
       react-hook-form:
         specifier: ^7.62.0
         version: 7.62.0(react@19.1.0)
-      resend:
-        specifier: ^6.5.0
-        version: 6.5.0
       validator:
         specifier: ^13.15.23
         version: 13.15.23
@@ -135,6 +135,9 @@ importers:
       '@types/node':
         specifier: ^20
         version: 20.19.10
+      '@types/nodemailer':
+        specifier: ^8.0.0
+        version: 8.0.0
       '@types/papaparse':
         specifier: ^5.5.2
         version: 5.5.2
@@ -1236,9 +1239,6 @@ packages:
   '@rushstack/eslint-patch@1.12.0':
     resolution: {integrity: sha512-5EwMtOqvJMMa3HbmxLlF74e+3/HhwBTMcvt3nqVJgGCozO6hzIPOBlwm8mGVNR9SN2IJpxSnlxczyDjcn7qIyw==}
 
-  '@stablelib/base64@1.0.1':
-    resolution: {integrity: sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==}
-
   '@standard-schema/utils@0.3.0':
     resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
 
@@ -1463,6 +1463,9 @@ packages:
 
   '@types/node@22.17.1':
     resolution: {integrity: sha512-y3tBaz+rjspDTylNjAX37jEC3TETEFGNJL6uQDxwF9/8GLLIjW1rvVHlynyuUKMnMr1Roq8jOv3vkopBjC4/VA==}
+
+  '@types/nodemailer@8.0.0':
+    resolution: {integrity: sha512-fyf8jWULsCo0d0BuoQ75i6IeoHs47qcqxWc7yUdUcV0pOZGjUTTOvwdG1PRXUDqN/8A64yQdQdnA2pZgcdi+cA==}
 
   '@types/papaparse@5.5.2':
     resolution: {integrity: sha512-gFnFp/JMzLHCwRf7tQHrNnfhN4eYBVYYI897CGX4MY1tzY9l2aLkVyx2IlKZ/SAqDbB3I1AOZW5gTMGGsqWliA==}
@@ -2112,9 +2115,6 @@ packages:
     resolution: {integrity: sha512-w+5mJ3GuFL+NjVtJlvydShqE1eN3h3PbI7/5LAsYJP/2qtuMXjfL2LpHSRqo4b4eSF5K/DH1JXKUAHSB2UW50g==}
     engines: {node: '>= 0.4'}
 
-  es6-promise@4.2.8:
-    resolution: {integrity: sha512-HJDGx5daxeIvxdBxvG2cb9g4tEvwIk3i8+nhX0yGrYmZUzbkdg8QbDevheDB8gd0//uPj4c1EQua8Q+MViT0/w==}
-
   esbuild-register@3.6.0:
     resolution: {integrity: sha512-H2/S7Pm8a9CL1uhp9OvjwrBh5Pvx0H8qVOxNu8Wed9Y7qv56MPtq+GGM8RJpq6glYJn9Wspr8uw7l55uyinNeg==}
     peerDependencies:
@@ -2312,9 +2312,6 @@ packages:
 
   fast-levenshtein@2.0.6:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}
-
-  fast-sha256@1.3.0:
-    resolution: {integrity: sha512-n11RGP/lrWEFI/bWdygLxhI+pVeo1ZYIVwvvPkW7azl/rOy+F3HYRZ2K5zeE9mmkhQppyv9sQFx0JM9UabnpPQ==}
 
   fastq@1.19.1:
     resolution: {integrity: sha512-GwLTyxkCXjXbxqIhTsMI2Nui8huMPtnxg7krajPJAjnEG/iiOS7i+zCtWGZR9G0NBKbXKh6X9m9UIsYX/N6vvQ==}
@@ -2814,6 +2811,10 @@ packages:
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
 
+  nodemailer@8.0.7:
+    resolution: {integrity: sha512-pkjE4mkBzQjdJT4/UmlKl3pX0rC9fZmjh7c6C9o7lv66Ac6w9WCnzPzhbPNxwZAzlF4mdq4CSWB5+FbK6FWCow==}
+    engines: {node: '>=6.0.0'}
+
   notistack@3.0.2:
     resolution: {integrity: sha512-0R+/arLYbK5Hh7mEfR2adt0tyXJcCC9KkA2hc56FeWik2QN6Bm/S4uW+BjzDARsJth5u06nTjelSw/VSnB1YEA==}
     engines: {node: '>=12.0.0', npm: '>=6.0.0'}
@@ -3061,9 +3062,6 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
-  querystringify@2.2.0:
-    resolution: {integrity: sha512-FIqgj2EUvTa7R50u0rGsyTftzjYmv/a3hO345bZNrqabNqjtgiDMgmo4mkUjd+nzU5oF3dClKqFIPUKybUyqoQ==}
-
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
 
@@ -3117,20 +3115,8 @@ packages:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
     engines: {node: '>=0.10.0'}
 
-  requires-port@1.0.0:
-    resolution: {integrity: sha512-KigOCHcocU3XODJxsu8i/j8T9tzT4adHiecwORRQ0ZZFcp7ahwXuRU1m+yuO90C5ZUyGeGfocHDI14M3L3yDAQ==}
-
   reselect@5.1.1:
     resolution: {integrity: sha512-K/BG6eIky/SBpzfHZv/dd+9JBFiS4SWV7FIujVyJRux6e45+73RaUHXLmIR1f7WOMaQ0U1km6qwklRQxpJJY0w==}
-
-  resend@6.5.0:
-    resolution: {integrity: sha512-XeuR/xEDx0TZJ9CT2G9GLbHJcZ4EDHk1cG+dF7lMbSkOLs6dl2A68aD82bjgi8eJ5AljuzKHAjxgPDK3ZAR4Kg==}
-    engines: {node: '>=20'}
-    peerDependencies:
-      '@react-email/render': '*'
-    peerDependenciesMeta:
-      '@react-email/render':
-        optional: true
 
   resolve-from@4.0.0:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
@@ -3337,9 +3323,6 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
-  svix@1.76.1:
-    resolution: {integrity: sha512-CRuDWBTgYfDnBLRaZdKp9VuoPcNUq9An14c/k+4YJ15Qc5Grvf66vp0jvTltd4t7OIRj+8lM1DAgvSgvf7hdLw==}
-
   synckit@0.11.11:
     resolution: {integrity: sha512-MeQTA1r0litLUf0Rp/iisCaL8761lKAZHaimlbGK4j0HysC4PLfqygQj9srcs0m2RdtDYnF8UuYyKpbjHYp7Jw==}
     engines: {node: ^14.18.0 || >=16.0.0}
@@ -3435,9 +3418,6 @@ packages:
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
 
-  url-parse@1.5.10:
-    resolution: {integrity: sha512-WypcfiRhfeUP9vvF0j6rw0J3hrWrw6iZv3+22h6iRMJ/8z1Tj6XfLP4DsUix5MhMPnXpiHDoKyoZ/bdCkwBCiQ==}
-
   use-sync-external-store@1.5.0:
     resolution: {integrity: sha512-Rb46I4cGGVBmjamjphe8L/UnvJD+uPPtTkNvX5mZgqdbavhI4EbgIWJiIHXJ8bc/i9EQGPRh4DwEURJ552Do0A==}
     peerDependencies:
@@ -3447,10 +3427,6 @@ packages:
     resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
-  uuid@10.0.0:
-    resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
-    hasBin: true
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
@@ -4421,8 +4397,6 @@ snapshots:
 
   '@rushstack/eslint-patch@1.12.0': {}
 
-  '@stablelib/base64@1.0.1': {}
-
   '@standard-schema/utils@0.3.0': {}
 
   '@swc/helpers@0.5.15':
@@ -4671,6 +4645,10 @@ snapshots:
   '@types/node@22.17.1':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/nodemailer@8.0.0':
+    dependencies:
+      '@types/node': 20.19.10
 
   '@types/papaparse@5.5.2':
     dependencies:
@@ -5334,8 +5312,6 @@ snapshots:
       is-date-object: 1.1.0
       is-symbol: 1.1.1
 
-  es6-promise@4.2.8: {}
-
   esbuild-register@3.6.0(esbuild@0.25.8):
     dependencies:
       debug: 4.4.1
@@ -5663,8 +5639,6 @@ snapshots:
   fast-json-stable-stringify@2.1.0: {}
 
   fast-levenshtein@2.0.6: {}
-
-  fast-sha256@1.3.0: {}
 
   fastq@1.19.1:
     dependencies:
@@ -6099,7 +6073,7 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
-  next-auth@4.24.13(next@15.5.9(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+  next-auth@4.24.13(next@15.5.9(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(nodemailer@8.0.7)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       '@babel/runtime': 7.28.2
       '@panva/hkdf': 1.2.1
@@ -6113,6 +6087,8 @@ snapshots:
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
       uuid: 8.3.2
+    optionalDependencies:
+      nodemailer: 8.0.7
 
   next@15.5.9(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
@@ -6142,6 +6118,8 @@ snapshots:
   node-gyp-build@4.8.4: {}
 
   node-releases@2.0.19: {}
+
+  nodemailer@8.0.7: {}
 
   notistack@3.0.2(csstype@3.1.3)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
@@ -6447,8 +6425,6 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  querystringify@2.2.0: {}
-
   queue-microtask@1.2.3: {}
 
   react-dom@19.1.0(react@19.1.0):
@@ -6505,13 +6481,7 @@ snapshots:
 
   require-directory@2.1.1: {}
 
-  requires-port@1.0.0: {}
-
   reselect@5.1.1: {}
-
-  resend@6.5.0:
-    dependencies:
-      svix: 1.76.1
 
   resolve-from@4.0.0: {}
 
@@ -6768,15 +6738,6 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
-  svix@1.76.1:
-    dependencies:
-      '@stablelib/base64': 1.0.1
-      '@types/node': 22.17.1
-      es6-promise: 4.2.8
-      fast-sha256: 1.3.0
-      url-parse: 1.5.10
-      uuid: 10.0.0
-
   synckit@0.11.11:
     dependencies:
       '@pkgr/core': 0.2.9
@@ -6911,11 +6872,6 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  url-parse@1.5.10:
-    dependencies:
-      querystringify: 2.2.0
-      requires-port: 1.0.0
-
   use-sync-external-store@1.5.0(react@19.1.0):
     dependencies:
       react: 19.1.0
@@ -6923,8 +6879,6 @@ snapshots:
   use-sync-external-store@1.6.0(react@19.1.0):
     dependencies:
       react: 19.1.0
-
-  uuid@10.0.0: {}
 
   uuid@8.3.2: {}
 

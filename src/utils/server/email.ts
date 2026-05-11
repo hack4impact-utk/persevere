@@ -1,4 +1,4 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 import { env } from "@/utils/env";
 
@@ -11,7 +11,15 @@ function escapeHtml(s: string): string {
     .replaceAll("'", "&#39;");
 }
 
-const resend = new Resend(env.resendApiKey);
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: env.gmailUser,
+    pass: env.gmailAppPassword,
+  },
+});
+
+const fromEmail = `Persevere <${env.gmailUser}>`;
 
 function wrapEmailHtml(bodyContent: string): string {
   return `<!DOCTYPE html>
@@ -90,27 +98,20 @@ If you have any questions or need assistance, please don't hesitate to reach out
 This is an automated message. Please do not reply to this email.
   `;
 
-  // For development: use "onboarding@resend.dev" (Resend's test domain)
-  // For production: use a verified custom domain (e.g., "noreply@yourdomain.com")
-  // You must verify your domain in Resend dashboard before using it in production
-  const fromEmail = env.resendFromEmail;
-
-  const result = await resend.emails.send({
-    from: fromEmail,
-    to: email,
-    subject: "Welcome to Persevere - Your Account is Ready!",
-    html: welcomeEmailHtml,
-    text: emailText,
-  });
-
-  // Resend returns errors in the response object, not as exceptions
-  if (result.error) {
-    const errorMessage = result.error.message || JSON.stringify(result.error);
-    console.error("Resend API error:", result.error);
+  try {
+    return await transporter.sendMail({
+      from: fromEmail,
+      replyTo: env.gmailUser,
+      to: email,
+      subject: "Welcome to Persevere - Your Account is Ready!",
+      html: welcomeEmailHtml,
+      text: emailText,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Gmail SMTP error:", error);
     throw new Error(`Failed to send email: ${errorMessage}`);
   }
-
-  return result;
 }
 
 /**
@@ -163,22 +164,19 @@ If you have any questions or need assistance, please don't hesitate to reach out
 This is an automated message. Please do not reply to this email.
   `;
 
-  const fromEmail = env.resendFromEmail;
-
-  const result = await resend.emails.send({
-    from: fromEmail,
-    to: email,
-    subject: "Reset Your Password - Persevere",
-    html: forgotPasswordEmailHtml,
-    text: emailText,
-  });
-
-  if (result.error) {
-    const errorMessage = result.error.message || JSON.stringify(result.error);
+  try {
+    return await transporter.sendMail({
+      from: fromEmail,
+      replyTo: env.gmailUser,
+      to: email,
+      subject: "Reset Your Password - Persevere",
+      html: forgotPasswordEmailHtml,
+      text: emailText,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to send password reset email: ${errorMessage}`);
   }
-
-  return result;
 }
 
 /**
@@ -247,21 +245,20 @@ If you can no longer attend, please update your RSVP as soon as possible so we c
 This is an automated reminder from Persevere. Please do not reply to this email.
   `.trim();
 
-  const result = await resend.emails.send({
-    from: env.resendFromEmail,
-    to: email,
-    subject: `Reminder: ${event.title} is tomorrow`,
-    html: reminderHtml,
-    text: reminderText,
-  });
-
-  if (result.error) {
-    const errorMessage = result.error.message || JSON.stringify(result.error);
-    console.error("Resend API error:", result.error);
+  try {
+    return await transporter.sendMail({
+      from: fromEmail,
+      replyTo: env.gmailUser,
+      to: email,
+      subject: `Reminder: ${event.title} is tomorrow`,
+      html: reminderHtml,
+      text: reminderText,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Gmail SMTP error:", error);
     throw new Error(`Failed to send reminder email: ${errorMessage}`);
   }
-
-  return result;
 }
 
 /**
@@ -280,9 +277,6 @@ export async function sendBulkEmail(
   failureCount: number;
   failures: { email: string; error: string }[];
 }> {
-  const fromEmail = env.resendFromEmail;
-
-  // Convert body to plain text (simple HTML stripping)
   const plainTextBody = body
     .replaceAll(/<[^>]*>/g, "")
     .replaceAll("&nbsp;", " ")
@@ -292,122 +286,44 @@ export async function sendBulkEmail(
     .replaceAll("&quot;", '"')
     .trim();
 
-  // Wrap body in HTML structure for better email rendering
   const emailHtml = wrapEmailHtml(body);
-
   const emailText = plainTextBody;
 
   let successCount = 0;
   let failureCount = 0;
   const failures: { email: string; error: string }[] = [];
 
-  // Use Resend batch API: create one email object per recipient, send up to 100 emails per batch call
-  // This gives us privacy (each recipient gets their own email) AND efficiency (one API call)
-  const maxEmailsPerBatch = 100;
+  // Send chunks of 5 in parallel to keep total send time bounded while staying well under
+  // Gmail SMTP per-account concurrency limits. Each recipient gets their own message for privacy.
+  const concurrency = 5;
+  for (let i = 0; i < recipients.length; i += concurrency) {
+    const chunk = recipients.slice(i, i + concurrency);
+    const results = await Promise.allSettled(
+      chunk.map((email) =>
+        transporter.sendMail({
+          from: env.gmailUser,
+          replyTo: env.gmailUser,
+          to: email,
+          subject,
+          html: emailHtml,
+          text: emailText,
+          list: {
+            unsubscribe: `mailto:${env.gmailUser}?subject=Unsubscribe`,
+          },
+        }),
+      ),
+    );
 
-  // Create email objects: one per recipient for privacy
-  const emailObjects: {
-    from: string;
-    to: string[];
-    subject: string;
-    html: string;
-    text: string;
-  }[] = [];
-
-  for (const email of recipients) {
-    emailObjects.push({
-      from: fromEmail,
-      to: [email], // One recipient per email object for privacy
-      subject,
-      html: emailHtml,
-      text: emailText,
-    });
-  }
-
-  // Send in batches of up to 100 email objects per API call
-  for (let i = 0; i < emailObjects.length; i += maxEmailsPerBatch) {
-    const batch = emailObjects.slice(i, i + maxEmailsPerBatch);
-
-    try {
-      if (!resend.batch || typeof resend.batch.send !== "function") {
-        console.error("Resend batch API not available");
-        throw new Error("Batch API not available in Resend SDK");
-      }
-
-      const result = await resend.batch.send(batch);
-
-      if (result.error) {
-        console.error("Batch failed:", result.error);
-        // If batch fails, mark all recipients in this batch as failed
-        for (const emailObj of batch) {
-          const email = emailObj.to[0];
-          failureCount++;
-          failures.push({
-            email,
-            error: result.error?.message || "Unknown error",
-          });
-        }
-      } else if (result.data) {
-        // Handle different response structures from Resend batch API
-        // Could be { data: [emailIds] } or { data: { data: [emailIds] } }
-        let emailIds: unknown[];
-        if (Array.isArray(result.data)) {
-          emailIds = result.data;
-        } else if (result.data.data && Array.isArray(result.data.data)) {
-          emailIds = result.data.data;
-        } else {
-          emailIds = batch.map(() => ({ id: "unknown" }));
-        }
-
-        const successfulEmails = emailIds.length;
-        const expectedEmails = batch.length;
-
-        if (successfulEmails === expectedEmails) {
-          // All emails in batch succeeded
-          successCount += successfulEmails;
-        } else {
-          // Partial success - this shouldn't happen but handle it
-          console.error(
-            `Batch partial success: ${successfulEmails}/${expectedEmails} emails sent`,
-          );
-          successCount += successfulEmails;
-          // Mark missing ones as failed (though Resend doesn't tell us which ones)
-          for (let j = successfulEmails; j < expectedEmails; j++) {
-            const email = batch[j].to[0];
-            failureCount++;
-            failures.push({
-              email,
-              error: "Email not included in batch response",
-            });
-          }
-        }
+    for (const [j, result] of results.entries()) {
+      const recipient = chunk[j];
+      if (result.status === "fulfilled") {
+        successCount++;
       } else {
-        // Unexpected response structure
-        console.error("Batch unexpected response structure:", result);
-        for (const emailObj of batch) {
-          const email = emailObj.to[0];
-          failureCount++;
-          failures.push({
-            email,
-            error: "Unexpected response structure from Resend API",
-          });
-        }
-      }
-    } catch (error) {
-      console.error(
-        "Batch failed:",
-        error instanceof Error ? error.message : String(error),
-      );
-      // If batch fails, mark all recipients in this batch as failed
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      for (const emailObj of batch) {
-        const email = emailObj.to[0];
         failureCount++;
-        failures.push({
-          email,
-          error: errorMessage,
-        });
+        const reason = result.reason;
+        const errorMessage =
+          reason instanceof Error ? reason.message : String(reason);
+        failures.push({ email: recipient, error: errorMessage });
       }
     }
   }
