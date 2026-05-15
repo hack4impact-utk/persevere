@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -41,6 +42,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     if ("response" in parsed) return parsed.response;
 
     const newCategory = await createEventCategory(parsed.data);
+    revalidateTag("event-categories");
 
     return NextResponse.json(
       { message: "Event category created successfully", data: newCategory },

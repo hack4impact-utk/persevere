@@ -1,15 +1,11 @@
 "use client";
 
-import AttachFileIcon from "@mui/icons-material/AttachFile";
 import CloseIcon from "@mui/icons-material/Close";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import {
   Alert,
   Box,
   Button,
-  Chip,
   CircularProgress,
   Divider,
   IconButton,
@@ -25,21 +21,14 @@ import {
   Typography,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
-import {
-  type ChangeEvent,
-  type ReactElement,
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type ReactElement, useCallback, useMemo, useState } from "react";
 
 import { MobileDialog } from "@/components/shared";
 import { useCommunications } from "@/hooks/use-communications";
 import { useEmailTemplates } from "@/hooks/use-email-templates";
 
 import RichTextEditor from "./rich-text-editor";
-import type { Attachment, RecipientType } from "./types";
+import type { RecipientType } from "./types";
 
 export type ComposeModalProps = {
   open: boolean;
@@ -47,21 +36,6 @@ export type ComposeModalProps = {
   onCreated?: () => void;
   userRole: "staff" | "admin";
 };
-
-// Helper to format file size
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-// Helper to get file icon based on type
-function getFileIcon(type: string): ReactElement {
-  if (type === "application/pdf") {
-    return <PictureAsPdfIcon sx={{ fontSize: 20, color: "#d32f2f" }} />;
-  }
-  return <InsertDriveFileIcon sx={{ fontSize: 20, color: "#757575" }} />;
-}
 
 /**
  * ComposeModal
@@ -81,7 +55,6 @@ export default function ComposeModal({
     useState<RecipientType>("volunteers");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | "">("");
   const [templateAnchorEl, setTemplateAnchorEl] = useState<HTMLElement | null>(
     null,
@@ -93,9 +66,6 @@ export default function ComposeModal({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const { enqueueSnackbar } = useSnackbar();
-
-  // File input ref
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Validations
   const subjectError = useMemo(
@@ -118,47 +88,6 @@ export default function ComposeModal({
 
   const markTouched = useCallback((field: string): void => {
     setTouched((prev) => ({ ...prev, [field]: true }));
-  }, []);
-
-  // File attachment handlers
-  const handleAttachClick = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  const handleFileChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const files = event.target.files;
-      if (!files) return;
-
-      const newAttachments: Attachment[] = [];
-      for (const file of files) {
-        // Skip if file already attached
-        if (
-          attachments.some((a) => a.name === file.name && a.size === file.size)
-        ) {
-          continue;
-        }
-        newAttachments.push({
-          id: `${file.name}-${file.size}-${Date.now()}`,
-          file,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-        });
-      }
-
-      setAttachments((prev) => [...prev, ...newAttachments]);
-
-      // Reset input so same file can be selected again
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    },
-    [attachments],
-  );
-
-  const handleRemoveAttachment = useCallback((id: string) => {
-    setAttachments((prev) => prev.filter((a) => a.id !== id));
   }, []);
 
   const { sendCommunication } = useCommunications({ skip: true });
@@ -246,7 +175,6 @@ export default function ComposeModal({
         setSubject("");
         setBody("");
         setRecipientType("volunteers");
-        setAttachments([]);
         setSelectedTemplateId("");
         setTemplateAnchorEl(null);
         setTouched({});
@@ -283,7 +211,6 @@ export default function ComposeModal({
     setSubject("");
     setBody("");
     setRecipientType("volunteers");
-    setAttachments([]);
     setTouched({});
     setSelectedTemplateId("");
     setTemplateAnchorEl(null);
@@ -460,51 +387,6 @@ export default function ComposeModal({
               minHeight={250}
             />
           </Box>
-
-          {/* Attachments Display */}
-          {attachments.length > 0 && (
-            <Box sx={{ py: 1, flexShrink: 0 }}>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ mb: 1, display: "block" }}
-              >
-                {attachments.length} attachment
-                {attachments.length === 1 ? "" : "s"}
-              </Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {attachments.map((attachment) => (
-                  <Chip
-                    key={attachment.id}
-                    icon={getFileIcon(attachment.type)}
-                    label={
-                      <Box sx={{ display: "flex", flexDirection: "column" }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {attachment.name.length > 20
-                            ? `${attachment.name.slice(0, 17)}...`
-                            : attachment.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {formatFileSize(attachment.size)}
-                        </Typography>
-                      </Box>
-                    }
-                    onDelete={() => handleRemoveAttachment(attachment.id)}
-                    variant="outlined"
-                    sx={{
-                      height: "auto",
-                      py: 0.5,
-                      "& .MuiChip-label": {
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "flex-start",
-                      },
-                    }}
-                  />
-                ))}
-              </Stack>
-            </Box>
-          )}
         </Box>
       </Box>
 
@@ -523,24 +405,6 @@ export default function ComposeModal({
       >
         {/* Left side - Formatting and attachment icons */}
         <Stack direction="row" spacing={1}>
-          {/* Attachment Button */}
-          <Tooltip title="Attach file">
-            <IconButton
-              onClick={handleAttachClick}
-              disabled={submitting}
-              size="small"
-            >
-              <AttachFileIcon />
-            </IconButton>
-          </Tooltip>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            onChange={handleFileChange}
-            style={{ display: "none" }}
-          />
-
           {/* Template Button */}
           <Tooltip
             title={

@@ -1,6 +1,7 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  index,
   integer,
   jsonb,
   pgTable,
@@ -18,57 +19,85 @@ import {
 import { timestamps } from "./helpers";
 
 // Core user table - shared by all user types (volunteers, staff, admin)
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
-  email: text("email").unique().notNull(),
-  password: text("password").notNull(),
-  phone: text("phone"),
-  bio: text("bio"),
-  profilePicture: text("profile_picture"),
-  isActive: boolean("is_active").default(true).notNull(),
-  isEmailVerified: boolean("is_email_verified").default(false).notNull(),
-  emailVerifiedAt: timestamp("email_verified_at"),
-  ...timestamps,
-});
+export const users = pgTable(
+  "users",
+  {
+    id: serial("id").primaryKey(),
+    firstName: text("first_name").notNull(),
+    lastName: text("last_name").notNull(),
+    email: text("email").unique().notNull(),
+    password: text("password").notNull(),
+    phone: text("phone"),
+    bio: text("bio"),
+    profilePicture: text("profile_picture"),
+    isActive: boolean("is_active").default(true).notNull(),
+    isEmailVerified: boolean("is_email_verified").default(false).notNull(),
+    emailVerifiedAt: timestamp("email_verified_at"),
+    ...timestamps,
+  },
+  (table) => ({
+    activeUsersIdx: index("users_is_active_idx")
+      .on(table.id)
+      .where(sql`is_active = true`),
+  }),
+);
 
 // Volunteer-specific data - references users table
-export const volunteers = pgTable("volunteers", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id")
-    .notNull()
-    .unique()
-    .references(() => users.id, { onDelete: "cascade" }),
-  volunteerType: text("volunteer_type"),
-  isAlumni: boolean("is_alumni").default(false).notNull(),
-  backgroundCheckStatus: backgroundCheckStatusEnum("background_check_status")
-    .default("not_required")
-    .notNull(),
-  availability: jsonb("availability"),
-  notificationPreference: notificationPreferenceEnum("notification_preference")
-    .default("email")
-    .notNull(),
-  employer: text("employer"),
-  jobTitle: text("job_title"),
-  city: text("city"),
-  state: text("state"),
-  referralSource: text("referral_source"),
-  ...timestamps,
-});
+export const volunteers = pgTable(
+  "volunteers",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .unique()
+      .references(() => users.id, { onDelete: "cascade" }),
+    volunteerType: text("volunteer_type"),
+    isAlumni: boolean("is_alumni").default(false).notNull(),
+    backgroundCheckStatus: backgroundCheckStatusEnum("background_check_status")
+      .default("not_required")
+      .notNull(),
+    availability: jsonb("availability"),
+    notificationPreference: notificationPreferenceEnum(
+      "notification_preference",
+    )
+      .default("email")
+      .notNull(),
+    employer: text("employer"),
+    jobTitle: text("job_title"),
+    city: text("city"),
+    state: text("state"),
+    referralSource: text("referral_source"),
+    ...timestamps,
+  },
+  (table) => ({
+    emailEligibleIdx: index("volunteers_notif_pref_idx")
+      .on(table.userId)
+      .where(sql`notification_preference != 'none'`),
+  }),
+);
 
 // Staff-specific data - references users table
-export const staff = pgTable("staff", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id")
-    .notNull()
-    .unique()
-    .references(() => users.id, { onDelete: "cascade" }),
-  notificationPreference: notificationPreferenceEnum("notification_preference")
-    .default("email")
-    .notNull(),
-  ...timestamps,
-});
+export const staff = pgTable(
+  "staff",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .unique()
+      .references(() => users.id, { onDelete: "cascade" }),
+    notificationPreference: notificationPreferenceEnum(
+      "notification_preference",
+    )
+      .default("email")
+      .notNull(),
+    ...timestamps,
+  },
+  (table) => ({
+    emailEligibleIdx: index("staff_notif_pref_idx")
+      .on(table.userId)
+      .where(sql`notification_preference != 'none'`),
+  }),
+);
 
 // Admin data - extends staff with admin-specific fields
 export const admin = pgTable("admin", {

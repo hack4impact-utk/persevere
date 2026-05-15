@@ -19,7 +19,7 @@ export const onboardingDocuments = pgTable("onboarding_documents", {
   title: text("title").notNull(),
   type: text("type").notNull(), // "pdf" | "video" | "link"
   actionType: text("action_type").notNull().default("sign"), // "sign" | "consent" | "acknowledge" | "informational"
-  url: text("url").notNull(), // Vercel Blob URL or external URL
+  url: text("url").notNull(), // Netlify Blobs proxy URL (/api/files/onboarding-documents/<key>) or external URL
   description: text("description"),
   required: boolean("required").notNull().default(false),
   sortOrder: integer("sort_order").notNull().default(0),

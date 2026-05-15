@@ -45,6 +45,19 @@ export type DocumentSignature = {
 // Validation schemas
 // ---------------------------------------------------------------------------
 
+const ONBOARDING_BLOB_PATH_REGEX =
+  /^\/api\/files\/onboarding-documents\/[a-f0-9-]+(?:\.[a-z0-9]+)?$/i;
+
+const documentUrlSchema = z.string().refine((value) => {
+  if (ONBOARDING_BLOB_PATH_REGEX.test(value)) return true;
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}, "URL must be a valid URL");
+
 export const createDocumentSchema = z
   .object({
     title: z.string().min(1, "Title is required"),
@@ -54,7 +67,7 @@ export const createDocumentSchema = z
     actionType: z
       .enum(["sign", "consent", "acknowledge", "informational"])
       .default("sign"),
-    url: z.string().url("URL must be a valid URL"),
+    url: documentUrlSchema,
     description: z.string().optional(),
     required: z.boolean().default(true),
     sortOrder: z.number().int().default(0),
@@ -75,7 +88,7 @@ export const updateDocumentSchema = z
     actionType: z
       .enum(["sign", "consent", "acknowledge", "informational"])
       .optional(),
-    url: z.string().url("URL must be a valid URL").optional(),
+    url: documentUrlSchema.optional(),
     description: z.string().optional(),
     required: z.boolean().optional(),
     sortOrder: z.number().int().optional(),

@@ -1,4 +1,4 @@
-import { and, between, eq, ne } from "drizzle-orm";
+import { and, between, eq, isNull, ne } from "drizzle-orm";
 
 import db from "@/db";
 import { opportunities, volunteerRsvps } from "@/db/schema/opportunities";
@@ -11,11 +11,26 @@ type ReminderResult = {
   failures: { email: string; error: string }[];
 };
 
+type ReminderRow = {
+  volunteerId: number;
+  opportunityId: number;
+  email: string;
+  firstName: string;
+  eventTitle: string;
+  eventStart: Date;
+  eventEnd: Date;
+  eventLocation: string;
+};
+
 /**
- * Queries events starting in the next 24 hours with confirmed RSVPs,
- * excluding volunteers who have opted out of notifications. Multiple events
- * for the same volunteer are each sent as separate emails within the same
- * cron run (batched invocation).
+ * Sends one reminder email per confirmed RSVP whose event starts within the
+ * next 24 hours and which has not been reminded yet. Designed to be safe to
+ * run frequently (every 30 min) — the reminder_sent_at filter ensures each
+ * RSVP is reminded exactly once unless cleared by a status transition back
+ * to "confirmed".
+ *
+ * Emails are dispatched in parallel chunks of 5 to keep total send time
+ * bounded while staying within Gmail SMTP concurrency limits.
  */
 export async function sendUpcomingReminders(): Promise<ReminderResult> {
   const now = new Date();
@@ -23,6 +38,8 @@ export async function sendUpcomingReminders(): Promise<ReminderResult> {
 
   const rows = await db
     .select({
+      volunteerId: volunteerRsvps.volunteerId,
+      opportunityId: volunteerRsvps.opportunityId,
       email: users.email,
       firstName: users.firstName,
       eventTitle: opportunities.title,
@@ -42,6 +59,7 @@ export async function sendUpcomingReminders(): Promise<ReminderResult> {
         eq(volunteerRsvps.status, "confirmed"),
         between(opportunities.startDate, now, in24h),
         ne(volunteers.notificationPreference, "none"),
+        isNull(volunteerRsvps.reminderSentAt),
       ),
     );
 
@@ -49,23 +67,65 @@ export async function sendUpcomingReminders(): Promise<ReminderResult> {
   let failed = 0;
   const failures: { email: string; error: string }[] = [];
 
-  for (const row of rows) {
-    try {
-      await sendEventReminderEmail(row.email, row.firstName, {
-        title: row.eventTitle,
-        startDate: row.eventStart,
-        endDate: row.eventEnd,
-        location: row.eventLocation,
-      });
+  const concurrency = 5;
+  for (let i = 0; i < rows.length; i += concurrency) {
+    const chunk = rows.slice(i, i + concurrency);
+    const results = await Promise.allSettled(
+      chunk.map((row) =>
+        sendEventReminderEmail(row.email, row.firstName, {
+          title: row.eventTitle,
+          startDate: row.eventStart,
+          endDate: row.eventEnd,
+          location: row.eventLocation,
+        }),
+      ),
+    );
+
+    // Process results and mark reminded RSVPs
+    const markPromises: Promise<void>[] = [];
+    for (const [j, result] of results.entries()) {
+      const row = chunk[j];
+      if (result.status === "rejected") {
+        failed++;
+        const reason = result.reason;
+        failures.push({
+          email: row.email,
+          error: reason instanceof Error ? reason.message : String(reason),
+        });
+        continue;
+      }
+
       sent++;
-    } catch (error) {
-      failed++;
-      failures.push({
-        email: row.email,
-        error: error instanceof Error ? error.message : String(error),
-      });
+      markPromises.push(markAsReminded(row));
     }
+
+    // Batch-persist reminder_sent_at for all successful sends in this chunk
+    await Promise.allSettled(markPromises);
   }
 
   return { sent, failed, failures };
+}
+
+/**
+ * Mark a single RSVP as reminded so subsequent cron ticks skip it.
+ * If this write fails (rare DB blip) the volunteer may get a duplicate
+ * reminder on the next tick; we log and move on rather than failing the send.
+ */
+async function markAsReminded(row: ReminderRow): Promise<void> {
+  try {
+    await db
+      .update(volunteerRsvps)
+      .set({ reminderSentAt: new Date() })
+      .where(
+        and(
+          eq(volunteerRsvps.volunteerId, row.volunteerId),
+          eq(volunteerRsvps.opportunityId, row.opportunityId),
+        ),
+      );
+  } catch (error) {
+    console.error(
+      `[notifications] Failed to persist reminder_sent_at for volunteer=${row.volunteerId} opportunity=${row.opportunityId}; volunteer may receive a duplicate reminder on the next cron tick`,
+      error,
+    );
+  }
 }

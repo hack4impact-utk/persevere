@@ -23,23 +23,22 @@ export async function POST(request: Request): Promise<NextResponse> {
       // Always return success to prevent email enumeration
       return NextResponse.json({ message: SUCCESS_MESSAGE });
     }
-
-    const result = await initiatePasswordReset(email);
+    const emailStr = email as string;
+    const result = await initiatePasswordReset(emailStr);
 
     if (result) {
-      try {
-        await sendPasswordResetEmail(email.toLowerCase().trim(), result.token);
-      } catch (error) {
-        console.error("Password reset email failed", {
-          email: email.toLowerCase().trim(),
-          error: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined,
-          timestamp: new Date().toISOString(),
-          errorType:
-            error instanceof Error ? error.constructor.name : typeof error,
-        });
-        // Still return success to prevent email enumeration
-      }
+      sendPasswordResetEmail(emailStr.toLowerCase().trim(), result.token).catch(
+        (error: unknown) => {
+          console.error("Password reset email failed", {
+            email: emailStr.toLowerCase().trim(),
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+            timestamp: new Date().toISOString(),
+            errorType:
+              error instanceof Error ? error.constructor.name : typeof error,
+          });
+        },
+      );
     }
 
     return NextResponse.json({ message: SUCCESS_MESSAGE });

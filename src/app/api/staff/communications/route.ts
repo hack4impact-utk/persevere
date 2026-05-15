@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
@@ -8,6 +8,7 @@ import {
   listCommunications,
 } from "@/services/communications.service";
 import { requireStaffAuth } from "@/utils/server/auth";
+import { sendBulkEmail } from "@/utils/server/email";
 import {
   handleRouteError,
   parseBodyOrError,
@@ -69,7 +70,33 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    return NextResponse.json(output, { status: 201 });
+    // Schedule email dispatch after the response is sent so the client
+    // isn't blocked by SMTP round-trips.
+    if (output.recipientEmails.length > 0) {
+      after(async () => {
+        try {
+          const result = await sendBulkEmail(
+            output.recipientEmails,
+            parsed.data.subject,
+            parsed.data.body,
+          );
+          if (result.failures.length > 0) {
+            console.error("Some emails failed to send:", result.failures);
+          }
+        } catch (error) {
+          console.error("Failed to send bulk emails:", error);
+        }
+      });
+    }
+
+    return NextResponse.json(
+      {
+        communication: output.communication,
+        emailSent: output.recipientEmails.length > 0,
+        recipientCount: output.recipientEmails.length,
+      },
+      { status: 201 },
+    );
   } catch (error) {
     return handleRouteError(error);
   }

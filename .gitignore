@@ -56,3 +56,6 @@ gemini.md
 
 # git worktrees
 .worktrees/
+
+# Local Netlify folder
+.netlify
