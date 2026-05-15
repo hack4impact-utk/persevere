@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -40,6 +41,7 @@ export async function PUT(
     if ("response" in parsed) return parsed.response;
 
     const updated = await updateEventCategory(categoryId, parsed.data);
+    revalidateTag("event-categories");
 
     return NextResponse.json({
       message: "Event category updated successfully",
@@ -70,6 +72,7 @@ export async function DELETE(
     }
 
     await deleteEventCategory(categoryId);
+    revalidateTag("event-categories");
 
     return NextResponse.json({
       message: "Event category deactivated successfully",

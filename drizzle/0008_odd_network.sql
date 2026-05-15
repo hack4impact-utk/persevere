@@ -1,0 +1,1 @@
+ALTER TABLE "volunteer_rsvps" ADD COLUMN "reminder_sent_at" timestamp;

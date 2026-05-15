@@ -9,6 +9,7 @@ import {
   notInArray,
   sql,
 } from "drizzle-orm";
+import { unstable_cache } from "next/cache";
 
 import db from "@/db";
 import {
@@ -56,14 +57,16 @@ export type OpportunityWithSpots = {
 // List open opportunities available to volunteers
 // ---------------------------------------------------------------------------
 
-export async function listEventCategories(): Promise<
-  { id: number; name: string }[]
-> {
-  return db
-    .select({ id: eventCategories.id, name: eventCategories.name })
-    .from(eventCategories)
-    .orderBy(asc(eventCategories.name));
-}
+export const listEventCategories = unstable_cache(
+  async (): Promise<{ id: number; name: string }[]> => {
+    return db
+      .select({ id: eventCategories.id, name: eventCategories.name })
+      .from(eventCategories)
+      .orderBy(asc(eventCategories.name));
+  },
+  ["event-categories"],
+  { revalidate: 3600, tags: ["event-categories"] },
+);
 
 export async function listOpportunityLocations(): Promise<string[]> {
   const now = new Date();

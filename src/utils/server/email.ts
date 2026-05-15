@@ -13,6 +13,8 @@ function escapeHtml(s: string): string {
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
+  pool: true,
+  maxConnections: 5,
   auth: {
     user: env.gmailUser,
     pass: env.gmailAppPassword,
@@ -41,7 +43,7 @@ function wrapEmailHtml(bodyContent: string): string {
  * @param email - Volunteer's email address
  * @param firstName - Volunteer's first name
  * @param password - Generated password for the volunteer
- * @returns Promise that resolves with Resend response if email is sent successfully
+ * @returns Promise that resolves when the email is sent
  */
 export async function sendWelcomeEmail(
   email: string,
@@ -118,7 +120,7 @@ This is an automated message. Please do not reply to this email.
  * Sends a password reset email with a reset link
  * @param email - User's email address
  * @param token - Password reset token (UUID)
- * @returns Promise that resolves with Resend response if email is sent successfully
+ * @returns Promise that resolves when the email is sent
  */
 export async function sendPasswordResetEmail(
   email: string,
@@ -301,7 +303,7 @@ export async function sendBulkEmail(
     const results = await Promise.allSettled(
       chunk.map((email) =>
         transporter.sendMail({
-          from: env.gmailUser,
+          from: fromEmail,
           replyTo: env.gmailUser,
           to: email,
           subject,

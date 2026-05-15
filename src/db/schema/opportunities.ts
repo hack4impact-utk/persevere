@@ -92,6 +92,7 @@ export const volunteerRsvps = pgTable(
       .references(() => opportunities.id, { onDelete: "cascade" }),
     status: rsvpStatusEnum("status").default("pending").notNull(),
     rsvpAt: timestamp("rsvp_at").defaultNow().notNull(),
+    reminderSentAt: timestamp("reminder_sent_at"),
     notes: text("notes"),
   },
   (table) => ({

@@ -94,9 +94,15 @@ export async function updateRsvpStatus(
     );
   }
 
+  // When an RSVP transitions to "confirmed" (e.g. cancelled → confirmed),
+  // clear reminder_sent_at so the volunteer is eligible for a fresh reminder
+  // from the event-reminders cron.
   await db
     .update(volunteerRsvps)
-    .set({ status: newStatus })
+    .set({
+      status: newStatus,
+      ...(newStatus === "confirmed" ? { reminderSentAt: null } : {}),
+    })
     .where(
       and(
         eq(volunteerRsvps.volunteerId, volunteerId),

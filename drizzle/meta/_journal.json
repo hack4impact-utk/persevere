@@ -57,6 +57,20 @@
       "when": 1776633054058,
       "tag": "0007_goofy_stardust",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1778836781536,
+      "tag": "0008_odd_network",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1778844594075,
+      "tag": "0009_condemned_wendell_vaughn",
+      "breakpoints": true
     }
   ]
 }

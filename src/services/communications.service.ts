@@ -9,7 +9,6 @@ import {
   volunteers,
 } from "@/db/schema";
 import { NotFoundError } from "@/utils/errors";
-import { sendBulkEmail } from "@/utils/server/email";
 
 export type CommunicationRecord = {
   id: number;
@@ -104,21 +103,17 @@ export async function listCommunications(
 }
 
 /**
- * Creates a bulk communication log and sends emails to recipients.
- * Throws if the sender is not found or the staff role tries to send to non-volunteers.
+ * Creates a bulk communication log and resolves the recipient list.
+ *
+ * Email dispatch is **not** performed here — the caller (route handler) is
+ * responsible for scheduling the actual send (e.g. via `after()`) so that
+ * this service remains usable outside of a request context.
  */
 export async function createCommunication(
   input: CreateCommunicationInput,
 ): Promise<{
   communication: CommunicationRecord | undefined;
-  emailSent: boolean;
-  emailError: boolean;
-  recipientCount: number;
-  emailResult?: {
-    successCount: number;
-    failureCount: number;
-    failures: { email: string; error: string }[];
-  };
+  recipientEmails: string[];
 }> {
   const senderUserResult = await db
     .select()
@@ -199,32 +194,6 @@ export async function createCommunication(
     }
   }
 
-  let emailSent = false;
-  let emailError = false;
-  let emailResult: {
-    successCount: number;
-    failureCount: number;
-    failures: { email: string; error: string }[];
-  } | null = null;
-
-  if (recipientEmails.length > 0) {
-    try {
-      emailResult = await sendBulkEmail(
-        recipientEmails,
-        input.subject,
-        input.body,
-      );
-      emailSent = emailResult.successCount > 0;
-      emailError = emailResult.failureCount > 0;
-      if (emailResult.failures.length > 0) {
-        console.error("Some emails failed to send:", emailResult.failures);
-      }
-    } catch (error) {
-      console.error("Failed to send bulk emails:", error);
-      emailError = true;
-    }
-  }
-
   const createdResult = await db
     .select(communicationSelect)
     .from(bulkCommunicationLogs)
@@ -234,10 +203,7 @@ export async function createCommunication(
 
   return {
     communication: createdResult[0],
-    emailSent,
-    emailError,
-    recipientCount: recipientEmails.length,
-    emailResult: emailResult ?? undefined,
+    recipientEmails,
   };
 }
 

@@ -28,21 +28,24 @@ Please have the following VSCode extensions installed:
 
 ### Environment Variables
 
-Create a `.env` file in the root directory with the following variables:
+Copy `.env.example` to `.env` and fill in the values. The full set:
 
 ```text
-DATABASE_URL=<ask lead for credentials>
+DATABASE_URL=<ask lead for credentials — Neon pooled connection string>
 NEXTAUTH_SECRET=<generate your own>
 NEXTAUTH_URL=http://localhost:3000
-RESEND_API_KEY=<ask lead for credentials>
-RESEND_FROM_EMAIL=<ask lead for credentials>
+GMAIL_USER=<ask lead for credentials — Gmail sender mailbox>
+GMAIL_APP_PASSWORD=<ask lead for credentials — 16-char Gmail app password>
+CRON_SECRET=<generate your own>
+APP_TIMEZONE=America/Chicago   # optional; defaults to America/Chicago
 ```
 
 **Setup steps:**
 
-1. Ask your team lead for `DATABASE_URL`, `RESEND_API_KEY`, and `RESEND_FROM_EMAIL`
-2. Generate your own NextAuth secret: `openssl rand -base64 32`
-3. Each developer must use their own unique `NEXTAUTH_SECRET`
+1. Ask your team lead for `DATABASE_URL`, `GMAIL_USER`, and `GMAIL_APP_PASSWORD`.
+2. Generate your own NextAuth secret: `openssl rand -base64 32`.
+3. Generate your own cron secret: `openssl rand -base64 32`. This is the bearer token the Netlify scheduled functions in `netlify/functions/` use to call the `/api/cron/*` routes.
+4. Each developer must use their own unique `NEXTAUTH_SECRET`.
 
 **Note:** All developers share the same database for development, but each needs their own `NEXTAUTH_SECRET` to prevent session conflicts.
 
