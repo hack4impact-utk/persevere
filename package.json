@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
-    "check": "concurrently --kill-others-on-fail 'pnpm lint' 'tsc --noEmit'"
+    "check": "concurrently --kill-others-on-fail 'pnpm lint' 'tsc --noEmit'",
+    "netlify:dev": "netlify dev"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
@@ -27,6 +28,8 @@
     "@mui/x-charts": "^8.27.5",
     "@mui/x-data-grid": "^8.10.0",
     "@neondatabase/serverless": "^1.0.1",
+    "@netlify/blobs": "^10.7.6",
+    "@netlify/functions": "^5.2.1",
     "@tiptap/extension-color": "^3.16.0",
     "@tiptap/extension-link": "^3.16.0",
     "@tiptap/extension-text-style": "^3.16.0",
@@ -34,7 +37,6 @@
     "@tiptap/pm": "^3.16.0",
     "@tiptap/react": "^3.16.0",
     "@tiptap/starter-kit": "^3.16.0",
-    "@vercel/blob": "^2.3.1",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.4",
@@ -70,6 +72,7 @@
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-unicorn": "^60.0.0",
     "knip": "^5.62.0",
+    "netlify-cli": "^26.0.1",
     "prettier": "^3.6.2",
     "tsx": "^4.20.3",
     "typescript": "latest",

@@ -26,7 +26,6 @@ export const env = {
   nextAuthUrl: getNextAuthUrl(),
   gmailUser: getEnvVar("GMAIL_USER"),
   gmailAppPassword: getEnvVar("GMAIL_APP_PASSWORD"),
-  blobReadWriteToken: getEnvVar("BLOB_READ_WRITE_TOKEN"),
   cronSecret: getEnvVar("CRON_SECRET"),
   appTimezone: process.env.APP_TIMEZONE ?? "America/Chicago",
   isProduction: process.env.NODE_ENV === "production",
