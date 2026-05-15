@@ -8,7 +8,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -24,6 +23,7 @@ import {
 import { type ReactElement, useCallback, useMemo, useState } from "react";
 import validator from "validator";
 
+import { MobileDialog } from "@/components/shared";
 import { useStaff } from "@/hooks/use-staff";
 
 import type { Staff } from "./types";
@@ -185,7 +185,7 @@ export default function AddStaffModal({
 
   return (
     <>
-      <Dialog
+      <MobileDialog
         open={open && !successDialogOpen}
         onClose={handleClose}
         maxWidth="sm"
@@ -273,10 +273,10 @@ export default function AddStaffModal({
             {submitting ? <CircularProgress size={24} /> : "Add Staff Member"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </MobileDialog>
 
       {/* Success Dialog */}
-      <Dialog
+      <MobileDialog
         open={successDialogOpen}
         onClose={handleSuccessClose}
         maxWidth="sm"
@@ -330,7 +330,7 @@ export default function AddStaffModal({
             Close
           </Button>
         </DialogActions>
-      </Dialog>
+      </MobileDialog>
     </>
   );
 }

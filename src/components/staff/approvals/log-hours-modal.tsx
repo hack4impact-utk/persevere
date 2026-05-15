@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   MenuItem,
@@ -13,7 +12,7 @@ import {
 } from "@mui/material";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { ModalTitleBar } from "@/components/shared";
+import { MobileDialog, ModalTitleBar } from "@/components/shared";
 import type { LogHoursInput } from "@/hooks/use-approvals-hours";
 import { apiClient } from "@/lib/api-client";
 
@@ -127,7 +126,7 @@ export default function LogHoursModal({
     Number(hours) <= 24;
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <MobileDialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <ModalTitleBar title="Log Hours for Volunteer" onClose={handleClose} />
       <DialogContent>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
@@ -210,6 +209,6 @@ export default function LogHoursModal({
           {submitting ? <CircularProgress size={20} /> : "Log Hours"}
         </Button>
       </DialogActions>
-    </Dialog>
+    </MobileDialog>
   );
 }

@@ -41,7 +41,7 @@ export default function DashboardRecommendations({
     effectiveRsvpStatus !== "declined";
 
   return (
-    <Card sx={{ borderRadius: 2, boxShadow: 2 }}>
+    <Card sx={{ borderRadius: 2, boxShadow: 2, flexShrink: 0 }}>
       <CardContent sx={{ p: 2.5 }}>
         <Box
           display="flex"
@@ -84,10 +84,10 @@ export default function DashboardRecommendations({
                 sm: "repeat(2, 1fr)",
               },
               gap: 2,
-              height: 288,
-              overflowY: "auto",
               alignItems: "start",
-              pr: 0.5,
+              height: { xs: "auto", md: 288 },
+              overflowY: { xs: "visible", md: "auto" },
+              pr: { xs: 0, md: 0.5 },
             }}
           >
             {recommendations.map((opp) => (

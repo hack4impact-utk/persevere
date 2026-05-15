@@ -150,7 +150,15 @@ const ApprovalsIcon = (): JSX.Element => (
   </svg>
 );
 
-export default function StaffSidebar(): JSX.Element {
+type StaffSidebarProps = {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+};
+
+export default function StaffSidebar({
+  mobileOpen,
+  onMobileClose,
+}: StaffSidebarProps = {}): JSX.Element {
   const { data: session } = useSession();
   const user = session?.user as { role?: string } | undefined;
 
@@ -193,5 +201,11 @@ export default function StaffSidebar(): JSX.Element {
     ];
   }, [isAdmin]);
 
-  return <BaseSidebar navItems={navItems} />;
+  return (
+    <BaseSidebar
+      navItems={navItems}
+      mobileOpen={mobileOpen}
+      onMobileClose={onMobileClose}
+    />
+  );
 }

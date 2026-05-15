@@ -391,7 +391,7 @@ export default function StaffDashboardPage(): JSX.Element {
                         key={opp.id}
                         sx={{
                           display: "grid",
-                          gridTemplateColumns: "1.5fr 1fr",
+                          gridTemplateColumns: { xs: "1fr", md: "1.5fr 1fr" },
                           alignItems: "center",
                           gap: 1.5,
                           py: 1.5,
@@ -462,9 +462,13 @@ export default function StaffDashboardPage(): JSX.Element {
                         <Box
                           key={item.key}
                           sx={{
-                            display: "flex",
+                            display: "grid",
+                            gridTemplateColumns: {
+                              xs: "auto 1fr",
+                              md: "auto 1fr auto",
+                            },
                             alignItems: "center",
-                            gap: 1.5,
+                            gap: { xs: 1, md: 1.5 },
                             py: 1.25,
                             borderTop:
                               idx === 0 ? "none" : "1px solid rgba(0,0,0,.08)",
@@ -528,7 +532,10 @@ export default function StaffDashboardPage(): JSX.Element {
                             variant="outlined"
                             size="small"
                             href="/staff/approvals"
-                            sx={{ flexShrink: 0 }}
+                            sx={{
+                              flexShrink: 0,
+                              gridColumn: { xs: "1 / -1", md: "auto" },
+                            }}
                           >
                             Review
                           </Button>

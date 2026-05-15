@@ -98,14 +98,17 @@ function computeOccurrences(
   return occurrences;
 }
 
+const AUTO_COMPLETE_GRACE_MS = 60 * 60 * 1000;
+
 export async function autoCompleteExpiredEvents(): Promise<void> {
+  const cutoff = new Date(Date.now() - AUTO_COMPLETE_GRACE_MS);
   await db
     .update(opportunities)
     .set({ status: "completed", updatedAt: new Date() })
     .where(
       and(
         inArray(opportunities.status, ["open", "full"]),
-        lt(opportunities.endDate, new Date()),
+        lt(opportunities.endDate, cutoff),
       ),
     );
 }

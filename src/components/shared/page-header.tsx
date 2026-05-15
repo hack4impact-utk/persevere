@@ -13,6 +13,10 @@ type PageHeaderProps = {
 
 /**
  * Shared page header component with standard typography and spacing.
+ *
+ * On mobile (`xs`), the action slot stretches to full width and stacks
+ * below the title. The title scales down to `h5` so it fits comfortably
+ * on a 360-px viewport without truncation.
  */
 export function PageHeader({
   eyebrow,
@@ -22,7 +26,7 @@ export function PageHeader({
   children,
 }: PageHeaderProps): JSX.Element {
   return (
-    <Box sx={{ pb: 3 }}>
+    <Box sx={{ pb: { xs: 2, md: 3 } }}>
       {eyebrow && (
         <Typography
           variant="caption"
@@ -41,17 +45,17 @@ export function PageHeader({
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
-        alignItems={{ xs: "flex-start", sm: "flex-end" }}
+        alignItems={{ xs: "stretch", sm: "flex-end" }}
         gap={2}
       >
         <Box flex={1} minWidth={0}>
           <Typography
-            variant="h4"
             sx={{
               fontWeight: 500,
               color: "text.primary",
               letterSpacing: "-0.01em",
               lineHeight: 1.2,
+              fontSize: { xs: "1.5rem", sm: "2.125rem" },
             }}
           >
             {title}
@@ -63,7 +67,15 @@ export function PageHeader({
           )}
         </Box>
         {actions && (
-          <Box flexShrink={0} sx={{ display: "flex", gap: 1 }}>
+          <Box
+            sx={{
+              flexShrink: 0,
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: 1,
+              "& > *": { width: { xs: "100%", sm: "auto" } },
+            }}
+          >
             {actions}
           </Box>
         )}

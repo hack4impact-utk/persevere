@@ -5,13 +5,12 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
-import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import Typography from "@mui/material/Typography";
 import { JSX, useEffect, useState } from "react";
 
-import { AsyncContent, ModalTitleBar } from "@/components/shared";
+import { AsyncContent, MobileDialog, ModalTitleBar } from "@/components/shared";
 import RsvpButton from "@/components/volunteer/rsvp-button";
 import { SpotsChip } from "@/components/volunteer/spots-chip";
 import type { RsvpStatus } from "@/components/volunteer/types";
@@ -79,7 +78,7 @@ export default function OpportunityDetailModal({
     opportunity.spotsRemaining <= 0;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <MobileDialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <ModalTitleBar
         title={loading ? "Loading..." : (opportunity?.title ?? "Opportunity")}
         onClose={onClose}
@@ -280,7 +279,15 @@ export default function OpportunityDetailModal({
       </DialogContent>
 
       {!loading && opportunity !== null && (
-        <DialogActions>
+        <DialogActions
+          sx={{
+            position: { xs: "sticky", sm: "static" },
+            bottom: 0,
+            bgcolor: "background.paper",
+            borderTop: { xs: 1, sm: 0 },
+            borderColor: "divider",
+          }}
+        >
           <Button onClick={onClose}>Close</Button>
           {opportunity?.status === "completed" ? (
             <Button variant="outlined" disabled fullWidth>
@@ -297,6 +304,6 @@ export default function OpportunityDetailModal({
           )}
         </DialogActions>
       )}
-    </Dialog>
+    </MobileDialog>
   );
 }

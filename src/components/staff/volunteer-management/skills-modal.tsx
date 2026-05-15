@@ -5,7 +5,6 @@ import {
   Button,
   Checkbox,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -16,6 +15,7 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
+import { MobileDialog } from "@/components/shared";
 import { useSkills } from "@/hooks/use-skills";
 
 type CurrentSkill = {
@@ -191,7 +191,7 @@ export default function SkillsModal({
   ]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <MobileDialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         Edit {mode === "skills" ? "Skills" : "Interests"}
       </DialogTitle>
@@ -279,6 +279,6 @@ export default function SkillsModal({
           {saving ? "Saving..." : "Save"}
         </Button>
       </DialogActions>
-    </Dialog>
+    </MobileDialog>
   );
 }

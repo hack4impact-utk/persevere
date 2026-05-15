@@ -3,6 +3,7 @@
 import {
   Avatar,
   Box,
+  Card,
   Chip,
   type ChipProps,
   CircularProgress,
@@ -17,7 +18,7 @@ import {
 } from "@mui/material";
 import { type ReactElement, useCallback } from "react";
 
-import { TablePaginationFooter } from "@/components/shared";
+import { ResponsiveTable, TablePaginationFooter } from "@/components/shared";
 import { EmptyState } from "@/components/ui";
 import type { Person, PersonRole } from "@/hooks/use-people";
 
@@ -95,156 +96,299 @@ export default function PeopleTable({
         overflow: "hidden",
       }}
     >
-      <TableContainer sx={{ flex: 1, overflow: "auto", position: "relative" }}>
-        {loading && (
-          <Box
-            sx={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "rgba(255,255,255,0.8)",
-              zIndex: 1,
-            }}
+      <ResponsiveTable
+        desktop={
+          <TableContainer
+            sx={{ flex: 1, overflow: "auto", position: "relative" }}
           >
-            <CircularProgress />
-          </Box>
-        )}
-        <Table stickyHeader aria-label="people table">
-          <TableHead>
-            <TableRow>
-              <TableCell
-                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "35%" }}
+            {loading && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "rgba(255,255,255,0.8)",
+                  zIndex: 1,
+                }}
               >
-                Name
-              </TableCell>
-              <TableCell
-                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "13%" }}
-              >
-                Role
-              </TableCell>
-              <TableCell
-                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "13%" }}
-              >
-                Status
-              </TableCell>
-              <TableCell
-                align="right"
-                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "10%" }}
-              >
-                Hours
-              </TableCell>
-              <TableCell
-                sx={{ fontWeight: 600, fontSize: "0.875rem", width: "14%" }}
-              >
-                Joined
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {people.length > 0 ? (
-              people.map((person) => {
-                const status = deriveStatus(person);
-                const roleMeta = ROLE_META[person.personType];
-                return (
-                  <TableRow
-                    key={person.key}
-                    onClick={() => handleRowClick(person)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        handleRowClick(person);
-                      }
-                    }}
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`View profile for ${person.firstName} ${person.lastName}`}
+                <CircularProgress />
+              </Box>
+            )}
+            <Table stickyHeader aria-label="people table">
+              <TableHead>
+                <TableRow>
+                  <TableCell
                     sx={{
-                      cursor: "pointer",
-                      "&:hover": { backgroundColor: "action.hover" },
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      width: "35%",
                     }}
                   >
-                    <TableCell>
+                    Name
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      width: "13%",
+                    }}
+                  >
+                    Role
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      width: "13%",
+                    }}
+                  >
+                    Status
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      width: "10%",
+                    }}
+                  >
+                    Hours
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      width: "14%",
+                    }}
+                  >
+                    Joined
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {people.length > 0 ? (
+                  people.map((person) => {
+                    const status = deriveStatus(person);
+                    const roleMeta = ROLE_META[person.personType];
+                    return (
+                      <TableRow
+                        key={person.key}
+                        onClick={() => handleRowClick(person)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleRowClick(person);
+                          }
+                        }}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`View profile for ${person.firstName} ${person.lastName}`}
+                        sx={{
+                          cursor: "pointer",
+                          "&:hover": { backgroundColor: "action.hover" },
+                        }}
+                      >
+                        <TableCell>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1.5,
+                            }}
+                          >
+                            <Avatar
+                              src={person.profilePicture || undefined}
+                              alt={`${person.firstName} ${person.lastName}`}
+                              sx={{ width: 32, height: 32, fontSize: 12 }}
+                            >
+                              {`${person.firstName?.[0] ?? ""}${person.lastName?.[0] ?? ""}`.toUpperCase() ||
+                                "?"}
+                            </Avatar>
+                            <Box>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontWeight: 600,
+                                  color: "text.primary",
+                                  lineHeight: 1.3,
+                                }}
+                              >
+                                {person.firstName} {person.lastName}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                {person.email}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={roleMeta.label}
+                            color={roleMeta.color}
+                            variant="outlined"
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={status}
+                            color={STATUS_COLOR[status]}
+                            variant="outlined"
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontVariantNumeric: "tabular-nums",
+                              fontWeight: 500,
+                              color:
+                                person.personType === "volunteer"
+                                  ? "text.primary"
+                                  : "text.disabled",
+                            }}
+                          >
+                            {person.personType === "volunteer"
+                              ? (person.totalHours ?? 0).toFixed(1)
+                              : "—"}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            {fmtJoined(person.createdAt)}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : loading ? null : (
+                  <TableRow>
+                    <TableCell colSpan={5}>
+                      <EmptyState message="No people found" />
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        }
+        mobile={
+          <Box sx={{ flex: 1, overflow: "auto", position: "relative" }}>
+            {loading ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  py: 6,
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            ) : people.length === 0 ? (
+              <EmptyState message="No people found" />
+            ) : (
+              <Box
+                sx={{ display: "flex", flexDirection: "column", gap: 1, p: 1 }}
+              >
+                {people.map((person) => {
+                  const status = deriveStatus(person);
+                  const roleMeta = ROLE_META[person.personType];
+                  const initials =
+                    `${person.firstName?.[0] ?? ""}${person.lastName?.[0] ?? ""}`.toUpperCase() ||
+                    "?";
+                  return (
+                    <Card
+                      key={person.key}
+                      variant="outlined"
+                      onClick={() => handleRowClick(person)}
+                      sx={{
+                        cursor: "pointer",
+                        "&:hover": { bgcolor: "action.hover" },
+                      }}
+                    >
                       <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          p: 1.5,
+                          gap: 1.5,
+                        }}
                       >
                         <Avatar
                           src={person.profilePicture || undefined}
                           alt={`${person.firstName} ${person.lastName}`}
-                          sx={{ width: 32, height: 32, fontSize: 12 }}
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            fontSize: 14,
+                            flexShrink: 0,
+                          }}
                         >
-                          {`${person.firstName?.[0] ?? ""}${person.lastName?.[0] ?? ""}`.toUpperCase() ||
-                            "?"}
+                          {initials}
                         </Avatar>
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: 600,
-                              color: "text.primary",
-                              lineHeight: 1.3,
-                            }}
-                          >
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography variant="body2" fontWeight={600} noWrap>
                             {person.firstName} {person.lastName}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            display="block"
+                            noWrap
+                          >
                             {person.email}
                           </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.75,
+                              mt: 0.5,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <Chip
+                              label={roleMeta.label}
+                              color={roleMeta.color}
+                              variant="outlined"
+                              size="small"
+                            />
+                            <Chip
+                              label={status}
+                              color={STATUS_COLOR[status]}
+                              variant="outlined"
+                              size="small"
+                            />
+                            <Typography
+                              variant="caption"
+                              color={
+                                person.personType === "volunteer"
+                                  ? "text.secondary"
+                                  : "text.disabled"
+                              }
+                            >
+                              {person.personType === "volunteer"
+                                ? `${(person.totalHours ?? 0).toFixed(1)} hrs`
+                                : "—"}{" "}
+                              · {fmtJoined(person.createdAt)}
+                            </Typography>
+                          </Box>
                         </Box>
                       </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={roleMeta.label}
-                        color={roleMeta.color}
-                        variant="outlined"
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={status}
-                        color={STATUS_COLOR[status]}
-                        variant="outlined"
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontVariantNumeric: "tabular-nums",
-                          fontWeight: 500,
-                          color:
-                            person.personType === "volunteer"
-                              ? "text.primary"
-                              : "text.disabled",
-                        }}
-                      >
-                        {person.personType === "volunteer"
-                          ? (person.totalHours ?? 0).toFixed(1)
-                          : "—"}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" color="text.secondary">
-                        {fmtJoined(person.createdAt)}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            ) : loading ? null : (
-              <TableRow>
-                <TableCell colSpan={5}>
-                  <EmptyState message="No people found" />
-                </TableCell>
-              </TableRow>
+                    </Card>
+                  );
+                })}
+              </Box>
             )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          </Box>
+        }
+      />
       {showPagination && (
         <TablePaginationFooter
           total={total}

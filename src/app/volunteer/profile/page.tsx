@@ -19,6 +19,8 @@ import {
   Skeleton,
   Stack,
   type SxProps,
+  Tab,
+  Tabs,
   Typography,
 } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -33,6 +35,7 @@ import type {
 } from "@/components/volunteer/availability-editor";
 import ProfileEditForm from "@/components/volunteer/profile-edit-form";
 import VolunteerAccountSettings from "@/components/volunteer/volunteer-account-settings";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useOnboardingDocuments } from "@/hooks/use-onboarding-documents";
 import { useVolunteerProfile } from "@/hooks/use-volunteer-profile";
 
@@ -124,6 +127,7 @@ function AvailabilityGrid({
 }: {
   availability: AvailabilityData | null | undefined;
 }): JSX.Element {
+  const isMobile = useIsMobile();
   const DAYS: Day[] = [
     "monday",
     "tuesday",
@@ -144,6 +148,84 @@ function AvailabilityGrid({
         No availability set — click &quot;Edit profile&quot; to add your
         schedule.
       </Typography>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+        {DAYS.map((day, i) => {
+          const ranges = availability?.[day] ?? [];
+          return (
+            <Box
+              key={day}
+              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+            >
+              <Typography
+                variant="caption"
+                fontWeight={700}
+                color="text.secondary"
+                sx={{
+                  width: 28,
+                  textTransform: "uppercase",
+                  fontSize: "0.6rem",
+                  flexShrink: 0,
+                  textAlign: "right",
+                }}
+              >
+                {SHORT[i]}
+              </Typography>
+              <Box
+                sx={{
+                  flex: 1,
+                  height: 14,
+                  bgcolor: "grey.50",
+                  borderRadius: 1,
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                {ranges.map((r, ri) => {
+                  const sh = parseHMM(r.start);
+                  const eh = parseHMM(r.end);
+                  const left =
+                    Math.max(0, (sh - DISPLAY_START) / DISPLAY_SPAN) * 100;
+                  const width = Math.min(
+                    100 - left,
+                    ((eh - sh) / DISPLAY_SPAN) * 100,
+                  );
+                  return (
+                    <Box
+                      key={ri}
+                      sx={{
+                        position: "absolute",
+                        left: `${left}%`,
+                        width: `${width}%`,
+                        top: 0,
+                        bottom: 0,
+                        bgcolor: "primary.main",
+                        opacity: 0.75,
+                        borderRadius: 0.5,
+                      }}
+                    />
+                  );
+                })}
+              </Box>
+            </Box>
+          );
+        })}
+        <Box display="flex" justifyContent="space-between" mt={0.5}>
+          <Typography variant="caption" color="text.disabled" fontSize="0.6rem">
+            6 AM
+          </Typography>
+          <Typography variant="caption" color="text.disabled" fontSize="0.6rem">
+            12 PM
+          </Typography>
+          <Typography variant="caption" color="text.disabled" fontSize="0.6rem">
+            12 AM
+          </Typography>
+        </Box>
+      </Box>
     );
   }
 
@@ -504,11 +586,19 @@ export default function VolunteerProfilePage(): JSX.Element {
     : "Volunteer";
 
   return (
-    <Box sx={{ flex: 1, display: "flex", minHeight: 0 }}>
-      {/* ── Left nav ──────────────────────────────────────────── */}
+    <Box
+      sx={{
+        flex: 1,
+        display: "flex",
+        flexDirection: { xs: "column", md: "row" },
+        minHeight: 0,
+      }}
+    >
+      {/* ── Side nav (desktop only) ─────────────────────────── */}
       <Box
         component="nav"
         sx={{
+          display: { xs: "none", md: "block" },
           width: 200,
           flexShrink: 0,
           borderRight: "1px solid",
@@ -567,9 +657,31 @@ export default function VolunteerProfilePage(): JSX.Element {
         })}
       </Box>
 
+      {/* ── Mobile-only top tabs ──────────────────────────────── */}
+      <Box
+        sx={{
+          display: { xs: "block", md: "none" },
+          borderBottom: 1,
+          borderColor: "divider",
+          flexShrink: 0,
+          bgcolor: "background.paper",
+        }}
+      >
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          aria-label="Profile sections"
+          sx={{ "& .MuiTab-root": { minWidth: 0, flex: 1 } }}
+        >
+          <Tab label="Profile" value="profile" />
+          <Tab label="Settings" value="settings" />
+        </Tabs>
+      </Box>
+
       {/* ── Content ───────────────────────────────────────────── */}
       <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-        <Box sx={{ px: 3, pt: 3, pb: 4 }}>
+        <Box sx={{ px: { xs: 2, md: 3 }, pt: { xs: 2, md: 3 }, pb: 4 }}>
           {activeTab === "settings" ? (
             <VolunteerAccountSettings
               initialFirstName={user.firstName ?? ""}

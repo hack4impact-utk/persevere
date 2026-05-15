@@ -7,9 +7,9 @@ import PlayCircleIcon from "@mui/icons-material/PlayCircle";
 import {
   Box,
   Button,
+  Card,
   Chip,
   CircularProgress,
-  Dialog,
   DialogActions,
   DialogContent,
   IconButton,
@@ -28,7 +28,12 @@ import {
 import { useSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useState } from "react";
 
-import { ConfirmDialog, ModalTitleBar } from "@/components/shared";
+import {
+  ConfirmDialog,
+  MobileDialog,
+  ModalTitleBar,
+  ResponsiveTable,
+} from "@/components/shared";
 import { EmptyState } from "@/components/ui";
 import {
   useVolunteerTypes,
@@ -187,88 +192,190 @@ export default function VolunteerTypesSettingsClient(): JSX.Element {
           position: "relative",
         }}
       >
-        <TableContainer sx={{ flex: 1, overflow: "auto" }}>
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "action.hover" }}>
-                <TableCell
-                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
-                >
-                  Name
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
-                >
-                  Status
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
-                  align="right"
-                >
-                  Actions
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading && (
-                <TableRow>
-                  <TableCell colSpan={3} sx={{ p: 0, borderBottom: 0 }}>
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        top: 48,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: "rgba(255, 255, 255, 0.7)",
-                        zIndex: 1,
-                      }}
+        <ResponsiveTable
+          desktop={
+            <TableContainer sx={{ flex: 1, overflow: "auto" }}>
+              <Table stickyHeader size="small">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "action.hover" }}>
+                    <TableCell
+                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
                     >
-                      <CircularProgress />
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              )}
-              {allTypes.length === 0 ? (
-                loading ? null : (
-                  <TableRow>
-                    <TableCell colSpan={3} align="center" sx={{ py: 5 }}>
-                      <EmptyState
-                        message="No volunteer types yet."
-                        action={
-                          <Box
-                            component="span"
-                            sx={{
-                              cursor: "pointer",
-                              color: "primary.main",
-                              fontWeight: 500,
-                            }}
-                            onClick={openAdd}
-                          >
-                            Add the first type
-                          </Box>
-                        }
-                      />
+                      Name
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                    >
+                      Status
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: 600, fontSize: "0.875rem", py: 1.5 }}
+                      align="right"
+                    >
+                      Actions
                     </TableCell>
                   </TableRow>
-                )
+                </TableHead>
+                <TableBody>
+                  {loading && (
+                    <TableRow>
+                      <TableCell colSpan={3} sx={{ p: 0, borderBottom: 0 }}>
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: 48,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "rgba(255, 255, 255, 0.7)",
+                            zIndex: 1,
+                          }}
+                        >
+                          <CircularProgress />
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {allTypes.length === 0 ? (
+                    loading ? null : (
+                      <TableRow>
+                        <TableCell colSpan={3} align="center" sx={{ py: 5 }}>
+                          <EmptyState
+                            message="No volunteer types yet."
+                            action={
+                              <Box
+                                component="span"
+                                sx={{
+                                  cursor: "pointer",
+                                  color: "primary.main",
+                                  fontWeight: 500,
+                                }}
+                                onClick={openAdd}
+                              >
+                                Add the first type
+                              </Box>
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )
+                  ) : (
+                    allTypes.map((type, index) => (
+                      <TableRow
+                        key={type.id}
+                        hover
+                        sx={{
+                          backgroundColor:
+                            index % 2 === 0 ? "transparent" : "action.hover",
+                          "&:last-child td": { border: 0 },
+                          opacity: type.isActive ? 1 : 0.6,
+                        }}
+                      >
+                        <TableCell sx={{ fontWeight: 500 }}>
+                          {type.name}
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={type.isActive ? "Active" : "Inactive"}
+                            size="small"
+                            color={type.isActive ? "success" : "default"}
+                            variant="outlined"
+                            sx={{ fontSize: "0.75rem" }}
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Stack
+                            direction="row"
+                            spacing={0.5}
+                            justifyContent="flex-end"
+                          >
+                            <Tooltip title="Edit name">
+                              <IconButton
+                                size="small"
+                                onClick={() => openEdit(type)}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            {type.isActive ? (
+                              <Tooltip title="Deactivate type">
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => setDeactivateConfirm(type)}
+                                >
+                                  <PauseCircleIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            ) : (
+                              <Tooltip title="Reactivate type">
+                                <IconButton
+                                  size="small"
+                                  color="success"
+                                  onClick={() => void handleReactivate(type)}
+                                >
+                                  <PlayCircleIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          }
+          mobile={
+            <Stack spacing={1} sx={{ p: 1.5 }}>
+              {loading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                  <CircularProgress />
+                </Box>
+              ) : allTypes.length === 0 ? (
+                <EmptyState
+                  message="No volunteer types yet."
+                  action={
+                    <Box
+                      component="span"
+                      sx={{
+                        cursor: "pointer",
+                        color: "primary.main",
+                        fontWeight: 500,
+                      }}
+                      onClick={openAdd}
+                    >
+                      Add the first type
+                    </Box>
+                  }
+                />
               ) : (
-                allTypes.map((type, index) => (
-                  <TableRow
+                allTypes.map((type) => (
+                  <Card
                     key={type.id}
-                    hover
-                    sx={{
-                      backgroundColor:
-                        index % 2 === 0 ? "transparent" : "action.hover",
-                      "&:last-child td": { border: 0 },
-                      opacity: type.isActive ? 1 : 0.6,
-                    }}
+                    variant="outlined"
+                    sx={{ opacity: type.isActive ? 1 : 0.6 }}
                   >
-                    <TableCell sx={{ fontWeight: 500 }}>{type.name}</TableCell>
-                    <TableCell>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        px: 1.5,
+                        py: 1,
+                        gap: 1,
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        fontWeight={500}
+                        sx={{ flex: 1 }}
+                      >
+                        {type.name}
+                      </Typography>
                       <Chip
                         label={type.isActive ? "Active" : "Inactive"}
                         size="small"
@@ -276,54 +383,43 @@ export default function VolunteerTypesSettingsClient(): JSX.Element {
                         variant="outlined"
                         sx={{ fontSize: "0.75rem" }}
                       />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Stack
-                        direction="row"
-                        spacing={0.5}
-                        justifyContent="flex-end"
-                      >
-                        <Tooltip title="Edit name">
+                      <Tooltip title="Edit name">
+                        <IconButton size="small" onClick={() => openEdit(type)}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      {type.isActive ? (
+                        <Tooltip title="Deactivate type">
                           <IconButton
                             size="small"
-                            onClick={() => openEdit(type)}
+                            color="error"
+                            onClick={() => setDeactivateConfirm(type)}
                           >
-                            <EditIcon fontSize="small" />
+                            <PauseCircleIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        {type.isActive ? (
-                          <Tooltip title="Deactivate type">
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => setDeactivateConfirm(type)}
-                            >
-                              <PauseCircleIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        ) : (
-                          <Tooltip title="Reactivate type">
-                            <IconButton
-                              size="small"
-                              color="success"
-                              onClick={() => void handleReactivate(type)}
-                            >
-                              <PlayCircleIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
+                      ) : (
+                        <Tooltip title="Reactivate type">
+                          <IconButton
+                            size="small"
+                            color="success"
+                            onClick={() => void handleReactivate(type)}
+                          >
+                            <PlayCircleIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
+                  </Card>
                 ))
               )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            </Stack>
+          }
+        />
       </Paper>
 
       {/* Add / Edit Dialog */}
-      <Dialog
+      <MobileDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         maxWidth="xs"
@@ -356,7 +452,7 @@ export default function VolunteerTypesSettingsClient(): JSX.Element {
             {saving ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </MobileDialog>
 
       <ConfirmDialog
         open={deactivateConfirm !== null}

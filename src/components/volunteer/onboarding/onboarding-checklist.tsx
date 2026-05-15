@@ -13,6 +13,7 @@ import Typography from "@mui/material/Typography";
 import Link from "next/link";
 import { type JSX, useEffect, useRef, useState } from "react";
 
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import type { OnboardingStatus } from "@/services/onboarding.service";
 
 type ChecklistItem = {
@@ -32,7 +33,10 @@ export default function OnboardingChecklist({
   isLoading,
   error,
 }: OnboardingChecklistProps): JSX.Element | null {
-  const [minimized, setMinimized] = useState(false);
+  const isMobile = useIsMobile();
+  // On phones, the floating widget would dominate the viewport — start it
+  // collapsed so it acts more like a FAB and lets the document content breathe.
+  const [minimized, setMinimized] = useState(isMobile);
   const [visible, setVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const prevCompleteRef = useRef<boolean | null>(null);
@@ -104,9 +108,10 @@ export default function OnboardingChecklist({
     <Box
       sx={{
         position: "fixed",
-        bottom: 32,
-        right: 32,
+        bottom: { xs: "calc(16px + env(safe-area-inset-bottom, 0px))", sm: 32 },
+        right: { xs: 16, sm: 32 },
         zIndex: 1200,
+        maxWidth: { xs: "calc(100vw - 32px)", sm: "none" },
         transition: "opacity 0.5s ease, transform 0.5s ease",
         opacity: visible ? 1 : 0,
         transform: visible ? "scale(1)" : "scale(0.9) translateY(-8px)",
@@ -201,8 +206,13 @@ export default function OnboardingChecklist({
             boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
             border: 1,
             borderColor: "divider",
-            width: 300,
-            height: 480,
+            width: { xs: "calc(100vw - 32px)", sm: 300 },
+            maxWidth: 360,
+            height: { xs: "auto", sm: 480 },
+            maxHeight: {
+              xs: "calc(100vh - 64px - env(safe-area-inset-bottom, 0px))",
+              sm: 480,
+            },
             display: "flex",
             flexDirection: "column",
           }}

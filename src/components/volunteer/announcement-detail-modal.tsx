@@ -2,13 +2,12 @@
 
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
-import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { JSX } from "react";
 
-import { ModalTitleBar } from "@/components/shared";
+import { MobileDialog, ModalTitleBar } from "@/components/shared";
 import type { AnnouncementItem } from "@/hooks/use-announcements";
 
 type AnnouncementDetailModalProps = {
@@ -23,7 +22,7 @@ export default function AnnouncementDetailModal({
   announcement,
 }: AnnouncementDetailModalProps): JSX.Element {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <MobileDialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <ModalTitleBar title={announcement?.subject ?? ""} onClose={onClose} />
       <DialogContent dividers>
         <Stack
@@ -64,6 +63,6 @@ export default function AnnouncementDetailModal({
           dangerouslySetInnerHTML={{ __html: announcement?.body ?? "" }}
         />
       </DialogContent>
-    </Dialog>
+    </MobileDialog>
   );
 }

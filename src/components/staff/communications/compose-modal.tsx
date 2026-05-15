@@ -11,7 +11,6 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Dialog,
   Divider,
   IconButton,
   InputBase,
@@ -35,6 +34,7 @@ import {
   useState,
 } from "react";
 
+import { MobileDialog } from "@/components/shared";
 import { useCommunications } from "@/hooks/use-communications";
 import { useEmailTemplates } from "@/hooks/use-email-templates";
 
@@ -292,7 +292,7 @@ export default function ComposeModal({
   }, [submitting, onClose]);
 
   return (
-    <Dialog
+    <MobileDialog
       open={open}
       onClose={handleClose}
       maxWidth="md"
@@ -621,6 +621,6 @@ export default function ComposeModal({
           </Button>
         </Stack>
       </Box>
-    </Dialog>
+    </MobileDialog>
   );
 }

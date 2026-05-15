@@ -108,6 +108,7 @@ export type UseCommunicationsResult = {
     recipientCount?: number;
   } | null>;
   deleteCommunication: (id: number) => Promise<boolean>;
+  clearSelection: () => void;
 };
 
 export function useCommunications({
@@ -238,6 +239,10 @@ export function useCommunications({
     [handleApiError, loadCommunications, search],
   );
 
+  const clearSelection = useCallback((): void => {
+    setSelectedCommunication(null);
+  }, []);
+
   return {
     communications,
     selectedCommunication,
@@ -250,5 +255,6 @@ export function useCommunications({
     selectCommunication,
     sendCommunication,
     deleteCommunication,
+    clearSelection,
   };
 }

@@ -15,7 +15,16 @@ export function ModalTitleBar({
   onClose,
 }: ModalTitleBarProps): ReactElement {
   return (
-    <DialogTitle>
+    <DialogTitle
+      sx={{
+        position: { xs: "sticky", sm: "static" },
+        top: 0,
+        zIndex: 1,
+        bgcolor: "background.paper",
+        borderBottom: { xs: 1, sm: 0 },
+        borderColor: "divider",
+      }}
+    >
       <Box
         sx={{
           display: "flex",

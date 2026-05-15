@@ -1,4 +1,7 @@
-import { put } from "@vercel/blob";
+import { randomUUID } from "node:crypto";
+import path from "node:path";
+
+import { getStore } from "@netlify/blobs";
 import { NextResponse } from "next/server";
 
 import { requireStaffAuth } from "@/utils/server/auth";
@@ -24,9 +27,16 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    const blob = await put(file.name, file, { access: "public" });
+    const key = `${randomUUID()}${path.extname(file.name).toLowerCase()}`;
+    const store = getStore("onboarding-documents");
+    await store.set(key, await file.arrayBuffer(), {
+      metadata: { contentType: file.type, originalName: file.name },
+    });
 
-    return NextResponse.json({ url: blob.url }, { status: 201 });
+    return NextResponse.json(
+      { url: `/api/files/onboarding-documents/${key}` },
+      { status: 201 },
+    );
   } catch (error) {
     console.error("Upload error:", error);
     return handleRouteError(error);

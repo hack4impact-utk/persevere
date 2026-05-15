@@ -14,7 +14,7 @@ import Typography from "@mui/material/Typography";
 import NextLink from "next/link";
 import { JSX, useState } from "react";
 
-import { PageHeader } from "@/components/shared";
+import { FilterDrawer, PageHeader } from "@/components/shared";
 import { EmptyState } from "@/components/ui";
 import { OpportunityCard } from "@/components/volunteer/opportunity-card";
 import OpportunityDetailModal from "@/components/volunteer/opportunity-detail-modal";
@@ -46,6 +46,17 @@ export default function OpportunitiesPage(): JSX.Element {
 
   const { categories } = useOpportunityCategories();
   const { locations } = useOpportunityLocations();
+
+  const activeFilterCount =
+    (categoryId === "" ? 0 : 1) +
+    (locationFilter === "" ? 0 : 1) +
+    (dateRange === "" ? 0 : 1);
+
+  const clearFilters = (): void => {
+    setCategoryId("");
+    setLocationFilter("");
+    setDateRange("");
+  };
 
   return (
     <Box
@@ -85,7 +96,15 @@ export default function OpportunitiesPage(): JSX.Element {
           justifyContent: "space-between",
         }}
       >
-        <Box sx={{ display: "flex", gap: 2, flex: 1, flexWrap: "wrap" }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            flex: 1,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
           <TextField
             size="small"
             value={search}
@@ -93,7 +112,7 @@ export default function OpportunitiesPage(): JSX.Element {
               setSearch(e.target.value);
             }}
             placeholder="Search opportunities"
-            sx={{ minWidth: 240, flex: 1, maxWidth: 400 }}
+            sx={{ minWidth: { xs: "100%", sm: 240 }, flex: 1, maxWidth: 400 }}
             slotProps={{
               input: {
                 startAdornment: (
@@ -104,56 +123,61 @@ export default function OpportunitiesPage(): JSX.Element {
               },
             }}
           />
-          <TextField
-            select
-            size="small"
-            value={categoryId}
-            onChange={(e) => {
-              setCategoryId(
-                e.target.value === "" ? "" : Number(e.target.value),
-              );
-            }}
-            sx={{ minWidth: 180 }}
-            slotProps={{ select: { displayEmpty: true } }}
+          <FilterDrawer
+            activeFilterCount={activeFilterCount}
+            onClear={clearFilters}
           >
-            <MenuItem value="">All categories</MenuItem>
-            {categories.map((c) => (
-              <MenuItem key={c.id} value={c.id}>
-                {c.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            size="small"
-            value={locationFilter}
-            onChange={(e) => {
-              setLocationFilter(e.target.value);
-            }}
-            sx={{ minWidth: 160 }}
-            slotProps={{ select: { displayEmpty: true } }}
-          >
-            <MenuItem value="">Any location</MenuItem>
-            {locations.map((loc) => (
-              <MenuItem key={loc} value={loc}>
-                {loc}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            size="small"
-            value={dateRange}
-            onChange={(e) => {
-              setDateRange(e.target.value as "week" | "month" | "");
-            }}
-            sx={{ minWidth: 150 }}
-            slotProps={{ select: { displayEmpty: true } }}
-          >
-            <MenuItem value="">Any date</MenuItem>
-            <MenuItem value="week">This week</MenuItem>
-            <MenuItem value="month">This month</MenuItem>
-          </TextField>
+            <TextField
+              select
+              size="small"
+              value={categoryId}
+              onChange={(e) => {
+                setCategoryId(
+                  e.target.value === "" ? "" : Number(e.target.value),
+                );
+              }}
+              label="Category"
+              sx={{ minWidth: 180 }}
+            >
+              <MenuItem value="">All categories</MenuItem>
+              {categories.map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              size="small"
+              value={locationFilter}
+              onChange={(e) => {
+                setLocationFilter(e.target.value);
+              }}
+              label="Location"
+              sx={{ minWidth: 160 }}
+            >
+              <MenuItem value="">Any location</MenuItem>
+              {locations.map((loc) => (
+                <MenuItem key={loc} value={loc}>
+                  {loc}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              size="small"
+              value={dateRange}
+              onChange={(e) => {
+                setDateRange(e.target.value as "week" | "month" | "");
+              }}
+              label="Date"
+              sx={{ minWidth: 150 }}
+            >
+              <MenuItem value="">Any date</MenuItem>
+              <MenuItem value="week">This week</MenuItem>
+              <MenuItem value="month">This month</MenuItem>
+            </TextField>
+          </FilterDrawer>
         </Box>
         {loading ? (
           <Skeleton variant="text" width={110} height={20} />
@@ -200,7 +224,10 @@ export default function OpportunitiesPage(): JSX.Element {
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(auto-fill, minmax(280px, 1fr))",
+                },
                 gap: 2,
               }}
             >

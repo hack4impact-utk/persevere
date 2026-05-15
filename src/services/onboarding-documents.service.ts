@@ -1,4 +1,4 @@
-import { del } from "@vercel/blob";
+import { getStore } from "@netlify/blobs";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -95,8 +95,25 @@ export const signDocumentSchema = z.object({
 // Helpers
 // ---------------------------------------------------------------------------
 
-function isVercelBlobUrl(url: string): boolean {
-  return url.includes("blob.vercel-storage.com");
+const ONBOARDING_BLOB_PREFIX = "/api/files/onboarding-documents/";
+
+function extractBlobKey(url: string): string | null {
+  if (!url.startsWith(ONBOARDING_BLOB_PREFIX)) return null;
+  const key = url.slice(ONBOARDING_BLOB_PREFIX.length);
+  return key.length > 0 ? key : null;
+}
+
+async function deleteOnboardingBlob(
+  url: string,
+  documentId: number,
+): Promise<void> {
+  const key = extractBlobKey(url);
+  if (!key) return;
+  try {
+    await getStore("onboarding-documents").delete(key);
+  } catch (error) {
+    console.error(`Failed to delete blob for document ${documentId}:`, error);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -139,17 +156,8 @@ export async function updateDocument(
     .where(eq(onboardingDocuments.id, id))
     .returning();
 
-  // Clean up old blob when the URL is replaced
-  if (
-    data.url &&
-    data.url !== existing[0].url &&
-    isVercelBlobUrl(existing[0].url)
-  ) {
-    try {
-      await del(existing[0].url);
-    } catch (error) {
-      console.error(`Failed to delete old blob for document ${id}:`, error);
-    }
+  if (data.url && data.url !== existing[0].url) {
+    await deleteOnboardingBlob(existing[0].url, id);
   }
 
   return updated as unknown as OnboardingDocument;
@@ -167,17 +175,7 @@ export async function deleteDocument(id: number): Promise<void> {
   }
 
   await db.delete(onboardingDocuments).where(eq(onboardingDocuments.id, id));
-
-  // Clean up Vercel Blob storage if the file was uploaded (not an external URL)
-  const doc = existing[0];
-  if (isVercelBlobUrl(doc.url)) {
-    try {
-      await del(doc.url);
-    } catch (error) {
-      console.error(`Failed to delete blob for document ${id}:`, error);
-      // DB record is already deleted — log and continue
-    }
-  }
+  await deleteOnboardingBlob(existing[0].url, id);
 }
 
 export async function signDocument(

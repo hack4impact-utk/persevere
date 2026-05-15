@@ -11,6 +11,7 @@ import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from "@mui/material/InputAdornment";
 import MenuItem from "@mui/material/MenuItem";
+import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -24,7 +25,7 @@ import Typography from "@mui/material/Typography";
 import { enqueueSnackbar } from "notistack";
 import { JSX, useCallback, useEffect, useMemo, useState } from "react";
 
-import { PageHeader } from "@/components/shared";
+import { FilterDrawer, PageHeader, ResponsiveTable } from "@/components/shared";
 import EventDetailModal from "@/components/staff/calendar/event-detail-modal";
 import EventFormModal from "@/components/staff/calendar/event-form-modal";
 import { EmptyState } from "@/components/ui";
@@ -105,6 +106,14 @@ export default function StaffOpportunitiesPage(): JSX.Element {
       return matchesSearch && matchesCategory && matchesLocation;
     });
   }, [events, activeTab, now, search, categoryId, locationFilter]);
+
+  const activeFilterCount =
+    (categoryId === "" ? 0 : 1) + (locationFilter === "" ? 0 : 1);
+
+  const clearFilters = (): void => {
+    setCategoryId("");
+    setLocationFilter("");
+  };
 
   const selectedEvent = useMemo(
     () =>
@@ -188,42 +197,47 @@ export default function StaffOpportunitiesPage(): JSX.Element {
               },
             }}
           />
-          <TextField
-            select
-            size="small"
-            value={categoryId}
-            onChange={(e) => {
-              setCategoryId(
-                e.target.value === "" ? "" : Number(e.target.value),
-              );
-            }}
-            sx={{ minWidth: 180 }}
-            slotProps={{ select: { displayEmpty: true } }}
+          <FilterDrawer
+            activeFilterCount={activeFilterCount}
+            onClear={clearFilters}
           >
-            <MenuItem value="">All categories</MenuItem>
-            {activeCategories.map((c) => (
-              <MenuItem key={c.id} value={c.id}>
-                {c.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            size="small"
-            value={locationFilter}
-            onChange={(e) => {
-              setLocationFilter(e.target.value);
-            }}
-            sx={{ minWidth: 160 }}
-            slotProps={{ select: { displayEmpty: true } }}
-          >
-            <MenuItem value="">All locations</MenuItem>
-            {locations.map((loc) => (
-              <MenuItem key={loc} value={loc}>
-                {loc}
-              </MenuItem>
-            ))}
-          </TextField>
+            <TextField
+              select
+              size="small"
+              label="Category"
+              value={categoryId}
+              onChange={(e) => {
+                setCategoryId(
+                  e.target.value === "" ? "" : Number(e.target.value),
+                );
+              }}
+              sx={{ minWidth: 180 }}
+            >
+              <MenuItem value="">All categories</MenuItem>
+              {activeCategories.map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              size="small"
+              label="Location"
+              value={locationFilter}
+              onChange={(e) => {
+                setLocationFilter(e.target.value);
+              }}
+              sx={{ minWidth: 160 }}
+            >
+              <MenuItem value="">All locations</MenuItem>
+              {locations.map((loc) => (
+                <MenuItem key={loc} value={loc}>
+                  {loc}
+                </MenuItem>
+              ))}
+            </TextField>
+          </FilterDrawer>
         </Box>
         {!loading && (
           <Typography variant="body2" color="text.secondary">
@@ -268,28 +282,168 @@ export default function StaffOpportunitiesPage(): JSX.Element {
               overflow: "hidden",
             }}
           >
-            <TableContainer sx={{ position: "relative" }}>
-              <Table stickyHeader size="small">
-                <TableHead>
-                  <TableRow sx={{ bgcolor: "grey.50" }}>
-                    <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
-                      Title
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
-                      Category
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
-                      Date
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ fontWeight: 600, fontSize: "0.875rem" }}
-                    >
-                      RSVPs
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
+            <ResponsiveTable
+              desktop={
+                <TableContainer sx={{ position: "relative" }}>
+                  <Table stickyHeader size="small">
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: "grey.50" }}>
+                        <TableCell
+                          sx={{ fontWeight: 600, fontSize: "0.875rem" }}
+                        >
+                          Title
+                        </TableCell>
+                        <TableCell
+                          sx={{ fontWeight: 600, fontSize: "0.875rem" }}
+                        >
+                          Category
+                        </TableCell>
+                        <TableCell
+                          sx={{ fontWeight: 600, fontSize: "0.875rem" }}
+                        >
+                          Date
+                        </TableCell>
+                        <TableCell
+                          align="right"
+                          sx={{ fontWeight: 600, fontSize: "0.875rem" }}
+                        >
+                          RSVPs
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filtered.map((event) => {
+                        const { maxVolunteers, rsvpCount, categoryName } =
+                          event.extendedProps ?? {};
+                        const filled = rsvpCount ?? 0;
+                        const pct = maxVolunteers ? filled / maxVolunteers : 0;
+                        const isNearFull = pct > 0.9;
+
+                        return (
+                          <TableRow
+                            key={event.id}
+                            hover
+                            onClick={() => {
+                              setSelectedEventId(event.id);
+                            }}
+                            sx={{ cursor: "pointer" }}
+                          >
+                            <TableCell>
+                              <Typography
+                                variant="body2"
+                                fontWeight={600}
+                                color="text.primary"
+                              >
+                                {event.title}
+                              </Typography>
+                              {event.location && (
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                    mt: 0.25,
+                                  }}
+                                >
+                                  <LocationOnIcon
+                                    sx={{
+                                      fontSize: 12,
+                                      color: "text.secondary",
+                                    }}
+                                  />
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                  >
+                                    {event.location}
+                                  </Typography>
+                                </Box>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {categoryName ? (
+                                <Chip
+                                  label={categoryName}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              ) : (
+                                <Typography
+                                  variant="caption"
+                                  color="text.disabled"
+                                >
+                                  —
+                                </Typography>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {formatDate(event.start)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              {maxVolunteers == null ? (
+                                <Typography
+                                  variant="caption"
+                                  color="text.disabled"
+                                >
+                                  No limit
+                                </Typography>
+                              ) : (
+                                <Box
+                                  sx={{
+                                    display: "inline-flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-end",
+                                    minWidth: 72,
+                                  }}
+                                >
+                                  <Typography
+                                    variant="body2"
+                                    fontWeight={600}
+                                    sx={{
+                                      fontVariantNumeric: "tabular-nums",
+                                    }}
+                                  >
+                                    {filled} / {maxVolunteers}
+                                  </Typography>
+                                  <Box
+                                    sx={{
+                                      height: 4,
+                                      width: 72,
+                                      bgcolor: "action.hover",
+                                      borderRadius: 2,
+                                      mt: 0.5,
+                                      overflow: "hidden",
+                                    }}
+                                  >
+                                    <Box
+                                      sx={{
+                                        width: `${pct * 100}%`,
+                                        height: "100%",
+                                        bgcolor: isNearFull
+                                          ? "warning.main"
+                                          : "primary.main",
+                                        borderRadius: 2,
+                                        transition: "width 0.3s",
+                                      }}
+                                    />
+                                  </Box>
+                                </Box>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              }
+              mobile={
+                <Stack spacing={1} sx={{ p: 1 }}>
                   {filtered.map((event) => {
                     const { maxVolunteers, rsvpCount, categoryName } =
                       event.extendedProps ?? {};
@@ -298,15 +452,18 @@ export default function StaffOpportunitiesPage(): JSX.Element {
                     const isNearFull = pct > 0.9;
 
                     return (
-                      <TableRow
+                      <Card
                         key={event.id}
-                        hover
+                        variant="outlined"
                         onClick={() => {
                           setSelectedEventId(event.id);
                         }}
-                        sx={{ cursor: "pointer" }}
+                        sx={{
+                          cursor: "pointer",
+                          "&:hover": { bgcolor: "action.hover" },
+                        }}
                       >
-                        <TableCell>
+                        <Box sx={{ p: 1.5 }}>
                           <Typography
                             variant="body2"
                             fontWeight={600}
@@ -334,77 +491,51 @@ export default function StaffOpportunitiesPage(): JSX.Element {
                               </Typography>
                             </Box>
                           )}
-                        </TableCell>
-                        <TableCell>
-                          {categoryName ? (
-                            <Chip
-                              label={categoryName}
-                              size="small"
-                              variant="outlined"
-                            />
-                          ) : (
-                            <Typography variant="caption" color="text.disabled">
-                              —
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="text.secondary">
-                            {formatDate(event.start)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="right">
-                          {maxVolunteers == null ? (
-                            <Typography variant="caption" color="text.disabled">
-                              No limit
-                            </Typography>
-                          ) : (
-                            <Box
-                              sx={{
-                                display: "inline-flex",
-                                flexDirection: "column",
-                                alignItems: "flex-end",
-                                minWidth: 72,
-                              }}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              flexWrap: "wrap",
+                              gap: 1,
+                              mt: 1,
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
                             >
+                              {formatDate(event.start)}
+                            </Typography>
+                            {categoryName && (
+                              <Chip
+                                label={categoryName}
+                                size="small"
+                                variant="outlined"
+                              />
+                            )}
+                            {maxVolunteers == null ? (
                               <Typography
-                                variant="body2"
-                                fontWeight={600}
-                                sx={{ fontVariantNumeric: "tabular-nums" }}
+                                variant="caption"
+                                color="text.disabled"
                               >
-                                {filled} / {maxVolunteers}
+                                No limit
                               </Typography>
-                              <Box
-                                sx={{
-                                  height: 4,
-                                  width: 72,
-                                  bgcolor: "action.hover",
-                                  borderRadius: 2,
-                                  mt: 0.5,
-                                  overflow: "hidden",
-                                }}
-                              >
-                                <Box
-                                  sx={{
-                                    width: `${pct * 100}%`,
-                                    height: "100%",
-                                    bgcolor: isNearFull
-                                      ? "warning.main"
-                                      : "primary.main",
-                                    borderRadius: 2,
-                                    transition: "width 0.3s",
-                                  }}
-                                />
-                              </Box>
-                            </Box>
-                          )}
-                        </TableCell>
-                      </TableRow>
+                            ) : (
+                              <Chip
+                                label={`${filled} / ${maxVolunteers} RSVPs`}
+                                size="small"
+                                color={isNearFull ? "warning" : "default"}
+                                variant="outlined"
+                              />
+                            )}
+                          </Box>
+                        </Box>
+                      </Card>
                     );
                   })}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                </Stack>
+              }
+            />
           </Card>
         )}
       </Box>
