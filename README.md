@@ -28,36 +28,45 @@ Please have the following VSCode extensions installed:
 
 ### Environment Variables
 
-Copy `.env.example` to `.env` and fill in the values. The full set:
+Create a `.env` file at the project root and paste in the block below, then fill each value:
 
 ```text
-DATABASE_URL=<ask lead for credentials — Neon pooled connection string>
-NEXTAUTH_SECRET=<generate your own>
-NEXTAUTH_URL=http://localhost:3000
-GMAIL_USER=<ask lead for credentials — Gmail sender mailbox>
-GMAIL_APP_PASSWORD=<ask lead for credentials — 16-char Gmail app password>
-CRON_SECRET=<generate your own>
-APP_TIMEZONE=America/Chicago   # optional; defaults to America/Chicago
+DATABASE_URL=<ask leadership — Neon pooled connection string>
+NEXTAUTH_SECRET=<self-generate — see below>
+NEXTAUTH_URL=http://localhost:8888
+GMAIL_USER=utkpersevere@gmail.com
+GMAIL_APP_PASSWORD=<ask leadership — 16-char Gmail app password>
+CRON_SECRET=<self-generate — see below>
+APP_TIMEZONE=America/Chicago
 ```
 
-**Setup steps:**
+**Where to get each value:**
 
-1. Ask your team lead for `DATABASE_URL`, `GMAIL_USER`, and `GMAIL_APP_PASSWORD`.
-2. Generate your own NextAuth secret: `openssl rand -base64 32`.
-3. Generate your own cron secret: `openssl rand -base64 32`. This is the bearer token the Netlify scheduled functions in `netlify/functions/` use to call the `/api/cron/*` routes.
-4. Each developer must use their own unique `NEXTAUTH_SECRET`.
-
-**Note:** All developers share the same database for development, but each needs their own `NEXTAUTH_SECRET` to prevent session conflicts.
+1. **Ask leadership / H4I for:** `DATABASE_URL` and `GMAIL_APP_PASSWORD`. These are shared production secrets and cannot be self-generated.
+2. **Self-generate** the following with `openssl rand -base64 32`:
+   - `NEXTAUTH_SECRET` — each developer **must** use a unique value.
+   - `CRON_SECRET` — any random value works locally.
 
 ### Running the App
 
-1. Run `pnpm install` to install the dependencies.
-2. Run `pnpm run dev` to start the development server.
-3. Open [http://localhost:3000](http://localhost:3000) in your browser.
+This project uses Netlify infra (Blobs for file storage, Scheduled Functions for cron) that only works locally under `netlify dev`. **Use `pnpm run netlify:dev`, not `pnpm run dev`, for any work that touches uploads, cron, or auth.**
+
+1. `pnpm install` — installs dependencies, including `netlify-cli` as a devDependency (no global install needed).
+2. `pnpm run netlify:dev` — starts Netlify Dev, which wraps the Next.js server and serves the app at <http://localhost:8888>.
+3. Open <http://localhost:8888> in your browser.
+
+### Before Committing
+
+`pnpm run check` (ESLint + `tsc --noEmit`) must pass before every commit:
+
+```bash
+pnpm run check     # lint + typecheck — must pass before any commit
+pnpm run lint:fix  # auto-fix most ESLint issues
+```
 
 ### Database Setup
 
-The project uses Drizzle ORM with PostgreSQL. Database migrations are automatically applied on startup.
+The project uses Drizzle ORM with PostgreSQL (Neon). Migrations are run manually with `pnpm drizzle-kit migrate` after schema changes.
 
 ### Authentication
 
