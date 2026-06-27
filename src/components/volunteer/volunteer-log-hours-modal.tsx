@@ -46,11 +46,13 @@ export default function VolunteerLogHoursModal({
 
   const handleSubmit = async (): Promise<void> => {
     setFormError(null);
-    const parsedOpportunityId = Number.parseInt(opportunityId, 10);
+    const parsedOpportunityId = opportunityId
+      ? Number.parseInt(opportunityId, 10)
+      : null;
     const parsedHours = Number.parseFloat(hours);
 
-    if (!opportunityId || Number.isNaN(parsedOpportunityId)) {
-      setFormError("Please select an opportunity.");
+    if (opportunityId && Number.isNaN(parsedOpportunityId)) {
+      setFormError("Invalid opportunity selected.");
       return;
     }
     if (!date) {
@@ -119,17 +121,24 @@ export default function VolunteerLogHoursModal({
             onChange={(e) => setOpportunityId(e.target.value)}
             fullWidth
             disabled={optionsLoading || isMutating}
+            helperText="Optional. Leave blank for one-on-one activities (e.g. mentoring)."
           >
             {optionsLoading ? (
               <MenuItem disabled>Loading…</MenuItem>
-            ) : pastOptions.length === 0 ? (
-              <MenuItem disabled>No eligible past events found</MenuItem>
             ) : (
-              pastOptions.map((r) => (
-                <MenuItem key={r.opportunityId} value={String(r.opportunityId)}>
-                  {r.opportunityTitle ?? `Opportunity #${r.opportunityId}`}
-                </MenuItem>
-              ))
+              [
+                <MenuItem key="none" value="">
+                  <em>None</em>
+                </MenuItem>,
+                ...pastOptions.map((r) => (
+                  <MenuItem
+                    key={r.opportunityId}
+                    value={String(r.opportunityId)}
+                  >
+                    {r.opportunityTitle ?? `Opportunity #${r.opportunityId}`}
+                  </MenuItem>
+                )),
+              ]
             )}
           </TextField>
 

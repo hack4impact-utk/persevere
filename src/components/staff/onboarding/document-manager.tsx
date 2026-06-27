@@ -5,16 +5,19 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import SearchIcon from "@mui/icons-material/Search";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
+import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputLabel from "@mui/material/InputLabel";
@@ -28,6 +31,8 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import { useSnackbar } from "notistack";
 import {
@@ -35,6 +40,7 @@ import {
   type JSX,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -63,6 +69,7 @@ type FormState = {
   url: string;
   file: File | null;
   description: string;
+  required: boolean;
 };
 
 const DEFAULT_FORM: FormState = {
@@ -73,6 +80,7 @@ const DEFAULT_FORM: FormState = {
   url: "",
   file: null,
   description: "",
+  required: true,
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -107,6 +115,7 @@ export default function DocumentManager(): JSX.Element {
     refetch,
   } = useOnboardingDocuments();
   const { enqueueSnackbar } = useSnackbar();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<OnboardingDocument | null>(null);
@@ -138,6 +147,7 @@ export default function DocumentManager(): JSX.Element {
       url: doc.url,
       file: null,
       description: doc.description ?? "",
+      required: doc.required,
     });
     setModalOpen(true);
   }, []);
@@ -191,7 +201,7 @@ export default function DocumentManager(): JSX.Element {
         actionType: form.actionType,
         url: resolvedUrl,
         description: form.description.trim() || undefined,
-        required: form.actionType !== "informational",
+        required: form.actionType === "informational" ? false : form.required,
       };
 
       if (editTarget) {
@@ -487,67 +497,120 @@ export default function DocumentManager(): JSX.Element {
           title={editTarget ? "Edit Document" : "Add Document"}
           onClose={closeModal}
         />
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="Title"
-              value={form.title}
-              onChange={(e) => setField("title", e.target.value)}
-              fullWidth
-              size="small"
-              required
-            />
+        <DialogContent dividers>
+          <Stack spacing={2.5} sx={{ mt: 1 }}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <TextField
+                label="Title"
+                value={form.title}
+                onChange={(e) => setField("title", e.target.value)}
+                fullWidth
+                size="small"
+                required
+              />
+              <FormControl sx={{ minWidth: { sm: 140 } }} size="small">
+                <InputLabel>Type</InputLabel>
+                <Select
+                  value={form.type}
+                  label="Type"
+                  onChange={(e) =>
+                    setField("type", e.target.value as FormState["type"])
+                  }
+                >
+                  <MenuItem value="pdf">PDF</MenuItem>
+                  <MenuItem value="video">Video</MenuItem>
+                  <MenuItem value="link">Link</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
 
-            <FormControl fullWidth size="small">
-              <InputLabel>Type</InputLabel>
-              <Select
-                value={form.type}
-                label="Type"
-                onChange={(e) =>
-                  setField("type", e.target.value as FormState["type"])
-                }
+            <Box
+              sx={{
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 2,
+                p: 2,
+                bgcolor: "grey.50",
+              }}
+            >
+              <Stack spacing={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Action Type</InputLabel>
+                  <Select
+                    value={form.actionType}
+                    label="Action Type"
+                    onChange={(e) => {
+                      const val = e.target.value as ActionType;
+                      setForm((prev) => ({
+                        ...prev,
+                        actionType: val,
+                        required:
+                          val === "informational" ? false : prev.required,
+                      }));
+                    }}
+                  >
+                    <MenuItem value="sign">Sign (formal agreement)</MenuItem>
+                    <MenuItem value="consent">Consent (give/deny)</MenuItem>
+                    <MenuItem value="acknowledge">
+                      Acknowledge (confirm reviewed)
+                    </MenuItem>
+                    <MenuItem value="informational">
+                      Informational (view only)
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={form.required}
+                      onChange={(e) => setField("required", e.target.checked)}
+                      disabled={form.actionType === "informational"}
+                      sx={{ "& .MuiSvgIcon-root": { fontSize: 20 } }}
+                    />
+                  }
+                  label={
+                    <Typography
+                      variant="body2"
+                      color={
+                        form.actionType === "informational"
+                          ? "text.disabled"
+                          : "text.primary"
+                      }
+                    >
+                      Required document (volunteers must complete this to
+                      complete onboarding)
+                    </Typography>
+                  }
+                />
+              </Stack>
+            </Box>
+
+            <Stack spacing={1}>
+              <Typography
+                variant="body2"
+                fontWeight={500}
+                color="text.secondary"
               >
-                <MenuItem value="pdf">PDF</MenuItem>
-                <MenuItem value="video">Video</MenuItem>
-                <MenuItem value="link">Link</MenuItem>
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth size="small">
-              <InputLabel>Action Type</InputLabel>
-              <Select
-                value={form.actionType}
-                label="Action Type"
-                onChange={(e) =>
-                  setField("actionType", e.target.value as ActionType)
-                }
-              >
-                <MenuItem value="sign">Sign (formal agreement)</MenuItem>
-                <MenuItem value="consent">Consent (give/deny)</MenuItem>
-                <MenuItem value="acknowledge">
-                  Acknowledge (confirm reviewed)
-                </MenuItem>
-                <MenuItem value="informational">
-                  Informational (view only)
-                </MenuItem>
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth size="small">
-              <InputLabel>Source</InputLabel>
-              <Select
+                Document Source
+              </Typography>
+              <ToggleButtonGroup
                 value={form.sourceMode}
-                label="Source"
-                onChange={(e) => {
-                  setField("sourceMode", e.target.value as SourceMode);
-                  setField("url", "");
-                  setField("file", null);
+                exclusive
+                onChange={(_e, val) => {
+                  if (val !== null) {
+                    setField("sourceMode", val as SourceMode);
+                    setField("url", "");
+                    setField("file", null);
+                  }
                 }}
+                fullWidth
+                size="small"
               >
-                <MenuItem value="url">External URL</MenuItem>
-                <MenuItem value="upload">Upload File</MenuItem>
-              </Select>
-            </FormControl>
+                <ToggleButton value="upload">Upload File</ToggleButton>
+                <ToggleButton value="url">External Link</ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
 
             {form.sourceMode === "url" ? (
               <TextField
@@ -559,18 +622,58 @@ export default function DocumentManager(): JSX.Element {
                 placeholder="https://..."
               />
             ) : (
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  display="block"
-                  mb={0.5}
-                >
-                  PDF or video file (mp4, webm)
-                </Typography>
+              <Box
+                onClick={() => fileInputRef.current?.click()}
+                sx={{
+                  border: "2px dashed",
+                  borderColor: form.file ? "success.main" : "primary.main",
+                  borderRadius: 2,
+                  p: 3,
+                  textAlign: "center",
+                  cursor: "pointer",
+                  bgcolor: form.file ? "success.50" : "transparent",
+                  "&:hover": {
+                    backgroundColor: form.file ? "success.50" : "action.hover",
+                    opacity: 0.9,
+                  },
+                }}
+              >
+                <UploadFileIcon
+                  sx={{
+                    fontSize: 32,
+                    color: form.file ? "success.main" : "primary.main",
+                    mb: 1,
+                  }}
+                />
+                {form.file ? (
+                  <Box>
+                    <Typography
+                      variant="body2"
+                      fontWeight={600}
+                      color="success.main"
+                    >
+                      File selected: {form.file.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {(form.file.size / (1024 * 1024)).toFixed(2)} MB • Click
+                      to change file
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box>
+                    <Typography variant="body2" fontWeight={500}>
+                      Drag &amp; drop your file here, or click to browse
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Accepts PDF or video file (mp4, webm)
+                    </Typography>
+                  </Box>
+                )}
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept=".pdf,video/mp4,video/webm"
+                  style={{ display: "none" }}
                   onChange={(e: ChangeEvent<HTMLInputElement>) =>
                     setField("file", e.target.files?.[0] ?? null)
                   }
@@ -585,7 +688,7 @@ export default function DocumentManager(): JSX.Element {
               fullWidth
               size="small"
               multiline
-              rows={2}
+              rows={3}
             />
           </Stack>
         </DialogContent>

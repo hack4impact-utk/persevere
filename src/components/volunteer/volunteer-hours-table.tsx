@@ -96,7 +96,7 @@ export default function VolunteerHoursTable({
                       }}
                     >
                       <TableCell sx={{ pl: 3, fontWeight: 500 }}>
-                        {entry.opportunityTitle ?? "Unknown Opportunity"}
+                        {entry.opportunityTitle ?? "None"}
                       </TableCell>
                       <TableCell>{formatDate(entry.date)}</TableCell>
                       <TableCell
@@ -166,7 +166,7 @@ export default function VolunteerHoursTable({
                         variant="body1"
                         sx={{ fontWeight: 600, lineHeight: 1.3 }}
                       >
-                        {entry.opportunityTitle ?? "Unknown Opportunity"}
+                        {entry.opportunityTitle ?? "None"}
                       </Typography>
                       <Typography
                         variant="h6"

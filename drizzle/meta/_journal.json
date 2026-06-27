@@ -71,6 +71,13 @@
       "when": 1778844594075,
       "tag": "0009_condemned_wendell_vaughn",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1782534865407,
+      "tag": "0010_outgoing_joshua_kane",
+      "breakpoints": true
     }
   ]
 }

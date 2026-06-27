@@ -1,0 +1,1 @@
+ALTER TABLE "volunteer_hours" ALTER COLUMN "opportunity_id" DROP NOT NULL;

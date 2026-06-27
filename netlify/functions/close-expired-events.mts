@@ -1,6 +1,6 @@
 import type { Config } from "@netlify/functions";
 
-export default async (): Promise<Response> => {
+const closeExpiredEvents = async (): Promise<Response> => {
   const baseUrl = process.env.URL;
   const secret = process.env.CRON_SECRET;
 
@@ -25,6 +25,7 @@ export default async (): Promise<Response> => {
 
   return new Response("OK");
 };
+export default closeExpiredEvents;
 
 export const config: Config = {
   schedule: "*/30 * * * *",

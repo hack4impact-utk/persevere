@@ -8,7 +8,7 @@ export type ApprovalsHoursRecord = {
   id: number;
   volunteerId: number;
   volunteerName: string;
-  opportunityId: number;
+  opportunityId: number | null;
   opportunityTitle: string | null;
   date: string;
   hours: number;
@@ -20,7 +20,7 @@ export type ApprovalsHoursRecord = {
 
 export type LogHoursInput = {
   volunteerId: number;
-  opportunityId: number;
+  opportunityId: number | null;
   date: string;
   hours: number;
   notes?: string;

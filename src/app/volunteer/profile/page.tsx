@@ -364,6 +364,7 @@ export default function VolunteerProfilePage(): JSX.Element {
     city?: string | null;
     state?: string | null;
     referralSource?: string | null;
+    isAlumni?: boolean | null;
   }): Promise<void> => {
     setSaving(true);
     try {
@@ -763,6 +764,9 @@ export default function VolunteerProfilePage(): JSX.Element {
                         fontWeight: 600,
                       }}
                     />
+                    {vol.isAlumni && (
+                      <Chip label="Alumni" size="small" color="secondary" />
+                    )}
                     <Chip
                       icon={<AccessTimeIcon />}
                       label={`${totalHours.toFixed(2)} hrs`}
@@ -811,6 +815,7 @@ export default function VolunteerProfilePage(): JSX.Element {
                         city: vol.city,
                         state: vol.state,
                         referralSource: vol.referralSource,
+                        isAlumni: vol.isAlumni,
                       }}
                       onSave={handleSave}
                       onCancel={() => setEditMode(false)}
