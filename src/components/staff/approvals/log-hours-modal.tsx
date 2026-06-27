@@ -99,10 +99,10 @@ export default function LogHoursModal({
   }, [onClose, reset]);
 
   const handleSubmit = useCallback(async () => {
-    if (!selectedVolunteer || !selectedEventId || !date || !hours) return;
+    if (!selectedVolunteer || !date || !hours) return;
     const ok = await onSubmit({
       volunteerId: selectedVolunteer.id,
-      opportunityId: Number(selectedEventId),
+      opportunityId: selectedEventId ? Number(selectedEventId) : null,
       date,
       hours: Number(hours),
       notes: notes || undefined,
@@ -120,7 +120,6 @@ export default function LogHoursModal({
 
   const isValid =
     selectedVolunteer !== null &&
-    selectedEventId !== "" &&
     date !== "" &&
     Number(hours) > 0 &&
     Number(hours) <= 24;
@@ -162,9 +161,12 @@ export default function LogHoursModal({
             label="Event / Opportunity"
             value={selectedEventId}
             onChange={(e) => setSelectedEventId(e.target.value)}
-            required
             disabled={loadingOptions}
+            helperText="Optional. Leave blank for one-on-one activities (e.g. mentoring)."
           >
+            <MenuItem value="">
+              <em>None</em>
+            </MenuItem>
             {events.map((evt) => (
               <MenuItem key={evt.id} value={evt.id}>
                 {evt.title}

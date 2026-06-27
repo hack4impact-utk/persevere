@@ -106,9 +106,9 @@ export const volunteerHours = pgTable("volunteer_hours", {
   volunteerId: integer("volunteer_id")
     .notNull()
     .references(() => volunteers.id, { onDelete: "cascade" }),
-  opportunityId: integer("opportunity_id")
-    .notNull()
-    .references(() => opportunities.id, { onDelete: "cascade" }),
+  opportunityId: integer("opportunity_id").references(() => opportunities.id, {
+    onDelete: "cascade",
+  }),
   date: timestamp("date").notNull(),
   hours: real("hours").notNull(),
   previousHours: real("previous_hours"),

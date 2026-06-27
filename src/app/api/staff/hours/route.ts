@@ -11,7 +11,13 @@ import {
 
 const logHoursSchema = z.object({
   volunteerId: z.number().int().positive(),
-  opportunityId: z.number().int().positive(),
+  opportunityId: z
+    .number()
+    .int()
+    .positive()
+    .nullable()
+    .optional()
+    .default(null),
   date: z.string().min(1, "Date is required"),
   hours: z.number().positive().max(24),
   notes: z.string().optional(),

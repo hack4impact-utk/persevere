@@ -39,7 +39,7 @@ export default function VolunteerHoursDetailModal({
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
           <DetailField
             label="Opportunity"
-            value={entry.opportunityTitle ?? "Unknown Opportunity"}
+            value={entry.opportunityTitle ?? "None"}
           />
           <DetailField
             label="Date"

@@ -182,7 +182,7 @@ export type FetchVolunteerByIdResult = {
   }[];
   hoursBreakdown?: {
     id: number;
-    opportunityId: number;
+    opportunityId: number | null;
     opportunityTitle: string | null;
     date: Date;
     hours: number;

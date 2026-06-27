@@ -12,7 +12,13 @@ import {
 } from "@/utils/server/route-helpers";
 
 const logHoursSchema = z.object({
-  opportunityId: z.number().int().positive(),
+  opportunityId: z
+    .number()
+    .int()
+    .positive()
+    .nullable()
+    .optional()
+    .default(null),
   date: z.string().min(1),
   hours: z.number().positive().max(24),
   notes: z.string().optional(),

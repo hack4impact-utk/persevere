@@ -6,7 +6,7 @@ import type { HoursStatus } from "@/lib/status-enums";
 
 export type VolunteerHourEntry = {
   id: number;
-  opportunityId: number;
+  opportunityId: number | null;
   opportunityTitle?: string | null;
   date: string;
   hours: number;
@@ -16,7 +16,7 @@ export type VolunteerHourEntry = {
 };
 
 export type LogHoursInput = {
-  opportunityId: number;
+  opportunityId: number | null;
   date: string;
   hours: number;
   notes?: string;

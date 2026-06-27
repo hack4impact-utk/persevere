@@ -15,7 +15,7 @@ export type AllHoursRecord = {
   id: number;
   volunteerId: number;
   volunteerName: string;
-  opportunityId: number;
+  opportunityId: number | null;
   opportunityTitle: string | null;
   date: Date;
   hours: number;
@@ -65,14 +65,14 @@ export type HoursFilters = {
 
 export type LogHoursInput = {
   volunteerId: number;
-  opportunityId: number;
+  opportunityId: number | null;
   date: string;
   hours: number;
   notes?: string;
 };
 
 export type VolunteerLogHoursInput = {
-  opportunityId: number;
+  opportunityId: number | null;
   date: string;
   hours: number;
   notes?: string;
@@ -147,7 +147,7 @@ export async function listVolunteerHours(filters: HoursFilters): Promise<{
 export async function logHours(input: LogHoursInput): Promise<{
   id: number;
   volunteerId: number;
-  opportunityId: number;
+  opportunityId: number | null;
   date: Date;
   hours: number;
   notes: string | null;
@@ -162,17 +162,19 @@ export async function logHours(input: LogHoursInput): Promise<{
       .from(volunteers)
       .where(eq(volunteers.id, input.volunteerId))
       .limit(1),
-    db
-      .select()
-      .from(opportunities)
-      .where(eq(opportunities.id, input.opportunityId))
-      .limit(1),
+    input.opportunityId
+      ? db
+          .select()
+          .from(opportunities)
+          .where(eq(opportunities.id, input.opportunityId))
+          .limit(1)
+      : Promise.resolve([]),
   ]);
 
   if (volunteerExists.length === 0) {
     throw new NotFoundError("Volunteer not found");
   }
-  if (opportunityExists.length === 0) {
+  if (input.opportunityId && opportunityExists.length === 0) {
     throw new NotFoundError("Opportunity not found");
   }
 
@@ -326,42 +328,48 @@ export async function volunteerLogHours(
   if (hours <= 0 || hours > 24) {
     throw new ValidationError("Hours must be between 0 and 24");
   }
-  const [[rsvp], [existing]] = await Promise.all([
-    db
-      .select()
-      .from(volunteerRsvps)
-      .where(
-        and(
-          eq(volunteerRsvps.volunteerId, volunteerId),
-          eq(volunteerRsvps.opportunityId, opportunityId),
+
+  if (opportunityId) {
+    const [[rsvp], [existing]] = await Promise.all([
+      db
+        .select()
+        .from(volunteerRsvps)
+        .where(
+          and(
+            eq(volunteerRsvps.volunteerId, volunteerId),
+            eq(volunteerRsvps.opportunityId, opportunityId),
+          ),
         ),
-      ),
-    db
-      .select({ id: volunteerHours.id })
-      .from(volunteerHours)
-      .where(
-        and(
-          eq(volunteerHours.volunteerId, volunteerId),
-          eq(volunteerHours.opportunityId, opportunityId),
+      db
+        .select({ id: volunteerHours.id })
+        .from(volunteerHours)
+        .where(
+          and(
+            eq(volunteerHours.volunteerId, volunteerId),
+            eq(volunteerHours.opportunityId, opportunityId),
+          ),
         ),
-      ),
-  ]);
-  if (!rsvp) {
-    throw new ValidationError(
-      "You can only log hours for events you RSVPed to",
-    );
+    ]);
+    if (!rsvp) {
+      throw new ValidationError(
+        "You can only log hours for events you RSVPed to",
+      );
+    }
+    if (rsvp.status !== "attended") {
+      throw new ValidationError(
+        "You can only log hours for events you attended",
+      );
+    }
+    if (existing) {
+      throw new ConflictError("You have already logged hours for this event");
+    }
   }
-  if (rsvp.status !== "attended") {
-    throw new ValidationError("You can only log hours for events you attended");
-  }
-  if (existing) {
-    throw new ConflictError("You have already logged hours for this event");
-  }
+
   const [created] = await db
     .insert(volunteerHours)
     .values({
       volunteerId,
-      opportunityId,
+      opportunityId: opportunityId ?? null,
       date: new Date(date),
       hours,
       notes: notes ?? null,
@@ -442,7 +450,7 @@ export async function listVolunteerOwnHours(volunteerId: number): Promise<
   {
     id: number;
     volunteerId: number;
-    opportunityId: number;
+    opportunityId: number | null;
     opportunityTitle: string | null;
     date: Date;
     hours: number;
